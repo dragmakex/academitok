@@ -500,6 +500,7 @@ effect-tanstack-start/
 - 🐳 [Docker Guide](./docs/guides/docker.md)
 - 🗄️ [Database Guide - PostgreSQL](./docs/guides/database-postgresql.md)
 - 💾 [Database Guide - SQLite](./docs/guides/database-sqlite.md)
+- ✨ [Code Quality Guide](./docs/guides/code-quality.md)
 
 ### External Resources
 

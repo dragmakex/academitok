@@ -291,6 +291,7 @@ const fetchUser = (userId: string) =>
 - 🐳 [Docker Guide](./docs/guides/docker.md) - Running with Docker
 - 🗄️ [PostgreSQL Guide](./docs/guides/database-postgresql.md) - PostgreSQL with Drizzle ORM
 - 💾 [SQLite Guide](./docs/guides/database-sqlite.md) - SQLite with Drizzle ORM
+- ✨ [Code Quality Guide](./docs/guides/code-quality.md) - Linting and formatting
 
 ### Complete Documentation
 - 📖 [CONTRIBUTING.md](./CONTRIBUTING.md) - Contribution guidelines
@@ -318,6 +319,12 @@ bun run preview          # Preview production build
 
 # Code Quality
 bun run typecheck        # TypeScript type checking
+bun run lint             # Run ESLint
+bun run lint:fix         # Fix ESLint errors automatically
+bun run format           # Format code with Prettier
+bun run format:check     # Check code formatting
+bun run dprint:format    # Format code with Dprint
+bun run dprint:check     # Check Dprint formatting
 ```
 
 ---
