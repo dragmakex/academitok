@@ -7,6 +7,11 @@
     "build": "vite build",
     "preview": "vite preview",
     "test": "vitest run",
+    "test:unit": "vitest run src/example.test.ts",
+    "test:component": "vitest run src/component/*.test.tsx",
+    "test:visual": "vitest run src/visual/*.test.tsx",
+    "test:visual:update": "vitest run src/visual/*.test.tsx --update",
+    "test:watch": "vitest",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
@@ -32,6 +37,16 @@
     "vite-tsconfig-paths": "^5.1.4"
   },
   "devDependencies": {
+    "@effect/opentelemetry": "^0.59.3",
+    "@effect/vitest": "^0.27.0",
+    "@opentelemetry/exporter-trace-otlp-http": "^0.208.0",
+    "@opentelemetry/sdk-metrics": "^2.2.0",
+    "@opentelemetry/sdk-trace-base": "^2.2.0",
+    "@opentelemetry/sdk-trace-node": "^2.2.0",
+    "@opentelemetry/sdk-trace-web": "^2.2.0",
+    "@sentry/node": "^10.30.0",
+    "@sentry/opentelemetry": "^10.30.0",
+    "@sentry/react": "^10.30.0",
     "@tanstack/devtools-vite": "^0.3.11",
     "@testing-library/dom": "^10.4.0",
     "@testing-library/react": "^16.2.0",
@@ -39,10 +54,18 @@
     "@types/react": "^19.2.0",
     "@types/react-dom": "^19.2.0",
     "@vitejs/plugin-react": "^5.0.4",
+    "@vitest/browser": "^4.0.15",
+    "@vitest/browser-playwright": "^4.0.15",
     "jsdom": "^27.0.0",
+    "playwright": "^1.57.0",
     "typescript": "^5.7.2",
     "vite": "^7.1.7",
-    "vitest": "^3.0.5",
+    "vitest": "^4.0.15",
+    "vitest-browser-react": "^2.0.2",
     "web-vitals": "^5.1.0"
+  },
+  "patchedDependencies": {
+    "srvx@0.9.7": "patches/srvx@0.9.7.patch",
+    "nitro@3.0.1-alpha.1": "patches/nitro@3.0.1-alpha.1.patch"
   }
 }
