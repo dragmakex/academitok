@@ -498,6 +498,8 @@ effect-tanstack-start/
 - 📊 [Telemetry Guide](./docs/guides/telemetry.md)
 - 📈 [PostHog Guide](./docs/guides/posthog.md)
 - 🐳 [Docker Guide](./docs/guides/docker.md)
+- 🗄️ [Database Guide - PostgreSQL](./docs/guides/database-postgresql.md)
+- 💾 [Database Guide - SQLite](./docs/guides/database-sqlite.md)
 
 ### External Resources
 

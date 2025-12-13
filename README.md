@@ -289,6 +289,8 @@ const fetchUser = (userId: string) =>
 - 📊 [Telemetry Guide](./docs/guides/telemetry.md) - Monitoring and observability
 - 📈 [PostHog Guide](./docs/guides/posthog.md) - Analytics and feature flags
 - 🐳 [Docker Guide](./docs/guides/docker.md) - Running with Docker
+- 🗄️ [PostgreSQL Guide](./docs/guides/database-postgresql.md) - PostgreSQL with Drizzle ORM
+- 💾 [SQLite Guide](./docs/guides/database-sqlite.md) - SQLite with Drizzle ORM
 
 ### Complete Documentation
 - 📖 [CONTRIBUTING.md](./CONTRIBUTING.md) - Contribution guidelines
