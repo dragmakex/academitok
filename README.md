@@ -1,290 +1,387 @@
-Welcome to your new TanStack app! 
+# Effect TanStack Start
 
-# Getting Started
+A modern, full-stack TypeScript application built with **Effect-TS**, **TanStack Start**, and **Bun**, featuring comprehensive testing, monitoring, and analytics out of the box.
 
-To run this application:
+## ✨ Features
+
+### Core Stack
+- 🚀 **[Bun](https://bun.sh)** - Fast JavaScript runtime and package manager
+- ⚡ **[Effect-TS](https://effect.website)** - Powerful functional effect system
+- 🎯 **[TanStack Start](https://tanstack.com/router/latest/docs/framework/react/start/getting-started)** - Full-stack React framework with SSR
+- 🎨 **[Tailwind CSS 4](https://tailwindcss.com)** - Utility-first CSS framework
+- 📦 **[@effect-atom](https://github.com/effect-ts-app/atom)** - Atomic state management
+- 🔄 **[@effect/rpc](https://effect.website/docs/guides/rpc/overview)** - Type-safe client-server communication
+
+### Testing & Quality
+- 🧪 **[Vitest 4](https://vitest.dev)** - Fast unit testing with browser mode
+- 🎭 **[@effect/vitest](https://effect.website/docs/guides/testing/vitest)** - Effect-based testing with TestContext
+- 🌐 **Multi-Browser Testing** - Chromium, Firefox, WebKit via Playwright
+- 📸 **Visual Regression Testing** - Screenshot comparison across browsers
+- 🔍 **Component Testing** - Real browser testing for React components
+
+### Observability & Analytics
+- 📊 **[Grafana Stack](https://grafana.com)** - Complete monitoring solution
+  - **Loki** - Log aggregation
+  - **Tempo** - Distributed tracing
+  - **Prometheus** - Metrics collection
+  - **Grafana** - Unified dashboards
+- 🐛 **[Sentry](https://sentry.io)** - Error tracking and performance monitoring (self-hosted)
+- 📈 **[PostHog](https://posthog.com)** - Product analytics and feature flags (self-hosted)
+- 🔭 **OpenTelemetry** - Distributed tracing and observability
+
+### Infrastructure
+- 🐳 **Docker Compose** - Complete local development stack
+- 🔄 **Hot Reload** - Fast development with HMR
+- 🏗️ **Production Ready** - Optimized builds and deployment configs
+
+---
+
+## 🚀 Quick Start
+
+### Option 1: Local Development
 
 ```bash
-pnpm install
-pnpm start
+# Install dependencies
+bun install
+
+# Install Playwright browsers for testing
+bunx playwright install --with-deps
+
+# Copy environment template
+cp .env.example .env
+
+# Start development server
+bun run dev
 ```
 
-# Building For Production
+Visit http://localhost:3000
 
-To build this application for production:
+### Option 2: Full Stack with Docker (Recommended)
 
 ```bash
-pnpm build
+# Generate secret keys
+openssl rand -hex 32  # For SENTRY_SECRET_KEY
+openssl rand -hex 32  # For POSTHOG_SECRET_KEY
+
+# Configure environment
+cp .env.docker .env
+# Edit .env and update secret keys
+
+# Start everything (app + monitoring + analytics)
+docker-compose up
 ```
 
-## Testing
+**Access Services:**
+- 🌐 **Application**: http://localhost:3000
+- 📊 **Grafana** (Logs, Traces, Metrics): http://localhost:3001 (admin/admin)
+- 🐛 **Sentry** (Errors): http://localhost:9000
+- 📈 **PostHog** (Analytics): http://localhost:8001
+- 📉 **Prometheus** (Metrics): http://localhost:9090
 
-This project uses [Vitest](https://vitest.dev/) for testing. You can run the tests with:
+📚 **See [DOCKER_SETUP.md](./DOCKER_SETUP.md) for complete Docker documentation**
+
+---
+
+## 📦 Project Structure
+
+```
+effect-tanstack-start/
+├── docs/                          # Documentation
+│   ├── architecture/              # Architecture and diagrams
+│   │   └── overview.md            # System architecture
+│   └── guides/                    # How-to guides
+│       ├── getting-started.md     # Setup guide
+│       ├── testing.md             # Testing guide
+│       ├── telemetry.md           # Observability guide
+│       ├── posthog.md            # Analytics guide
+│       └── docker.md             # Docker guide
+├── docker/                        # Docker configurations
+├── src/
+│   ├── api/                       # API schemas and clients
+│   ├── lib/                       # Shared utilities
+│   │   ├── logger-loki.ts         # Loki logging
+│   │   ├── posthog-client.ts      # PostHog browser
+│   │   ├── posthog-server.ts      # PostHog server
+│   │   ├── telemetry-client.ts    # Sentry browser
+│   │   └── telemetry-server.ts    # Sentry server
+│   ├── routes/                    # File-based routing
+│   ├── component/                 # Component tests
+│   ├── visual/                    # Visual regression tests
+│   └── *.test.ts                  # Unit tests
+├── Dockerfile                     # Container build
+├── docker-compose.yml             # Service orchestration
+├── CONTRIBUTING.md                # Contribution guidelines
+├── DOCKER_SETUP.md                # Docker documentation
+└── TESTING_AND_TELEMETRY.md       # Testing & observability
+```
+
+---
+
+## 🧪 Testing
 
 ```bash
-pnpm test
+# Run all tests
+bun run test
+
+# Run specific test suites
+bun run test:unit        # Effect-based unit tests
+bun run test:component   # Component tests (3 browsers)
+bun run test:visual      # Visual regression tests
+
+# Update visual regression baselines
+bun run test:visual:update
+
+# Watch mode
+bun run test:watch
+
+# Type checking
+bun run typecheck
 ```
 
-## Styling
+**Test Types:**
+- **Unit Tests** - Effect-based tests with @effect/vitest
+- **Component Tests** - Real browser testing with Playwright
+- **Visual Regression** - Screenshot comparison across browsers
 
-This project uses [Tailwind CSS](https://tailwindcss.com/) for styling.
+📚 **See [Testing Guide](./docs/guides/testing.md) for complete documentation**
 
+---
 
+## 🏗️ Building
 
+```bash
+# Build for production
+bun run build
 
-## Routing
-This project uses [TanStack Router](https://tanstack.com/router). The initial setup is a file based router. Which means that the routes are managed as files in `src/routes`.
-
-### Adding A Route
-
-To add a new route to your application just add another a new file in the `./src/routes` directory.
-
-TanStack will automatically generate the content of the route file for you.
-
-Now that you have two routes you can use a `Link` component to navigate between them.
-
-### Adding Links
-
-To use SPA (Single Page Application) navigation you will need to import the `Link` component from `@tanstack/react-router`.
-
-```tsx
-import { Link } from "@tanstack/react-router";
+# Preview production build
+bun run preview
 ```
 
-Then anywhere in your JSX you can use it like so:
+---
 
-```tsx
-<Link to="/about">About</Link>
-```
+## 📊 Monitoring & Observability
 
-This will create a link that will navigate to the `/about` route.
+### Logs (Grafana Loki)
 
-More information on the `Link` component can be found in the [Link documentation](https://tanstack.com/router/v1/docs/framework/react/api/router/linkComponent).
+```typescript
+import { Effect } from "effect"
 
-### Using A Layout
-
-In the File Based Routing setup the layout is located in `src/routes/__root.tsx`. Anything you add to the root route will appear in all the routes. The route content will appear in the JSX where you use the `<Outlet />` component.
-
-Here is an example layout that includes a header:
-
-```tsx
-import { Outlet, createRootRoute } from '@tanstack/react-router'
-import { TanStackRouterDevtools } from '@tanstack/react-router-devtools'
-
-import { Link } from "@tanstack/react-router";
-
-export const Route = createRootRoute({
-  component: () => (
-    <>
-      <header>
-        <nav>
-          <Link to="/">Home</Link>
-          <Link to="/about">About</Link>
-        </nav>
-      </header>
-      <Outlet />
-      <TanStackRouterDevtools />
-    </>
-  ),
+const program = Effect.gen(function* () {
+  yield* Effect.log("Application started")
+  // Logs automatically sent to Loki
 })
 ```
 
-The `<TanStackRouterDevtools />` component is not required so you can remove it if you don't want it in your layout.
+### Traces (OpenTelemetry + Tempo)
 
-More information on layouts can be found in the [Layouts documentation](https://tanstack.com/router/latest/docs/framework/react/guide/routing-concepts#layouts).
+```typescript
+import { Effect } from "effect"
 
-
-## Data Fetching
-
-There are multiple ways to fetch data in your application. You can use TanStack Query to fetch data from a server. But you can also use the `loader` functionality built into TanStack Router to load the data for a route before it's rendered.
-
-For example:
-
-```tsx
-const peopleRoute = createRoute({
-  getParentRoute: () => rootRoute,
-  path: "/people",
-  loader: async () => {
-    const response = await fetch("https://swapi.dev/api/people");
-    return response.json() as Promise<{
-      results: {
-        name: string;
-      }[];
-    }>;
-  },
-  component: () => {
-    const data = peopleRoute.useLoaderData();
-    return (
-      <ul>
-        {data.results.map((person) => (
-          <li key={person.name}>{person.name}</li>
-        ))}
-      </ul>
-    );
-  },
-});
+const program = Effect.gen(function* () {
+  // Your code here
+}).pipe(
+  Effect.withSpan("operationName", {
+    attributes: { userId: "123" }
+  })
+)
 ```
 
-Loaders simplify your data fetching logic dramatically. Check out more information in the [Loader documentation](https://tanstack.com/router/latest/docs/framework/react/guide/data-loading#loader-parameters).
+### Error Tracking (Sentry)
 
-### React-Query
+```typescript
+import { captureException } from "./lib/telemetry-client"
 
-React-Query is an excellent addition or alternative to route loading and integrating it into you application is a breeze.
+try {
+  // Your code
+} catch (error) {
+  captureException(error)
+}
+```
 
-First add your dependencies:
+📚 **See [Telemetry Guide](./docs/guides/telemetry.md) for complete documentation**
+
+---
+
+## 📈 Analytics (PostHog)
+
+### Client-Side
+
+```typescript
+import { trackEvent, identifyUser } from "./lib/posthog-client"
+
+// Track events
+trackEvent("button_clicked", {
+  button_id: "signup",
+  page: "/landing"
+})
+
+// Identify users
+identifyUser({
+  userId: "user-123",
+  email: "user@example.com"
+})
+
+// Feature flags
+if (isFeatureFlagEnabled("new_dashboard")) {
+  // Show new dashboard
+}
+```
+
+### Server-Side
+
+```typescript
+import { Effect } from "effect"
+import { trackServerEvent } from "./lib/posthog-server"
+
+const program = Effect.gen(function* () {
+  yield* trackServerEvent("user_signup", {
+    distinctId: "user-123",
+    plan: "premium"
+  })
+})
+```
+
+📚 **See [PostHog Guide](./docs/guides/posthog.md) for complete documentation**
+
+---
+
+## 🎯 Effect-TS Integration
+
+This project leverages Effect-TS for:
+- Type-safe error handling
+- Composable business logic
+- Resource management with scopes
+- Built-in observability (tracing, logging)
+- Dependency injection
+
+**Example:**
+
+```typescript
+import { Effect } from "effect"
+
+const fetchUser = (userId: string) =>
+  Effect.gen(function* () {
+    yield* Effect.log(`Fetching user: ${userId}`)
+
+    const response = yield* Effect.tryPromise(() =>
+      fetch(`/api/users/${userId}`)
+    )
+
+    const user = yield* Effect.tryPromise(() => response.json())
+
+    return user
+  }).pipe(
+    Effect.withSpan("fetchUser", { attributes: { userId } })
+  )
+```
+
+---
+
+## 📚 Documentation
+
+### For New Contributors
+👉 **Start with [CONTRIBUTING.md](./CONTRIBUTING.md)**
+
+### Guides
+- 🚀 [Getting Started](./docs/guides/getting-started.md) - Setup and installation
+- 🏗️ [Architecture Overview](./docs/architecture/overview.md) - System design
+- 🧪 [Testing Guide](./docs/guides/testing.md) - Writing and running tests
+- 📊 [Telemetry Guide](./docs/guides/telemetry.md) - Monitoring and observability
+- 📈 [PostHog Guide](./docs/guides/posthog.md) - Analytics and feature flags
+- 🐳 [Docker Guide](./docs/guides/docker.md) - Running with Docker
+
+### Complete Documentation
+- 📖 [CONTRIBUTING.md](./CONTRIBUTING.md) - Contribution guidelines
+- 🐳 [DOCKER_SETUP.md](./DOCKER_SETUP.md) - Complete Docker setup
+- 🧪 [TESTING_AND_TELEMETRY.md](./TESTING_AND_TELEMETRY.md) - Testing & observability
+
+---
+
+## 🔧 Available Scripts
 
 ```bash
-pnpm add @tanstack/react-query @tanstack/react-query-devtools
+# Development
+bun run dev              # Start dev server with hot reload
+
+# Testing
+bun run test             # Run all tests
+bun run test:unit        # Run Effect-based unit tests
+bun run test:component   # Run component tests
+bun run test:visual      # Run visual regression tests
+bun run test:watch       # Run tests in watch mode
+
+# Building
+bun run build            # Build for production
+bun run preview          # Preview production build
+
+# Code Quality
+bun run typecheck        # TypeScript type checking
 ```
 
-Next we'll need to create a query client and provider. We recommend putting those in `main.tsx`.
+---
 
-```tsx
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+## 🌟 Key Highlights
 
-// ...
+### Type Safety
+- **End-to-end type safety** with TypeScript and Effect-TS
+- **Type-safe RPC** with @effect/rpc
+- **Type-safe routing** with TanStack Router
 
-const queryClient = new QueryClient();
+### Developer Experience
+- **Hot Module Replacement** - Instant feedback
+- **Browser DevTools** - Debug tests in real browsers
+- **Comprehensive Testing** - Unit, component, and visual regression
+- **Built-in Monitoring** - Pre-configured observability stack
 
-// ...
+### Production Ready
+- **Self-hosted monitoring** - Full control over data
+- **Error tracking** - Automatic error capture and reporting
+- **Analytics** - Product analytics and feature flags
+- **Distributed tracing** - Track requests across services
+- **Docker deployment** - Complete containerized stack
 
-if (!rootElement.innerHTML) {
-  const root = ReactDOM.createRoot(rootElement);
+---
 
-  root.render(
-    <QueryClientProvider client={queryClient}>
-      <RouterProvider router={router} />
-    </QueryClientProvider>
-  );
-}
-```
+## 🤝 Contributing
 
-You can also add TanStack Query Devtools to the root route (optional).
+We welcome contributions! Please read [CONTRIBUTING.md](./CONTRIBUTING.md) for guidelines on:
+- Setting up your development environment
+- Project architecture and patterns
+- Testing requirements
+- Code style and conventions
+- Pull request process
 
-```tsx
-import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
+---
 
-const rootRoute = createRootRoute({
-  component: () => (
-    <>
-      <Outlet />
-      <ReactQueryDevtools buttonPosition="top-right" />
-      <TanStackRouterDevtools />
-    </>
-  ),
-});
-```
+## 📄 License
 
-Now you can use `useQuery` to fetch your data.
+[Your License Here]
 
-```tsx
-import { useQuery } from "@tanstack/react-query";
+---
 
-import "./App.css";
+## 🙏 Acknowledgments
 
-function App() {
-  const { data } = useQuery({
-    queryKey: ["people"],
-    queryFn: () =>
-      fetch("https://swapi.dev/api/people")
-        .then((res) => res.json())
-        .then((data) => data.results as { name: string }[]),
-    initialData: [],
-  });
+Built with amazing open-source technologies:
+- [Effect-TS](https://effect.website)
+- [TanStack](https://tanstack.com)
+- [Bun](https://bun.sh)
+- [Vitest](https://vitest.dev)
+- [Grafana](https://grafana.com)
+- [Sentry](https://sentry.io)
+- [PostHog](https://posthog.com)
+- [Playwright](https://playwright.dev)
 
-  return (
-    <div>
-      <ul>
-        {data.map((person) => (
-          <li key={person.name}>{person.name}</li>
-        ))}
-      </ul>
-    </div>
-  );
-}
+---
 
-export default App;
-```
-
-You can find out everything you need to know on how to use React-Query in the [React-Query documentation](https://tanstack.com/query/latest/docs/framework/react/overview).
-
-## State Management
-
-Another common requirement for React applications is state management. There are many options for state management in React. TanStack Store provides a great starting point for your project.
-
-First you need to add TanStack Store as a dependency:
+**Ready to build?** 🚀
 
 ```bash
-pnpm add @tanstack/store
+bun install
+bun run dev
 ```
 
-Now let's create a simple counter in the `src/App.tsx` file as a demonstration.
+For the full experience with monitoring and analytics:
 
-```tsx
-import { useStore } from "@tanstack/react-store";
-import { Store } from "@tanstack/store";
-import "./App.css";
-
-const countStore = new Store(0);
-
-function App() {
-  const count = useStore(countStore);
-  return (
-    <div>
-      <button onClick={() => countStore.setState((n) => n + 1)}>
-        Increment - {count}
-      </button>
-    </div>
-  );
-}
-
-export default App;
+```bash
+docker-compose up
 ```
-
-One of the many nice features of TanStack Store is the ability to derive state from other state. That derived state will update when the base state updates.
-
-Let's check this out by doubling the count using derived state.
-
-```tsx
-import { useStore } from "@tanstack/react-store";
-import { Store, Derived } from "@tanstack/store";
-import "./App.css";
-
-const countStore = new Store(0);
-
-const doubledStore = new Derived({
-  fn: () => countStore.state * 2,
-  deps: [countStore],
-});
-doubledStore.mount();
-
-function App() {
-  const count = useStore(countStore);
-  const doubledCount = useStore(doubledStore);
-
-  return (
-    <div>
-      <button onClick={() => countStore.setState((n) => n + 1)}>
-        Increment - {count}
-      </button>
-      <div>Doubled - {doubledCount}</div>
-    </div>
-  );
-}
-
-export default App;
-```
-
-We use the `Derived` class to create a new store that is derived from another store. The `Derived` class has a `mount` method that will start the derived store updating.
-
-Once we've created the derived store we can use it in the `App` component just like we would any other store using the `useStore` hook.
-
-You can find out everything you need to know on how to use TanStack Store in the [TanStack Store documentation](https://tanstack.com/store/latest).
-
-# Demo files
-
-Files prefixed with `demo` can be safely deleted. They are there to provide a starting point for you to play around with the features you've installed.
-
-# Learn More
-
-You can learn more about all of the offerings from TanStack in the [TanStack documentation](https://tanstack.com).

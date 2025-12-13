@@ -31,6 +31,8 @@
     "effect": "^3.19.10",
     "lucide-react": "^0.544.0",
     "nitro": "latest",
+    "posthog-js": "^1.306.1",
+    "posthog-node": "^5.17.2",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
     "tailwindcss": "^4.0.6",

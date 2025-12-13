@@ -1,0 +1,12 @@
+<?xml version="1.0"?>
+<clickhouse>
+    <logger>
+        <level>warning</level>
+        <console>true</console>
+    </logger>
+    <query_log>
+        <database>system</database>
+        <table>query_log</table>
+    </query_log>
+    <listen_host>0.0.0.0</listen_host>
+</clickhouse>

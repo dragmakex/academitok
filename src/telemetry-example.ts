@@ -2,12 +2,17 @@
  * Telemetry Example
  *
  * This file demonstrates how to use OpenTelemetry tracing, Sentry error logging,
- * and Grafana Loki logging in an Effect application.
+ * Grafana Loki logging, and PostHog analytics in an Effect application.
  */
 
 import { Effect } from "effect"
 import { initSentry, createSentryTelemetryLayer } from "./lib/telemetry-server"
 import { createLokiLoggerLayer } from "./lib/logger-loki"
+import {
+  createPostHogLayer,
+  trackServerEvent,
+  identifyServerUser,
+} from "./lib/posthog-server"
 
 // ====================
 // Configuration
@@ -27,6 +32,11 @@ const LOKI_CONFIG = {
   },
 }
 
+const POSTHOG_CONFIG = {
+  apiKey: process.env.POSTHOG_API_KEY || "phc_development_key",
+  host: process.env.POSTHOG_HOST || "http://localhost:8000",
+}
+
 // ====================
 // Initialize Sentry
 // ====================
@@ -43,10 +53,14 @@ const TelemetryLive = createSentryTelemetryLayer(TELEMETRY_CONFIG)
 // Logger layer for structured logging (sends to Loki)
 const LoggerLive = createLokiLoggerLayer(LOKI_CONFIG)
 
-// Combine both layers
+// PostHog layer for analytics
+const PostHogLive = createPostHogLayer(POSTHOG_CONFIG)
+
+// Combine all layers
 const AppLayer = TelemetryLive.pipe(
   // Note: If you want logs in both console and Loki, use createCombinedLoggerLayer instead
-  Effect.zipLeft(LoggerLive)
+  Effect.zipLeft(LoggerLive),
+  Effect.zipLeft(PostHogLive)
 )
 
 // ====================
@@ -114,22 +128,66 @@ const program = Effect.gen(function* () {
     version: "1.0.0",
   })
 
+  // Track application start in PostHog
+  yield* trackServerEvent("application_started", {
+    distinctId: "server",
+    environment: TELEMETRY_CONFIG.environment,
+  })
+
   try {
     // Query the database
     const user = yield* queryDatabase("user-456")
     yield* Effect.log(`User fetched: ${user.name}`)
 
+    // Identify user in PostHog
+    yield* identifyServerUser(user.id, {
+      email: user.email,
+      name: user.name,
+    })
+
+    // Track user fetch event
+    yield* trackServerEvent("user_fetched", {
+      distinctId: user.id,
+      userName: user.name,
+    })
+
     // Call external API
     const apiResult = yield* callExternalAPI("/api/external/data")
     yield* Effect.log(`API call completed: ${apiResult.status}`)
+
+    // Track API call event
+    yield* trackServerEvent("api_call_completed", {
+      distinctId: user.id,
+      endpoint: "/api/external/data",
+      status: apiResult.status,
+    })
 
     // Process the data
     const processed = yield* processData({ user, apiResult })
     yield* Effect.log(`Processing result: ${JSON.stringify(processed)}`)
 
+    // Track processing completion
+    yield* trackServerEvent("data_processed", {
+      distinctId: user.id,
+      processingTime: Date.now() - processed.timestamp,
+    })
+
     yield* Effect.log("Application completed successfully")
+
+    // Track successful completion
+    yield* trackServerEvent("application_completed", {
+      distinctId: user.id,
+      success: true,
+    })
   } catch (error) {
     yield* Effect.logError("Application failed", error)
+
+    // Track error in PostHog
+    yield* trackServerEvent("application_error", {
+      distinctId: "server",
+      error: String(error),
+    })
+
     throw error
   }
 }).pipe(
@@ -167,20 +225,31 @@ Effect.runPromise(
 /**
  * To run this example:
  *
- * 1. Start Grafana Loki (using Docker):
+ * 1. Using Docker Compose (recommended):
  *    ```bash
- *    docker run -p 3100:3100 grafana/loki
+ *    docker-compose up
  *    ```
  *
- * 2. Optionally set up the OpenTelemetry backend:
- *    ```bash
- *    docker run -p 3000:3000 -p 4317:4317 -p 4318:4318 --rm -it docker.io/grafana/otel-lgtm
- *    ```
+ * 2. OR start services individually:
+ *
+ *    a. Start Grafana Loki:
+ *       ```bash
+ *       docker run -p 3100:3100 grafana/loki
+ *       ```
+ *
+ *    b. Start OpenTelemetry backend:
+ *       ```bash
+ *       docker run -p 3000:3000 -p 4317:4317 -p 4318:4318 --rm -it docker.io/grafana/otel-lgtm
+ *       ```
+ *
+ *    c. Start PostHog (see docker-compose.yml for full setup)
  *
  * 3. Set environment variables (create a .env file):
  *    ```
  *    SENTRY_DSN=https://your-sentry-dsn@sentry.io/project-id
  *    LOKI_ENDPOINT=http://localhost:3100/loki/api/v1/push
+ *    POSTHOG_API_KEY=phc_development_key
+ *    POSTHOG_HOST=http://localhost:8000
  *    NODE_ENV=development
  *    ```
  *
@@ -190,7 +259,8 @@ Effect.runPromise(
  *    ```
  *
  * 5. View the results:
- *    - Traces: Open http://localhost:3000/explore (Grafana Tempo)
- *    - Logs: Query Loki via Grafana at http://localhost:3000
- *    - Errors: Check your Sentry dashboard
+ *    - Grafana (Traces & Logs): http://localhost:3001
+ *    - Sentry: http://localhost:9000
+ *    - PostHog: http://localhost:8001
+ *    - Prometheus: http://localhost:9090
  */
