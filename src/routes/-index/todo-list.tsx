@@ -1,29 +1,37 @@
-import { Result, useAtomRefresh, useAtomValue } from "@effect-atom/atom-react";
-import { todosAtom } from "./atoms";
-import { TodoItem } from "./todo-item";
+import { Result, useAtomRefresh, useAtomValue } from "@effect-atom/atom-react"
+import { todosAtom } from "./atoms"
+import { TodoItem } from "./todo-item"
 
+/**
+ * Renders a list of todo items, handling loading, empty states, and errors.
+ *
+ * @returns The rendered todo list.
+ */
 export function TodoList() {
-  const result = useAtomValue(todosAtom);
-  const refreshTodos = useAtomRefresh(todosAtom);
+  const result = useAtomValue(todosAtom)
+  const refreshTodos = useAtomRefresh(todosAtom)
 
   return (
     <div>
-      {Result.builder(result)
+      {Result
+        .builder(result)
         .onInitial(() => (
-          <p className="text-gray-500 dark:text-gray-400">Loading todos...</p>
+          <p className="text-gray-500 dark:text-gray-400">
+            Loading todos...
+          </p>
         ))
         .onSuccess((todos) =>
-          todos.length === 0 ? (
-            <p className="text-gray-500 dark:text-gray-400">
-              No todos yet. Add one above!
-            </p>
-          ) : (
-            <ul className="space-y-2">
-              {todos.map((todo) => (
-                <TodoItem key={todo.id} todo={todo} />
-              ))}
-            </ul>
-          ),
+          todos.length === 0
+            ? (
+              <p className="text-gray-500 dark:text-gray-400">
+                No todos yet. Add one above!
+              </p>
+            )
+            : (
+              <ul className="space-y-2">
+                {todos.map((todo) => <TodoItem key={todo.id} todo={todo} />)}
+              </ul>
+            )
         )
         .onFailure(() => (
           <div className="p-4 bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-800 rounded-lg">
@@ -40,5 +48,5 @@ export function TodoList() {
         ))
         .render()}
     </div>
-  );
+  )
 }

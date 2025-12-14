@@ -1,22 +1,24 @@
-import * as Layer from "effect/Layer";
-import * as Effect from "effect/Effect";
-import { DomainRpc } from "@/api/domain-rpc";
-import { TodosService } from "./todos-service";
+import { DomainRpc } from "@/api/domain-rpc"
+import * as Effect from "effect/Effect"
+import * as Layer from "effect/Layer"
+import { TodosService } from "./todos-service"
 
-export const TodosRpcLive = DomainRpc.toLayer(
-  Effect.gen(function* () {
-    const todos = yield* TodosService;
+export const TodosRpcLive = DomainRpc
+  .toLayer(
+    Effect.gen(function*() {
+      const todos = yield* TodosService
 
-    return {
-      todos_list: () => todos.list,
+      return {
+        todosList: () => todos.list,
 
-      todos_getById: ({ id }) => todos.getById(id),
+        todosGetById: ({ id }) => todos.getById(id),
 
-      todos_create: ({ input }) => todos.create(input),
+        todosCreate: ({ input }) => todos.create(input),
 
-      todos_update: ({ id, input }) => todos.update(id, input),
+        todosUpdate: ({ id, input }) => todos.update(id, input),
 
-      todos_remove: ({ id }) => todos.remove(id),
-    };
-  }),
-).pipe(Layer.provide(TodosService.Default));
+        todosRemove: ({ id }) => todos.remove(id),
+      }
+    }),
+  )
+  .pipe(Layer.provide(TodosService.Default))

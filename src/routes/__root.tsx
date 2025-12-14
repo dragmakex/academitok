@@ -1,8 +1,8 @@
-import { HeadContent, Scripts, createRootRoute } from "@tanstack/react-router";
-import { TanStackRouterDevtoolsPanel } from "@tanstack/react-router-devtools";
-import { TanStackDevtools } from "@tanstack/react-devtools";
-import { RegistryProvider } from "@effect-atom/atom-react";
-import appCss from "../styles.css?url";
+import { RegistryProvider } from "@effect-atom/atom-react"
+import { TanStackDevtools } from "@tanstack/react-devtools"
+import { createRootRoute, HeadContent, Scripts } from "@tanstack/react-router"
+import { TanStackRouterDevtoolsPanel } from "@tanstack/react-router-devtools"
+import appCss from "../styles.css?url"
 
 export const Route = createRootRoute({
   head: () => ({
@@ -27,8 +27,15 @@ export const Route = createRootRoute({
   }),
 
   shellComponent: RootDocument,
-});
+})
 
+/**
+ * The root document component for the application.
+ *
+ * @param props - The properties for the RootDocument component.
+ * @param props.children - The child elements to be rendered within the document.
+ * @returns The rendered HTML document.
+ */
 function RootDocument({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
@@ -36,7 +43,9 @@ function RootDocument({ children }: { children: React.ReactNode }) {
         <HeadContent />
       </head>
       <body>
-        <RegistryProvider defaultIdleTTL={60_000}>{children}</RegistryProvider>
+        <RegistryProvider defaultIdleTTL={60_000}>
+          {children}
+        </RegistryProvider>
         <TanStackDevtools
           config={{
             position: "bottom-right",
@@ -51,5 +60,5 @@ function RootDocument({ children }: { children: React.ReactNode }) {
         <Scripts />
       </body>
     </html>
-  );
+  )
 }

@@ -1,31 +1,36 @@
-import { dehydrate } from "@/lib/atom-utils";
-import { Result } from "@effect-atom/atom-react";
-import { HydrationBoundary } from "@effect-atom/atom-react/ReactHydration";
-import { createFileRoute } from "@tanstack/react-router";
-import { createServerFn } from "@tanstack/react-start";
-import * as Effect from "effect/Effect";
-import { serverRuntime } from "./api/$";
-import { TodosService } from "./api/-lib/todos-service";
-import { App } from "./-index/app";
-import { todosAtom } from "./-index/atoms";
+import { dehydrate } from "@/lib/atom-utils"
+import { Result } from "@effect-atom/atom-react"
+import { HydrationBoundary } from "@effect-atom/atom-react/ReactHydration"
+import { createFileRoute } from "@tanstack/react-router"
+import { createServerFn } from "@tanstack/react-start"
+import * as Effect from "effect/Effect"
+import { App } from "./-index/app"
+import { todosAtom } from "./-index/atoms"
+import { serverRuntime } from "./api/$"
+import { TodosService } from "./api/-lib/todos-service"
 
 const listTodos = createServerFn({ method: "GET" }).handler(async () => {
   const todos = await serverRuntime.runPromiseExit(
     Effect.flatMap(TodosService, (s) => s.list),
-  );
-  return dehydrate(todosAtom.remote, Result.fromExit(todos));
-});
+  )
+  return dehydrate(todosAtom.remote, Result.fromExit(todos))
+})
 
 export const Route = createFileRoute("/")({
   loader: () => listTodos(),
   component: AppWrapper,
-});
+})
 
+/**
+ * Wraps the main application component with a HydrationBoundary to provide dehydrated data.
+ *
+ * @returns The wrapped application component.
+ */
 function AppWrapper() {
-  const dehydrated = Route.useLoaderData();
+  const dehydrated = Route.useLoaderData()
   return (
     <HydrationBoundary state={[dehydrated]}>
       <App />
     </HydrationBoundary>
-  );
+  )
 }

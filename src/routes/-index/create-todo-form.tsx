@@ -1,20 +1,27 @@
-import { Result, useAtom } from "@effect-atom/atom-react";
-import { useState } from "react";
-import { createTodoAtom } from "./atoms";
+import { Result, useAtom } from "@effect-atom/atom-react"
+import { useState } from "react"
+import { createTodoAtom } from "./atoms"
 
+/**
+ * A form component for creating new todo items.
+ *
+ * @returns The rendered form.
+ */
 export function CreateTodoForm() {
-  const [title, setTitle] = useState("");
-  const [createResult, create] = useAtom(createTodoAtom);
+  const [title, setTitle] = useState("")
+  const [createResult, create] = useAtom(createTodoAtom)
 
   const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!title.trim()) return;
+    e.preventDefault()
+    if (!title.trim()) {
+      return
+    }
 
-    create({ title: title.trim() });
-    setTitle("");
-  };
+    create({ title: title.trim() })
+    setTitle("")
+  }
 
-  const hasError = Result.isFailure(createResult);
+  const hasError = Result.isFailure(createResult)
 
   return (
     <div className="mb-6">
@@ -36,10 +43,10 @@ export function CreateTodoForm() {
         </button>
       </form>
       {hasError && (
-        <div className="mt-2 p-3 bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-800 rounded-lg text-red-700 dark:text-red-200 text-sm">
+        <div className="mt-2 p-3 bg-red-50 dark:bg-red-950 border border-red-200 dark:border-800 rounded-lg text-red-700 dark:text-red-200 text-sm">
           Failed to create todo. Please try again.
         </div>
       )}
     </div>
-  );
+  )
 }

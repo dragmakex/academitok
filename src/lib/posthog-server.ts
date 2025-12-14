@@ -4,8 +4,8 @@
  * This file configures PostHog for server-side event tracking and feature flags.
  */
 
-import { PostHog } from 'posthog-node'
-import { Effect, Layer } from 'effect'
+import { Effect, Layer } from "effect"
+import { PostHog } from "posthog-node"
 
 /**
  * Configuration options for PostHog server
@@ -19,21 +19,23 @@ export interface PostHogServerConfig {
 /**
  * PostHog service tag
  */
-export class PostHogService extends Effect.Tag('PostHogService')<
+export class PostHogService extends Effect.Tag("PostHogService")<
   PostHogService,
   PostHog
 >() {}
 
 /**
  * Create a PostHog client instance
+ * @param config - The PostHog server configuration.
+ * @returns A PostHog client instance.
  */
 export function createPostHogClient(config: PostHogServerConfig): PostHog {
   if (!config.apiKey) {
-    throw new Error('PostHog API key is required')
+    throw new Error("PostHog API key is required")
   }
 
   return new PostHog(config.apiKey, {
-    host: config.host || 'https://app.posthog.com',
+    host: config.host || "https://app.posthog.com",
     flushAt: 10, // Batch size for events
     flushInterval: 10000, // 10 seconds
     enable: true,
@@ -60,8 +62,12 @@ export function createPostHogClient(config: PostHogServerConfig): PostHog {
  *
  * Effect.runPromise(program.pipe(Effect.provide(PostHogLive)))
  * ```
+ * @param config - The PostHog server configuration.
+ * @returns A Layer that provides the PostHog service.
  */
-export function createPostHogLayer(config: PostHogServerConfig): Layer.Layer<PostHogService> {
+export function createPostHogLayer(
+  config: PostHogServerConfig,
+): Layer.Layer<PostHogService> {
   return Layer.succeed(PostHogService, createPostHogClient(config))
 }
 
@@ -77,24 +83,28 @@ export function createPostHogLayer(config: PostHogServerConfig): Layer.Layer<Pos
  *   })
  * })
  * ```
+ * @param eventName - The name of the event to track.
+ * @param properties - (Optional) Additional properties for the event.
+ * @param properties.distinctId - The unique ID of the user associated with the event.
+ * @returns An Effect that tracks the event.
  */
 export function trackServerEvent(
   eventName: string,
   properties?: {
     distinctId?: string
     [key: string]: unknown
-  }
+  },
 ): Effect.Effect<void, never, PostHogService> {
-  return Effect.gen(function* () {
+  return Effect.gen(function*() {
     const posthog = yield* PostHogService
-    const distinctId = properties?.distinctId || 'server'
+    const distinctId = properties?.distinctId || "server"
 
     posthog.capture({
       distinctId,
       event: eventName,
       properties: {
         ...properties,
-        $lib: 'posthog-node',
+        $lib: "posthog-node",
       },
     })
 
@@ -115,12 +125,15 @@ export function trackServerEvent(
  *   })
  * })
  * ```
+ * @param distinctId - The unique ID of the user.
+ * @param properties - (Optional) Additional properties to identify the user with.
+ * @returns An Effect that identifies the user.
  */
 export function identifyServerUser(
   distinctId: string,
-  properties?: Record<string, unknown>
+  properties?: Record<string, unknown>,
 ): Effect.Effect<void, never, PostHogService> {
-  return Effect.gen(function* () {
+  return Effect.gen(function*() {
     const posthog = yield* PostHogService
 
     posthog.identify({
@@ -148,13 +161,17 @@ export function identifyServerUser(
  *   }
  * })
  * ```
+ * @param flagKey - The key of the feature flag.
+ * @param distinctId - The unique ID of the user.
+ * @param defaultValue - The default value if the flag is not found or not enabled.
+ * @returns An Effect that returns the feature flag value.
  */
 export function getServerFeatureFlag(
   flagKey: string,
   distinctId: string,
-  defaultValue: boolean | string = false
+  defaultValue: boolean | string = false,
 ): Effect.Effect<boolean | string, never, PostHogService> {
-  return Effect.gen(function* () {
+  return Effect.gen(function*() {
     const posthog = yield* PostHogService
 
     const flagValue = yield* Effect.promise(() =>
@@ -181,12 +198,15 @@ export function getServerFeatureFlag(
  *   }
  * })
  * ```
+ * @param flagKey - The key of the feature flag.
+ * @param distinctId - The unique ID of the user.
+ * @returns An Effect that returns true if the feature flag is enabled, false otherwise.
  */
 export function isServerFeatureFlagEnabled(
   flagKey: string,
-  distinctId: string
+  distinctId: string,
 ): Effect.Effect<boolean, never, PostHogService> {
-  return Effect.gen(function* () {
+  return Effect.gen(function*() {
     const posthog = yield* PostHogService
 
     const isEnabled = yield* Effect.promise(() =>
@@ -207,13 +227,14 @@ export function isServerFeatureFlagEnabled(
  *   yield* flushPostHog()
  * })
  * ```
+ * @returns An Effect that flushes all pending events.
  */
 export function flushPostHog(): Effect.Effect<void, never, PostHogService> {
-  return Effect.gen(function* () {
+  return Effect.gen(function*() {
     const posthog = yield* PostHogService
 
     yield* Effect.promise(() => posthog.flush())
-    yield* Effect.log('PostHog events flushed')
+    yield* Effect.log("PostHog events flushed")
   })
 }
 
@@ -227,12 +248,13 @@ export function flushPostHog(): Effect.Effect<void, never, PostHogService> {
  *   yield* shutdownPostHog()
  * })
  * ```
+ * @returns An Effect that shuts down the PostHog client.
  */
 export function shutdownPostHog(): Effect.Effect<void, never, PostHogService> {
-  return Effect.gen(function* () {
+  return Effect.gen(function*() {
     const posthog = yield* PostHogService
 
     yield* Effect.promise(() => posthog.shutdown())
-    yield* Effect.log('PostHog client shutdown')
+    yield* Effect.log("PostHog client shutdown")
   })
 }

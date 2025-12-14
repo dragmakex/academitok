@@ -1,73 +1,48 @@
 /**
- * Grafana Loki Logger Integration
- *
- * This module provides a custom Effect logger that sends logs to Grafana Loki.
- * Loki is a horizontally scalable, highly available log aggregation system inspired by Prometheus.
- */
-
-import { Logger, type LogLevel } from "effect"
-
-/**
- * Configuration for Grafana Loki
- */
-export interface LokiConfig {
-  /** Loki push API endpoint (e.g., "http://localhost:3100/loki/api/v1/push") */
-  endpoint: string
-  /** Labels to attach to all log streams */
-  labels?: Record<string, string>
-  /** Batch size for sending logs (default: 100) */
-  batchSize?: number
-  /** Flush interval in milliseconds (default: 5000ms) */
-  flushIntervalMs?: number
-  /** Optional authentication token */
-  authToken?: string
-}
-
-/**
- * A log entry in Loki format
- */
-interface LokiLogEntry {
-  ts: string  // Timestamp in nanoseconds
-  line: string // The log message
-}
-
-/**
- * A log stream with labels and entries
- */
-interface LokiStream {
-  stream: Record<string, string>
-  values: Array<[string, string]> // [timestamp, message]
-}
-
-/**
- * The request body format for Loki push API
- */
-interface LokiPushRequest {
-  streams: LokiStream[]
-}
-
-/**
  * Internal log buffer for batching
  */
 class LogBuffer {
-  private buffer: Array<{ timestamp: number; message: string; level: LogLevel.LogLevel }> = []
+  private buffer: Array<
+    { timestamp: number; message: string; level: LogLevel.LogLevel }
+  > = []
   private timer: NodeJS.Timeout | null = null
 
+  /**
+   * Constructs a new LogBuffer.
+   * @param config - The Loki configuration.
+   * @param flush - The function to call when logs need to be flushed.
+   */
   constructor(
     private config: Required<LokiConfig>,
-    private flush: (logs: typeof this.buffer) => void
+    private flush: (
+      logs: Array<
+        { timestamp: number; message: string; level: LogLevel.LogLevel }
+      >,
+    ) => void,
   ) {}
 
+  /**
+   * Adds a log entry to the buffer.
+   * @param timestamp - The timestamp of the log entry.
+   * @param message - The log message.
+   * @param level - The log level.
+   */
   add(timestamp: number, message: string, level: LogLevel.LogLevel) {
     this.buffer.push({ timestamp, message, level })
 
     if (this.buffer.length >= this.config.batchSize) {
       this.flushNow()
     } else if (!this.timer) {
-      this.timer = setTimeout(() => this.flushNow(), this.config.flushIntervalMs)
+      this.timer = setTimeout(
+        () => this.flushNow(),
+        this.config.flushIntervalMs,
+      )
     }
   }
 
+  /**
+   * Flushes the current buffer immediately.
+   */
   private flushNow() {
     if (this.timer) {
       clearTimeout(this.timer)
@@ -80,6 +55,9 @@ class LogBuffer {
     }
   }
 
+  /**
+   * Destroys the buffer, flushing any remaining logs.
+   */
   destroy() {
     this.flushNow()
   }
@@ -87,8 +65,12 @@ class LogBuffer {
 
 /**
  * Create a Logger that sends logs to Grafana Loki
+ * @param config - The Loki configuration.
+ * @returns A custom Effect logger.
  */
-export function createLokiLogger(config: LokiConfig): Logger.Logger<unknown, void> {
+export function createLokiLogger(
+  config: LokiConfig,
+): Logger.Logger<unknown, void> {
   const fullConfig: Required<LokiConfig> = {
     endpoint: config.endpoint,
     labels: config.labels || { job: "effect-app", level: "application" },
@@ -99,10 +81,12 @@ export function createLokiLogger(config: LokiConfig): Logger.Logger<unknown, voi
 
   // Function to send logs to Loki
   const sendToLoki = async (
-    logs: Array<{ timestamp: number; message: string; level: LogLevel.LogLevel }>
+    logs: Array<
+      { timestamp: number; message: string; level: LogLevel.LogLevel }
+    >,
   ) => {
     try {
-      const streams: Record<string, LokiLogEntry[]> = {}
+      const streams: Record<string, Array<LokiLogEntry>> = {}
 
       // Group logs by level
       for (const log of logs) {
@@ -121,7 +105,9 @@ export function createLokiLogger(config: LokiConfig): Logger.Logger<unknown, voi
       }
 
       // Convert to Loki format
-      const lokiStreams: LokiStream[] = Object.entries(streams).map(([level, entries]) => ({
+      const lokiStreams: Array<LokiStream> = Object.entries(streams).map((
+        [level, entries],
+      ) => ({
         stream: {
           ...fullConfig.labels,
           level,
@@ -139,7 +125,7 @@ export function createLokiLogger(config: LokiConfig): Logger.Logger<unknown, voi
       }
 
       if (fullConfig.authToken) {
-        headers["Authorization"] = `Bearer ${fullConfig.authToken}`
+        headers.Authorization = `Bearer ${fullConfig.authToken}`
       }
 
       const response = await fetch(fullConfig.endpoint, {
@@ -150,7 +136,7 @@ export function createLokiLogger(config: LokiConfig): Logger.Logger<unknown, voi
 
       if (!response.ok) {
         console.error(
-          `Failed to send logs to Loki: ${response.status} ${response.statusText}`
+          `Failed to send logs to Loki: ${response.status} ${response.statusText}`,
         )
       }
     } catch (error) {
@@ -162,7 +148,7 @@ export function createLokiLogger(config: LokiConfig): Logger.Logger<unknown, voi
   const buffer = new LogBuffer(fullConfig, sendToLoki)
 
   // Create the custom logger
-  return Logger.make(({ logLevel, message, date }) => {
+  return Logger.make(({ date, logLevel, message }) => {
     const timestamp = date.getTime()
 
     // Format the message
@@ -203,6 +189,8 @@ export function createLokiLogger(config: LokiConfig): Logger.Logger<unknown, voi
  *
  * Effect.runPromise(program.pipe(Effect.provide(LokiLoggerLive)))
  * ```
+ * @param config - The Loki configuration.
+ * @returns A Layer that provides the Loki logger.
  */
 export function createLokiLoggerLayer(config: LokiConfig) {
   const lokiLogger = createLokiLogger(config)
@@ -232,6 +220,8 @@ export function createLokiLoggerLayer(config: LokiConfig) {
  *
  * Effect.runPromise(program.pipe(Effect.provide(LoggerLive)))
  * ```
+ * @param config - The Loki configuration.
+ * @returns A Layer that provides the combined console and Loki logger.
  */
 export function createCombinedLoggerLayer(config: LokiConfig) {
   const lokiLogger = createLokiLogger(config)

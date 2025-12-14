@@ -5,7 +5,7 @@
  * and session recording.
  */
 
-import posthog from 'posthog-js'
+import posthog from "posthog-js"
 
 /**
  * Configuration options for PostHog client
@@ -21,23 +21,24 @@ export interface PostHogClientConfig {
 
 /**
  * Initialize PostHog for the React application
+ * @param config - The PostHog client configuration.
  */
 export function initPostHog(config: PostHogClientConfig) {
-  if (typeof window === 'undefined') {
-    console.warn('PostHog cannot be initialized on the server')
+  if (typeof window === "undefined") {
+    console.warn("PostHog cannot be initialized on the server")
     return
   }
 
   if (!config.apiKey) {
-    console.warn('PostHog API key not provided, skipping initialization')
+    console.warn("PostHog API key not provided, skipping initialization")
     return
   }
 
   posthog.init(config.apiKey, {
-    api_host: config.apiHost || 'https://app.posthog.com',
+    "api_host": config.apiHost || "https://app.posthog.com",
 
     // Session recording
-    session_recording: {
+    "session_recording": {
       enabled: config.enableSessionRecording !== false,
       maskAllInputs: true,
       maskAllText: false,
@@ -47,13 +48,13 @@ export function initPostHog(config: PostHogClientConfig) {
     autocapture: config.enableAutocapture !== false,
 
     // Performance monitoring
-    capture_performance: config.enablePerformanceCapture !== false,
-    capture_pageview: true,
-    capture_pageleave: true,
+    "capture_performance": config.enablePerformanceCapture !== false,
+    "capture_pageview": true,
+    "capture_pageleave": true,
 
     // Privacy
-    respect_dnt: true,
-    disable_persistence: false,
+    "respect_dnt": true,
+    "disable_persistence": false,
 
     // Debug mode
     loaded: (ph) => {
@@ -63,8 +64,8 @@ export function initPostHog(config: PostHogClientConfig) {
     },
 
     // Advanced options
-    persistence: 'localStorage+cookie',
-    cross_subdomain_cookie: false,
+    persistence: "localStorage+cookie",
+    "cross_subdomain_cookie": false,
   })
 }
 
@@ -82,6 +83,10 @@ export function initPostHog(config: PostHogClientConfig) {
  *   plan: "pro",
  * })
  * ```
+ * @param params - The user properties to identify with.
+ * @param params.userId - The unique ID of the user.
+ * @param params.email - (Optional) The email of the user.
+ * @param params.name - (Optional) The name of the user.
  */
 export function identifyUser(params: {
   userId: string
@@ -105,8 +110,13 @@ export function identifyUser(params: {
  *   page: "/landing",
  * })
  * ```
+ * @param eventName - The name of the event to track.
+ * @param properties - (Optional) Additional properties for the event.
  */
-export function trackEvent(eventName: string, properties?: Record<string, unknown>) {
+export function trackEvent(
+  eventName: string,
+  properties?: Record<string, unknown>,
+) {
   posthog.capture(eventName, properties)
 }
 
@@ -122,10 +132,11 @@ export function trackEvent(eventName: string, properties?: Record<string, unknow
  *
  * trackPageView("/dashboard")
  * ```
+ * @param path - (Optional) The path of the page viewed. Defaults to `window.location.href`.
  */
 export function trackPageView(path?: string) {
-  posthog.capture('$pageview', {
-    $current_url: path || window.location.href,
+  posthog.capture("$pageview", {
+    "$current_url": path || window.location.href,
   })
 }
 
@@ -141,6 +152,7 @@ export function trackPageView(path?: string) {
  *   // ... rest of logout logic
  * }
  * ```
+ * @returns {void}
  */
 export function resetPostHog() {
   posthog.reset()
@@ -159,6 +171,8 @@ export function resetPostHog() {
  *   // Show new design
  * }
  * ```
+ * @param flagKey - The key of the feature flag.
+ * @returns The value of the feature flag.
  */
 export function getFeatureFlag(flagKey: string): boolean | string | undefined {
   return posthog.getFeatureFlag(flagKey)
@@ -175,6 +189,8 @@ export function getFeatureFlag(flagKey: string): boolean | string | undefined {
  *   // Show new dashboard
  * }
  * ```
+ * @param flagKey - The key of the feature flag.
+ * @returns True if the feature flag is enabled, false otherwise.
  */
 export function isFeatureFlagEnabled(flagKey: string): boolean {
   return posthog.isFeatureEnabled(flagKey)
@@ -193,6 +209,7 @@ export function isFeatureFlagEnabled(flagKey: string): boolean {
  *   }
  * })
  * ```
+ * @param callback - The callback function to execute once feature flags are loaded.
  */
 export function onFeatureFlags(callback: () => void) {
   posthog.onFeatureFlags(callback)
@@ -210,6 +227,7 @@ export function onFeatureFlags(callback: () => void) {
  *   beta_tester: true,
  * })
  * ```
+ * @param properties - The user properties to set.
  */
 export function setUserProperties(properties: Record<string, unknown>) {
   posthog.people.set(properties)
@@ -217,6 +235,7 @@ export function setUserProperties(properties: Record<string, unknown>) {
 
 /**
  * Start a session recording
+ * @returns {void}
  */
 export function startSessionRecording() {
   posthog.startSessionRecording()
@@ -224,6 +243,7 @@ export function startSessionRecording() {
 
 /**
  * Stop a session recording
+ * @returns {void}
  */
 export function stopSessionRecording() {
   posthog.stopSessionRecording()
@@ -232,4 +252,6 @@ export function stopSessionRecording() {
 /**
  * Export the PostHog instance for advanced usage
  */
-export { posthog }
+export {
+  posthog,
+}

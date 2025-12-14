@@ -1,20 +1,20 @@
-import { createFileRoute } from "@tanstack/react-router";
-import * as HttpServerResponse from "@effect/platform/HttpServerResponse";
-import * as HttpServer from "@effect/platform/HttpServer";
-import * as HttpLayerRouter from "@effect/platform/HttpLayerRouter";
-import * as RpcSerialization from "@effect/rpc/RpcSerialization";
-import * as RpcServer from "@effect/rpc/RpcServer";
-import * as Layer from "effect/Layer";
-import { DomainRpc } from "@/api/domain-rpc";
-import { DomainApi } from "@/api/domain-api";
-import { TodosRpcLive } from "./-lib/todos-rpc-live";
-import { TodosApiLive } from "./-lib/todos-api-live";
-import * as ManagedRuntime from "effect/ManagedRuntime";
-import { TodosService } from "./-lib/todos-service";
-import * as RpcMiddleware from "@effect/rpc/RpcMiddleware";
-import * as Effect from "effect/Effect";
-import * as Exit from "effect/Exit";
-import * as Logger from "effect/Logger";
+import { DomainApi } from "@/api/domain-api"
+import { DomainRpc } from "@/api/domain-rpc"
+import * as HttpLayerRouter from "@effect/platform/HttpLayerRouter"
+import * as HttpServer from "@effect/platform/HttpServer"
+import * as HttpServerResponse from "@effect/platform/HttpServerResponse"
+import * as RpcMiddleware from "@effect/rpc/RpcMiddleware"
+import * as RpcSerialization from "@effect/rpc/RpcSerialization"
+import * as RpcServer from "@effect/rpc/RpcServer"
+import { createFileRoute } from "@tanstack/react-router"
+import * as Effect from "effect/Effect"
+import * as Exit from "effect/Exit"
+import * as Layer from "effect/Layer"
+import * as Logger from "effect/Logger"
+import * as ManagedRuntime from "effect/ManagedRuntime"
+import { TodosApiLive } from "./-lib/todos-api-live"
+import { TodosRpcLive } from "./-lib/todos-rpc-live"
+import { TodosService } from "./-lib/todos-service"
 
 class RpcLogger extends RpcMiddleware.Tag<RpcLogger>()("RpcLogger", {
   wrap: true,
@@ -37,55 +37,58 @@ const RpcLoggerLive = Layer.succeed(
             ),
             exit,
           ),
-      }),
-    ),
+      }))
   ),
-);
-const RpcRouter = RpcServer.layerHttpRouter({
-  group: DomainRpc.middleware(RpcLogger),
-  path: "/api/rpc",
-  protocol: "http",
-  spanPrefix: "rpc",
-  disableFatalDefects: true,
-}).pipe(
-  Layer.provide(TodosRpcLive),
-  Layer.provide(RpcLoggerLive),
-  Layer.provide(RpcSerialization.layerNdjson),
-);
+)
+const RpcRouter = RpcServer
+  .layerHttpRouter({
+    group: DomainRpc.middleware(RpcLogger),
+    path: "/api/rpc",
+    protocol: "http",
+    spanPrefix: "rpc",
+    disableFatalDefects: true,
+  })
+  .pipe(
+    Layer.provide(TodosRpcLive),
+    Layer.provide(RpcLoggerLive),
+    Layer.provide(RpcSerialization.layerNdjson),
+  )
 
 const HttpApiRouter = HttpLayerRouter.addHttpApi(DomainApi).pipe(
   Layer.provide(TodosApiLive),
   Layer.provide(HttpServer.layerContext),
-);
+)
 
 const HealthRoute = HttpLayerRouter.use((router) =>
-  router.add("GET", "/api/health", HttpServerResponse.text("OK")),
-);
+  router.add("GET", "/api/health", HttpServerResponse.text("OK"))
+)
 
 const AllRoutes = Layer.mergeAll(RpcRouter, HttpApiRouter, HealthRoute).pipe(
   Layer.provide(Logger.pretty),
-);
+)
 
-const memoMap = Effect.runSync(Layer.makeMemoMap);
+const memoMap = Effect.runSync(Layer.makeMemoMap)
 
 const globalHmr = globalThis as unknown as {
-  __EFFECT_DISPOSE__?: () => Promise<void>;
-};
+  __EFFECT_DISPOSE__?: () => Promise<void>
+}
 if (globalHmr.__EFFECT_DISPOSE__) {
-  await globalHmr.__EFFECT_DISPOSE__();
-  globalHmr.__EFFECT_DISPOSE__ = undefined;
+  await globalHmr.__EFFECT_DISPOSE__()
+  globalHmr.__EFFECT_DISPOSE__ = undefined
 }
 
-const { handler, dispose } = HttpLayerRouter.toWebHandler(AllRoutes, { memoMap });
-const effectHandler = ({ request }: { request: Request }) => handler(request);
+const { dispose, handler } = HttpLayerRouter.toWebHandler(AllRoutes, {
+  memoMap,
+})
+const effectHandler = ({ request }: { request: Request }) => handler(request)
 
 // ManagedRuntime for use in loaders/server functions
-export const serverRuntime = ManagedRuntime.make(TodosService.Default, memoMap);
+export const serverRuntime = ManagedRuntime.make(TodosService.Default, memoMap)
 
 globalHmr.__EFFECT_DISPOSE__ = async () => {
-  await dispose();
-  await serverRuntime.dispose();
-};
+  await dispose()
+  await serverRuntime.dispose()
+}
 
 export const Route = createFileRoute("/api/$")({
   server: {
@@ -98,4 +101,4 @@ export const Route = createFileRoute("/api/$")({
       OPTIONS: effectHandler,
     },
   },
-});
+})

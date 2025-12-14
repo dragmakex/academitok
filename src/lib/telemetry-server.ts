@@ -6,11 +6,11 @@
  */
 
 import { NodeSdk } from "@effect/opentelemetry"
-import { BatchSpanProcessor } from "@opentelemetry/sdk-trace-base"
 import { OTLPTraceExporter } from "@opentelemetry/exporter-trace-otlp-http"
-import { SentrySpanProcessor } from "@sentry/opentelemetry"
+import { BatchSpanProcessor } from "@opentelemetry/sdk-trace-base"
 import * as Sentry from "@sentry/node"
-import { Layer } from "effect"
+import { SentrySpanProcessor } from "@sentry/opentelemetry"
+import type { Layer } from "effect"
 
 /**
  * Configuration options for telemetry
@@ -24,6 +24,8 @@ export interface TelemetryConfig {
 
 /**
  * Initialize Sentry for error logging and tracing
+ * @param config - The telemetry configuration.
+ * @returns {void}
  */
 export function initSentry(config: TelemetryConfig) {
   if (!config.sentryDsn) {
@@ -34,9 +36,12 @@ export function initSentry(config: TelemetryConfig) {
   Sentry.init({
     dsn: config.sentryDsn,
     environment: config.environment || "development",
+
+    // Performance Monitoring
     tracesSampleRate: 1.0, // Adjust this in production (e.g., 0.1 for 10% sampling)
+
+    // Add custom integrations here
     integrations: [
-      // Add custom integrations here
       Sentry.httpIntegration(),
       Sentry.nativeNodeFetchIntegration(),
     ],
@@ -45,8 +50,12 @@ export function initSentry(config: TelemetryConfig) {
 
 /**
  * Create an OpenTelemetry Layer with Sentry integration
+ * @param config - The telemetry configuration.
+ * @returns An OpenTelemetry Layer with Sentry integration.
  */
-export function createSentryTelemetryLayer(config: TelemetryConfig): Layer.Layer<never> {
+export function createSentryTelemetryLayer(
+  config: TelemetryConfig,
+): Layer.Layer<never> {
   return NodeSdk.layer(() => ({
     resource: {
       serviceName: config.serviceName,
@@ -59,8 +68,12 @@ export function createSentryTelemetryLayer(config: TelemetryConfig): Layer.Layer
 
 /**
  * Create an OpenTelemetry Layer with OTLP exporter (for Grafana/Tempo/etc.)
+ * @param config - The telemetry configuration.
+ * @returns An OpenTelemetry Layer with OTLP exporter.
  */
-export function createOTLPTelemetryLayer(config: TelemetryConfig): Layer.Layer<never> {
+export function createOTLPTelemetryLayer(
+  config: TelemetryConfig,
+): Layer.Layer<never> {
   const otlpEndpoint = config.otlpEndpoint || "http://localhost:4318/v1/traces"
 
   return NodeSdk.layer(() => ({
@@ -72,15 +85,19 @@ export function createOTLPTelemetryLayer(config: TelemetryConfig): Layer.Layer<n
     spanProcessor: new BatchSpanProcessor(
       new OTLPTraceExporter({
         url: otlpEndpoint,
-      })
+      }),
     ),
   }))
 }
 
 /**
  * Create a combined telemetry layer that sends to both Sentry and OTLP
+ * @param config - The telemetry configuration.
+ * @returns A combined telemetry layer.
  */
-export function createCombinedTelemetryLayer(config: TelemetryConfig): Layer.Layer<never> {
+export function createCombinedTelemetryLayer(
+  config: TelemetryConfig,
+): Layer.Layer<never> {
   const otlpEndpoint = config.otlpEndpoint || "http://localhost:4318/v1/traces"
 
   return NodeSdk.layer(() => ({
@@ -92,7 +109,7 @@ export function createCombinedTelemetryLayer(config: TelemetryConfig): Layer.Lay
     spanProcessor: new BatchSpanProcessor(
       new OTLPTraceExporter({
         url: otlpEndpoint,
-      })
+      }),
     ),
   }))
 }

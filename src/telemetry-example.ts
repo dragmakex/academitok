@@ -6,13 +6,13 @@
  */
 
 import { Effect } from "effect"
-import { initSentry, createSentryTelemetryLayer } from "./lib/telemetry-server"
 import { createLokiLoggerLayer } from "./lib/logger-loki"
 import {
   createPostHogLayer,
-  trackServerEvent,
   identifyServerUser,
+  trackServerEvent,
 } from "./lib/posthog-server"
+import { createSentryTelemetryLayer, initSentry } from "./lib/telemetry-server"
 
 // ====================
 // Configuration
@@ -25,7 +25,8 @@ const TELEMETRY_CONFIG = {
 }
 
 const LOKI_CONFIG = {
-  endpoint: process.env.LOKI_ENDPOINT || "http://localhost:3100/loki/api/v1/push",
+  endpoint: process.env.LOKI_ENDPOINT
+    || "http://localhost:3100/loki/api/v1/push",
   labels: {
     job: "effect-tanstack-start",
     environment: TELEMETRY_CONFIG.environment,
@@ -60,7 +61,7 @@ const PostHogLive = createPostHogLayer(POSTHOG_CONFIG)
 const AppLayer = TelemetryLive.pipe(
   // Note: If you want logs in both console and Loki, use createCombinedLoggerLayer instead
   Effect.zipLeft(LoggerLive),
-  Effect.zipLeft(PostHogLive)
+  Effect.zipLeft(PostHogLive),
 )
 
 // ====================
@@ -69,72 +70,78 @@ const AppLayer = TelemetryLive.pipe(
 
 // Simulate a database query
 const queryDatabase = (userId: string) =>
-  Effect.gen(function* () {
-    yield* Effect.log(`Querying database for user: ${userId}`)
-    yield* Effect.sleep("100 millis")
+  Effect
+    .gen(function*() {
+      yield* Effect.log(`Querying database for user: ${userId}`)
+      yield* Effect.sleep("100 millis")
 
-    // Simulate a random failure (10% chance)
-    const shouldFail = Math.random() < 0.1
-    if (shouldFail) {
-      return yield* Effect.fail(new Error("Database connection timeout"))
-    }
+      // Simulate a random failure (10% chance)
+      const shouldFail = Math.random() < 0.1
+      if (shouldFail) {
+        return yield* Effect.fail(new Error("Database connection timeout"))
+      }
 
-    return {
-      id: userId,
-      name: "John Doe",
-      email: "john@example.com",
-    }
-  }).pipe(
-    Effect.withSpan("queryDatabase", { attributes: { userId } })
-  )
+      return {
+        id: userId,
+        name: "John Doe",
+        email: "john@example.com",
+      }
+    })
+    .pipe(
+      Effect.withSpan("queryDatabase", { attributes: { userId } }),
+    )
 
 // Simulate an API call
 const callExternalAPI = (endpoint: string) =>
-  Effect.gen(function* () {
-    yield* Effect.log(`Calling external API: ${endpoint}`)
-    yield* Effect.sleep("200 millis")
+  Effect
+    .gen(function*() {
+      yield* Effect.log(`Calling external API: ${endpoint}`)
+      yield* Effect.sleep("200 millis")
 
-    return {
-      status: "success",
-      data: { message: "API response" },
-    }
-  }).pipe(
-    Effect.withSpan("callExternalAPI", { attributes: { endpoint } })
-  )
+      return {
+        status: "success",
+        data: { message: "API response" },
+      }
+    })
+    .pipe(
+      Effect.withSpan("callExternalAPI", { attributes: { endpoint } }),
+    )
 
 // Simulate processing data
 const processData = (data: unknown) =>
-  Effect.gen(function* () {
-    yield* Effect.log("Processing data...")
-    yield* Effect.sleep("50 millis")
+  Effect
+    .gen(function*() {
+      yield* Effect.log("Processing data...")
+      yield* Effect.sleep("50 millis")
 
-    yield* Effect.logInfo("Data processed successfully")
+      yield* Effect.logInfo("Data processed successfully")
 
-    return { processed: true, timestamp: Date.now() }
-  }).pipe(
-    Effect.withSpan("processData")
-  )
+      return { processed: true, timestamp: Date.now() }
+    })
+    .pipe(
+      Effect.withSpan("processData"),
+    )
 
 // ====================
 // Main Program
 // ====================
 
-const program = Effect.gen(function* () {
-  yield* Effect.log("Application starting...")
+const program = Effect
+  .gen(function*() {
+    yield* Effect.log("Application starting...")
 
-  // Add custom annotations for all logs in this scope
-  yield* Effect.annotateLogsScoped({
-    requestId: "req-123",
-    version: "1.0.0",
-  })
+    // Add custom annotations for all logs in this scope
+    yield* Effect.annotateLogsScoped({
+      requestId: "req-123",
+      version: "1.0.0",
+    })
 
-  // Track application start in PostHog
-  yield* trackServerEvent("application_started", {
-    distinctId: "server",
-    environment: TELEMETRY_CONFIG.environment,
-  })
+    // Track application start in PostHog
+    yield* trackServerEvent("application_started", {
+      distinctId: "server",
+      environment: TELEMETRY_CONFIG.environment,
+    })
 
-  try {
     // Query the database
     const user = yield* queryDatabase("user-456")
     yield* Effect.log(`User fetched: ${user.name}`)
@@ -179,48 +186,51 @@ const program = Effect.gen(function* () {
       distinctId: user.id,
       success: true,
     })
-  } catch (error) {
-    yield* Effect.logError("Application failed", error)
+  })
+  .pipe(
+    // Wrap everything in a span for the entire request
+    Effect.withSpan("handleRequest"),
+    // Add a log span to measure total duration
+    Effect.withLogSpan("requestDuration"),
+    // Make it scoped so annotateLogsScoped works
+    Effect.scoped,
+    Effect.catchAll((error) =>
+      Effect.gen(function*() {
+        yield* Effect.logError("Application failed", error)
 
-    // Track error in PostHog
-    yield* trackServerEvent("application_error", {
-      distinctId: "server",
-      error: String(error),
-    })
-
-    throw error
-  }
-}).pipe(
-  // Wrap everything in a span for the entire request
-  Effect.withSpan("handleRequest"),
-  // Add a log span to measure total duration
-  Effect.withLogSpan("requestDuration"),
-  // Make it scoped so annotateLogsScoped works
-  Effect.scoped
-)
+        // Track error in PostHog
+        yield* trackServerEvent("application_error", {
+          distinctId: "server",
+          error: String(error),
+        })
+      })
+    ),
+  )
 
 // ====================
 // Run the Program
 // ====================
 
-Effect.runPromise(
-  program.pipe(
-    Effect.provide(AppLayer),
-    Effect.catchAllCause((cause) => {
-      // Log any unhandled errors
-      return Effect.logError("Unhandled error", cause)
-    })
+Effect
+  .runPromise(
+    program.pipe(
+      Effect.provide(AppLayer),
+      Effect.catchAllCause((cause) => {
+        // Log any unhandled errors
+        return Effect.logError("Unhandled error", cause)
+      }),
+    ),
   )
-).then(
-  () => {
-    console.log("\n✅ Program completed successfully")
-    process.exit(0)
-  },
-  (error) => {
-    console.error("\n❌ Program failed:", error)
-    process.exit(1)
-  }
-)
+  .then(
+    () => {
+      console.log("\n✅ Program completed successfully")
+      process.exit(0)
+    },
+    (error) => {
+      console.error("\n❌ Program failed:", error)
+      process.exit(1)
+    },
+  )
 
 /**
  * To run this example:

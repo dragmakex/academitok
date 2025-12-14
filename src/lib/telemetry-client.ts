@@ -20,6 +20,7 @@ export interface ClientTelemetryConfig {
 
 /**
  * Initialize Sentry for the React application
+ * @param config - The client telemetry configuration.
  */
 export function initClientSentry(config: ClientTelemetryConfig) {
   if (!config.sentryDsn) {
