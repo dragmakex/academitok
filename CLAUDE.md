@@ -49,13 +49,68 @@ This is a **TanStack Start** full-stack application built with **Effect-TS**, **
 
 ### Before ANY Code Change
 
-1. **READ EXISTING DOCUMENTATION**
+1. **CREATE A GIT WORKTREE - ALWAYS**
+
+   **This project uses git worktrees for ALL development work.** Never work directly on master.
+
+   ```bash
+   # Create a new worktree for your feature/fix
+   git worktree add .worktrees/feature-name -b feature-name
+
+   # Navigate to the worktree
+   cd .worktrees/feature-name
+   ```
+
+   **Worktree Workflow:**
+   - **One worktree per feature/fix** - keeps work isolated
+   - **Branch naming**: `feature/name`, `fix/name`, `refactor/name`, `docs/name`
+   - **Master stays clean** - never commit directly to master
+   - **Commit frequently** - step-wise commits document your thought process
+   - **Open PR when done** - merge into master via pull request
+
+   **Why Worktrees?**
+   - Work on multiple features simultaneously without stashing
+   - Keep master clean and deployable at all times
+   - Easy context switching without losing work
+   - Each worktree is a complete working directory
+
+   **Commit Frequency:**
+   - ✅ Commit after each logical step (not just when "done")
+   - ✅ Each commit should have a clear, single purpose
+   - ✅ Commits tell a story - future you will thank you
+   - ✅ Step-wise commits make PRs easier to review
+   - ❌ Don't wait until everything is perfect to commit
+   - ❌ Don't create giant "implement everything" commits
+
+   **Example Workflow:**
+   ```bash
+   # 1. Create worktree
+   git worktree add .worktrees/feature-user-auth -b feature/user-auth
+   cd .worktrees/feature-user-auth
+
+   # 2. Make changes, commit frequently
+   git commit -m "feat: add User schema with validation"
+   git commit -m "feat: implement JWT token generation"
+   git commit -m "test: add user authentication tests"
+   git commit -m "docs: document auth flow in docs/app/user-auth/"
+
+   # 3. Push and create PR
+   git push -u origin feature/user-auth
+   gh pr create --title "Add user authentication" --body "..."
+
+   # 4. After PR merged, cleanup
+   cd ../..
+   git worktree remove .worktrees/feature-user-auth
+   git branch -d feature/user-auth
+   ```
+
+2. **READ EXISTING DOCUMENTATION**
    - Check `docs/architecture/overview.md` for system architecture
    - Check `docs/guides/` for relevant patterns and workflows
    - Understand how your change fits into the existing system
    - **DO NOT skip this** - you cannot improve what you don't understand
 
-2. **Understand Repository Structure**
+3. **Understand Repository Structure**
    ```
    src/
    ├── api/          # Server-side API handlers
@@ -77,22 +132,29 @@ This is a **TanStack Start** full-stack application built with **Effect-TS**, **
 
 ### During Implementation
 
-3. **Write Code with German Precision**
+4. **Write Code with German Precision**
    - Follow existing patterns in the codebase
    - Maintain type safety - no `any`, no `as` casts without justification
    - Write self-documenting code - clear names, obvious intent
    - Add comments ONLY when "why" is not obvious from code
 
-4. **Create Tests FIRST or ALONGSIDE**
+5. **Create Tests FIRST or ALONGSIDE**
    - Unit tests for utilities and services (`*.test.ts`)
    - Component tests for UI (`*.test.tsx`)
    - Visual tests for visual components (`src/visual/*.test.tsx`)
    - Integration tests when crossing boundaries
    - **Coverage is not a metric** - test behavior, not lines
 
+6. **COMMIT FREQUENTLY (Step-wise Commits)**
+   - Commit after each logical unit of work
+   - Each commit should pass verification (typecheck, lint, test)
+   - Write clear commit messages following conventional commits format
+   - Don't wait until feature is "complete" - commit as you go
+   - Step-wise commits create documentation of your thought process
+
 ### After Implementation
 
-5. **VERIFY - All Must Pass**
+7. **VERIFY - All Must Pass**
    ```bash
    bun run typecheck  # TypeScript must be clean - ZERO errors
    bun run lint       # ESLint must pass - fix, don't disable
@@ -102,7 +164,7 @@ This is a **TanStack Start** full-stack application built with **Effect-TS**, **
 
    **IF ANY FAIL**: Fix them. Do not proceed. Do not ask for permission to skip.
 
-6. **Run Full Validation**
+8. **Run Full Validation**
    ```bash
    bun run validate   # Runs: typecheck + lint + format + test + perf
    ```
@@ -111,7 +173,7 @@ This is a **TanStack Start** full-stack application built with **Effect-TS**, **
 
 ### Documentation Requirements
 
-7. **DOCUMENT YOUR WORK in `docs/app/`**
+9. **DOCUMENT YOUR WORK in `docs/app/`**
 
    **For every feature, bug fix, or significant change**, create or update documentation in `docs/app/[feature-name]/`:
 
@@ -154,6 +216,73 @@ This is a **TanStack Start** full-stack application built with **Effect-TS**, **
    - `docs/architecture/overview.md` - High-level architecture with Mermaid
    - `docs/guides/testing.md` - Testing patterns and practices
    - `docs/guides/code-quality.md` - Quality standards
+
+### Pull Request & Merge
+
+10. **OPEN PULL REQUEST**
+
+    Once your feature is complete, documented, and validated:
+
+    ```bash
+    # Push your branch
+    git push -u origin feature/your-feature-name
+
+    # Create pull request (using gh CLI)
+    gh pr create \
+      --title "feat: clear description of feature" \
+      --body "Detailed description with context, changes, and testing notes"
+    ```
+
+    **Pull Request Requirements:**
+    - ✅ All commits follow conventional commits format
+    - ✅ `bun run validate` passes
+    - ✅ Documentation in `docs/app/` is complete
+    - ✅ PR description explains **why**, not just what
+    - ✅ Step-wise commits tell a clear story
+
+    **PR Description Template:**
+    ```markdown
+    ## Summary
+
+    Brief overview of what and why
+
+    ## Changes
+
+    - List of key changes
+    - Reference file paths
+
+    ## Testing
+
+    - How it was tested
+    - What scenarios were covered
+
+    ## Documentation
+
+    - Link to docs/app/[feature-name]/
+    - Any architectural decisions documented
+    ```
+
+    **Merge Strategy:**
+    - Use **merge commits** (not squash, not rebase)
+    - Preserve step-wise commit history
+    - Commits tell the implementation story
+
+11. **CLEANUP AFTER MERGE**
+
+    ```bash
+    # Return to main repository
+    cd ../..
+
+    # Update master
+    git checkout master
+    git pull
+
+    # Remove worktree
+    git worktree remove .worktrees/feature-your-feature-name
+
+    # Delete local branch (after PR merged)
+    git branch -d feature/your-feature-name
+    ```
 
 ---
 
@@ -300,16 +429,19 @@ bun run validate         # typecheck + lint + format + test + perf
 
 ## 🚫 Anti-Patterns - DO NOT DO THESE
 
-1. **Skipping verification** - "It compiles so it's fine" ❌
-2. **Ignoring linting errors** - "I'll fix it later" ❌
-3. **Commenting out tests** - "This test is flaky" ❌
-4. **Adding dependencies without justification** - "This library is cool" ❌
-5. **Using `any` or `as` without strong justification** - "TypeScript is too hard" ❌
-6. **Patching symptoms** - "This fixes my immediate problem" ❌
-7. **Skipping documentation** - "The code is self-documenting" ❌
-8. **Copy-paste without understanding** - "This worked elsewhere" ❌
-9. **Premature optimization** - "I made it 0.1ms faster but now it's unreadable" ❌
-10. **Breaking existing patterns** - "My way is better" (maybe, but consistency > personal preference) ❌
+1. **Working directly on master** - "It's a small change" ❌ → **ALWAYS use git worktrees**
+2. **One giant commit** - "I'll commit when it's done" ❌ → **Commit step-wise**
+3. **Squashing commits** - "Clean history looks better" ❌ → **Preserve step-wise history**
+4. **Skipping verification** - "It compiles so it's fine" ❌
+5. **Ignoring linting errors** - "I'll fix it later" ❌
+6. **Commenting out tests** - "This test is flaky" ❌
+7. **Adding dependencies without justification** - "This library is cool" ❌
+8. **Using `any` or `as` without strong justification** - "TypeScript is too hard" ❌
+9. **Patching symptoms** - "This fixes my immediate problem" ❌
+10. **Skipping documentation** - "The code is self-documenting" ❌
+11. **Copy-paste without understanding** - "This worked elsewhere" ❌
+12. **Premature optimization** - "I made it 0.1ms faster but now it's unreadable" ❌
+13. **Breaking existing patterns** - "My way is better" (maybe, but consistency > personal preference) ❌
 
 ---
 
@@ -317,6 +449,7 @@ bun run validate         # typecheck + lint + format + test + perf
 
 ### Before You Start
 
+- [ ] Created git worktree for this work (`git worktree add .worktrees/feature-name -b feature-name`)
 - [ ] Read relevant documentation in `docs/`
 - [ ] Understand existing patterns in codebase
 - [ ] Check Effect Solutions for relevant patterns
@@ -328,6 +461,9 @@ bun run validate         # typecheck + lint + format + test + perf
 - [ ] Maintain strict type safety
 - [ ] Write/update tests alongside code
 - [ ] Keep changes minimal and focused
+- [ ] **Commit frequently** - step-wise commits after each logical unit
+- [ ] Each commit passes verification (typecheck, lint, test)
+- [ ] Commit messages follow conventional commits format
 
 ### After Implementation
 
@@ -338,7 +474,9 @@ bun run validate         # typecheck + lint + format + test + perf
 - [ ] `bun run validate` - passes ✓
 - [ ] Created/updated documentation in `docs/app/`
 - [ ] Added Mermaid diagrams where appropriate
-- [ ] Code review ready
+- [ ] Step-wise commits tell a clear story
+- [ ] Pull request created with detailed description
+- [ ] Ready for merge via PR (merge commit, not squash)
 
 ---
 
