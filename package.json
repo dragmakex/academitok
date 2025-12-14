@@ -20,6 +20,7 @@
     "analyze": "vite build --mode analyze",
     "size": "bun run scripts/check-bundle-size.ts",
     "perf:check": "bun run build && bun run size",
+    "prepare": "effect-language-service patch",
     "postinstall": "bash scripts/install-git-hooks.sh",
     "validate": "bun run typecheck && bun run lint && bun run format:check && bun run test && bun run perf:check"
   },
