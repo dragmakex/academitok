@@ -48,8 +48,6 @@ for hook in "${GIT_HOOKS_DIR}"/*; do
     # Use relative path for better portability
     relative_path="../../scripts/git-hooks/${hook_name}"
     ln -s "$relative_path" "$hook_dest"
-
-    echo -e "${GREEN}✓${NC} Installed ${hook_name}"
     INSTALLED=$((INSTALLED + 1))
   fi
 done
@@ -57,19 +55,6 @@ done
 echo ""
 if [ $INSTALLED -gt 0 ]; then
   echo -e "${GREEN}✅ Successfully installed ${INSTALLED} git hook(s)${NC}"
-  echo ""
-  echo "Git hooks installed:"
-  for hook in "${GIT_HOOKS_DIR}"/*; do
-    if [ -f "$hook" ]; then
-      hook_name=$(basename "$hook")
-      echo "  • ${hook_name}"
-    fi
-  done
-  echo ""
-  echo "These hooks will run automatically on:"
-  echo "  • pre-commit  - Before each commit (type check, lint, format)"
-  echo "  • commit-msg  - Validate commit message format"
-  echo ""
 else
   echo -e "${YELLOW}⚠️  No git hooks found to install${NC}"
   echo ""
