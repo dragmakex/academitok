@@ -93,3 +93,4 @@ Desktop.ini
 # Application specific
 count.txt
 todos.json
+\n# Ignore worktrees directory\n.worktrees/

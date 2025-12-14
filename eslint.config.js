@@ -3,9 +3,8 @@ import { fixupPluginRules } from "@eslint/compat"
 import { FlatCompat } from "@eslint/eslintrc"
 import js from "@eslint/js"
 import tsParser from "@typescript-eslint/parser"
-import codegen from "eslint-plugin-codegen"
 import _import from "eslint-plugin-import"
-import simpleImportSort from "eslint-plugin-simple-import-sort"
+import jsdoc from "eslint-plugin-jsdoc"
 import sortDestructureKeys from "eslint-plugin-sort-destructure-keys"
 import path from "node:path"
 import { fileURLToPath } from "node:url"
@@ -34,6 +33,9 @@ export default [
       "**/*.md",
       "**/*.cjs",
       "**/*.js",
+      "node_modules",
+      ".output",
+      ".worktrees/",
     ],
   },
   ...compat.extends(
@@ -45,9 +47,8 @@ export default [
     plugins: {
       import: fixupPluginRules(_import),
       "sort-destructure-keys": sortDestructureKeys,
-      "simple-import-sort": simpleImportSort,
-      codegen,
       "@effect": effectPlugin,
+      "jsdoc": jsdoc,
       // Add local rules
       "local": { rules: localRules },
       "local-advanced": { rules: advancedLocalRules },
@@ -57,6 +58,9 @@ export default [
       parser: tsParser,
       ecmaVersion: 2018,
       sourceType: "module",
+      parserOptions: {
+        checkJSDoc: true,
+      },
     },
 
     settings: {
@@ -69,23 +73,52 @@ export default [
           alwaysTryTypes: true,
         },
       },
+      "jsdoc": {
+        "mode": "typescript",
+      },
     },
 
     rules: {
       "camelcase": "error",
-      "max-lines": ["error", {"max": 500, "skipComments": true}],
-      "complexity": ["error", {"max": 20, "variant": "modified"}],
+      "max-lines": ["error", { "max": 500, "skipComments": true }],
+      "complexity": ["error", { "max": 20, "variant": "modified" }],
       "require-atomic-updates": "error",
       "max-depth": ["error", 4],
-      "max-lines-per-function": ["error", {"max": 150, "skipBlankLines": true, "skipComments": true}],
+      "max-lines-per-function": ["error", {
+        "max": 150,
+        "skipBlankLines": true,
+        "skipComments": true,
+      }],
       "eqeqeq": "error",
       "prefer-template": "error",
       "sort-vars": "error",
       "curly": "error",
       "default-case-last": "error",
       "dot-notation": "error",
+      "jsdoc/check-alignment": "error",
+      "jsdoc/check-indentation": "error",
+      "jsdoc/check-param-names": "error",
+      "jsdoc/check-syntax": "error",
+      "jsdoc/check-tag-names": ["error", { definedTags: ["remarks"] }],
+      "jsdoc/require-description": "error",
+      "jsdoc/require-jsdoc": [
+        "error",
+        {
+          "require": {
+            "FunctionDeclaration": true,
+            "MethodDefinition": true,
+          },
+        },
+      ],
+      "jsdoc/require-param": "error",
+      "jsdoc/require-param-description": "error",
+      "jsdoc/require-param-name": "error",
+      "jsdoc/require-param-type": "error",
+      "jsdoc/require-returns": "error",
+      "jsdoc/require-returns-check": "error",
+      "jsdoc/require-returns-description": "error",
+      "jsdoc/require-returns-type": "error",
 
-      "codegen/codegen": "error",
       "no-fallthrough": "off",
       "no-irregular-whitespace": "off",
       "no-useless-concat": "error",
@@ -98,7 +131,6 @@ export default [
           "CallExpression[callee.property.name='push'] > SpreadElement.arguments",
         message: "Do not use spread arguments in Array.push",
       }],
-
       "no-unused-vars": "off",
       "prefer-rest-params": "off",
       "prefer-spread": "off",
@@ -107,7 +139,6 @@ export default [
       "import/no-duplicates": "error",
       "import/no-unresolved": "off",
       "import/order": "off",
-      "simple-import-sort/imports": "off",
       "sort-destructure-keys/sort-destructure-keys": "error",
       "deprecation/deprecation": "off",
 
@@ -137,17 +168,17 @@ export default [
       "@typescript-eslint/no-use-before-define": "off",
       "@typescript-eslint/no-namespace": "off",
 
-      "@effect/dprint": ["error", {
-        config: {
-          indentWidth: 2,
-          lineWidth: 80,
-          semiColons: "asi",
-          quoteStyle: "alwaysDouble",
-          trailingCommas: "onlyMultiLine",
-          operatorPosition: "maintain",
-          "arrowFunction.useParentheses": "force",
-        },
-      }],
+      // "@effect/dprint": ["error", {
+      //   config: {
+      //     indentWidth: 2,
+      //     lineWidth: 80,
+      //     semiColons: "asi",
+      //     quoteStyle: "alwaysDouble",
+      //     trailingCommas: "onlyMultiLine",
+      //     operatorPosition: "maintain",
+      //     "arrowFunction.useParentheses": "force",
+      //   },
+      // }],
 
       // @effect eslint plugin rules
       "@effect/no-import-from-barrel-package": "error",
