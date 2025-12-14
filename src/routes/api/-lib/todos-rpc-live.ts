@@ -9,15 +9,15 @@ export const TodosRpcLive = DomainRpc
       const todos = yield* TodosService
 
       return {
-        todosList: () => todos.list,
+        todos_list: () => todos.list,
 
-        todosGetById: ({ id }) => todos.getById(id),
+        todos_getById: ({ id }) => todos.getById(id),
 
-        todosCreate: ({ input }) => todos.create(input),
+        todos_create: ({ input }) => todos.create(input),
 
-        todosUpdate: ({ id, input }) => todos.update(id, input),
+        todos_update: ({ id, input }) => todos.update(id, input),
 
-        todosRemove: ({ id }) => todos.remove(id),
+        todos_remove: ({ id }) => todos.remove(id),
       }
     }),
   )

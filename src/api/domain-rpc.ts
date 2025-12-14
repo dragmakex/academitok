@@ -37,4 +37,4 @@ export class TodosRpc extends RpcGroup
   .prefix("todos_")
 {}
 
-export class DomainRpc extends RpcGroup.make().merge(TodosRpc) {}
+export class DomainRpc extends TodosRpc {}

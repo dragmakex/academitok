@@ -23,7 +23,7 @@ export class TodosService extends Effect.Service<TodosService>()(
 
       const list = Effect.gen(function*() {
         const todos = yield* Ref.get(todosRef)
-        return Array.fromIterable(todos.values())
+        return Array.from(todos.values())
       })
 
       const getById = (id: TodoId) =>
