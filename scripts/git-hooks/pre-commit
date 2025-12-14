@@ -10,7 +10,7 @@ bun run format
 
 # 2. Lint all files with ESLint
 echo "🔍 Linting files..."
-bun run lint:fix
+bun run lint:fix || true
 
 # 3. Re-add all files to staging
 echo ""

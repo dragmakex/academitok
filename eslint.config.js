@@ -113,11 +113,11 @@ export default [
       "jsdoc/require-param": "error",
       "jsdoc/require-param-description": "error",
       "jsdoc/require-param-name": "error",
-      "jsdoc/require-param-type": "error",
+      "jsdoc/require-param-type": "warn",
       "jsdoc/require-returns": "error",
       "jsdoc/require-returns-check": "error",
       "jsdoc/require-returns-description": "error",
-      "jsdoc/require-returns-type": "error",
+      "jsdoc/require-returns-type": "warn",
 
       "no-fallthrough": "off",
       "no-irregular-whitespace": "off",

@@ -71,7 +71,6 @@ function shouldIncludeFile(filePath: string): boolean {
  * @param {string} dirPath - path of the directory
  * @param {string} baseDir - base directory
  * @returns {<Array<FileSize>>} returns filesize
- *
  */
 async function getDirectoryFiles(
   dirPath: string,
