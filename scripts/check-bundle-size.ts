@@ -162,7 +162,8 @@ function formatBreakdown(files: Array<FileSize>, _totalLimit: number): string {
 
 /**
  * Formats compression benchmark comparison
- * @param files
+ * @param files - the files to benchmark
+ * @returns - raw and compressed sizes
  */
 function formatCompressionBenchmark(
   files: Array<FileSize>,
@@ -198,7 +199,8 @@ function formatCompressionBenchmark(
 
 /**
  * Gets total raw size of files (no compression)
- * @param dirPath
+ * @param dirPath - directory path of the files
+ * @returns - raw size of files in directory
  */
 async function getTotalRawSize(dirPath: string): Promise<number> {
   const files = await getDirectoryFiles(dirPath)
