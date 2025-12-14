@@ -1,0 +1,22 @@
+#!/usr/bin/env bash
+set -e
+
+echo "🔍 Running pre-commit checks..."
+echo ""
+
+# 1. Format all files with Dprint
+echo "✨ Formatting files with Dprint..."
+bun run format
+
+# 2. Lint all files with ESLint
+echo "🔍 Linting files..."
+bun run lint:fix
+
+# 3. Re-add all files to staging
+echo ""
+echo "📦 Re-staging all files..."
+git add -A
+
+echo ""
+echo "✅ Pre-commit checks passed!"
+echo ""
