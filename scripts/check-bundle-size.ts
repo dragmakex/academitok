@@ -58,7 +58,8 @@ interface FileSize {
 /**
  * Check if file should be included in bundle size check
  * Only JS and CSS files matter for critical path performance
- * @param filePath
+ * @param {string} filePath - the file path to be checked
+ * @returns {boolean} - boolean indicating wether or not to include the file
  */
 function shouldIncludeFile(filePath: string): boolean {
   const ext = filePath.split(".").pop()?.toLowerCase()
@@ -67,14 +68,16 @@ function shouldIncludeFile(filePath: string): boolean {
 
 /**
  * Recursively gets all files in a directory with their sizes
- * @param dirPath
- * @param baseDir
+ * @param {string} dirPath - path of the directory
+ * @param {string} baseDir - base directory
+ * @returns {<Array<FileSize>>} returns filesize
+ *
  */
 async function getDirectoryFiles(
   dirPath: string,
   baseDir: string = dirPath,
 ): Promise<Array<FileSize>> {
-  const files: Array<FileSize> = []
+  let files: Array<FileSize> = []
 
   try {
     const entries = await readdir(dirPath, { withFileTypes: true })
@@ -84,7 +87,7 @@ async function getDirectoryFiles(
 
       if (entry.isDirectory()) {
         const subFiles = await getDirectoryFiles(fullPath, baseDir)
-        files.push(...subFiles)
+        files = files.concat(subFiles)
       } else if (shouldIncludeFile(fullPath)) {
         const stats = await stat(fullPath)
         const content = await readFile(fullPath)
@@ -112,7 +115,8 @@ async function getDirectoryFiles(
 
 /**
  * Formats a size in bytes to a human-readable string
- * @param bytes
+ * @param {number} bytes - how many bytes
+ * @returns {string} - bytes number in kb
  */
 function formatSize(bytes: number): string {
   const kb = bytes / 1024
@@ -121,9 +125,9 @@ function formatSize(bytes: number): string {
 
 /**
  * Formats a file breakdown table
- * @param files
- * @param totalLimit
- * @param _totalLimit
+ * @param {Array<FileSize>} files - the files used
+ * @param {number} _totalLimit - total size limit
+ * @returns {string} - the file breakdown table
  */
 function formatBreakdown(files: Array<FileSize>, _totalLimit: number): string {
   const sortKey = COMPRESSION_METHOD === "brotli" ? "brotli" : "gzip"
