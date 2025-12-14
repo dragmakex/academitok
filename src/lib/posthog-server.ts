@@ -21,7 +21,7 @@ export interface PostHogServerConfig {
  */
 export class PostHogService extends Effect.Tag("PostHogService")<
   PostHogService,
-  PostHog
+  { readonly client: PostHog }
 >() {}
 
 /**
@@ -38,7 +38,6 @@ export function createPostHogClient(config: PostHogServerConfig): PostHog {
     host: config.host || "https://app.posthog.com",
     flushAt: 10, // Batch size for events
     flushInterval: 10000, // 10 seconds
-    enable: true,
   })
 }
 
@@ -68,7 +67,7 @@ export function createPostHogClient(config: PostHogServerConfig): PostHog {
 export function createPostHogLayer(
   config: PostHogServerConfig,
 ): Layer.Layer<PostHogService> {
-  return Layer.succeed(PostHogService, createPostHogClient(config))
+  return Layer.succeed(PostHogService, { client: createPostHogClient(config) })
 }
 
 /**
@@ -96,10 +95,10 @@ export function trackServerEvent(
   },
 ): Effect.Effect<void, never, PostHogService> {
   return Effect.gen(function*() {
-    const posthog = yield* PostHogService
+    const { client } = yield* PostHogService
     const distinctId = properties?.distinctId || "server"
 
-    posthog.capture({
+    client.capture({
       distinctId,
       event: eventName,
       properties: {
@@ -134,9 +133,9 @@ export function identifyServerUser(
   properties?: Record<string, unknown>,
 ): Effect.Effect<void, never, PostHogService> {
   return Effect.gen(function*() {
-    const posthog = yield* PostHogService
+    const { client } = yield* PostHogService
 
-    posthog.identify({
+    client.identify({
       distinctId,
       properties,
     })
@@ -172,10 +171,10 @@ export function getServerFeatureFlag(
   defaultValue: boolean | string = false,
 ): Effect.Effect<boolean | string, never, PostHogService> {
   return Effect.gen(function*() {
-    const posthog = yield* PostHogService
+    const { client } = yield* PostHogService
 
     const flagValue = yield* Effect.promise(() =>
-      posthog.getFeatureFlag(flagKey, distinctId)
+      client.getFeatureFlag(flagKey, distinctId)
     )
 
     return flagValue ?? defaultValue
@@ -207,10 +206,10 @@ export function isServerFeatureFlagEnabled(
   distinctId: string,
 ): Effect.Effect<boolean, never, PostHogService> {
   return Effect.gen(function*() {
-    const posthog = yield* PostHogService
+    const { client } = yield* PostHogService
 
     const isEnabled = yield* Effect.promise(() =>
-      posthog.isFeatureEnabled(flagKey, distinctId)
+      client.isFeatureEnabled(flagKey, distinctId)
     )
 
     return isEnabled ?? false
@@ -231,9 +230,9 @@ export function isServerFeatureFlagEnabled(
  */
 export function flushPostHog(): Effect.Effect<void, never, PostHogService> {
   return Effect.gen(function*() {
-    const posthog = yield* PostHogService
+    const { client } = yield* PostHogService
 
-    yield* Effect.promise(() => posthog.flush())
+    yield* Effect.promise(() => client.flush())
     yield* Effect.log("PostHog events flushed")
   })
 }
@@ -252,9 +251,9 @@ export function flushPostHog(): Effect.Effect<void, never, PostHogService> {
  */
 export function shutdownPostHog(): Effect.Effect<void, never, PostHogService> {
   return Effect.gen(function*() {
-    const posthog = yield* PostHogService
+    const { client } = yield* PostHogService
 
-    yield* Effect.promise(() => posthog.shutdown())
+    yield* Effect.promise(() => client.shutdown())
     yield* Effect.log("PostHog client shutdown")
   })
 }

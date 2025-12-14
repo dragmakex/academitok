@@ -123,11 +123,9 @@ function formatSize(bytes: number): string {
  * Formats a file breakdown table
  * @param files
  * @param totalLimit
+ * @param _totalLimit
  */
-function formatBreakdown(files: Array<FileSize>, totalLimit: number): string {
-  const compressedSize = COMPRESSION_METHOD === "brotli"
-    ? "compressed"
-    : "compressed"
+function formatBreakdown(files: Array<FileSize>, _totalLimit: number): string {
   const sortKey = COMPRESSION_METHOD === "brotli" ? "brotli" : "gzip"
 
   // Sort by compressed size, largest first
@@ -147,12 +145,12 @@ function formatBreakdown(files: Array<FileSize>, totalLimit: number): string {
   for (const file of top10) {
     const savings = (((file.gzip - file.brotli) / file.gzip) * 100).toFixed(1)
     const name = file.path.length > 50
-      ? `...${  file.path.slice(-47)}`
+      ? `...${file.path.slice(-47)}`
       : file.path
 
     output += `  ${name.padEnd(50)} ${formatSize(file.raw).padStart(12)} ${
       formatSize(file.gzip).padStart(12)
-    } ${formatSize(file.brotli).padStart(12)} ${(`${savings  }%`).padStart(10)}\n`
+    } ${formatSize(file.brotli).padStart(12)} ${(`${savings}%`).padStart(10)}\n`
   }
 
   return output
@@ -222,7 +220,7 @@ async function checkBundleSizes(): Promise<void> {
       continue
     }
 
-    const { totalBrotli, totalGzip, totalRaw } = formatCompressionBenchmark(
+    const { totalBrotli, totalGzip } = formatCompressionBenchmark(
       files,
     )
 

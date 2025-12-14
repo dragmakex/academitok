@@ -1,3 +1,28 @@
+import type { LogLevel } from "effect"
+import { Logger } from "effect"
+
+interface LokiConfig {
+  endpoint: string
+  labels?: Record<string, string>
+  batchSize?: number
+  flushIntervalMs?: number
+  authToken?: string
+}
+
+interface LokiLogEntry {
+  ts: string
+  line: string
+}
+
+interface LokiStream {
+  stream: Record<string, string>
+  values: Array<[string, string]>
+}
+
+interface LokiPushRequest {
+  streams: Array<LokiStream>
+}
+
 /**
  * Internal log buffer for batching
  */

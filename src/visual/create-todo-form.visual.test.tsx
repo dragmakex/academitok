@@ -11,7 +11,7 @@ import { CreateTodoForm } from "../routes/-index/create-todo-form"
  */
 
 test("CreateTodoForm renders correctly in default state", async () => {
-  const screen = render(<CreateTodoForm />)
+  const screen = await render(<CreateTodoForm />)
 
   // Wait for the form to be fully rendered
   await expect
@@ -23,7 +23,7 @@ test("CreateTodoForm renders correctly in default state", async () => {
 })
 
 test("CreateTodoForm shows submit button as disabled when input is empty", async () => {
-  const screen = render(<CreateTodoForm />)
+  const screen = await render(<CreateTodoForm />)
 
   // Wait for elements to be visible
   await expect.element(page.getByRole("button", { name: /add/i })).toBeVisible()
@@ -35,7 +35,7 @@ test("CreateTodoForm shows submit button as disabled when input is empty", async
 })
 
 test("CreateTodoForm shows enabled state with text input", async () => {
-  const screen = render(<CreateTodoForm />)
+  const screen = await render(<CreateTodoForm />)
 
   const input = page.getByPlaceholder("What needs to be done?")
 
@@ -47,7 +47,7 @@ test("CreateTodoForm shows enabled state with text input", async () => {
 })
 
 test("CreateTodoForm maintains consistent styling across viewports", async () => {
-  const screen = render(<CreateTodoForm />)
+  const screen = await render(<CreateTodoForm />)
 
   // Wait for the form to render
   await expect

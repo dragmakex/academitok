@@ -23,14 +23,18 @@ export const serializable: {
   ): R & TypedSerializable<Atom.Type<R>, I>
 } = Atom.serializable as any
 
-export const dehydrate = <A, I>(
-  atom: Atom.Atom<A> & TypedSerializable<A, I>,
-  value: A,
-): {
+export interface DehydratedAtom {
+  readonly "~@effect-atom/atom/DehydratedAtom": true
   readonly key: string
   readonly value: object
   readonly dehydratedAt: number
-} => ({
+}
+
+export const dehydrate = <A, I>(
+  atom: Atom.Atom<A> & TypedSerializable<A, I>,
+  value: A,
+): DehydratedAtom => ({
+  "~@effect-atom/atom/DehydratedAtom": true,
   key: atom[Atom.SerializableTypeId].key,
   value: atom[Atom.SerializableTypeId].encode(value) as object,
   dehydratedAt: Date.now(),

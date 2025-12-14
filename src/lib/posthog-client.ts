@@ -38,11 +38,7 @@ export function initPostHog(config: PostHogClientConfig) {
     "api_host": config.apiHost || "https://app.posthog.com",
 
     // Session recording
-    "session_recording": {
-      enabled: config.enableSessionRecording !== false,
-      maskAllInputs: true,
-      maskAllText: false,
-    },
+    "disable_session_recording": config.enableSessionRecording === false,
 
     // Autocapture events (clicks, page views, etc.)
     autocapture: config.enableAutocapture !== false,
@@ -193,7 +189,7 @@ export function getFeatureFlag(flagKey: string): boolean | string | undefined {
  * @returns True if the feature flag is enabled, false otherwise.
  */
 export function isFeatureFlagEnabled(flagKey: string): boolean {
-  return posthog.isFeatureEnabled(flagKey)
+  return posthog.isFeatureEnabled(flagKey) ?? false
 }
 
 /**

@@ -4,8 +4,8 @@ import { tanstackStart } from "@tanstack/react-start/plugin/vite"
 import viteReact from "@vitejs/plugin-react"
 import { playwright } from "@vitest/browser-playwright"
 import { nitro } from "nitro/vite"
-import { defineConfig } from "vite"
 import viteTsConfigPaths from "vite-tsconfig-paths"
+import { defineConfig } from "vitest/config"
 
 const config = defineConfig({
   plugins: [
@@ -60,8 +60,10 @@ const config = defineConfig({
       },
     },
   },
-  watch: {
-    ignored: [".worktrees/**"],
+  server: {
+    watch: {
+      ignored: [".worktrees/**"],
+    },
   },
 })
 

@@ -5,7 +5,7 @@
  * Grafana Loki logging, and PostHog analytics in an Effect application.
  */
 
-import { Effect } from "effect"
+import { Effect, Layer } from "effect"
 import { createLokiLoggerLayer } from "./lib/logger-loki"
 import {
   createPostHogLayer,
@@ -59,9 +59,8 @@ const PostHogLive = createPostHogLayer(POSTHOG_CONFIG)
 
 // Combine all layers
 const AppLayer = TelemetryLive.pipe(
-  // Note: If you want logs in both console and Loki, use createCombinedLoggerLayer instead
-  Effect.zipLeft(LoggerLive),
-  Effect.zipLeft(PostHogLive),
+  Layer.provideMerge(LoggerLive),
+  Layer.provideMerge(PostHogLive),
 )
 
 // ====================
@@ -108,7 +107,7 @@ const callExternalAPI = (endpoint: string) =>
     )
 
 // Simulate processing data
-const processData = (data: unknown) =>
+const processData = (_data: unknown) =>
   Effect
     .gen(function*() {
       yield* Effect.log("Processing data...")
