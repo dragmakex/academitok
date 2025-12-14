@@ -51,8 +51,8 @@ if (isFeatureFlagEnabled("new_dashboard")) {
 import { Effect } from "effect"
 import {
   createPostHogLayer,
-  trackServerEvent,
   identifyServerUser,
+  trackServerEvent,
 } from "./lib/posthog-server"
 
 const PostHogLive = createPostHogLayer({
@@ -60,7 +60,7 @@ const PostHogLive = createPostHogLayer({
   host: process.env.POSTHOG_HOST,
 })
 
-const program = Effect.gen(function* () {
+const program = Effect.gen(function*() {
   // Track events
   yield* trackServerEvent("user_signed_up", {
     distinctId: "user-123",
@@ -99,10 +99,10 @@ trackEvent("purchase_completed", {
 const canAccessBeta = isFeatureFlagEnabled("beta_access")
 
 // Server-side
-const program = Effect.gen(function* () {
+const program = Effect.gen(function*() {
   const canAccessBeta = yield* isServerFeatureFlagEnabled(
     "beta_access",
-    "user-123"
+    "user-123",
   )
 
   if (canAccessBeta) {
@@ -124,6 +124,7 @@ stopSessionRecording()
 ## Dashboard
 
 Access PostHog at http://localhost:8001 to view:
+
 - Analytics dashboards
 - User funnels
 - Session recordings

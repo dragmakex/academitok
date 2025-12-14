@@ -187,12 +187,12 @@ graph TB
 
 ### Component Responsibilities
 
-| Component | Purpose | Port | Data Format |
-|-----------|---------|------|-------------|
-| **Grafana Loki** | Log aggregation & storage | 3100 | JSON, logfmt |
-| **Grafana Tempo** | Distributed tracing | 3200, 4317, 4318 | OTLP, Jaeger |
-| **Prometheus** | Metrics collection | 9090 | Prometheus format |
-| **Grafana** | Unified visualization | 3001 | - |
+| Component         | Purpose                   | Port             | Data Format       |
+| ----------------- | ------------------------- | ---------------- | ----------------- |
+| **Grafana Loki**  | Log aggregation & storage | 3100             | JSON, logfmt      |
+| **Grafana Tempo** | Distributed tracing       | 3200, 4317, 4318 | OTLP, Jaeger      |
+| **Prometheus**    | Metrics collection        | 9090             | Prometheus format |
+| **Grafana**       | Unified visualization     | 3001             | -                 |
 
 ---
 
@@ -293,10 +293,10 @@ graph LR
 **Example:**
 
 ```typescript
-const program = Effect.gen(function* () {
+const program = Effect.gen(function*() {
   // Automatic tracing
   const user = yield* fetchUser(userId).pipe(
-    Effect.withSpan("fetchUser")
+    Effect.withSpan("fetchUser"),
   )
 
   // Automatic logging

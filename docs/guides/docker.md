@@ -57,13 +57,13 @@ docker-compose logs -f app
 
 ## Services
 
-| Service | URL | Purpose |
-|---------|-----|---------|
-| App | http://localhost:3000 | Your application |
-| Grafana | http://localhost:3001 | Dashboards (admin/admin) |
-| Sentry | http://localhost:9000 | Error tracking |
-| PostHog | http://localhost:8001 | Analytics |
-| Prometheus | http://localhost:9090 | Metrics |
+| Service    | URL                   | Purpose                  |
+| ---------- | --------------------- | ------------------------ |
+| App        | http://localhost:3000 | Your application         |
+| Grafana    | http://localhost:3001 | Dashboards (admin/admin) |
+| Sentry     | http://localhost:9000 | Error tracking           |
+| PostHog    | http://localhost:8001 | Analytics                |
+| Prometheus | http://localhost:9090 | Metrics                  |
 
 ## Common Commands
 

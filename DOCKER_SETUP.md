@@ -87,40 +87,40 @@ Once all services are healthy:
 
 ### Application Services
 
-| Service | Port | Description |
-|---------|------|-------------|
+| Service | Port | Description                                     |
+| ------- | ---- | ----------------------------------------------- |
 | **app** | 3000 | Your TanStack Start application with hot reload |
 
 ### Monitoring Stack (Grafana)
 
-| Service | Port | Description |
-|---------|------|-------------|
-| **grafana** | 3001 | Visualization and dashboards |
-| **loki** | 3100 | Log aggregation |
-| **tempo** | 3200, 4317, 4318 | Distributed tracing |
-| **prometheus** | 9090 | Metrics collection |
+| Service        | Port             | Description                  |
+| -------------- | ---------------- | ---------------------------- |
+| **grafana**    | 3001             | Visualization and dashboards |
+| **loki**       | 3100             | Log aggregation              |
+| **tempo**      | 3200, 4317, 4318 | Distributed tracing          |
+| **prometheus** | 9090             | Metrics collection           |
 
 ### Error Tracking (Sentry Self-Hosted)
 
-| Service | Port | Description |
-|---------|------|-------------|
-| **sentry-web** | 9000 | Sentry web interface |
-| **sentry-worker** | - | Background job processor |
-| **sentry-cron** | - | Scheduled tasks |
-| **postgres** | 5432 | Database for Sentry |
-| **redis** | 6379 | Cache for Sentry |
+| Service           | Port | Description              |
+| ----------------- | ---- | ------------------------ |
+| **sentry-web**    | 9000 | Sentry web interface     |
+| **sentry-worker** | -    | Background job processor |
+| **sentry-cron**   | -    | Scheduled tasks          |
+| **postgres**      | 5432 | Database for Sentry      |
+| **redis**         | 6379 | Cache for Sentry         |
 
 ### Analytics (PostHog Self-Hosted)
 
-| Service | Port | Description |
-|---------|------|-------------|
-| **posthog** | 8001, 8002 | PostHog web interface and API |
-| **posthog-worker** | - | Background job processor |
-| **posthog-postgres** | 5432 | PostgreSQL database |
-| **posthog-clickhouse** | - | ClickHouse for analytics |
-| **posthog-redis** | 6379 | Redis cache |
-| **posthog-kafka** | 9092 | Event streaming |
-| **posthog-zookeeper** | 2181 | Kafka coordination |
+| Service                | Port       | Description                   |
+| ---------------------- | ---------- | ----------------------------- |
+| **posthog**            | 8001, 8002 | PostHog web interface and API |
+| **posthog-worker**     | -          | Background job processor      |
+| **posthog-postgres**   | 5432       | PostgreSQL database           |
+| **posthog-clickhouse** | -          | ClickHouse for analytics      |
+| **posthog-redis**      | 6379       | Redis cache                   |
+| **posthog-kafka**      | 9092       | Event streaming               |
+| **posthog-zookeeper**  | 2181       | Kafka coordination            |
 
 ---
 
@@ -219,10 +219,12 @@ Edit `docker/tempo/tempo-config.yaml` to configure trace storage and sampling.
 4. Datasources are pre-configured (Loki, Tempo, Prometheus)
 
 **Explore Logs:**
+
 - Go to Explore → Select "Loki"
 - Query: `{job="effect-tanstack-start"}`
 
 **Explore Traces:**
+
 - Go to Explore → Select "Tempo"
 - Use Search or TraceQL queries
 

@@ -91,16 +91,16 @@ graph TB
 
 ### Technology Stack
 
-| Layer | Technologies |
-|-------|-------------|
-| **Frontend** | React 19, TanStack Router, @effect-atom, Tailwind CSS 4 |
-| **Backend** | Bun, Nitro, Effect-TS, @effect/rpc |
-| **Testing** | Vitest 4, @effect/vitest, Playwright |
-| **Monitoring** | Grafana, Loki, Tempo, Prometheus |
-| **Error Tracking** | Sentry (self-hosted) |
-| **Analytics** | PostHog (self-hosted) |
-| **Runtime** | Bun |
-| **Package Manager** | Bun |
+| Layer               | Technologies                                            |
+| ------------------- | ------------------------------------------------------- |
+| **Frontend**        | React 19, TanStack Router, @effect-atom, Tailwind CSS 4 |
+| **Backend**         | Bun, Nitro, Effect-TS, @effect/rpc                      |
+| **Testing**         | Vitest 4, @effect/vitest, Playwright                    |
+| **Monitoring**      | Grafana, Loki, Tempo, Prometheus                        |
+| **Error Tracking**  | Sentry (self-hosted)                                    |
+| **Analytics**       | PostHog (self-hosted)                                   |
+| **Runtime**         | Bun                                                     |
+| **Package Manager** | Bun                                                     |
 
 📚 **Detailed Guide:** [Architecture Overview](./docs/architecture/overview.md)
 
@@ -180,6 +180,7 @@ footer
 **Types:** `feat`, `fix`, `docs`, `style`, `refactor`, `test`, `chore`
 
 **Examples:**
+
 ```
 feat(auth): add login with PostHog tracking
 fix(ui): correct button alignment on mobile
@@ -210,43 +211,42 @@ graph TD
 #### Effect-Based Unit Test
 
 ```typescript
-import { it, expect } from "@effect/vitest"
+import { expect, it } from "@effect/vitest"
 import { Effect } from "effect"
 
 it.effect("calculates total correctly", () =>
-  Effect.gen(function* () {
+  Effect.gen(function*() {
     const result = yield* calculateTotal([10, 20, 30])
     expect(result).toBe(60)
-  })
-)
+  }))
 ```
 
 #### Component Test
 
 ```typescript
-import { expect, test } from 'vitest'
-import { page } from 'vitest/browser'
-import { render } from 'vitest-browser-react'
+import { expect, test } from "vitest"
+import { render } from "vitest-browser-react"
+import { page } from "vitest/browser"
 
-test('button click updates counter', async () => {
+test("button click updates counter", async () => {
   render(<Counter />)
 
-  const button = page.getByRole('button', { name: /increment/i })
+  const button = page.getByRole("button", { name: /increment/i })
   await button.click()
 
-  await expect.element(page.getByText('Count: 1')).toBeVisible()
+  await expect.element(page.getByText("Count: 1")).toBeVisible()
 })
 ```
 
 #### Visual Regression Test
 
 ```typescript
-import { expect, test } from 'vitest'
-import { render } from 'vitest-browser-react'
+import { expect, test } from "vitest"
+import { render } from "vitest-browser-react"
 
-test('card component visual', async () => {
+test("card component visual", async () => {
   const screen = render(<Card title="Test" />)
-  await expect(screen.container).toMatchScreenshot('card-default')
+  await expect(screen.container).toMatchScreenshot("card-default")
 })
 ```
 
@@ -263,17 +263,19 @@ test('card component visual', async () => {
 ```typescript
 import { Effect } from "effect"
 
-const myOperation = Effect.gen(function* () {
-  yield* Effect.log("Starting operation")
+const myOperation = Effect
+  .gen(function*() {
+    yield* Effect.log("Starting operation")
 
-  // Your code here
+    // Your code here
 
-  yield* Effect.log("Operation completed")
-}).pipe(
-  Effect.withSpan("myOperation", {
-    attributes: { userId: "123" }
+    yield* Effect.log("Operation completed")
   })
-)
+  .pipe(
+    Effect.withSpan("myOperation", {
+      attributes: { userId: "123" },
+    }),
+  )
 ```
 
 #### Client-Side Analytics
@@ -306,13 +308,14 @@ try {
 
 ### Viewing Observability Data
 
-| Service | URL | Purpose |
-|---------|-----|---------|
-| **Grafana** | http://localhost:3001 | Logs, traces, metrics |
-| **Sentry** | http://localhost:9000 | Errors and performance |
+| Service     | URL                   | Purpose                     |
+| ----------- | --------------------- | --------------------------- |
+| **Grafana** | http://localhost:3001 | Logs, traces, metrics       |
+| **Sentry**  | http://localhost:9000 | Errors and performance      |
 | **PostHog** | http://localhost:8001 | Analytics and feature flags |
 
 📚 **Complete Guides:**
+
 - [Telemetry Documentation](./docs/guides/telemetry.md)
 - [PostHog Documentation](./docs/guides/posthog.md)
 
@@ -338,7 +341,7 @@ try {
 
 ```typescript
 // ✅ Good - Use Effect.gen
-const program = Effect.gen(function* () {
+const program = Effect.gen(function*() {
   const user = yield* fetchUser(id)
   const posts = yield* fetchPosts(user.id)
   return { user, posts }
@@ -348,9 +351,9 @@ const program = Effect.gen(function* () {
 const program = fetchUser(id).pipe(
   Effect.flatMap(user =>
     fetchPosts(user.id).pipe(
-      Effect.map(posts => ({ user, posts }))
+      Effect.map(posts => ({ user, posts })),
     )
-  )
+  ),
 )
 ```
 
@@ -382,28 +385,34 @@ bun run typecheck
 ### 3. Create Pull Request
 
 **PR Title Format:**
+
 ```
 type(scope): brief description
 ```
 
 **PR Description Template:**
+
 ```markdown
 ## Description
+
 Brief description of changes
 
 ## Type of Change
+
 - [ ] Bug fix
 - [ ] New feature
 - [ ] Breaking change
 - [ ] Documentation update
 
 ## Testing
+
 - [ ] Unit tests added/updated
 - [ ] Component tests added/updated
 - [ ] Visual tests added/updated
 - [ ] All tests passing
 
 ## Checklist
+
 - [ ] Code follows style guidelines
 - [ ] Self-review completed
 - [ ] Documentation updated
@@ -501,6 +510,8 @@ effect-tanstack-start/
 - 🗄️ [Database Guide - PostgreSQL](./docs/guides/database-postgresql.md)
 - 💾 [Database Guide - SQLite](./docs/guides/database-sqlite.md)
 - ✨ [Code Quality Guide](./docs/guides/code-quality.md)
+- 🤖 [AI Code Review Guide](./docs/guides/ai-code-review.md)
+- ⚡ [Performance Monitoring](./docs/guides/performance-monitoring.md)
 
 ### External Resources
 

@@ -22,6 +22,7 @@ graph TB
 ```
 
 This guide covers:
+
 - Installing SQLite and Drizzle dependencies
 - Setting up database schema
 - Configuring SQLite connection
@@ -46,6 +47,7 @@ bun add @effect/sql @effect/sql-drizzle
 ```
 
 **Package Purposes:**
+
 - `drizzle-orm` - TypeScript ORM with type-safe queries
 - `better-sqlite3` - Fast, synchronous SQLite3 driver for Node.js/Bun
 - `drizzle-kit` - CLI for migrations and schema management
@@ -159,8 +161,8 @@ touch data/.gitkeep
 Create `src/db/schema/users.ts`:
 
 ```typescript
-import { sqliteTable, integer, text } from "drizzle-orm/sqlite-core"
 import { sql } from "drizzle-orm"
+import { integer, sqliteTable, text } from "drizzle-orm/sqlite-core"
 
 export const users = sqliteTable("users", {
   id: integer("id").primaryKey({ autoIncrement: true }),
@@ -182,8 +184,8 @@ export type NewUser = typeof users.$inferInsert
 Create `src/db/schema/posts.ts`:
 
 ```typescript
-import { sqliteTable, integer, text } from "drizzle-orm/sqlite-core"
 import { sql } from "drizzle-orm"
+import { integer, sqliteTable, text } from "drizzle-orm/sqlite-core"
 import { users } from "./users"
 
 export const posts = sqliteTable("posts", {
@@ -209,8 +211,8 @@ export type NewPost = typeof posts.$inferInsert
 Create `src/db/schema/index.ts`:
 
 ```typescript
-export * from "./users"
 export * from "./posts"
+export * from "./users"
 ```
 
 ### 2. SQLite-Specific Considerations
@@ -253,11 +255,11 @@ text("metadata", { mode: "json" }).$type<{ key: string; value: number }>()
 Create `src/db/client.ts`:
 
 ```typescript
-import { drizzle } from "drizzle-orm/better-sqlite3"
 import Database from "better-sqlite3"
-import * as schema from "./schema"
-import path from "path"
+import { drizzle } from "drizzle-orm/better-sqlite3"
 import fs from "fs"
+import path from "path"
+import * as schema from "./schema"
 
 // Ensure data directory exists
 const databasePath = process.env.DATABASE_PATH || "./data/database.sqlite"
@@ -290,7 +292,9 @@ sqlite.pragma("foreign_keys = ON")
 export const db = drizzle(sqlite, { schema })
 
 // Export SQLite instance for raw queries if needed
-export { sqlite }
+export {
+  sqlite,
+}
 
 // Export types
 export type Database = typeof db
@@ -301,12 +305,12 @@ export type Database = typeof db
 Create `src/db/client.ts`:
 
 ```typescript
-import { drizzle } from "drizzle-orm/better-sqlite3"
 import Database from "better-sqlite3"
-import * as schema from "./schema"
-import { Effect, Layer, Context } from "effect"
-import path from "path"
+import { drizzle } from "drizzle-orm/better-sqlite3"
+import { Context, Effect, Layer } from "effect"
 import fs from "fs"
+import path from "path"
+import * as schema from "./schema"
 
 // Database service tag
 export class DatabaseService extends Context.Tag("DatabaseService")<
@@ -320,9 +324,8 @@ export class DatabaseService extends Context.Tag("DatabaseService")<
 // Create database layer
 export const DatabaseLive = Layer.scoped(
   DatabaseService,
-  Effect.gen(function* () {
-    const databasePath =
-      process.env.DATABASE_PATH || "./data/database.sqlite"
+  Effect.gen(function*() {
+    const databasePath = process.env.DATABASE_PATH || "./data/database.sqlite"
 
     // Ensure data directory exists
     if (databasePath !== ":memory:") {
@@ -359,16 +362,14 @@ export const DatabaseLive = Layer.scoped(
     const db = drizzle(sqlite, { schema })
 
     // Cleanup on scope close
-    yield* Effect.addFinalizer(() =>
-      Effect.sync(() => sqlite.close())
-    )
+    yield* Effect.addFinalizer(() => Effect.sync(() => sqlite.close()))
 
     return { db, sqlite }
-  })
+  }),
 )
 
 // Helper to get database instance
-export const getDatabase = Effect.gen(function* () {
+export const getDatabase = Effect.gen(function*() {
   const { db } = yield* DatabaseService
   return db
 })
@@ -384,7 +385,9 @@ import { DatabaseLive } from "./client"
 export const DatabaseLayer = DatabaseLive
 
 // Export for use in application
-export { DatabaseService } from "./client"
+export {
+  DatabaseService,
+} from "./client"
 ```
 
 ---
@@ -406,11 +409,11 @@ bunx drizzle-kit generate
 Create `src/db/migrate.ts`:
 
 ```typescript
+import Database from "better-sqlite3"
 import { drizzle } from "drizzle-orm/better-sqlite3"
 import { migrate } from "drizzle-orm/better-sqlite3/migrator"
-import Database from "better-sqlite3"
-import path from "path"
 import fs from "fs"
+import path from "path"
 
 async function runMigrations() {
   const databasePath = process.env.DATABASE_PATH || "./data/database.sqlite"
@@ -485,16 +488,20 @@ bun run db:reset
 ### Basic CRUD Operations
 
 ```typescript
+import { and, eq, like } from "drizzle-orm"
 import { db } from "./db/client"
-import { users, posts } from "./db/schema"
-import { eq, and, like } from "drizzle-orm"
+import { posts, users } from "./db/schema"
 
 // CREATE
-const newUser = db.insert(users).values({
-  email: "john@example.com",
-  name: "John Doe",
-  passwordHash: "...",
-}).returning().get()
+const newUser = db
+  .insert(users)
+  .values({
+    email: "john@example.com",
+    name: "John Doe",
+    passwordHash: "...",
+  })
+  .returning()
+  .get()
 
 // READ - Single record
 const user = db.query.users.findFirst({
@@ -513,7 +520,8 @@ const userWithPosts = db.query.users.findFirst({
 })
 
 // UPDATE
-db.update(users)
+db
+  .update(users)
   .set({ name: "Jane Doe", updatedAt: new Date() })
   .where(eq(users.id, 1))
   .run()
@@ -525,7 +533,7 @@ db.delete(users).where(eq(users.id, 1)).run()
 const searchResults = db.query.users.findMany({
   where: and(
     like(users.email, "%@example.com"),
-    eq(users.name, "John Doe")
+    eq(users.name, "John Doe"),
   ),
   limit: 10,
   offset: 0,
@@ -537,14 +545,14 @@ const searchResults = db.query.users.findMany({
 Create `src/db/repositories/users.ts`:
 
 ```typescript
+import { eq } from "drizzle-orm"
 import { Effect } from "effect"
 import { DatabaseService } from "../layer"
-import { users, type User, type NewUser } from "../schema/users"
-import { eq } from "drizzle-orm"
+import { type NewUser, type User, users } from "../schema/users"
 
 export const UserRepository = {
   create: (data: NewUser) =>
-    Effect.gen(function* () {
+    Effect.gen(function*() {
       const { db } = yield* DatabaseService
       const user = yield* Effect.sync(() =>
         db.insert(users).values(data).returning().get()
@@ -553,7 +561,7 @@ export const UserRepository = {
     }),
 
   findById: (id: number) =>
-    Effect.gen(function* () {
+    Effect.gen(function*() {
       const { db } = yield* DatabaseService
       const user = yield* Effect.sync(() =>
         db.query.users.findFirst({
@@ -567,7 +575,7 @@ export const UserRepository = {
     }),
 
   findByEmail: (email: string) =>
-    Effect.gen(function* () {
+    Effect.gen(function*() {
       const { db } = yield* DatabaseService
       return yield* Effect.sync(() =>
         db.query.users.findFirst({
@@ -577,10 +585,11 @@ export const UserRepository = {
     }),
 
   update: (id: number, data: Partial<NewUser>) =>
-    Effect.gen(function* () {
+    Effect.gen(function*() {
       const { db } = yield* DatabaseService
       const updated = yield* Effect.sync(() =>
-        db.update(users)
+        db
+          .update(users)
           .set({ ...data, updatedAt: new Date() })
           .where(eq(users.id, id))
           .returning()
@@ -590,15 +599,13 @@ export const UserRepository = {
     }),
 
   delete: (id: number) =>
-    Effect.gen(function* () {
+    Effect.gen(function*() {
       const { db } = yield* DatabaseService
-      yield* Effect.sync(() =>
-        db.delete(users).where(eq(users.id, id)).run()
-      )
+      yield* Effect.sync(() => db.delete(users).where(eq(users.id, id)).run())
     }),
 
   list: (limit = 10, offset = 0) =>
-    Effect.gen(function* () {
+    Effect.gen(function*() {
       const { db } = yield* DatabaseService
       return yield* Effect.sync(() =>
         db.query.users.findMany({ limit, offset })
@@ -614,7 +621,7 @@ import { Effect } from "effect"
 import { DatabaseLayer } from "./db/layer"
 import { UserRepository } from "./db/repositories/users"
 
-const program = Effect.gen(function* () {
+const program = Effect.gen(function*() {
   // Create user
   const user = yield* UserRepository.create({
     email: "john@example.com",
@@ -730,7 +737,7 @@ Create `src/db/seed.ts`:
 
 ```typescript
 import { db } from "./client"
-import { users, posts } from "./schema"
+import { posts, users } from "./schema"
 
 function seed() {
   console.log("Seeding database...")
@@ -740,40 +747,51 @@ function seed() {
   db.delete(users).run()
 
   // Create users
-  const user1 = db.insert(users).values({
-    email: "alice@example.com",
-    name: "Alice Johnson",
-    passwordHash: "hashed_password_1",
-  }).returning().get()
+  const user1 = db
+    .insert(users)
+    .values({
+      email: "alice@example.com",
+      name: "Alice Johnson",
+      passwordHash: "hashed_password_1",
+    })
+    .returning()
+    .get()
 
-  const user2 = db.insert(users).values({
-    email: "bob@example.com",
-    name: "Bob Smith",
-    passwordHash: "hashed_password_2",
-  }).returning().get()
+  const user2 = db
+    .insert(users)
+    .values({
+      email: "bob@example.com",
+      name: "Bob Smith",
+      passwordHash: "hashed_password_2",
+    })
+    .returning()
+    .get()
 
   console.log(`Created 2 users`)
 
   // Create posts
-  db.insert(posts).values([
-    {
-      title: "First Post",
-      content: "This is Alice's first post",
-      authorId: user1.id,
-      published: new Date(),
-    },
-    {
-      title: "Second Post",
-      content: "This is Alice's second post",
-      authorId: user1.id,
-    },
-    {
-      title: "Bob's Post",
-      content: "This is Bob's post",
-      authorId: user2.id,
-      published: new Date(),
-    },
-  ]).run()
+  db
+    .insert(posts)
+    .values([
+      {
+        title: "First Post",
+        content: "This is Alice's first post",
+        authorId: user1.id,
+        published: new Date(),
+      },
+      {
+        title: "Second Post",
+        content: "This is Alice's second post",
+        authorId: user1.id,
+      },
+      {
+        title: "Bob's Post",
+        content: "This is Bob's post",
+        authorId: user2.id,
+        published: new Date(),
+      },
+    ])
+    .run()
 
   console.log(`Created 3 posts`)
   console.log("Seeding completed!")
@@ -806,21 +824,19 @@ DATABASE_PATH=":memory:"
 Create `src/db/test-utils.ts`:
 
 ```typescript
+import Database from "better-sqlite3"
+import { drizzle } from "drizzle-orm/better-sqlite3"
+import { migrate } from "drizzle-orm/better-sqlite3/migrator"
 import { Effect, Layer } from "effect"
 import { DatabaseService } from "./layer"
-import { drizzle } from "drizzle-orm/better-sqlite3"
-import Database from "better-sqlite3"
 import * as schema from "./schema"
-import { migrate } from "drizzle-orm/better-sqlite3/migrator"
 
 // Create test database layer (in-memory)
 export const TestDatabaseLayer = Layer.scoped(
   DatabaseService,
-  Effect.gen(function* () {
+  Effect.gen(function*() {
     // Create in-memory SQLite database
-    const sqlite = yield* Effect.sync(() =>
-      new Database(":memory:")
-    )
+    const sqlite = yield* Effect.sync(() => new Database(":memory:"))
 
     // Configure SQLite
     yield* Effect.sync(() => {
@@ -837,12 +853,10 @@ export const TestDatabaseLayer = Layer.scoped(
     )
 
     // Cleanup on scope close
-    yield* Effect.addFinalizer(() =>
-      Effect.sync(() => sqlite.close())
-    )
+    yield* Effect.addFinalizer(() => Effect.sync(() => sqlite.close()))
 
     return { db, sqlite }
-  })
+  }),
 )
 ```
 
@@ -851,40 +865,42 @@ export const TestDatabaseLayer = Layer.scoped(
 Create `src/db/repositories/users.test.ts`:
 
 ```typescript
-import { it, expect, describe } from "@effect/vitest"
+import { describe, expect, it } from "@effect/vitest"
 import { Effect } from "effect"
-import { UserRepository } from "./users"
 import { TestDatabaseLayer } from "../test-utils"
+import { UserRepository } from "./users"
 
 describe("UserRepository", () => {
   it.effect("creates and finds user", () =>
-    Effect.gen(function* () {
-      // Create user
-      const user = yield* UserRepository.create({
-        email: "test@example.com",
-        name: "Test User",
-        passwordHash: "hashed",
+    Effect
+      .gen(function*() {
+        // Create user
+        const user = yield* UserRepository.create({
+          email: "test@example.com",
+          name: "Test User",
+          passwordHash: "hashed",
+        })
+
+        expect(user.email).toBe("test@example.com")
+        expect(user.id).toBeGreaterThan(0)
+
+        // Find user
+        const found = yield* UserRepository.findById(user.id)
+        expect(found.id).toBe(user.id)
+        expect(found.email).toBe(user.email)
       })
-
-      expect(user.email).toBe("test@example.com")
-      expect(user.id).toBeGreaterThan(0)
-
-      // Find user
-      const found = yield* UserRepository.findById(user.id)
-      expect(found.id).toBe(user.id)
-      expect(found.email).toBe(user.email)
-    }).pipe(Effect.provide(TestDatabaseLayer))
-  )
+      .pipe(Effect.provide(TestDatabaseLayer)))
 
   it.effect("handles user not found", () =>
-    Effect.gen(function* () {
-      const result = yield* UserRepository.findById(999).pipe(
-        Effect.either
-      )
+    Effect
+      .gen(function*() {
+        const result = yield* UserRepository.findById(999).pipe(
+          Effect.either,
+        )
 
-      expect(result._tag).toBe("Left")
-    }).pipe(Effect.provide(TestDatabaseLayer))
-  )
+        expect(result._tag).toBe("Left")
+      })
+      .pipe(Effect.provide(TestDatabaseLayer)))
 })
 ```
 
@@ -902,20 +918,22 @@ bun run test
 ### Synchronous Transactions
 
 ```typescript
-import { db } from "./db/client"
-import { users, accounts } from "./db/schema"
 import { eq, sql } from "drizzle-orm"
+import { db } from "./db/client"
+import { accounts, users } from "./db/schema"
 
 // Transaction with better-sqlite3
 db.transaction((tx) => {
   // Deduct from sender
-  tx.update(accounts)
+  tx
+    .update(accounts)
     .set({ balance: sql`${accounts.balance} - 100` })
     .where(eq(accounts.userId, 1))
     .run()
 
   // Add to receiver
-  tx.update(accounts)
+  tx
+    .update(accounts)
     .set({ balance: sql`${accounts.balance} + 100` })
     .where(eq(accounts.userId, 2))
     .run()
@@ -929,7 +947,7 @@ import { Effect } from "effect"
 import { DatabaseService } from "./layer"
 
 const transferMoney = (fromId: number, toId: number, amount: number) =>
-  Effect.gen(function* () {
+  Effect.gen(function*() {
     const { sqlite } = yield* DatabaseService
 
     yield* Effect.sync(() =>
@@ -951,6 +969,7 @@ sqlite.pragma("journal_mode = WAL")
 ```
 
 Benefits:
+
 - Better concurrency (readers don't block writers)
 - Faster writes
 - More robust
@@ -971,9 +990,9 @@ export const users = sqliteTable("users", {
 ### 3. Prepared Statements
 
 ```typescript
+import { eq } from "drizzle-orm"
 import { db } from "./db/client"
 import { users } from "./db/schema"
-import { eq } from "drizzle-orm"
 
 // Drizzle automatically uses prepared statements
 const getUserById = (id: number) =>
@@ -991,22 +1010,25 @@ getUserById(3)
 
 ```typescript
 // Insert multiple records at once
-db.insert(users).values([
-  { email: "user1@example.com", name: "User 1", passwordHash: "..." },
-  { email: "user2@example.com", name: "User 2", passwordHash: "..." },
-  { email: "user3@example.com", name: "User 3", passwordHash: "..." },
-]).run()
+db
+  .insert(users)
+  .values([
+    { email: "user1@example.com", name: "User 1", passwordHash: "..." },
+    { email: "user2@example.com", name: "User 2", passwordHash: "..." },
+    { email: "user3@example.com", name: "User 3", passwordHash: "..." },
+  ])
+  .run()
 ```
 
 ### 5. PRAGMA Optimization
 
 ```typescript
 // Optimize for performance
-sqlite.pragma("synchronous = NORMAL")    // Balance safety/speed
-sqlite.pragma("cache_size = -64000")     // 64MB cache
-sqlite.pragma("temp_store = MEMORY")     // Keep temp tables in memory
+sqlite.pragma("synchronous = NORMAL") // Balance safety/speed
+sqlite.pragma("cache_size = -64000") // 64MB cache
+sqlite.pragma("temp_store = MEMORY") // Keep temp tables in memory
 sqlite.pragma("mmap_size = 30000000000") // Memory-mapped I/O
-sqlite.pragma("page_size = 4096")        // 4KB pages
+sqlite.pragma("page_size = 4096") // 4KB pages
 ```
 
 ---
@@ -1016,8 +1038,8 @@ sqlite.pragma("page_size = 4096")        // 4KB pages
 ### Manual Backup
 
 ```typescript
-import { db, sqlite } from "./db/client"
 import fs from "fs"
+import { db, sqlite } from "./db/client"
 
 function backupDatabase() {
   const timestamp = new Date().toISOString().replace(/[:.]/g, "-")
@@ -1055,7 +1077,8 @@ function backup() {
   const db = new Database(databasePath, { readonly: true })
 
   // Create backup
-  db.backup(backupPath)
+  db
+    .backup(backupPath)
     .then(() => {
       console.log(`Backup created successfully: ${backupPath}`)
       db.close()
@@ -1185,6 +1208,7 @@ process.on("SIGTERM", () => {
 ```
 
 **Solutions:**
+
 1. Enable WAL mode: `sqlite.pragma("journal_mode = WAL")`
 2. Increase busy timeout: `sqlite.pragma("busy_timeout = 5000")`
 3. Use transactions for write operations
@@ -1197,6 +1221,7 @@ process.on("SIGTERM", () => {
 ```
 
 **Solutions:**
+
 1. Check file permissions: `chmod 644 data/database.sqlite`
 2. Check directory permissions: `chmod 755 data/`
 3. Ensure data directory exists
@@ -1217,13 +1242,16 @@ sqlite3 data/database.sqlite < src/db/migrations/0000_initial.sql
 ### Common Errors
 
 **Error: `no such table: users`**
+
 - Run migrations: `bun run db:migrate`
 
 **Error: `FOREIGN KEY constraint failed`**
+
 - Enable foreign keys: `sqlite.pragma("foreign_keys = ON")`
 - Check insertion order (parent before child)
 
 **Error: `UNIQUE constraint failed`**
+
 - Check for duplicate values in unique columns
 - Use `.onConflictDoUpdate()` or `.onConflictDoNothing()`
 
@@ -1270,6 +1298,7 @@ const users = drizzle(readOnlyDb).query.users.findMany()
 
 SQLite theoretical max database size: **281 TB**
 Practical limits:
+
 - File system limits
 - Available disk space
 - Performance degrades with very large databases (>100GB)
@@ -1281,12 +1310,10 @@ For large datasets, consider PostgreSQL instead.
 ```typescript
 import { Effect } from "effect"
 
-const checkDatabaseHealth = Effect.gen(function* () {
+const checkDatabaseHealth = Effect.gen(function*() {
   const { sqlite } = yield* DatabaseService
 
-  const result = yield* Effect.sync(() =>
-    sqlite.prepare("SELECT 1").get()
-  )
+  const result = yield* Effect.sync(() => sqlite.prepare("SELECT 1").get())
 
   yield* Effect.log("Database health check passed")
 })
@@ -1296,20 +1323,21 @@ const checkDatabaseHealth = Effect.gen(function* () {
 
 ## Comparison: SQLite vs PostgreSQL
 
-| Feature | SQLite | PostgreSQL |
-|---------|--------|------------|
-| **Setup** | File-based, zero config | Requires server |
-| **Deployment** | Single file | Database server |
-| **Concurrency** | Limited (single writer) | Excellent |
-| **Performance (reads)** | Very fast | Fast |
-| **Performance (writes)** | Fast (single user) | Fast (multi-user) |
-| **Data Types** | Limited (5 types) | Rich (many types) |
-| **Full-text Search** | Basic | Advanced |
-| **Replication** | Manual file copy | Built-in |
-| **Backup** | File copy | pg_dump |
-| **Best For** | Small to medium apps, prototypes, embedded | Large apps, high concurrency |
+| Feature                  | SQLite                                     | PostgreSQL                   |
+| ------------------------ | ------------------------------------------ | ---------------------------- |
+| **Setup**                | File-based, zero config                    | Requires server              |
+| **Deployment**           | Single file                                | Database server              |
+| **Concurrency**          | Limited (single writer)                    | Excellent                    |
+| **Performance (reads)**  | Very fast                                  | Fast                         |
+| **Performance (writes)** | Fast (single user)                         | Fast (multi-user)            |
+| **Data Types**           | Limited (5 types)                          | Rich (many types)            |
+| **Full-text Search**     | Basic                                      | Advanced                     |
+| **Replication**          | Manual file copy                           | Built-in                     |
+| **Backup**               | File copy                                  | pg_dump                      |
+| **Best For**             | Small to medium apps, prototypes, embedded | Large apps, high concurrency |
 
 **When to use SQLite:**
+
 - Development and testing
 - Small to medium applications (<100GB)
 - Low to medium traffic
@@ -1318,6 +1346,7 @@ const checkDatabaseHealth = Effect.gen(function* () {
 - Prototypes and MVPs
 
 **When to use PostgreSQL:**
+
 - Large applications (>100GB)
 - High traffic / high concurrency
 - Multiple servers (read replicas)

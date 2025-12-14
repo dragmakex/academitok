@@ -23,6 +23,7 @@ graph TB
 ```
 
 This guide covers:
+
 - Installing PostgreSQL and Drizzle dependencies
 - Setting up database schema
 - Configuring connection pooling
@@ -47,6 +48,7 @@ bun add @effect/sql @effect/sql-drizzle @effect/sql-pg
 ```
 
 **Package Purposes:**
+
 - `drizzle-orm` - TypeScript ORM with type-safe queries
 - `postgres` - PostgreSQL client for Node.js/Bun
 - `drizzle-kit` - CLI for migrations and schema management
@@ -158,7 +160,7 @@ export type NewUser = typeof users.$inferInsert
 Create `src/db/schema/posts.ts`:
 
 ```typescript
-import { pgTable, serial, text, timestamp, integer } from "drizzle-orm/pg-core"
+import { integer, pgTable, serial, text, timestamp } from "drizzle-orm/pg-core"
 import { users } from "./users"
 
 export const posts = pgTable("posts", {
@@ -180,8 +182,8 @@ export type NewPost = typeof posts.$inferInsert
 Create `src/db/schema/index.ts`:
 
 ```typescript
-export * from "./users"
 export * from "./posts"
+export * from "./users"
 ```
 
 ### 2. Schema Types
@@ -189,7 +191,7 @@ export * from "./posts"
 Drizzle automatically infers TypeScript types:
 
 ```typescript
-import type { User, NewUser } from "./schema/users"
+import type { NewUser, User } from "./schema/users"
 
 // User type for selecting data
 const user: User = {
@@ -246,9 +248,9 @@ Create `src/db/client.ts`:
 
 ```typescript
 import { drizzle } from "drizzle-orm/postgres-js"
+import { Context, Effect, Layer } from "effect"
 import postgres from "postgres"
 import * as schema from "./schema"
-import { Effect, Layer, Context } from "effect"
 
 // Database service tag
 export class DatabaseService extends Context.Tag("DatabaseService")<
@@ -262,7 +264,7 @@ export class DatabaseService extends Context.Tag("DatabaseService")<
 // Create database layer
 export const DatabaseLive = Layer.scoped(
   DatabaseService,
-  Effect.gen(function* () {
+  Effect.gen(function*() {
     const connectionString = yield* Effect.promise(() =>
       Promise.resolve(process.env.DATABASE_URL)
     )
@@ -282,16 +284,14 @@ export const DatabaseLive = Layer.scoped(
     const db = drizzle(client, { schema })
 
     // Cleanup on scope close
-    yield* Effect.addFinalizer(() =>
-      Effect.promise(() => client.end())
-    )
+    yield* Effect.addFinalizer(() => Effect.promise(() => client.end()))
 
     return { db, client }
-  })
+  }),
 )
 
 // Helper to get database instance
-export const getDatabase = Effect.gen(function* () {
+export const getDatabase = Effect.gen(function*() {
   const { db } = yield* DatabaseService
   return db
 })
@@ -307,7 +307,9 @@ import { DatabaseLive } from "./client"
 export const DatabaseLayer = DatabaseLive
 
 // Export for use in application
-export { DatabaseService } from "./client"
+export {
+  DatabaseService,
+} from "./client"
 ```
 
 ---
@@ -391,16 +393,19 @@ bun run db:studio
 ### Basic CRUD Operations
 
 ```typescript
+import { and, eq, like } from "drizzle-orm"
 import { db } from "./db/client"
-import { users, posts } from "./db/schema"
-import { eq, and, like } from "drizzle-orm"
+import { posts, users } from "./db/schema"
 
 // CREATE
-const newUser = await db.insert(users).values({
-  email: "john@example.com",
-  name: "John Doe",
-  passwordHash: "...",
-}).returning()
+const newUser = await db
+  .insert(users)
+  .values({
+    email: "john@example.com",
+    name: "John Doe",
+    passwordHash: "...",
+  })
+  .returning()
 
 // READ - Single record
 const user = await db.query.users.findFirst({
@@ -419,7 +424,8 @@ const userWithPosts = await db.query.users.findFirst({
 })
 
 // UPDATE
-await db.update(users)
+await db
+  .update(users)
   .set({ name: "Jane Doe" })
   .where(eq(users.id, 1))
 
@@ -430,7 +436,7 @@ await db.delete(users).where(eq(users.id, 1))
 const searchResults = await db.query.users.findMany({
   where: and(
     like(users.email, "%@example.com"),
-    eq(users.name, "John Doe")
+    eq(users.name, "John Doe"),
   ),
   limit: 10,
   offset: 0,
@@ -442,14 +448,14 @@ const searchResults = await db.query.users.findMany({
 Create `src/db/repositories/users.ts`:
 
 ```typescript
+import { eq } from "drizzle-orm"
 import { Effect } from "effect"
 import { DatabaseService } from "../layer"
-import { users, type User, type NewUser } from "../schema/users"
-import { eq } from "drizzle-orm"
+import { type NewUser, type User, users } from "../schema/users"
 
 export const UserRepository = {
   create: (data: NewUser) =>
-    Effect.gen(function* () {
+    Effect.gen(function*() {
       const { db } = yield* DatabaseService
       const [user] = yield* Effect.tryPromise(() =>
         db.insert(users).values(data).returning()
@@ -458,7 +464,7 @@ export const UserRepository = {
     }),
 
   findById: (id: number) =>
-    Effect.gen(function* () {
+    Effect.gen(function*() {
       const { db } = yield* DatabaseService
       const user = yield* Effect.tryPromise(() =>
         db.query.users.findFirst({
@@ -472,7 +478,7 @@ export const UserRepository = {
     }),
 
   findByEmail: (email: string) =>
-    Effect.gen(function* () {
+    Effect.gen(function*() {
       const { db } = yield* DatabaseService
       return yield* Effect.tryPromise(() =>
         db.query.users.findFirst({
@@ -482,10 +488,11 @@ export const UserRepository = {
     }),
 
   update: (id: number, data: Partial<NewUser>) =>
-    Effect.gen(function* () {
+    Effect.gen(function*() {
       const { db } = yield* DatabaseService
       const [updated] = yield* Effect.tryPromise(() =>
-        db.update(users)
+        db
+          .update(users)
           .set({ ...data, updatedAt: new Date() })
           .where(eq(users.id, id))
           .returning()
@@ -494,15 +501,13 @@ export const UserRepository = {
     }),
 
   delete: (id: number) =>
-    Effect.gen(function* () {
+    Effect.gen(function*() {
       const { db } = yield* DatabaseService
-      yield* Effect.tryPromise(() =>
-        db.delete(users).where(eq(users.id, id))
-      )
+      yield* Effect.tryPromise(() => db.delete(users).where(eq(users.id, id)))
     }),
 
   list: (limit = 10, offset = 0) =>
-    Effect.gen(function* () {
+    Effect.gen(function*() {
       const { db } = yield* DatabaseService
       return yield* Effect.tryPromise(() =>
         db.query.users.findMany({ limit, offset })
@@ -518,7 +523,7 @@ import { Effect } from "effect"
 import { DatabaseLayer } from "./db/layer"
 import { UserRepository } from "./db/repositories/users"
 
-const program = Effect.gen(function* () {
+const program = Effect.gen(function*() {
   // Create user
   const user = yield* UserRepository.create({
     email: "john@example.com",
@@ -636,9 +641,9 @@ docker-compose exec app bun run db:migrate
 Create `src/db/seed.ts`:
 
 ```typescript
-import { db } from "./client"
-import { users, posts } from "./schema"
 import { Effect } from "effect"
+import { db } from "./client"
+import { posts, users } from "./schema"
 
 async function seed() {
   console.log("Seeding database...")
@@ -648,18 +653,21 @@ async function seed() {
   await db.delete(users)
 
   // Create users
-  const [user1, user2] = await db.insert(users).values([
-    {
-      email: "alice@example.com",
-      name: "Alice Johnson",
-      passwordHash: "hashed_password_1",
-    },
-    {
-      email: "bob@example.com",
-      name: "Bob Smith",
-      passwordHash: "hashed_password_2",
-    },
-  ]).returning()
+  const [user1, user2] = await db
+    .insert(users)
+    .values([
+      {
+        email: "alice@example.com",
+        name: "Alice Johnson",
+        passwordHash: "hashed_password_1",
+      },
+      {
+        email: "bob@example.com",
+        name: "Bob Smith",
+        passwordHash: "hashed_password_2",
+      },
+    ])
+    .returning()
 
   console.log(`Created ${2} users`)
 
@@ -718,14 +726,14 @@ Create `src/db/test-utils.ts`:
 
 ```typescript
 import { Effect, Layer } from "effect"
-import { DatabaseLive, DatabaseService } from "./layer"
 import { db } from "./client"
+import { DatabaseLive, DatabaseService } from "./layer"
 import * as schema from "./schema"
 
 // Create test database layer
 export const TestDatabaseLayer = Layer.scoped(
   DatabaseService,
-  Effect.gen(function* () {
+  Effect.gen(function*() {
     const testDb = db
 
     // Clear all tables before tests
@@ -733,12 +741,12 @@ export const TestDatabaseLayer = Layer.scoped(
     yield* Effect.promise(() => testDb.delete(schema.users))
 
     return { db: testDb, client: testDb }
-  })
+  }),
 )
 
 // Helper to run tests with database
 export const runTestWithDb = <E, A>(
-  program: Effect.Effect<A, E, DatabaseService>
+  program: Effect.Effect<A, E, DatabaseService>,
 ) => Effect.runPromise(program.pipe(Effect.provide(TestDatabaseLayer)))
 ```
 
@@ -747,28 +755,29 @@ export const runTestWithDb = <E, A>(
 Create `src/db/repositories/users.test.ts`:
 
 ```typescript
-import { it, expect, describe, beforeEach } from "@effect/vitest"
+import { beforeEach, describe, expect, it } from "@effect/vitest"
 import { Effect } from "effect"
-import { UserRepository } from "./users"
 import { runTestWithDb } from "../test-utils"
+import { UserRepository } from "./users"
 
 describe("UserRepository", () => {
   it.effect("creates and finds user", () =>
-    Effect.gen(function* () {
-      // Create user
-      const user = yield* UserRepository.create({
-        email: "test@example.com",
-        name: "Test User",
-        passwordHash: "hashed",
+    Effect
+      .gen(function*() {
+        // Create user
+        const user = yield* UserRepository.create({
+          email: "test@example.com",
+          name: "Test User",
+          passwordHash: "hashed",
+        })
+
+        expect(user.email).toBe("test@example.com")
+
+        // Find user
+        const found = yield* UserRepository.findById(user.id)
+        expect(found.id).toBe(user.id)
       })
-
-      expect(user.email).toBe("test@example.com")
-
-      // Find user
-      const found = yield* UserRepository.findById(user.id)
-      expect(found.id).toBe(user.id)
-    }).pipe(Effect.provide(/* TestDatabaseLayer */))
-  )
+      .pipe(Effect.provide(/* TestDatabaseLayer */)))
 })
 ```
 
@@ -816,7 +825,7 @@ const client = postgres(connectionString, {
 import { Effect } from "effect"
 import { DatabaseService } from "./layer"
 
-export const checkDatabaseHealth = Effect.gen(function* () {
+export const checkDatabaseHealth = Effect.gen(function*() {
   const { client } = yield* DatabaseService
 
   yield* Effect.tryPromise({
@@ -843,7 +852,7 @@ const db = drizzle(client, {
   logger: {
     logQuery(query: string, params: unknown[]) {
       Effect.runSync(
-        Effect.log(`SQL: ${query}`, { params })
+        Effect.log(`SQL: ${query}`, { params }),
       )
     },
   },
@@ -905,18 +914,20 @@ import { Effect } from "effect"
 import { DatabaseService } from "./layer"
 
 const transferMoney = (fromId: number, toId: number, amount: number) =>
-  Effect.gen(function* () {
+  Effect.gen(function*() {
     const { db } = yield* DatabaseService
 
     yield* Effect.tryPromise(() =>
       db.transaction(async (tx) => {
         // Deduct from sender
-        await tx.update(accounts)
+        await tx
+          .update(accounts)
           .set({ balance: sql`${accounts.balance} - ${amount}` })
           .where(eq(accounts.id, fromId))
 
         // Add to receiver
-        await tx.update(accounts)
+        await tx
+          .update(accounts)
           .set({ balance: sql`${accounts.balance} + ${amount}` })
           .where(eq(accounts.id, toId))
       })
@@ -928,7 +939,7 @@ const transferMoney = (fromId: number, toId: number, amount: number) =>
 
 ```typescript
 export const findUserOrFail = (id: number) =>
-  Effect.gen(function* () {
+  Effect.gen(function*() {
     const user = yield* UserRepository.findById(id)
 
     if (!user) {
@@ -958,7 +969,8 @@ export const users = pgTable("users", {
 Update `updatedAt` on modifications:
 
 ```typescript
-await db.update(users)
+await db
+  .update(users)
   .set({ name: "New Name", updatedAt: new Date() })
   .where(eq(users.id, 1))
 ```
@@ -1001,13 +1013,16 @@ cat src/db/migrations/0000_initial.sql
 ### Common Errors
 
 **Error: `relation "users" does not exist`**
+
 - Run migrations: `bun run db:migrate`
 
 **Error: `password authentication failed`**
+
 - Check `DATABASE_URL` in `.env`
 - Verify PostgreSQL is running
 
 **Error: `ECONNREFUSED`**
+
 - PostgreSQL is not running
 - Check port is correct (5432)
 
@@ -1035,6 +1050,7 @@ const client = postgres(connectionString, {
 ### 3. Connection Limits
 
 Calculate appropriate pool size:
+
 ```
 max_connections = (CPUs × 2) + effective_spindle_count
 ```

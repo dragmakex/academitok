@@ -5,6 +5,7 @@ A modern, full-stack TypeScript application built with **Effect-TS**, **TanStack
 ## ✨ Features
 
 ### Core Stack
+
 - 🚀 **[Bun](https://bun.sh)** - Fast JavaScript runtime and package manager
 - ⚡ **[Effect-TS](https://effect.website)** - Powerful functional effect system
 - 🎯 **[TanStack Start](https://tanstack.com/router/latest/docs/framework/react/start/getting-started)** - Full-stack React framework with SSR
@@ -13,6 +14,7 @@ A modern, full-stack TypeScript application built with **Effect-TS**, **TanStack
 - 🔄 **[@effect/rpc](https://effect.website/docs/guides/rpc/overview)** - Type-safe client-server communication
 
 ### Testing & Quality
+
 - 🧪 **[Vitest 4](https://vitest.dev)** - Fast unit testing with browser mode
 - 🎭 **[@effect/vitest](https://effect.website/docs/guides/testing/vitest)** - Effect-based testing with TestContext
 - 🌐 **Multi-Browser Testing** - Chromium, Firefox, WebKit via Playwright
@@ -20,6 +22,7 @@ A modern, full-stack TypeScript application built with **Effect-TS**, **TanStack
 - 🔍 **Component Testing** - Real browser testing for React components
 
 ### Observability & Analytics
+
 - 📊 **[Grafana Stack](https://grafana.com)** - Complete monitoring solution
   - **Loki** - Log aggregation
   - **Tempo** - Distributed tracing
@@ -30,6 +33,7 @@ A modern, full-stack TypeScript application built with **Effect-TS**, **TanStack
 - 🔭 **OpenTelemetry** - Distributed tracing and observability
 
 ### Infrastructure
+
 - 🐳 **Docker Compose** - Complete local development stack
 - 🔄 **Hot Reload** - Fast development with HMR
 - 🏗️ **Production Ready** - Optimized builds and deployment configs
@@ -72,6 +76,7 @@ docker-compose up
 ```
 
 **Access Services:**
+
 - 🌐 **Application**: http://localhost:3000
 - 📊 **Grafana** (Logs, Traces, Metrics): http://localhost:3001 (admin/admin)
 - 🐛 **Sentry** (Errors): http://localhost:9000
@@ -139,6 +144,7 @@ bun run typecheck
 ```
 
 **Test Types:**
+
 - **Unit Tests** - Effect-based tests with @effect/vitest
 - **Component Tests** - Real browser testing with Playwright
 - **Visual Regression** - Screenshot comparison across browsers
@@ -166,7 +172,7 @@ bun run preview
 ```typescript
 import { Effect } from "effect"
 
-const program = Effect.gen(function* () {
+const program = Effect.gen(function*() {
   yield* Effect.log("Application started")
   // Logs automatically sent to Loki
 })
@@ -177,13 +183,15 @@ const program = Effect.gen(function* () {
 ```typescript
 import { Effect } from "effect"
 
-const program = Effect.gen(function* () {
-  // Your code here
-}).pipe(
-  Effect.withSpan("operationName", {
-    attributes: { userId: "123" }
+const program = Effect
+  .gen(function*() {
+    // Your code here
   })
-)
+  .pipe(
+    Effect.withSpan("operationName", {
+      attributes: { userId: "123" },
+    }),
+  )
 ```
 
 ### Error Tracking (Sentry)
@@ -207,18 +215,18 @@ try {
 ### Client-Side
 
 ```typescript
-import { trackEvent, identifyUser } from "./lib/posthog-client"
+import { identifyUser, trackEvent } from "./lib/posthog-client"
 
 // Track events
 trackEvent("button_clicked", {
   button_id: "signup",
-  page: "/landing"
+  page: "/landing",
 })
 
 // Identify users
 identifyUser({
   userId: "user-123",
-  email: "user@example.com"
+  email: "user@example.com",
 })
 
 // Feature flags
@@ -233,10 +241,10 @@ if (isFeatureFlagEnabled("new_dashboard")) {
 import { Effect } from "effect"
 import { trackServerEvent } from "./lib/posthog-server"
 
-const program = Effect.gen(function* () {
+const program = Effect.gen(function*() {
   yield* trackServerEvent("user_signup", {
     distinctId: "user-123",
-    plan: "premium"
+    plan: "premium",
   })
 })
 ```
@@ -248,6 +256,7 @@ const program = Effect.gen(function* () {
 ## 🎯 Effect-TS Integration
 
 This project leverages Effect-TS for:
+
 - Type-safe error handling
 - Composable business logic
 - Resource management with scopes
@@ -260,19 +269,21 @@ This project leverages Effect-TS for:
 import { Effect } from "effect"
 
 const fetchUser = (userId: string) =>
-  Effect.gen(function* () {
-    yield* Effect.log(`Fetching user: ${userId}`)
+  Effect
+    .gen(function*() {
+      yield* Effect.log(`Fetching user: ${userId}`)
 
-    const response = yield* Effect.tryPromise(() =>
-      fetch(`/api/users/${userId}`)
+      const response = yield* Effect.tryPromise(() =>
+        fetch(`/api/users/${userId}`)
+      )
+
+      const user = yield* Effect.tryPromise(() => response.json())
+
+      return user
+    })
+    .pipe(
+      Effect.withSpan("fetchUser", { attributes: { userId } }),
     )
-
-    const user = yield* Effect.tryPromise(() => response.json())
-
-    return user
-  }).pipe(
-    Effect.withSpan("fetchUser", { attributes: { userId } })
-  )
 ```
 
 ---
@@ -280,9 +291,11 @@ const fetchUser = (userId: string) =>
 ## 📚 Documentation
 
 ### For New Contributors
+
 👉 **Start with [CONTRIBUTING.md](./CONTRIBUTING.md)**
 
 ### Guides
+
 - 🚀 [Getting Started](./docs/guides/getting-started.md) - Setup and installation
 - 🏗️ [Architecture Overview](./docs/architecture/overview.md) - System design
 - 🧪 [Testing Guide](./docs/guides/testing.md) - Writing and running tests
@@ -292,8 +305,11 @@ const fetchUser = (userId: string) =>
 - 🗄️ [PostgreSQL Guide](./docs/guides/database-postgresql.md) - PostgreSQL with Drizzle ORM
 - 💾 [SQLite Guide](./docs/guides/database-sqlite.md) - SQLite with Drizzle ORM
 - ✨ [Code Quality Guide](./docs/guides/code-quality.md) - Linting and formatting
+- 🤖 [AI Code Review Guide](./docs/guides/ai-code-review.md) - AI-powered code review
+- ⚡ [Performance Monitoring](./docs/guides/performance-monitoring.md) - Bundle size & Web Vitals
 
 ### Complete Documentation
+
 - 📖 [CONTRIBUTING.md](./CONTRIBUTING.md) - Contribution guidelines
 - 🐳 [DOCKER_SETUP.md](./DOCKER_SETUP.md) - Complete Docker setup
 - 🧪 [TESTING_AND_TELEMETRY.md](./TESTING_AND_TELEMETRY.md) - Testing & observability
@@ -332,17 +348,20 @@ bun run dprint:check     # Check Dprint formatting
 ## 🌟 Key Highlights
 
 ### Type Safety
+
 - **End-to-end type safety** with TypeScript and Effect-TS
 - **Type-safe RPC** with @effect/rpc
 - **Type-safe routing** with TanStack Router
 
 ### Developer Experience
+
 - **Hot Module Replacement** - Instant feedback
 - **Browser DevTools** - Debug tests in real browsers
 - **Comprehensive Testing** - Unit, component, and visual regression
 - **Built-in Monitoring** - Pre-configured observability stack
 
 ### Production Ready
+
 - **Self-hosted monitoring** - Full control over data
 - **Error tracking** - Automatic error capture and reporting
 - **Analytics** - Product analytics and feature flags
@@ -354,6 +373,7 @@ bun run dprint:check     # Check Dprint formatting
 ## 🤝 Contributing
 
 We welcome contributions! Please read [CONTRIBUTING.md](./CONTRIBUTING.md) for guidelines on:
+
 - Setting up your development environment
 - Project architecture and patterns
 - Testing requirements
@@ -371,6 +391,7 @@ We welcome contributions! Please read [CONTRIBUTING.md](./CONTRIBUTING.md) for g
 ## 🙏 Acknowledgments
 
 Built with amazing open-source technologies:
+
 - [Effect-TS](https://effect.website)
 - [TanStack](https://tanstack.com)
 - [Bun](https://bun.sh)

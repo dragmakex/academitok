@@ -32,10 +32,12 @@ const TelemetryLive = createSentryTelemetryLayer({
   environment: "production",
 })
 
-const program = Effect.gen(function* () {
-  yield* Effect.log("Processing request")
-  // Your code here
-}).pipe(Effect.withSpan("myOperation"))
+const program = Effect
+  .gen(function*() {
+    yield* Effect.log("Processing request")
+    // Your code here
+  })
+  .pipe(Effect.withSpan("myOperation"))
 
 Effect.runPromise(program.pipe(Effect.provide(TelemetryLive)))
 ```

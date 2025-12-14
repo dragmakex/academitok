@@ -30,23 +30,24 @@ Effect-based tests using `@effect/vitest` for testing Effect programs with autom
 **Location:** `src/example.test.ts`
 
 **Features:**
+
 - `it.effect` - Automatic TestContext injection (TestClock, etc.)
 - `it.live` - Run tests with live Effect environment
 - `it.scoped` - Tests requiring Scope for resource management
 - `it.flakyTest` - Handle tests that may occasionally fail
 
 **Example:**
+
 ```ts
-import { it, expect } from "@effect/vitest"
+import { expect, it } from "@effect/vitest"
 import { Effect, TestClock } from "effect"
 
 it.effect("test with simulated time", () =>
-  Effect.gen(function* () {
+  Effect.gen(function*() {
     yield* TestClock.adjust("1000 millis")
     const now = yield* Clock.currentTimeMillis
     expect(now).toBe(1000)
-  })
-)
+  }))
 ```
 
 #### 2. Component Tests
@@ -56,23 +57,25 @@ Component tests using `vitest-browser-react` for testing React components in rea
 **Location:** `src/component/*.test.tsx`
 
 **Features:**
+
 - Tests run in real browsers (Chromium, Firefox, WebKit)
 - Accurate DOM behavior and event handling
 - Accessibility testing support
 
 **Example:**
-```ts
-import { expect, test } from 'vitest'
-import { page } from 'vitest/browser'
-import { render } from 'vitest-browser-react'
 
-test('component interaction', async () => {
+```ts
+import { expect, test } from "vitest"
+import { render } from "vitest-browser-react"
+import { page } from "vitest/browser"
+
+test("component interaction", async () => {
   render(<MyComponent />)
 
-  const button = page.getByRole('button', { name: /submit/i })
+  const button = page.getByRole("button", { name: /submit/i })
   await button.click()
 
-  await expect.element(page.getByText('Success')).toBeInTheDocument()
+  await expect.element(page.getByText("Success")).toBeInTheDocument()
 })
 ```
 
@@ -83,23 +86,29 @@ Visual regression tests that capture and compare screenshots across browsers.
 **Location:** `src/visual/*.test.tsx`
 
 **Features:**
+
 - Automatic screenshot comparison
 - Browser-specific baselines (Chromium, Firefox, WebKit)
 - Configurable thresholds for pixel differences
 
 **Example:**
+
 ```ts
-import { expect, test } from 'vitest'
-import { page } from 'vitest/browser'
-import { render } from 'vitest-browser-react'
+import { expect, test } from "vitest"
+import { render } from "vitest-browser-react"
+import { page } from "vitest/browser"
 
-test('button renders correctly', async () => {
-  const screen = render(<Button>Click me</Button>)
+test("button renders correctly", async () => {
+  const screen = render(
+    <Button>
+      Click me
+    </Button>,
+  )
 
-  await expect.element(page.getByRole('button')).toBeVisible()
+  await expect.element(page.getByRole("button")).toBeVisible()
 
   // Capture and compare screenshot
-  await expect(screen.container).toMatchScreenshot('button-default')
+  await expect(screen.container).toMatchScreenshot("button-default")
 })
 ```
 
@@ -135,43 +144,40 @@ bun run test -- --project=webkit
 #### Effect-Based Tests
 
 ```ts
-import { it, expect } from "@effect/vitest"
+import { expect, it } from "@effect/vitest"
 import { Effect, Exit } from "effect"
 
 // Test successful operations
 it.effect("divides numbers", () =>
-  Effect.gen(function* () {
+  Effect.gen(function*() {
     const result = yield* divide(10, 2)
     expect(result).toBe(5)
-  })
-)
+  }))
 
 // Test failures
 it.effect("handles errors", () =>
-  Effect.gen(function* () {
+  Effect.gen(function*() {
     const result = yield* Effect.exit(divide(10, 0))
     expect(result).toStrictEqual(Exit.fail("Cannot divide by zero"))
-  })
-)
+  }))
 
 // Test with TestClock
 it.effect("simulates time", () =>
-  Effect.gen(function* () {
+  Effect.gen(function*() {
     yield* TestClock.adjust("1000 millis")
     const now = yield* Clock.currentTimeMillis
     expect(now).toBe(1000)
-  })
-)
+  }))
 ```
 
 #### Component Tests
 
 ```ts
-import { expect, test } from 'vitest'
-import { page } from 'vitest/browser'
-import { render } from 'vitest-browser-react'
+import { expect, test } from "vitest"
+import { render } from "vitest-browser-react"
+import { page } from "vitest/browser"
 
-test('form validation', async () => {
+test("form validation", async () => {
   render(<ContactForm />)
 
   // Test accessibility
@@ -179,26 +185,28 @@ test('form validation', async () => {
   await expect.element(emailInput).toBeInTheDocument()
 
   // Test user interaction
-  await emailInput.fill('invalid-email')
-  await page.getByRole('button', { name: /submit/i }).click()
+  await emailInput.fill("invalid-email")
+  await page.getByRole("button", { name: /submit/i }).click()
 
   // Test validation message
-  await expect.element(
-    page.getByText('Please enter a valid email')
-  ).toBeVisible()
+  await expect
+    .element(
+      page.getByText("Please enter a valid email"),
+    )
+    .toBeVisible()
 })
 ```
 
 #### Visual Regression Tests
 
 ```ts
-import { expect, test } from 'vitest'
-import { render } from 'vitest-browser-react'
+import { expect, test } from "vitest"
+import { render } from "vitest-browser-react"
 
-test('hero section visual', async () => {
+test("hero section visual", async () => {
   const screen = render(<HeroSection />)
 
-  await expect(screen.container).toMatchScreenshot('hero-section', {
+  await expect(screen.container).toMatchScreenshot("hero-section", {
     // Override global settings per test
     comparatorOptions: {
       threshold: 0.2,
@@ -221,6 +229,7 @@ Distributed tracing to track requests across services and identify bottlenecks.
 **Server-side configuration:** `src/lib/telemetry-server.ts`
 
 **Usage:**
+
 ```ts
 import { Effect } from "effect"
 import { createSentryTelemetryLayer } from "./lib/telemetry-server"
@@ -231,19 +240,22 @@ const TelemetryLive = createSentryTelemetryLayer({
   environment: process.env.NODE_ENV,
 })
 
-const program = Effect.gen(function* () {
-  yield* Effect.log("Starting operation")
-  // Your business logic
-}).pipe(
-  Effect.withSpan("my-operation", {
-    attributes: { userId: "123" }
+const program = Effect
+  .gen(function*() {
+    yield* Effect.log("Starting operation")
+    // Your business logic
   })
-)
+  .pipe(
+    Effect.withSpan("my-operation", {
+      attributes: { userId: "123" },
+    }),
+  )
 
 Effect.runPromise(program.pipe(Effect.provide(TelemetryLive)))
 ```
 
 **Features:**
+
 - Automatic span creation with `Effect.withSpan`
 - Span annotations with `Effect.annotateCurrentSpan`
 - Logs converted to span events
@@ -293,6 +305,7 @@ function App() {
 ```
 
 **Features:**
+
 - Automatic error capture
 - Performance monitoring
 - Session replay
@@ -317,7 +330,7 @@ const LoggerLive = createLokiLoggerLayer({
   },
 })
 
-const program = Effect.gen(function* () {
+const program = Effect.gen(function*() {
   yield* Effect.log("This goes to Loki!")
 })
 
@@ -325,6 +338,7 @@ Effect.runPromise(program.pipe(Effect.provide(LoggerLive)))
 ```
 
 **Features:**
+
 - Batched log sending (configurable batch size)
 - Automatic log level tagging
 - Custom labels for log streams
@@ -332,6 +346,7 @@ Effect.runPromise(program.pipe(Effect.provide(LoggerLive)))
 - Fallback to console on errors
 
 **Combined Console + Loki:**
+
 ```ts
 import { createCombinedLoggerLayer } from "./lib/logger-loki"
 
@@ -367,6 +382,7 @@ docker run -p 3000:3000 -p 4317:4317 -p 4318:4318 --rm -it docker.io/grafana/ote
 ```
 
 This provides:
+
 - **Grafana UI:** http://localhost:3000 (default login: admin/admin)
 - **Loki endpoint:** http://localhost:3100/loki/api/v1/push
 - **OTLP endpoint:** http://localhost:4318/v1/traces
@@ -405,6 +421,7 @@ bun run src/telemetry-example.ts
 ```
 
 Then view results:
+
 - **Traces:** http://localhost:3000/explore → Select Tempo
 - **Logs:** http://localhost:3000/explore → Select Loki
 - **Errors:** Check your Sentry dashboard

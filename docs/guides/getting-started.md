@@ -129,21 +129,25 @@ effect-tanstack-start/
 ### Key Directories Explained
 
 **`src/api/`** - API layer
+
 - Shared schemas between client and server
 - Type-safe API clients
 - RPC definitions using @effect/rpc
 
 **`src/lib/`** - Shared libraries
+
 - Telemetry integrations (Sentry, PostHog, Loki)
 - Utility functions
 - Reusable Effect-based logic
 
 **`src/routes/`** - Pages and API routes
+
 - File-based routing powered by TanStack Router
 - API routes use Nitro server framework
 - Server functions with `createServerFn`
 
 **`docker/`** - Service configurations
+
 - Pre-configured monitoring stack
 - Database settings
 - Service-specific configs
@@ -218,17 +222,21 @@ touch src/routes/about.tsx
 
 ```typescript
 // src/routes/about.tsx
-import { createFileRoute } from '@tanstack/react-router'
+import { createFileRoute } from "@tanstack/react-router"
 
-export const Route = createFileRoute('/about')({
+export const Route = createFileRoute("/about")({
   component: AboutPage,
 })
 
 function AboutPage() {
   return (
     <div>
-      <h1>About</h1>
-      <p>This is the about page</p>
+      <h1>
+        About
+      </h1>
+      <p>
+        This is the about page
+      </p>
     </div>
   )
 }
@@ -245,12 +253,12 @@ touch src/routes/api/hello.ts
 
 ```typescript
 // src/routes/api/hello.ts
-import { createServerFn } from '@tanstack/react-start'
-import { Effect } from 'effect'
+import { createServerFn } from "@tanstack/react-start"
+import { Effect } from "effect"
 
-export const GET = createServerFn('GET', () => {
+export const GET = createServerFn("GET", () => {
   return Effect.succeed({
-    message: 'Hello, World!',
+    message: "Hello, World!",
     timestamp: new Date().toISOString(),
   })
 })
@@ -261,12 +269,12 @@ Available at `/api/hello`
 ### Adding State with Atoms
 
 ```typescript
-import { atom } from '@effect-atom/atom'
-import { useAtom } from '@effect-atom/atom-react'
+import { atom } from "@effect-atom/atom"
+import { useAtom } from "@effect-atom/atom-react"
 
 // Define atom
 const counterAtom = atom({
-  key: 'counter',
+  key: "counter",
   effects: Effect.succeed(0),
 })
 
@@ -290,15 +298,19 @@ touch src/components/Button.test.tsx
 ```
 
 ```typescript
-import { expect, test } from 'vitest'
-import { page } from 'vitest/browser'
-import { render } from 'vitest-browser-react'
-import { Button } from './Button'
+import { expect, test } from "vitest"
+import { render } from "vitest-browser-react"
+import { page } from "vitest/browser"
+import { Button } from "./Button"
 
-test('button renders and clicks', async () => {
-  render(<Button>Click me</Button>)
+test("button renders and clicks", async () => {
+  render(
+    <Button>
+      Click me
+    </Button>,
+  )
 
-  const button = page.getByRole('button', { name: /click me/i })
+  const button = page.getByRole("button", { name: /click me/i })
   await expect.element(button).toBeVisible()
 
   await button.click()

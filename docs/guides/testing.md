@@ -65,11 +65,11 @@ sequenceDiagram
 **Example:**
 
 ```typescript
-import { it, expect } from "@effect/vitest"
-import { Effect, TestClock, Clock } from "effect"
+import { expect, it } from "@effect/vitest"
+import { Clock, Effect, TestClock } from "effect"
 
 it.effect("simulates time passage", () =>
-  Effect.gen(function* () {
+  Effect.gen(function*() {
     // Start at time 0
     const start = yield* Clock.currentTimeMillis
     expect(start).toBe(0)
@@ -80,8 +80,7 @@ it.effect("simulates time passage", () =>
     // Verify time moved forward
     const end = yield* Clock.currentTimeMillis
     expect(end).toBe(1000)
-  })
-)
+  }))
 ```
 
 ### 2. Component Tests
@@ -112,22 +111,22 @@ sequenceDiagram
 **Example:**
 
 ```typescript
-import { expect, test } from 'vitest'
-import { page } from 'vitest/browser'
-import { render } from 'vitest-browser-react'
+import { expect, test } from "vitest"
+import { render } from "vitest-browser-react"
+import { page } from "vitest/browser"
 
-test('form submission', async () => {
+test("form submission", async () => {
   render(<ContactForm />)
 
   // Interact like a real user
   const nameInput = page.getByLabelText(/name/i)
-  await nameInput.fill('John Doe')
+  await nameInput.fill("John Doe")
 
-  const submitButton = page.getByRole('button', { name: /submit/i })
+  const submitButton = page.getByRole("button", { name: /submit/i })
   await submitButton.click()
 
   // Verify the result
-  await expect.element(page.getByText('Form submitted')).toBeVisible()
+  await expect.element(page.getByText("Form submitted")).toBeVisible()
 })
 ```
 
@@ -153,14 +152,18 @@ graph LR
 **Example:**
 
 ```typescript
-import { expect, test } from 'vitest'
-import { render } from 'vitest-browser-react'
+import { expect, test } from "vitest"
+import { render } from "vitest-browser-react"
 
-test('button visual regression', async () => {
-  const screen = render(<Button variant="primary">Click me</Button>)
+test("button visual regression", async () => {
+  const screen = render(
+    <Button variant="primary">
+      Click me
+    </Button>,
+  )
 
   // Capture and compare screenshot
-  await expect(screen.container).toMatchScreenshot('button-primary')
+  await expect(screen.container).toMatchScreenshot("button-primary")
 })
 ```
 
@@ -173,11 +176,11 @@ test('button visual regression', async () => {
 #### Basic Test Structure
 
 ```typescript
-import { it, expect } from "@effect/vitest"
+import { expect, it } from "@effect/vitest"
 import { Effect } from "effect"
 
 it.effect("test name", () =>
-  Effect.gen(function* () {
+  Effect.gen(function*() {
     // Arrange
     const input = 10
 
@@ -186,35 +189,33 @@ it.effect("test name", () =>
 
     // Assert
     expect(result).toBe(20)
-  })
-)
+  }))
 ```
 
 #### Testing Failures
 
 ```typescript
-import { it, expect } from "@effect/vitest"
+import { expect, it } from "@effect/vitest"
 import { Effect, Exit } from "effect"
 
 it.effect("handles errors correctly", () =>
-  Effect.gen(function* () {
+  Effect.gen(function*() {
     const result = yield* Effect.exit(
-      Effect.fail("Expected error")
+      Effect.fail("Expected error"),
     )
 
     expect(result).toStrictEqual(Exit.fail("Expected error"))
-  })
-)
+  }))
 ```
 
 #### Using TestClock
 
 ```typescript
 it.effect("delayed operation", () =>
-  Effect.gen(function* () {
+  Effect.gen(function*() {
     // Start a delayed operation
     const fiber = yield* Effect.fork(
-      Effect.delay(Effect.succeed("result"), "5 seconds")
+      Effect.delay(Effect.succeed("result"), "5 seconds"),
     )
 
     // Advance time
@@ -223,25 +224,23 @@ it.effect("delayed operation", () =>
     // Get result
     const result = yield* Fiber.join(fiber)
     expect(result).toBe("result")
-  })
-)
+  }))
 ```
 
 #### Resource Management with Scopes
 
 ```typescript
 it.scoped("manages resources", () =>
-  Effect.gen(function* () {
+  Effect.gen(function*() {
     const resource = Effect.acquireRelease(
       Effect.succeed("resource"),
-      () => Effect.log("cleanup")
+      () => Effect.log("cleanup"),
     )
 
     const value = yield* resource
     expect(value).toBe("resource")
     // Cleanup happens automatically
-  })
-)
+  }))
 ```
 
 ### Component Tests
@@ -249,41 +248,41 @@ it.scoped("manages resources", () =>
 #### Accessibility Testing
 
 ```typescript
-test('accessible form', async () => {
+test("accessible form", async () => {
   render(<LoginForm />)
 
   // Use semantic queries
   const emailInput = page.getByLabelText(/email/i)
   const passwordInput = page.getByLabelText(/password/i)
-  const submitButton = page.getByRole('button', { name: /log in/i })
+  const submitButton = page.getByRole("button", { name: /log in/i })
 
   // Verify ARIA attributes
-  await expect.element(emailInput).toHaveAttribute('type', 'email')
-  await expect.element(passwordInput).toHaveAttribute('type', 'password')
+  await expect.element(emailInput).toHaveAttribute("type", "email")
+  await expect.element(passwordInput).toHaveAttribute("type", "password")
 })
 ```
 
 #### User Interaction Patterns
 
 ```typescript
-test('multi-step form', async () => {
+test("multi-step form", async () => {
   render(<Wizard />)
 
   // Step 1
-  await page.getByLabelText(/name/i).fill('John')
-  await page.getByRole('button', { name: /next/i }).click()
+  await page.getByLabelText(/name/i).fill("John")
+  await page.getByRole("button", { name: /next/i }).click()
 
   // Step 2
-  await page.getByLabelText(/email/i).fill('john@example.com')
-  await page.getByRole('button', { name: /next/i }).click()
+  await page.getByLabelText(/email/i).fill("john@example.com")
+  await page.getByRole("button", { name: /next/i }).click()
 
   // Step 3 - Review
-  await expect.element(page.getByText('John')).toBeVisible()
-  await expect.element(page.getByText('john@example.com')).toBeVisible()
+  await expect.element(page.getByText("John")).toBeVisible()
+  await expect.element(page.getByText("john@example.com")).toBeVisible()
 
   // Submit
-  await page.getByRole('button', { name: /submit/i }).click()
-  await expect.element(page.getByText('Success')).toBeVisible()
+  await page.getByRole("button", { name: /submit/i }).click()
+  await expect.element(page.getByText("Success")).toBeVisible()
 })
 ```
 
@@ -292,35 +291,47 @@ test('multi-step form', async () => {
 #### Component States
 
 ```typescript
-test('button states', async () => {
-  const { rerender } = render(<Button>Default</Button>)
-  await expect(screen.container).toMatchScreenshot('button-default')
+test("button states", async () => {
+  const { rerender } = render(
+    <Button>
+      Default
+    </Button>,
+  )
+  await expect(screen.container).toMatchScreenshot("button-default")
 
-  rerender(<Button disabled>Disabled</Button>)
-  await expect(screen.container).toMatchScreenshot('button-disabled')
+  rerender(
+    <Button disabled>
+      Disabled
+    </Button>,
+  )
+  await expect(screen.container).toMatchScreenshot("button-disabled")
 
-  rerender(<Button loading>Loading</Button>)
-  await expect(screen.container).toMatchScreenshot('button-loading')
+  rerender(
+    <Button loading>
+      Loading
+    </Button>,
+  )
+  await expect(screen.container).toMatchScreenshot("button-loading")
 })
 ```
 
 #### Responsive Layouts
 
 ```typescript
-test('responsive navigation', async () => {
+test("responsive navigation", async () => {
   render(<Navigation />)
 
   // Desktop view
   await page.viewport(1920, 1080)
-  await expect(screen.container).toMatchScreenshot('nav-desktop')
+  await expect(screen.container).toMatchScreenshot("nav-desktop")
 
   // Tablet view
   await page.viewport(768, 1024)
-  await expect(screen.container).toMatchScreenshot('nav-tablet')
+  await expect(screen.container).toMatchScreenshot("nav-tablet")
 
   // Mobile view
   await page.viewport(375, 667)
-  await expect(screen.container).toMatchScreenshot('nav-mobile')
+  await expect(screen.container).toMatchScreenshot("nav-mobile")
 })
 ```
 
@@ -370,9 +381,9 @@ export default defineConfig({
       provider: playwright(),
       headless: true,
       instances: [
-        { browser: 'chromium', viewport: { width: 1280, height: 720 } },
-        { browser: 'firefox', viewport: { width: 1280, height: 720 } },
-        { browser: 'webkit', viewport: { width: 1280, height: 720 } },
+        { browser: "chromium", viewport: { width: 1280, height: 720 } },
+        { browser: "firefox", viewport: { width: 1280, height: 720 } },
+        { browser: "webkit", viewport: { width: 1280, height: 720 } },
       ],
     },
   },
@@ -387,15 +398,15 @@ export default defineConfig({
 
 ```typescript
 // ❌ Bad - Testing implementation
-test('sets loading state', async () => {
+test("sets loading state", async () => {
   const { component } = render(<UserProfile />)
   expect(component.state.loading).toBe(true)
 })
 
 // ✅ Good - Testing behavior
-test('shows loading indicator', async () => {
+test("shows loading indicator", async () => {
   render(<UserProfile />)
-  await expect.element(page.getByText('Loading...')).toBeVisible()
+  await expect.element(page.getByText("Loading...")).toBeVisible()
 })
 ```
 
@@ -403,29 +414,29 @@ test('shows loading indicator', async () => {
 
 ```typescript
 // ❌ Bad - Fragile selectors
-const button = page.getByClass('btn-primary')
+const button = page.getByClass("btn-primary")
 
 // ✅ Good - Semantic queries
-const button = page.getByRole('button', { name: /submit/i })
+const button = page.getByRole("button", { name: /submit/i })
 ```
 
 ### 3. Test User Workflows
 
 ```typescript
 // ✅ Good - Complete user flow
-test('user can create and edit todo', async () => {
+test("user can create and edit todo", async () => {
   render(<TodoApp />)
 
   // Create
-  await page.getByPlaceholder(/new todo/i).fill('Buy milk')
-  await page.getByRole('button', { name: /add/i }).click()
-  await expect.element(page.getByText('Buy milk')).toBeVisible()
+  await page.getByPlaceholder(/new todo/i).fill("Buy milk")
+  await page.getByRole("button", { name: /add/i }).click()
+  await expect.element(page.getByText("Buy milk")).toBeVisible()
 
   // Edit
-  await page.getByRole('button', { name: /edit/i }).click()
-  await page.getByPlaceholder(/edit todo/i).fill('Buy almond milk')
-  await page.getByRole('button', { name: /save/i }).click()
-  await expect.element(page.getByText('Buy almond milk')).toBeVisible()
+  await page.getByRole("button", { name: /edit/i }).click()
+  await page.getByPlaceholder(/edit todo/i).fill("Buy almond milk")
+  await page.getByRole("button", { name: /save/i }).click()
+  await expect.element(page.getByText("Buy almond milk")).toBeVisible()
 })
 ```
 
@@ -433,11 +444,11 @@ test('user can create and edit todo', async () => {
 
 ```typescript
 // ✅ Good - Each test is independent
-test('displays user profile', async () => {
+test("displays user profile", async () => {
   const testUser = {
-    id: '123',
-    name: 'Test User',
-    email: 'test@example.com'
+    id: "123",
+    name: "Test User",
+    email: "test@example.com",
   }
 
   render(<UserProfile user={testUser} />)
@@ -449,16 +460,16 @@ test('displays user profile', async () => {
 
 ```typescript
 // ❌ Bad - No waiting
-test('loads data', async () => {
+test("loads data", async () => {
   render(<DataTable />)
-  expect(page.getByText('Data loaded')).toBeVisible()
+  expect(page.getByText("Data loaded")).toBeVisible()
 })
 
 // ✅ Good - Wait for async operations
-test('loads data', async () => {
+test("loads data", async () => {
   render(<DataTable />)
   // expect.element auto-retries until element appears
-  await expect.element(page.getByText('Data loaded')).toBeVisible()
+  await expect.element(page.getByText("Data loaded")).toBeVisible()
 })
 ```
 
@@ -524,7 +535,7 @@ jobs:
 ### Using Browser DevTools
 
 ```typescript
-test('debug with devtools', async () => {
+test("debug with devtools", async () => {
   render(<ComplexComponent />)
 
   // Tests pause here, browser stays open
@@ -537,25 +548,25 @@ test('debug with devtools', async () => {
 ### Logging During Tests
 
 ```typescript
-test('debug with logs', async () => {
+test("debug with logs", async () => {
   render(<Component />)
 
-  const element = page.getByRole('button')
-  console.log('Element count:', element.length)
-  console.log('Element text:', await element.textContent())
+  const element = page.getByRole("button")
+  console.log("Element count:", element.length)
+  console.log("Element text:", await element.textContent())
 })
 ```
 
 ### Screenshot on Failure
 
 ```typescript
-test('captures failure screenshot', async () => {
+test("captures failure screenshot", async () => {
   render(<Component />)
 
   try {
-    await expect.element(page.getByText('Missing')).toBeVisible()
+    await expect.element(page.getByText("Missing")).toBeVisible()
   } catch (error) {
-    await page.screenshot({ path: 'failure.png' })
+    await page.screenshot({ path: "failure.png" })
     throw error
   }
 })

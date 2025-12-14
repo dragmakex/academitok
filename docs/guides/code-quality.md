@@ -34,6 +34,7 @@ graph TB
 ```
 
 This guide covers:
+
 - ESLint configuration with Effect-specific rules
 - Custom local ESLint rules for Effect patterns
 - Prettier configuration
@@ -49,6 +50,7 @@ This guide covers:
 ### 1. ESLint
 
 ESLint enforces code quality and consistency with:
+
 - Standard TypeScript rules
 - Effect-specific patterns from `@effect/eslint-plugin`
 - Custom local rules for Effect.gen patterns
@@ -57,6 +59,7 @@ ESLint enforces code quality and consistency with:
 ### 2. Prettier
 
 Prettier handles basic code formatting:
+
 - No semicolons
 - 120 character line width
 - No trailing commas
@@ -64,6 +67,7 @@ Prettier handles basic code formatting:
 ### 3. Dprint
 
 Dprint provides advanced formatting:
+
 - Effect-integrated via `@effect/dprint`
 - TypeScript, JSON, Markdown, SQL, TOML, CSS
 - Consistent 80-character line width
@@ -72,6 +76,7 @@ Dprint provides advanced formatting:
 ### 4. TypeScript
 
 TypeScript ensures type safety:
+
 - Strict mode enabled
 - No implicit any
 - Consistent type imports
@@ -221,7 +226,7 @@ Prevents try-catch blocks inside Effect.gen:
 
 ```typescript
 // ❌ Bad - try-catch in Effect.gen
-const program = Effect.gen(function* () {
+const program = Effect.gen(function*() {
   try {
     const result = yield* someEffect
   } catch (error) {
@@ -230,7 +235,7 @@ const program = Effect.gen(function* () {
 })
 
 // ✅ Good - use Effect error handling
-const program = Effect.gen(function* () {
+const program = Effect.gen(function*() {
   const result = yield* Effect.tryPromise(() => someAsyncOperation())
 })
 ```
@@ -255,14 +260,14 @@ Requires `return yield*` pattern for terminal effects:
 
 ```typescript
 // ❌ Bad - missing return
-const program = Effect.gen(function* () {
+const program = Effect.gen(function*() {
   if (condition) {
     yield* Effect.fail(new Error("Failed"))
   }
 })
 
 // ✅ Good - return yield* for terminal effects
-const program = Effect.gen(function* () {
+const program = Effect.gen(function*() {
   if (condition) {
     return yield* Effect.fail(new Error("Failed"))
   }
@@ -275,12 +280,12 @@ Prevents Effect.runSync inside Effect.gen:
 
 ```typescript
 // ❌ Bad - runSync inside generator
-const program = Effect.gen(function* () {
+const program = Effect.gen(function*() {
   const result = Effect.runSync(otherEffect) // ERROR
 })
 
 // ✅ Good - use yield*
-const program = Effect.gen(function* () {
+const program = Effect.gen(function*() {
   const result = yield* otherEffect
 })
 ```
@@ -535,7 +540,7 @@ jobs:
 
 ```typescript
 // ✅ Good - proper Effect.gen usage
-const program = Effect.gen(function* () {
+const program = Effect.gen(function*() {
   // Use yield* for effects
   const user = yield* fetchUser(id)
 
@@ -567,10 +572,8 @@ interface User {
 }
 
 const fetchUser = (id: number): Effect.Effect<User, FetchError> =>
-  Effect.gen(function* () {
-    const response = yield* Effect.tryPromise(() =>
-      fetch(`/api/users/${id}`)
-    )
+  Effect.gen(function*() {
+    const response = yield* Effect.tryPromise(() => fetch(`/api/users/${id}`))
     const user: User = yield* Effect.tryPromise(() => response.json())
     return user
   })
@@ -580,9 +583,9 @@ const fetchUser = (id: number): Effect.Effect<User, FetchError> =>
 
 ```typescript
 // ✅ Good - organized imports
-import type { User } from "./types"
 import { Effect, Layer } from "effect"
 import { fetchUser } from "./api"
+import type { User } from "./types"
 ```
 
 ---
@@ -604,6 +607,7 @@ DEBUG=eslint:* bun run lint
 The configs are designed to work together. Prettier handles formatting, ESLint handles code quality.
 
 If conflicts occur:
+
 1. Run Prettier first: `bun run format`
 2. Then run ESLint: `bun run lint:fix`
 
@@ -622,7 +626,7 @@ To disable a custom rule temporarily:
 
 ```typescript
 /* eslint-disable local-advanced/no-try-catch-in-effect-gen */
-const program = Effect.gen(function* () {
+const program = Effect.gen(function*() {
   try {
     // ...
   } catch (e) {
