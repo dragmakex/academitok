@@ -59,6 +59,45 @@ const config = defineConfig({
         },
       },
     },
+    // Coverage configuration - 100% coverage required (German precision engineering)
+    coverage: {
+      provider: "istanbul",
+      reporter: ["text", "html", "json-summary", "json"],
+
+      // 100% coverage thresholds - NO EXCEPTIONS
+      thresholds: {
+        lines: 100,
+        functions: 100,
+        branches: 100,
+        statements: 100,
+      },
+
+      // Files to include in coverage analysis
+      include: ["src/**/*.{ts,tsx}"],
+
+      // Files to exclude from coverage requirements
+      exclude: [
+        "src/**/*.test.{ts,tsx}", // Test files
+        "src/**/*.spec.{ts,tsx}", // Spec files
+        "src/visual/**", // Visual regression tests
+        "src/routeTree.gen.ts", // Generated route tree
+        "**/*.d.ts", // Type definitions
+        "**/__tests__/**", // Test directories
+        "**/node_modules/**", // Dependencies
+      ],
+
+      // Enforce coverage for all files, not just tested ones
+      all: true,
+
+      // Don't skip files with 100% coverage in reports
+      skipFull: false,
+
+      // Clean coverage directory before running
+      clean: true,
+
+      // Output directory for coverage reports
+      reportsDirectory: "./coverage",
+    },
   },
   server: {
     watch: {

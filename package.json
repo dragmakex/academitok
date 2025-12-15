@@ -12,6 +12,8 @@
     "test:visual": "vitest run src/visual/*.test.tsx",
     "test:visual:update": "vitest run src/visual/*.test.tsx --update",
     "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "test:coverage:ui": "vitest run --coverage --ui",
     "typecheck": "tsc --noEmit",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
@@ -22,7 +24,7 @@
     "perf:check": "bun run build && bun run size",
     "prepare": "effect-language-service patch",
     "postinstall": "bash scripts/install-git-hooks.sh",
-    "validate": "bun run typecheck && bun run lint && bun run format:check && bun run test && bun run perf:check"
+    "validate": "bun run typecheck && bun run lint && bun run format:check && bun run test:coverage && bun run perf:check"
   },
   "dependencies": {
     "@effect-atom/atom": "^0.4.8",
@@ -72,6 +74,8 @@
     "@vitejs/plugin-react": "^5.0.4",
     "@vitest/browser": "^4.0.15",
     "@vitest/browser-playwright": "^4.0.15",
+    "@vitest/coverage-istanbul": "^4.0.15",
+    "@vitest/coverage-v8": "^4.0.15",
     "dprint": "^0.47.2",
     "eslint": "^9.17.0",
     "eslint-import-resolver-typescript": "^3.7.0",

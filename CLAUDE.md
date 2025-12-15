@@ -156,20 +156,31 @@ This is a **TanStack Start** full-stack application built with **Effect-TS**, **
 
 7. **VERIFY - All Must Pass**
    ```bash
-   bun run typecheck  # TypeScript must be clean - ZERO errors
-   bun run lint       # ESLint must pass - fix, don't disable
-   bun run test       # All tests must pass - fix failures
-   bun run build      # Build must succeed - verify production readiness
+   bun run typecheck      # TypeScript must be clean - ZERO errors
+   bun run lint           # ESLint must pass - fix, don't disable
+   bun run test:coverage  # All tests pass + 100% coverage - NO EXCEPTIONS
+   bun run build          # Build must succeed - verify production readiness
    ```
+
+   **Coverage Requirements (German Precision - 100%):**
+   - ✅ 100% line coverage
+   - ✅ 100% function coverage
+   - ✅ 100% branch coverage
+   - ✅ 100% statement coverage
+   - ❌ No exceptions - every line must be tested
+   - ❌ No skipping coverage checks
+   - 📊 View coverage report: `bun run test:coverage:ui`
 
    **IF ANY FAIL**: Fix them. Do not proceed. Do not ask for permission to skip.
 
 8. **Run Full Validation**
    ```bash
-   bun run validate   # Runs: typecheck + lint + format + test + perf
+   bun run validate   # Runs: typecheck + lint + format + test:coverage + perf
    ```
 
    This is your **definition of done**. If this fails, you're not done.
+
+   **Note**: `validate` now includes coverage enforcement - 100% required.
 
 ### Documentation Requirements
 
@@ -469,9 +480,10 @@ bun run validate         # typecheck + lint + format + test + perf
 
 - [ ] `bun run typecheck` - passes ✓
 - [ ] `bun run lint` - passes ✓
-- [ ] `bun run test` - passes ✓
+- [ ] `bun run test:coverage` - passes with 100% coverage ✓
 - [ ] `bun run build` - passes ✓
-- [ ] `bun run validate` - passes ✓
+- [ ] `bun run validate` - passes (includes coverage) ✓
+- [ ] 100% test coverage achieved (lines, functions, branches, statements)
 - [ ] Created/updated documentation in `docs/app/`
 - [ ] Added Mermaid diagrams where appropriate
 - [ ] Step-wise commits tell a clear story
