@@ -1,4 +1,5 @@
 import { expect, it } from "@effect/vitest"
+import * as EffectArray from "effect/Array"
 import * as Effect from "effect/Effect"
 import * as Stream from "effect/Stream"
 import { addRpcErrorLogging } from "./api-client"
@@ -69,7 +70,7 @@ it.effect("addRpcErrorLogging - handles Stream functions", () =>
 
     // Run the stream and verify the value
     const values = yield* Stream.runCollect(result)
-    expect(Array.from(values)).toEqual(["stream-value"])
+    expect(EffectArray.fromIterable(values)).toEqual(["stream-value"])
   }))
 
 it.effect("addRpcErrorLogging - logs errors on Stream failure", () =>

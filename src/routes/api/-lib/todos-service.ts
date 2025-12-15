@@ -5,6 +5,7 @@ import type {
   UpdateTodoInput,
 } from "@/api/todo-schema"
 import { TodoNotFound } from "@/api/todo-schema"
+import * as EffectArray from "effect/Array"
 import * as DateTime from "effect/DateTime"
 import * as Effect from "effect/Effect"
 import * as Option from "effect/Option"
@@ -23,7 +24,7 @@ export class TodosService extends Effect.Service<TodosService>()(
 
       const list = Effect.gen(function*() {
         const todos = yield* Ref.get(todosRef)
-        return Array.from(todos.values())
+        return EffectArray.fromIterable(todos.values())
       })
 
       const getById = (id: TodoId) =>

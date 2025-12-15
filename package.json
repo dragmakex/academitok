@@ -19,12 +19,13 @@
     "lint:fix": "eslint . --fix",
     "format": "dprint fmt",
     "format:check": "dprint check",
+    "docs:check": "bun run scripts/check-docs-quality.ts",
     "analyze": "vite build --mode analyze",
     "size": "bun run scripts/check-bundle-size.ts",
     "perf:check": "bun run build && bun run size",
     "prepare": "effect-language-service patch",
     "postinstall": "bash scripts/install-git-hooks.sh",
-    "validate": "bun run typecheck && bun run lint && bun run format:check && bun run test:coverage && bun run perf:check"
+    "validate": "bun run typecheck && bun run lint && bun run format:check && bun run docs:check && bun run test:coverage && bun run perf:check"
   },
   "dependencies": {
     "@effect-atom/atom": "^0.4.8",

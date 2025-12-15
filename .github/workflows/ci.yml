@@ -57,7 +57,28 @@ jobs:
       - name: Check formatting (Dprint)
         run: bun run format:check
 
-  # Job 3: Build
+  # Job 3: Documentation Quality
+  docs:
+    name: Documentation Quality
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Check documentation quality
+        run: bun run docs:check
+
+  # Job 4: Build
   build:
     name: Build
     runs-on: ubuntu-latest
@@ -85,7 +106,7 @@ jobs:
           path: .output
           retention-days: 7
 
-  # Job 4: Unit Tests
+  # Job 5: Unit Tests
   test-unit:
     name: Unit Tests
     runs-on: ubuntu-latest
@@ -106,7 +127,7 @@ jobs:
       - name: Run unit tests
         run: bun run test:unit
 
-  # Job 5: Component Tests
+  # Job 6: Component Tests
   test-component:
     name: Component Tests (Multi-Browser)
     runs-on: ubuntu-latest

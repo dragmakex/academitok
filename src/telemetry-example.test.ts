@@ -9,17 +9,17 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 
 // Mock all external dependencies before importing the module
 vi.mock("effect/Effect", async (importOriginal) => {
-  const original = await importOriginal<typeof import("effect/Effect")>()
+  const original = await importOriginal()
   return {
-    ...original,
+    ...(original as object),
     runPromise: vi.fn().mockResolvedValue(undefined),
   }
 })
 
 vi.mock("effect/Layer", async (importOriginal) => {
-  const original = await importOriginal<typeof import("effect/Layer")>()
+  const original = await importOriginal()
   return {
-    ...original,
+    ...(original as object),
   }
 })
 

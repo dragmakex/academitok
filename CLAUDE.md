@@ -175,12 +175,18 @@ This is a **TanStack Start** full-stack application built with **Effect-TS**, **
 
 8. **Run Full Validation**
    ```bash
-   bun run validate   # Runs: typecheck + lint + format + test:coverage + perf
+   bun run validate   # Runs: typecheck + lint + format + docs + coverage + perf
    ```
 
    This is your **definition of done**. If this fails, you're not done.
 
-   **Note**: `validate` now includes coverage enforcement - 100% required.
+   **Validation includes:**
+   - ✅ TypeScript type checking (zero errors)
+   - ✅ ESLint + TSDoc completeness
+   - ✅ Code formatting (dprint)
+   - ✅ Documentation quality (structure, diagrams, implementation match)
+   - ✅ Test coverage (100% required)
+   - ✅ Performance (bundle size)
 
 ### Documentation Requirements
 
@@ -223,10 +229,32 @@ This is a **TanStack Start** full-stack application built with **Effect-TS**, **
    ```
    ````
 
+   **TSDoc Requirements (Enforced by ESLint):**
+   - ✅ All exported functions must have TSDoc comments
+   - ✅ Include function description (what it does and why)
+   - ✅ Document all `@param` with types and descriptions
+   - ✅ Document `@returns` with type and description
+   - ✅ Add `@example` for non-trivial functions
+   - ✅ Explain `@throws` for error conditions
+   - ❌ No missing documentation - ESLint will fail
+
+   **Documentation Quality Checks:**
+   ```bash
+   bun run docs:check  # Automated documentation quality verification
+   ```
+
+   This checks:
+   - ✅ `docs/app/` structure is maintained
+   - ✅ Required files exist (README.md, architecture.md, etc.)
+   - ✅ Mermaid diagrams are present
+   - ✅ Documentation matches implementation
+   - ✅ TSDoc completeness (via ESLint)
+
    **See existing docs** for examples:
    - `docs/architecture/overview.md` - High-level architecture with Mermaid
    - `docs/guides/testing.md` - Testing patterns and practices
    - `docs/guides/code-quality.md` - Quality standards
+   - `docs/app/README.md` - Feature documentation standards
 
 ### Pull Request & Merge
 
@@ -479,13 +507,16 @@ bun run validate         # typecheck + lint + format + test + perf
 ### After Implementation
 
 - [ ] `bun run typecheck` - passes ✓
-- [ ] `bun run lint` - passes ✓
+- [ ] `bun run lint` - passes (includes TSDoc checks) ✓
+- [ ] `bun run docs:check` - documentation quality verified ✓
 - [ ] `bun run test:coverage` - passes with 100% coverage ✓
 - [ ] `bun run build` - passes ✓
-- [ ] `bun run validate` - passes (includes coverage) ✓
+- [ ] `bun run validate` - full validation passes ✓
 - [ ] 100% test coverage achieved (lines, functions, branches, statements)
+- [ ] All functions have complete TSDoc (description, @param, @returns)
 - [ ] Created/updated documentation in `docs/app/`
-- [ ] Added Mermaid diagrams where appropriate
+- [ ] Added Mermaid diagrams for architecture/flows
+- [ ] Documentation matches actual implementation
 - [ ] Step-wise commits tell a clear story
 - [ ] Pull request created with detailed description
 - [ ] Ready for merge via PR (merge commit, not squash)

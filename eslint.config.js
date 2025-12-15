@@ -113,11 +113,13 @@ export default [
       "jsdoc/require-param": "error",
       "jsdoc/require-param-description": "error",
       "jsdoc/require-param-name": "error",
-      "jsdoc/require-param-type": "warn",
+      // TypeScript provides types - JSDoc types are redundant
+      "jsdoc/require-param-type": "off",
       "jsdoc/require-returns": "error",
       "jsdoc/require-returns-check": "error",
       "jsdoc/require-returns-description": "error",
-      "jsdoc/require-returns-type": "warn",
+      // TypeScript provides types - JSDoc types are redundant
+      "jsdoc/require-returns-type": "off",
 
       "no-fallthrough": "off",
       "no-irregular-whitespace": "off",
