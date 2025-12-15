@@ -1,505 +1,566 @@
 # Contributing Guide
 
-Welcome to the Effect TanStack Start project! This guide will help you understand the project structure, development workflow, and how to contribute effectively.
+Welcome! This project follows **German precision engineering standards**. Every contribution must meet rigorous quality requirements before it can be merged.
 
-## Table of Contents
+## 🇩🇪 Engineering Philosophy
 
-- [Getting Started](#getting-started)
-- [Project Architecture](#project-architecture)
-- [Development Workflow](#development-workflow)
-- [Testing](#testing)
-- [Observability](#observability)
-- [Code Style](#code-style)
-- [Pull Request Process](#pull-request-process)
-- [Documentation](#documentation)
+This project embodies:
 
----
+- **Root cause fixes** - Never patch symptoms
+- **Minimal dependencies** - Each dependency is a liability
+- **Long-term thinking** - Code maintainable in 5 years
+- **High efficiency** - Every line justified
+- **Precision & thoroughness** - 100% test coverage, complete documentation
 
-## Getting Started
-
-### Quick Setup
-
-```bash
-# Clone and install
-git clone <repository-url>
-cd effect-tanstack-start
-bun install
-
-# Install test dependencies
-bunx playwright install --with-deps
-
-# Copy environment template
-cp .env.example .env
-
-# Start development
-bun run dev
-```
-
-📚 **Detailed Guide:** [Getting Started](./docs/guides/getting-started.md)
-
-### Docker Setup (Recommended for Full Stack)
-
-```bash
-# Generate secrets
-openssl rand -hex 32  # For SENTRY_SECRET_KEY
-openssl rand -hex 32  # For POSTHOG_SECRET_KEY
-
-# Configure
-cp .env.docker .env
-# Edit .env with generated secrets
-
-# Start everything
-docker-compose up
-```
-
-📚 **Detailed Guide:** [Docker Setup](./DOCKER_SETUP.md)
+**Quality is not optional. It is the baseline.**
 
 ---
 
-## Project Architecture
+## 📋 Required Verification (Definition of Done)
 
-### High-Level Overview
+Every contribution MUST pass ALL these verifications:
 
-```mermaid
-graph TB
-    subgraph "Frontend"
-        UI[React 19 + TanStack Router]
-        State[@effect-atom]
-    end
-
-    subgraph "Backend"
-        Server[Nitro + Bun]
-        Effect[Effect-TS Runtime]
-    end
-
-    subgraph "Observability"
-        Monitoring[Grafana Stack]
-        Errors[Sentry]
-        Analytics[PostHog]
-    end
-
-    UI <--> Server
-    UI --> State
-    Server --> Effect
-
-    UI --> Analytics
-    UI --> Errors
-    Server --> Monitoring
-    Server --> Analytics
-    Server --> Errors
-```
-
-### Technology Stack
-
-| Layer               | Technologies                                            |
-| ------------------- | ------------------------------------------------------- |
-| **Frontend**        | React 19, TanStack Router, @effect-atom, Tailwind CSS 4 |
-| **Backend**         | Bun, Nitro, Effect-TS, @effect/rpc                      |
-| **Testing**         | Vitest 4, @effect/vitest, Playwright                    |
-| **Monitoring**      | Grafana, Loki, Tempo, Prometheus                        |
-| **Error Tracking**  | Sentry (self-hosted)                                    |
-| **Analytics**       | PostHog (self-hosted)                                   |
-| **Runtime**         | Bun                                                     |
-| **Package Manager** | Bun                                                     |
-
-📚 **Detailed Guide:** [Architecture Overview](./docs/architecture/overview.md)
-
----
-
-## Development Workflow
-
-### 1. Create a Feature Branch
-
-```bash
-git checkout -b feature/your-feature-name
-```
-
-### 2. Make Changes
-
-Edit code with hot reload:
-
-```bash
-bun run dev
-# App runs on http://localhost:3000
-# Changes auto-reload
-```
-
-### 3. Write Tests
-
-```bash
-# Unit tests (Effect-based)
-touch src/features/my-feature.test.ts
-
-# Component tests
-touch src/component/MyComponent.test.tsx
-
-# Visual regression tests
-touch src/visual/MyComponent.visual.test.tsx
-```
-
-📚 **Testing Guide:** [Complete Testing Documentation](./docs/guides/testing.md)
-
-### 4. Run Tests Locally
-
-```bash
-# Run all tests
-bun run test
-
-# Run specific test suites
-bun run test:unit        # Effect-based tests
-bun run test:component   # Component tests
-bun run test:visual      # Visual regression
-
-# Watch mode
-bun run test:watch
-```
-
-### 5. Type Check
+### 1. TypeScript Type Checking ✓
 
 ```bash
 bun run typecheck
 ```
 
-### 6. Commit Changes
+**Requirements:**
+
+- ✅ Zero TypeScript errors
+- ✅ Strict mode enabled
+- ✅ No `any` types without justification
+- ✅ No `as` casts without justification
+- ✅ Effect Language Service diagnostics pass
+
+**Configuration:** `tsconfig.json`
+
+**What it checks:**
+
+- Type correctness
+- Effect pipeline errors
+- Service requirement validation
+- Import/export issues
+
+---
+
+### 2. Code Linting (ESLint + TSDoc) ✓
 
 ```bash
-git add .
-git commit -m "feat: add new feature"
+bun run lint
 ```
 
-**Commit Message Format:**
+**Requirements:**
 
-```
-type(scope): subject
+- ✅ Zero ESLint errors
+- ✅ All warnings addressed
+- ✅ TSDoc completeness (all exported functions)
+- ✅ Import organization
+- ✅ Effect-specific patterns
 
-body
+**TSDoc Standards:**
 
-footer
-```
+````typescript
+/**
+ * Brief description of what the function does and why it exists
+ *
+ * @param paramName - Description of the parameter
+ * @param anotherParam - Description with details
+ * @returns Description of what is returned
+ * @throws {ErrorType} When this error occurs
+ * @example
+ * ```ts
+ * const result = functionName("input")
+ * // result === expected output
+ * ```
+ */
+export function functionName(
+  paramName: string,
+  anotherParam: number,
+): Result {
+  // Implementation
+}
+````
 
-**Types:** `feat`, `fix`, `docs`, `style`, `refactor`, `test`, `chore`
+**Required for all exported:**
 
-**Examples:**
-
-```
-feat(auth): add login with PostHog tracking
-fix(ui): correct button alignment on mobile
-docs(readme): update setup instructions
-test(api): add tests for user endpoints
-```
+- Functions
+- Classes
+- Types (complex ones)
+- Constants (non-obvious)
 
 ---
 
-## Testing
+### 3. Code Formatting ✓
 
-### Test Types and When to Use Them
+```bash
+bun run format:check  # Check formatting
+bun run format        # Auto-fix formatting
+```
 
+**Requirements:**
+
+- ✅ Consistent formatting (dprint)
+- ✅ No manual formatting needed
+- ✅ Automatic via pre-commit hooks
+
+---
+
+### 4. Documentation Quality ✓
+
+```bash
+bun run docs:check
+```
+
+**Requirements:**
+
+- ✅ TSDoc for all exported functions
+- ✅ Feature documentation in `docs/app/[feature-name]/`
+- ✅ Mermaid diagrams for architecture
+- ✅ Implementation matches documentation
+
+**Documentation Structure:**
+
+```
+docs/app/[feature-name]/
+├── README.md           # ✅ Required - Overview, purpose, usage
+├── architecture.md     # ⚠️  Recommended - Design decisions, trade-offs
+├── implementation.md   # ⚠️  Recommended - Technical details, key files
+└── diagrams/           # ⚠️  Recommended - Mermaid diagrams
+    ├── flow.md        #     Sequence/flow diagrams
+    └── structure.md   #     Component/module diagrams
+```
+
+**README.md Must Include:**
+
+- Feature overview (what and why)
+- Usage examples with code
+- Key decisions documented
+- Integration points
+- Testing notes
+
+**Mermaid Diagram Example:**
+
+````markdown
 ```mermaid
-graph TD
-    Question{What are you testing?}
-    Question -->|Business Logic| Unit[Effect-Based Unit Tests]
-    Question -->|User Interaction| Component[Component Tests]
-    Question -->|Visual Appearance| Visual[Visual Regression Tests]
+sequenceDiagram
+    participant Client
+    participant API
+    participant Service
+    participant Database
 
-    Unit --> Location1[src/*.test.ts]
-    Component --> Location2[src/component/*.test.tsx]
-    Visual --> Location3[src/visual/*.test.tsx]
+    Client->>API: Request
+    API->>Service: Process
+    Service->>Database: Query
+    Database-->>Service: Result
+    Service-->>API: Response
+    API-->>Client: Data
 ```
-
-### Writing Tests
-
-#### Effect-Based Unit Test
-
-```typescript
-import { expect, it } from "@effect/vitest"
-import { Effect } from "effect"
-
-it.effect("calculates total correctly", () =>
-  Effect.gen(function*() {
-    const result = yield* calculateTotal([10, 20, 30])
-    expect(result).toBe(60)
-  }))
-```
-
-#### Component Test
-
-```typescript
-import { expect, test } from "vitest"
-import { render } from "vitest-browser-react"
-import { page } from "vitest/browser"
-
-test("button click updates counter", async () => {
-  render(<Counter />)
-
-  const button = page.getByRole("button", { name: /increment/i })
-  await button.click()
-
-  await expect.element(page.getByText("Count: 1")).toBeVisible()
-})
-```
-
-#### Visual Regression Test
-
-```typescript
-import { expect, test } from "vitest"
-import { render } from "vitest-browser-react"
-
-test("card component visual", async () => {
-  const screen = render(<Card title="Test" />)
-  await expect(screen.container).toMatchScreenshot("card-default")
-})
-```
-
-📚 **Complete Guide:** [Testing Documentation](./docs/guides/testing.md)
+````
 
 ---
 
-## Observability
+### 5. Test Coverage (100%) ✓
 
-### Adding Telemetry to Your Code
+```bash
+bun run test:coverage        # Run with coverage
+bun run test:coverage:ui     # View HTML report
+```
 
-#### Server-Side Tracing
+**Requirements:**
+
+- ✅ 100% line coverage
+- ✅ 100% function coverage
+- ✅ 90-100% branch coverage
+- ✅ 100% statement coverage
+- ✅ All tests passing
+- ❌ No skipped tests
+- ❌ No commented-out tests
+
+**Test Types:**
+
+- **Unit tests** (`*.test.ts`) - Functions, utilities, services
+- **Component tests** (`*.test.tsx`) - React components, hooks
+- **Visual tests** (`src/visual/*.test.tsx`) - Visual regression
+- **Integration tests** - API endpoints, full flows
+
+**Test Standards:**
 
 ```typescript
 import { Effect } from "effect"
+import { describe, expect, test } from "vitest"
 
-const myOperation = Effect
-  .gen(function*() {
-    yield* Effect.log("Starting operation")
-
-    // Your code here
-
-    yield* Effect.log("Operation completed")
-  })
-  .pipe(
-    Effect.withSpan("myOperation", {
-      attributes: { userId: "123" },
-    }),
-  )
-```
-
-#### Client-Side Analytics
-
-```typescript
-import { trackEvent } from "./lib/posthog-client"
-
-function handleButtonClick() {
-  trackEvent("button_clicked", {
-    button_id: "signup",
-    page: window.location.pathname,
-  })
-
-  // Your code here
-}
-```
-
-#### Error Tracking
-
-```typescript
-import { captureException } from "./lib/telemetry-client"
-
-try {
-  // Your code here
-} catch (error) {
-  captureException(error)
-  throw error
-}
-```
-
-### Viewing Observability Data
-
-| Service     | URL                   | Purpose                     |
-| ----------- | --------------------- | --------------------------- |
-| **Grafana** | http://localhost:3001 | Logs, traces, metrics       |
-| **Sentry**  | http://localhost:9000 | Errors and performance      |
-| **PostHog** | http://localhost:8001 | Analytics and feature flags |
-
-📚 **Complete Guides:**
-
-- [Telemetry Documentation](./docs/guides/telemetry.md)
-- [PostHog Documentation](./docs/guides/posthog.md)
-
----
-
-## Code Style
-
-### TypeScript
-
-- **Use strict mode** - Enable all strict TypeScript options
-- **Prefer Effect** - Use Effect-TS for business logic
-- **Type everything** - No `any` types
-- **Use const** - Prefer `const` over `let`
-
-### React
-
-- **Functional components** - No class components
-- **Hooks** - Use React hooks appropriately
-- **Props** - Define prop types with TypeScript interfaces
-- **Effects** - Use @effect-atom for state management
-
-### Effect-TS
-
-```typescript
-// ✅ Good - Use Effect.gen
-const program = Effect.gen(function*() {
-  const user = yield* fetchUser(id)
-  const posts = yield* fetchPosts(user.id)
-  return { user, posts }
-})
-
-// ❌ Avoid - Nested pipes
-const program = fetchUser(id).pipe(
-  Effect.flatMap(user =>
-    fetchPosts(user.id).pipe(
-      Effect.map(posts => ({ user, posts })),
+/**
+ * Test suite for MyService
+ */
+describe("MyService", () => {
+  /**
+   * Tests the happy path
+   */
+  test("should return expected result on valid input", async () => {
+    const result = await Effect.runPromise(
+      MyService.doSomething("valid"),
     )
-  ),
-)
+
+    expect(result).toEqual(expectedValue)
+  })
+
+  /**
+   * Tests error handling
+   */
+  test("should throw error on invalid input", async () => {
+    await expect(
+      Effect.runPromise(MyService.doSomething("invalid")),
+    )
+      .rejects
+      .toThrow("Expected error message")
+  })
+})
 ```
 
-### Naming Conventions
-
-- **Files** - `kebab-case.ts`, `PascalCase.tsx` for components
-- **Variables** - `camelCase`
-- **Constants** - `UPPER_SNAKE_CASE`
-- **Types/Interfaces** - `PascalCase`
-- **Functions** - `camelCase`, descriptive names
+**Coverage Report Location:** `coverage/index.html`
 
 ---
 
-## Pull Request Process
-
-### 1. Ensure Tests Pass
+### 6. Build Success ✓
 
 ```bash
-bun run test
-bun run typecheck
+bun run build
 ```
 
-### 2. Update Documentation
+**Requirements:**
 
-- Update relevant documentation in `docs/`
-- Add JSDoc comments for public APIs
-- Update README if needed
+- ✅ Production build succeeds
+- ✅ No build errors
+- ✅ Bundle size within limits
+- ✅ All assets generated
 
-### 3. Create Pull Request
+---
 
-**PR Title Format:**
+### 7. Performance (Bundle Size) ✓
 
+```bash
+bun run size         # Check bundle size
+bun run perf:check   # Build + size check
 ```
-type(scope): brief description
+
+**Requirements:**
+
+- ✅ Bundle size within limits
+- ✅ No unexpected size increases
+- ✅ Large dependencies justified
+
+---
+
+### 8. Full Validation (All Checks) ✓
+
+```bash
+bun run validate
 ```
 
-**PR Description Template:**
+**Runs all checks in sequence:**
+
+1. TypeScript type checking
+2. ESLint + TSDoc linting
+3. Code formatting check
+4. Documentation quality
+5. Test coverage (100%)
+6. Production build
+7. Bundle size check
+
+**This is your definition of done.** If `validate` fails, your work is not complete.
+
+---
+
+## 🔄 Git Workflow (Mandatory)
+
+### Always Use Git Worktrees
+
+**NEVER work directly on master.** Use worktrees for ALL development:
+
+```bash
+# 1. Create worktree for your feature
+git worktree add .worktrees/feature-name -b feature/feature-name
+cd .worktrees/feature-name
+
+# 2. Implement changes, commit frequently
+git commit -m "feat: add initial feature structure"
+git commit -m "feat: implement core functionality"
+git commit -m "test: add comprehensive tests"
+git commit -m "docs: document feature in docs/app/"
+
+# 3. Push and create PR
+git push -u origin feature/feature-name
+gh pr create --title "Add feature-name" --body "..."
+
+# 4. After PR merged, cleanup
+cd ../..
+git worktree remove .worktrees/feature-name
+git branch -d feature/feature-name
+```
+
+**Branch Naming:**
+
+- `feature/` - New features
+- `fix/` - Bug fixes
+- `refactor/` - Code refactoring
+- `docs/` - Documentation updates
+
+### Step-wise Commits
+
+**Commit frequently** after each logical unit of work:
+
+✅ **Good commit flow:**
+
+```bash
+git commit -m "feat: add User schema with validation"
+git commit -m "feat: implement JWT token generation"
+git commit -m "test: add user authentication tests"
+git commit -m "docs: document auth flow in docs/app/user-auth/"
+```
+
+❌ **Bad commit flow:**
+
+```bash
+git commit -m "feat: add complete user authentication system"
+# One giant commit with everything
+```
+
+**Each commit should:**
+
+- Have a clear, single purpose
+- Pass all verification checks
+- Follow conventional commits format
+- Tell a story when reviewed
+
+**Conventional Commits:**
+
+- `feat:` - New feature
+- `fix:` - Bug fix
+- `docs:` - Documentation only
+- `test:` - Tests only
+- `refactor:` - Code refactoring
+- `perf:` - Performance improvement
+- `chore:` - Build/tooling changes
+
+---
+
+## 🚀 Pull Request Process
+
+### 1. Before Creating PR
+
+**Checklist:**
+
+- [ ] Created git worktree for feature
+- [ ] Read relevant documentation in `docs/`
+- [ ] Implemented with German precision
+- [ ] Added comprehensive tests (100% coverage)
+- [ ] Added TSDoc to all functions
+- [ ] Created feature documentation
+- [ ] Added Mermaid diagrams
+- [ ] Step-wise commits with clear messages
+- [ ] `bun run validate` passes ✓
+
+### 2. PR Template
 
 ```markdown
-## Description
+## Summary
 
-Brief description of changes
+Brief overview of what and why
 
-## Type of Change
+## Changes
 
-- [ ] Bug fix
-- [ ] New feature
-- [ ] Breaking change
-- [ ] Documentation update
+- List of key changes
+- Reference file paths (src/lib/auth.ts:45)
+- Explain design decisions
 
 ## Testing
 
-- [ ] Unit tests added/updated
-- [ ] Component tests added/updated
-- [ ] Visual tests added/updated
-- [ ] All tests passing
-
-## Checklist
-
-- [ ] Code follows style guidelines
-- [ ] Self-review completed
-- [ ] Documentation updated
-- [ ] No new warnings
-```
-
-### 4. Review Process
-
-- Automated checks must pass
-- At least one approval required
-- Address review feedback
-- Maintain clean commit history
-
-### 5. Merge
-
-- Use "Squash and Merge" for feature branches
-- Delete branch after merge
-
----
+- How it was tested
+- Coverage achieved (100%)
+- Edge cases covered
 
 ## Documentation
 
-### Where to Add Documentation
+- Link to docs/app/[feature]/
+- Mermaid diagrams added
+- TSDoc complete
 
-```
-docs/
-├── architecture/        # System architecture and diagrams
-│   └── overview.md
-├── guides/              # How-to guides
-│   ├── getting-started.md
-│   ├── testing.md
-│   ├── telemetry.md
-│   ├── posthog.md
-│   └── docker.md
-└── diagrams/            # Standalone diagrams (future)
+## Checklist
+
+- [ ] All tests pass
+- [ ] 100% coverage achieved
+- [ ] Documentation complete
+- [ ] `bun run validate` passes
+- [ ] Step-wise commits
 ```
 
-### Documentation Standards
+### 3. PR Requirements
 
-1. **Use Mermaid** - For diagrams and flowcharts
-2. **Code Examples** - Include working code snippets
-3. **Screenshots** - Add screenshots for UI features
-4. **Links** - Cross-reference related documentation
-5. **Keep Updated** - Update docs with code changes
+**Must pass:**
 
-### Adding Diagrams
+- ✅ All CI checks (GitHub Actions)
+- ✅ Code review approved
+- ✅ No merge conflicts
+- ✅ Documentation reviewed
+- ✅ Tests reviewed
 
-Use Mermaid.js syntax:
+**Merge Strategy:**
 
-```mermaid
-graph LR
-    A[Start] --> B{Decision}
-    B -->|Yes| C[Action]
-    B -->|No| D[Alternative]
-    C --> E[End]
-    D --> E
+- Use **merge commits** (not squash, not rebase)
+- Preserve step-wise commit history
+- Commits tell implementation story
+
+---
+
+## 🔍 CI/CD Pipeline
+
+### GitHub Actions Jobs
+
+All PRs run these checks:
+
+**Job 1: Type Check** (10 min timeout)
+
+- TypeScript compilation
+- Effect Language Service diagnostics
+- Zero errors required
+
+**Job 2: Lint** (10 min timeout)
+
+- ESLint validation
+- TSDoc completeness
+- Code formatting check
+
+**Job 3: Documentation Quality** (5 min timeout)
+
+- docs/app/ structure verification
+- Mermaid diagram checks
+- Documentation completeness
+
+**Job 4: Build** (15 min timeout)
+
+- Production build
+- Bundle size check
+- Asset generation
+
+**Job 5: Unit Tests** (10 min timeout)
+
+- Run all unit tests
+- Fast feedback
+
+**Job 6: Component Tests** (20 min timeout)
+
+- Multi-browser testing (Chromium, Firefox, WebKit)
+- Visual regression tests
+- Component tests
+
+**All jobs must pass** before merge is allowed.
+
+---
+
+## 📊 Local Development Workflow
+
+### Quick Reference
+
+```bash
+# Start development server
+bun run dev
+
+# Run checks individually
+bun run typecheck          # Type checking
+bun run lint               # Linting + TSDoc
+bun run lint:fix           # Auto-fix linting
+bun run format             # Format code
+bun run format:check       # Check formatting
+bun run docs:check         # Documentation quality
+bun run test               # Run all tests
+bun run test:coverage      # Tests with coverage
+bun run test:coverage:ui   # View coverage report
+bun run build              # Production build
+bun run size               # Check bundle size
+
+# Full validation (recommended before commit)
+bun run validate           # ALL checks
+```
+
+### Recommended Development Flow
+
+```bash
+# 1. Create worktree
+git worktree add .worktrees/feature-auth -b feature/auth
+cd .worktrees/feature-auth
+
+# 2. Implement feature (TDD approach)
+# Write test → Implement → Verify → Commit
+bun run test:watch        # Watch mode for TDD
+
+# 3. Check frequently during development
+bun run typecheck         # Quick type check
+bun run test:coverage     # Verify coverage
+
+# 4. Before committing
+bun run validate          # Full validation
+
+# 5. Commit (pre-commit hooks run automatically)
+git commit -m "feat: add user authentication"
+
+# 6. Push and create PR
+git push -u origin feature/auth
+gh pr create
 ```
 
 ---
 
-## Project Structure
+## 🚫 Common Mistakes (Avoid These)
 
-```
-effect-tanstack-start/
-├── docs/                          # Documentation
-│   ├── architecture/              # Architecture docs
-│   └── guides/                    # How-to guides
-├── docker/                        # Docker configs
-├── src/
-│   ├── api/                       # API layer
-│   ├── lib/                       # Shared libraries
-│   ├── routes/                    # Pages and API routes
-│   ├── component/                 # Component tests
-│   ├── visual/                    # Visual regression tests
-│   └── *.test.ts                  # Unit tests
-├── Dockerfile                     # Container build
-├── docker-compose.yml             # Service orchestration
-├── CONTRIBUTING.md                # This file
-├── DOCKER_SETUP.md                # Docker guide
-└── TESTING_AND_TELEMETRY.md       # Testing & observability
-```
+### ❌ Anti-Patterns
+
+1. **Working directly on master**
+   - Always use worktrees
+   - Keep master clean and deployable
+
+2. **One giant commit**
+   - Commit frequently after logical units
+   - Step-wise commits for reviewability
+
+3. **Skipping verification**
+   - "It compiles so it's fine" ← Wrong
+   - Run `bun run validate` before pushing
+
+4. **Missing documentation**
+   - "Code is self-documenting" ← Wrong
+   - Add TSDoc + feature docs
+
+5. **Incomplete tests**
+   - "I'll add tests later" ← Wrong
+   - Write tests alongside code
+
+6. **Ignoring linting errors**
+   - "I'll fix it later" ← Wrong
+   - ESLint errors block CI
+
+7. **Patching symptoms**
+   - "This fixes my immediate problem" ← Wrong
+   - Find and fix root cause
+
+8. **Adding unnecessary dependencies**
+   - "This library is cool" ← Wrong
+   - Justify every dependency
+
+9. **Using any/as without justification**
+   - "TypeScript is too hard" ← Wrong
+   - Type everything properly
+
+10. **Squashing commits in PRs**
+    - "Clean history looks better" ← Wrong
+    - Preserve step-wise history
 
 ---
 
-## Need Help?
+## 📚 Additional Resources
 
-### Documentation Resources
+### Project Documentation
 
 - 📚 [Getting Started Guide](./docs/guides/getting-started.md)
 - 🏗️ [Architecture Overview](./docs/architecture/overview.md)
@@ -507,11 +568,32 @@ effect-tanstack-start/
 - 📊 [Telemetry Guide](./docs/guides/telemetry.md)
 - 📈 [PostHog Guide](./docs/guides/posthog.md)
 - 🐳 [Docker Guide](./docs/guides/docker.md)
-- 🗄️ [Database Guide - PostgreSQL](./docs/guides/database-postgresql.md)
-- 💾 [Database Guide - SQLite](./docs/guides/database-sqlite.md)
 - ✨ [Code Quality Guide](./docs/guides/code-quality.md)
-- 🤖 [AI Code Review Guide](./docs/guides/ai-code-review.md)
 - ⚡ [Performance Monitoring](./docs/guides/performance-monitoring.md)
+- 📖 [Feature Documentation Standards](./docs/app/README.md)
+
+### Effect-TS Resources
+
+```bash
+effect-solutions list                    # See all topics
+effect-solutions show services-and-layers
+effect-solutions show data-modeling
+effect-solutions show error-handling
+effect-solutions show testing
+```
+
+### Local Effect Source
+
+```
+~/.local/share/effect-solutions/effect
+```
+
+Grep for real implementation examples:
+
+```bash
+cd ~/.local/share/effect-solutions/effect
+grep -r "Context.Tag" packages/
+```
 
 ### External Resources
 
@@ -520,18 +602,45 @@ effect-tanstack-start/
 - [Vitest](https://vitest.dev)
 - [Bun](https://bun.sh)
 
-### Community
+---
 
-- Open an issue for bugs
-- Start a discussion for questions
-- Submit PRs for improvements
+## 🆘 Getting Help
+
+### Before Asking
+
+1. Check existing documentation (`docs/`)
+2. Search issues on GitHub
+3. Run `effect-solutions show [topic]`
+4. Review similar code in the codebase
+
+### When Asking
+
+Provide:
+
+- What you're trying to accomplish
+- What you've tried
+- Error messages (full output)
+- Relevant code (minimal reproduction)
+- Environment (OS, Bun version, etc.)
 
 ---
 
-## License
+## 📖 Philosophy Reminder
 
-[Your License Here]
+**You are not just writing code. You are maintaining a system.**
+
+Every change you make will be read, debugged, and modified by future maintainers (including future you). Write code and documentation with the precision and thoroughness of a German technical manual.
+
+- **Fix root causes**, not symptoms
+- **Use minimal dependencies** - each one is a liability
+- **Think long-term** - maintainable for 5 years
+- **Be efficient** - every line justified
+- **Be precise** - 100% coverage, complete docs
+
+**Quality is not optional. It is the baseline.**
 
 ---
 
-Thank you for contributing! 🎉
+_When in doubt, ask yourself: "Would this pass a German engineering inspection?" If no, keep working._
+
+🇩🇪 **Präzision. Gründlichkeit. Qualität.**
