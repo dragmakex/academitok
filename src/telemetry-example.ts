@@ -5,7 +5,8 @@
  * Grafana Loki logging, and PostHog analytics in an Effect application.
  */
 
-import { Effect, Layer } from "effect"
+import * as Effect from "effect/Effect"
+import * as Layer from "effect/Layer"
 import { createLokiLoggerLayer } from "./lib/logger-loki"
 import {
   createPostHogLayer,
@@ -20,7 +21,7 @@ import { createSentryTelemetryLayer, initSentry } from "./lib/telemetry-server"
 
 const TELEMETRY_CONFIG = {
   serviceName: "effect-tanstack-start",
-  sentryDsn: process.env.SENTRY_DSN, // Set this in your .env file
+  sentryDsn: process.env.SENTRY_DSN ?? "", // Set this in your .env file
   environment: process.env.NODE_ENV || "development",
 }
 
@@ -231,6 +232,7 @@ Effect
     },
   )
 
+/* eslint-disable jsdoc/check-indentation */
 /**
  * To run this example:
  *

@@ -7,6 +7,7 @@ import * as RpcMiddleware from "@effect/rpc/RpcMiddleware"
 import * as RpcSerialization from "@effect/rpc/RpcSerialization"
 import * as RpcServer from "@effect/rpc/RpcServer"
 import { createFileRoute } from "@tanstack/react-router"
+import type { Cause } from "effect/Cause"
 import * as Effect from "effect/Effect"
 import * as Exit from "effect/Exit"
 import * as Layer from "effect/Layer"
@@ -16,31 +17,84 @@ import { TodosApiLive } from "./-lib/todos-api-live"
 import { TodosRpcLive } from "./-lib/todos-rpc-live"
 import { TodosService } from "./-lib/todos-service"
 
-class RpcLogger extends RpcMiddleware.Tag<RpcLogger>()("RpcLogger", {
+/**
+ * RPC logging middleware - logs errors for failed RPC requests.
+ * Exported for testing.
+ */
+export class RpcLogger extends RpcMiddleware.Tag<RpcLogger>()("RpcLogger", {
   wrap: true,
   optional: true,
 }) {}
-const RpcLoggerLive = Layer.succeed(
-  RpcLogger,
-  RpcLogger.of((opts) =>
-    Effect.flatMap(Effect.exit(opts.next), (exit) =>
-      Exit.match(exit, {
-        onSuccess: () => exit,
-        onFailure: (cause) =>
-          Effect.zipRight(
-            Effect.annotateLogs(
-              Effect.logError(`RPC request failed: ${opts.rpc._tag}`, cause),
-              {
-                "rpc.method": opts.rpc._tag,
-                "rpc.clientId": opts.clientId,
-              },
-            ),
-            exit,
+
+/**
+ * RPC logger handler implementation.
+ * Exported for testing.
+ *
+ * @param opts - The options for the RPC logger handler.
+ * @param opts.next - The next effect to execute.
+ * @param opts.rpc - The RPC request metadata.
+ * @param opts.rpc._tag - The RPC method tag.
+ * @param opts.clientId - The client identifier.
+ * @returns An Effect that yields the Exit result after logging any errors.
+ */
+export const createRpcLoggerHandler = <A, E>(
+  opts: { next: Effect.Effect<A, E>; rpc: { _tag: string }; clientId: string },
+): Effect.Effect<Exit.Exit<A, E>, never, never> =>
+  Effect.flatMap(Effect.exit(opts.next), (exit) =>
+    Exit.match(exit, {
+      onSuccess: () => Effect.succeed(exit),
+      onFailure: (cause: Cause<E>) =>
+        Effect.zipRight(
+          Effect.annotateLogs(
+            Effect.logError(`RPC request failed: ${opts.rpc._tag}`, cause),
+            {
+              "rpc.method": opts.rpc._tag,
+              "rpc.clientId": opts.clientId,
+            },
           ),
-      }))
-  ),
+          Effect.succeed(exit),
+        ),
+    }))
+
+/**
+ * RPC logger middleware handler that wraps the next effect with logging.
+ * Returns the original result or re-raises the error after logging.
+ *
+ * @param opts - The options for the RPC logger middleware.
+ * @param opts.next - The next effect to execute.
+ * @param opts.rpc - The RPC request metadata.
+ * @param opts.rpc._tag - The RPC method tag.
+ * @param opts.clientId - The client identifier.
+ * @returns An Effect that yields the result or fails with the original error.
+ */
+const rpcLoggerMiddleware = <A, E>(
+  opts: { next: Effect.Effect<A, E>; rpc: { _tag: string }; clientId: number },
+): Effect.Effect<A, E, never> =>
+  Effect.flatMap(Effect.exit(opts.next), (exit) =>
+    Exit.match(exit, {
+      onSuccess: (value) => Effect.succeed(value),
+      onFailure: (cause: Cause<E>) =>
+        Effect.zipRight(
+          Effect.annotateLogs(
+            Effect.logError(`RPC request failed: ${opts.rpc._tag}`, cause),
+            {
+              "rpc.method": opts.rpc._tag,
+              "rpc.clientId": String(opts.clientId),
+            },
+          ),
+          Effect.failCause(cause),
+        ),
+    }))
+
+export const RpcLoggerLive = Layer.succeed(
+  RpcLogger,
+  RpcLogger.of(rpcLoggerMiddleware),
 )
-const RpcRouter = RpcServer
+
+/**
+ * Router layers - exported for testing.
+ */
+export const RpcRouter = RpcServer
   .layerHttpRouter({
     group: DomainRpc.middleware(RpcLogger),
     path: "/api/rpc",
@@ -54,18 +108,20 @@ const RpcRouter = RpcServer
     Layer.provide(RpcSerialization.layerNdjson),
   )
 
-const HttpApiRouter = HttpLayerRouter.addHttpApi(DomainApi).pipe(
+export const HttpApiRouter = HttpLayerRouter.addHttpApi(DomainApi).pipe(
   Layer.provide(TodosApiLive),
   Layer.provide(HttpServer.layerContext),
 )
 
-const HealthRoute = HttpLayerRouter.use((router) =>
+export const HealthRoute = HttpLayerRouter.use((router) =>
   router.add("GET", "/api/health", HttpServerResponse.text("OK"))
 )
 
-const AllRoutes = Layer.mergeAll(RpcRouter, HttpApiRouter, HealthRoute).pipe(
-  Layer.provide(Logger.pretty),
-)
+export const AllRoutes = Layer
+  .mergeAll(RpcRouter, HttpApiRouter, HealthRoute)
+  .pipe(
+    Layer.provide(Logger.pretty),
+  )
 
 const memoMap = Effect.runSync(Layer.makeMemoMap)
 
@@ -74,7 +130,7 @@ const globalHmr = globalThis as unknown as {
 }
 if (globalHmr.__EFFECT_DISPOSE__) {
   await globalHmr.__EFFECT_DISPOSE__()
-  globalHmr.__EFFECT_DISPOSE__ = undefined
+  delete globalHmr.__EFFECT_DISPOSE__
 }
 
 const { dispose, handler } = HttpLayerRouter.toWebHandler(AllRoutes, {

@@ -4,7 +4,8 @@
  * This file configures PostHog for server-side event tracking and feature flags.
  */
 
-import { Effect, Layer } from "effect"
+import * as Effect from "effect/Effect"
+import * as Layer from "effect/Layer"
 import { PostHog } from "posthog-node"
 
 /**
@@ -135,10 +136,11 @@ export function identifyServerUser(
   return Effect.gen(function*() {
     const { client } = yield* PostHogService
 
-    client.identify({
-      distinctId,
-      properties,
-    })
+    client.identify(
+      properties
+        ? { distinctId, properties }
+        : { distinctId },
+    )
 
     yield* Effect.log(`Identified user: ${distinctId}`, properties)
   })

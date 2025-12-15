@@ -1,5 +1,5 @@
-import type { LogLevel } from "effect"
-import { Logger } from "effect"
+import * as Logger from "effect/Logger"
+import type * as LogLevel from "effect/LogLevel"
 
 interface LokiConfig {
   endpoint: string

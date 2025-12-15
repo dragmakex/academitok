@@ -61,7 +61,9 @@ export const todosAtom = (() => {
       (get) => get(remoteAtom),
       (ctx, update: TodosCacheUpdate) => {
         const current = ctx.get(todosAtom)
-        if (!Result.isSuccess(current)) {return}
+        if (!Result.isSuccess(current)) {
+          return
+        }
 
         const nextValue = (() => {
           switch (update._tag) {

@@ -5,12 +5,12 @@
  * It can export traces to either Sentry or another backend like Grafana/Tempo via OTLP.
  */
 
-import { NodeSdk } from "@effect/opentelemetry"
+import * as NodeSdk from "@effect/opentelemetry/NodeSdk"
 import { OTLPTraceExporter } from "@opentelemetry/exporter-trace-otlp-http"
 import { BatchSpanProcessor } from "@opentelemetry/sdk-trace-base"
 import * as Sentry from "@sentry/node"
 import { SentrySpanProcessor } from "@sentry/opentelemetry"
-import type { Layer } from "effect"
+import type * as Layer from "effect/Layer"
 
 /**
  * Configuration options for telemetry
