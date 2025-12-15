@@ -45,7 +45,7 @@ describe("telemetry-example", () => {
   beforeEach(() => {
     vi.clearAllMocks()
     // Mock process.exit to prevent test from exiting
-    process.exit = vi.fn() as any
+    process.exit = vi.fn() as unknown as typeof process.exit
     // Set up environment variables
     process.env = {
       ...originalProcessEnv,

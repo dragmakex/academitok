@@ -1,3 +1,4 @@
+import { TodoId } from "@/api/todo-schema"
 import { describe, expect, it, vi } from "vitest"
 
 /**
@@ -51,7 +52,7 @@ describe("atoms", () => {
       const update = {
         _tag: "Upsert" as const,
         todo: {
-          id: "test-id" as any,
+          id: TodoId.make("test-id"),
           title: "Test",
           completed: false,
         },
@@ -63,7 +64,7 @@ describe("atoms", () => {
       // Test that the Delete tag is valid
       const update = {
         _tag: "Delete" as const,
-        id: "test-id" as any,
+        id: TodoId.make("test-id"),
       }
       expect(update._tag).toBe("Delete")
     })

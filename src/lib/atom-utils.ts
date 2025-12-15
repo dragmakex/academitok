@@ -10,18 +10,18 @@ export interface TypedSerializable<A, I> {
 }
 
 export const serializable: {
-  <R extends Atom.Atom<any>, I>(options: {
+  <R extends Atom.Atom<unknown>, I>(options: {
     readonly key: string
     readonly schema: Schema.Schema<Atom.Type<R>, I>
   }): (self: R) => R & TypedSerializable<Atom.Type<R>, I>
-  <R extends Atom.Atom<any>, I>(
+  <R extends Atom.Atom<unknown>, I>(
     self: R,
     options: {
       readonly key: string
       readonly schema: Schema.Schema<Atom.Type<R>, I>
     },
   ): R & TypedSerializable<Atom.Type<R>, I>
-} = Atom.serializable as any
+} = Atom.serializable as typeof serializable
 
 export interface DehydratedAtom {
   readonly "~@effect-atom/atom/DehydratedAtom": true

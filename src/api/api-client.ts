@@ -17,7 +17,7 @@ export const addRpcErrorLogging = <Client>(client: Client): Client => {
   ): u is Stream.Stream<unknown, unknown, unknown> =>
     hasProperty(u, Stream.StreamTypeId)
 
-  const wrapCall = <F extends (...args: Array<any>) => any>(
+  const wrapCall = <F extends (...args: Array<unknown>) => unknown>(
     fn: F,
     path: ReadonlyArray<string>,
   ): F => {
@@ -36,7 +36,7 @@ export const addRpcErrorLogging = <Client>(client: Client): Client => {
       if (isStream(result)) {
         return result.pipe(Stream.tapErrorCause(logCause)) as ReturnType<F>
       }
-      return result
+      return result as ReturnType<F>
     } as F
   }
 

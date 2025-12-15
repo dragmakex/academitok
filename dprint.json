@@ -25,7 +25,8 @@
     "**/*-lock.json",
     "**/package.json",
     "vscode/*.json",
-    "**/.worktrees"
+    "**/.worktrees",
+    "**/*.gen.ts"
   ],
   "plugins": [
     "https://plugins.dprint.dev/typescript-0.94.0.wasm",

@@ -266,7 +266,9 @@ describe("isFeatureFlagEnabled", () => {
   })
 
   it("returns false when flag is null", () => {
-    vi.mocked(posthog.isFeatureEnabled).mockReturnValueOnce(null as any)
+    vi.mocked(posthog.isFeatureEnabled).mockReturnValueOnce(
+      null as unknown as boolean,
+    )
 
     const isEnabled = isFeatureFlagEnabled("test-flag")
 

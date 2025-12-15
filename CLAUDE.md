@@ -98,6 +98,11 @@ This is a **TanStack Start** full-stack application built with **Effect-TS**, **
    git push -u origin feature/user-auth
    gh pr create --title "Add user authentication" --body "..."
 
+   # 3.5. Watch CI and fix any failures
+   ./scripts/ci-watch.sh
+   # Shows spinner progress, then final status with logs on failure
+   # If CI fails: read the logs, fix the issue, commit, push, run again
+
    # 4. After PR merged, cleanup
    cd ../..
    git worktree remove .worktrees/feature-user-auth
@@ -462,6 +467,9 @@ bun run perf:check       # Build + size check
 
 # Full Validation (run before committing)
 bun run validate         # typecheck + lint + format + test + perf
+
+# CI Verification (run after pushing PR)
+./scripts/ci-watch.sh    # Watch GitHub Actions, show logs on failure
 ```
 
 ---

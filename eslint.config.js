@@ -150,9 +150,20 @@ export default [
       }],
 
       "@typescript-eslint/member-delimiter-style": 0,
-      "@typescript-eslint/no-non-null-assertion": "off",
-      "@typescript-eslint/ban-types": "off",
-      "@typescript-eslint/no-explicit-any": "off",
+      "@typescript-eslint/no-non-null-assertion": "error",
+      "@typescript-eslint/no-restricted-types": ["error", {
+        types: {
+          "Object": {
+            message: "Use object or a specific type instead",
+            fixWith: "object",
+          },
+          "{}": { message: "Use object or Record<string, unknown> instead" },
+          "Function": {
+            message: "Use a specific function type like () => void instead",
+          },
+        },
+      }],
+      "@typescript-eslint/no-explicit-any": "error",
       "@typescript-eslint/no-empty-interface": "off",
       "@typescript-eslint/consistent-type-imports": "warn",
 
@@ -161,7 +172,11 @@ export default [
         varsIgnorePattern: "^_",
       }],
 
-      "@typescript-eslint/ban-ts-comment": "off",
+      "@typescript-eslint/ban-ts-comment": ["error", {
+        "ts-expect-error": "allow-with-description",
+        "ts-ignore": true,
+        "ts-nocheck": true,
+      }],
       "@typescript-eslint/camelcase": "off",
       "@typescript-eslint/explicit-function-return-type": "off",
       "@typescript-eslint/explicit-module-boundary-types": "off",

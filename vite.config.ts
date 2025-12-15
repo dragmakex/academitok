@@ -56,6 +56,16 @@ const config = defineConfig({
             threshold: 0.2,
             allowedMismatchedPixelRatio: 0.01,
           },
+          // Platform-agnostic screenshot paths - exclude OS from filename
+          // This ensures screenshots work across macOS (darwin) and Linux CI
+          resolveScreenshotPath: ({
+            arg,
+            browserName,
+            ext,
+            testFileDirectory,
+            testFileName,
+          }) =>
+            `${testFileDirectory}/__screenshots__/${testFileName}/${arg}-${browserName}${ext}`,
         },
       },
     },

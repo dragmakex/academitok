@@ -1,4 +1,4 @@
-import { TodoNotFound } from "@/api/todo-schema"
+import { TodoId, TodoNotFound } from "@/api/todo-schema"
 import { expect, it } from "@effect/vitest"
 import * as Effect from "effect/Effect"
 import * as Exit from "effect/Exit"
@@ -52,7 +52,7 @@ it.effect("getById fails with TodoNotFound for non-existent id", () =>
   Effect
     .gen(function*() {
       const service = yield* TodosService
-      const fakeId = "non-existent-id" as any
+      const fakeId = TodoId.make("non-existent-id")
 
       const result = yield* Effect.exit(service.getById(fakeId))
       expect(Exit.isFailure(result)).toBe(true)
@@ -121,7 +121,7 @@ it.effect("update fails with TodoNotFound for non-existent id", () =>
   Effect
     .gen(function*() {
       const service = yield* TodosService
-      const fakeId = "non-existent" as any
+      const fakeId = TodoId.make("non-existent")
 
       const result = yield* Effect.exit(
         service.update(fakeId, {
@@ -151,7 +151,7 @@ it.effect("remove fails with TodoNotFound for non-existent id", () =>
   Effect
     .gen(function*() {
       const service = yield* TodosService
-      const fakeId = "non-existent" as any
+      const fakeId = TodoId.make("non-existent")
 
       const result = yield* Effect.exit(service.remove(fakeId))
       expect(Exit.isFailure(result)).toBe(true)
