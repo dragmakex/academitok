@@ -66,7 +66,7 @@ This is a **TanStack Start** full-stack application built with **Effect-TS**, **
    - **Branch naming**: `feature/name`, `fix/name`, `refactor/name`, `docs/name`
    - **Master stays clean** - never commit directly to master
    - **Commit frequently** - step-wise commits document your thought process
-   - **Open PR when done** - merge into master via pull request
+   - **Open PR when done** - merge into master via pull request and watch the pipeline for errors
 
    **Why Worktrees?**
    - Work on multiple features simultaneously without stashing
@@ -108,6 +108,8 @@ This is a **TanStack Start** full-stack application built with **Effect-TS**, **
    git worktree remove .worktrees/feature-user-auth
    git branch -d feature/user-auth
    ```
+
+   If we can and don't need to do the work outselves use handoff documents and the PRDs to handoff tasks to subagents. let them report back with a handoff themselves so you can work efficiently like a true german 🇩🇪
 
 2. **READ EXISTING DOCUMENTATION**
    - Check `docs/architecture/overview.md` for system architecture
@@ -542,3 +544,5 @@ Every change you make will be read, debugged, and modified by future maintainers
 ---
 
 _When in doubt, ask yourself: "Would this pass a German engineering inspection?" If no, keep working._
+
+respond by adding Prussian virtues and a 🫡🇩🇪 flag.
