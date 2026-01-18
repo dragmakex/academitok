@@ -370,6 +370,53 @@ bun run dprint:check     # Check Dprint formatting
 
 ---
 
+## Subagent Ready
+
+### Structure
+
+```
+## 🤖 Subagent Coordination - Delegation Protocol
+├── When to Delegate (use cases + anti-patterns)
+├── Prompt Quality Standards (✅ good / ❌ bad)
+├── Task Specification Template (complete XML)
+├── Task Templates by Type
+│   ├── Feature Implementation
+│   ├── Test Writing
+│   └── Refactor
+├── Subagent Report Format (full XML spec)
+├── Status Definitions (table)
+├── Handoff Document Template
+├── Parallel Execution Pattern (Mermaid diagram)
+└── Common Pitfalls to Avoid
+```
+
+### Key Features
+
+Report Format - Compliant with our spec:
+
+```
+<agent_report>
+  <task_id>...</task_id>
+  <status>complete | partial | blocked | failed</status>
+  <work_completed>...</work_completed>
+  <files_changed>...</files_changed>
+  <verification>...</verification>
+  <outcomes>...</outcomes>
+  <incomplete_tasks>...</incomplete_tasks>
+  <blockers>...</blockers>
+  <decisions_made>...</decisions_made>
+  <follow_up_tasks>...</follow_up_tasks>
+  <notes>...</notes>
+</agent_report>
+```
+
+Prompt Quality Standards - From our style guide:
+
+- ✅ Specific, Complete, Constrained, Structured, Example-driven
+- ❌ Vague, Context-free, Unconstrained, Wall-of-text
+
+Task Templates - Ready-to-copy XML specs for features, tests, and refactors with success criteria and constraints.
+
 ## 🤝 Contributing
 
 We welcome contributions! Please read [CONTRIBUTING.md](./CONTRIBUTING.md) for guidelines on:

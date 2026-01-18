@@ -533,6 +533,470 @@ bun run validate         # typecheck + lint + format + test + perf
 
 ---
 
+## 🤖 Subagent Coordination - Delegation Protocol
+
+<subagent_philosophy>
+**Delegate like a German engineering manager:** Clear specifications, defined boundaries, structured reporting.
+
+When a task can be parallelized or isolated, spawn subagents. The main agent orchestrates; subagents execute with precision.
+</subagent_philosophy>
+
+### When to Delegate
+
+**USE SUBAGENTS FOR:**
+
+- Independent feature implementations
+- Parallel test writing
+- Documentation generation
+- Code review / analysis tasks
+- Research and exploration
+- Refactoring isolated modules
+
+**DO NOT DELEGATE:**
+
+- Architectural decisions (main agent decides)
+- Cross-cutting concerns affecting multiple modules
+- Tasks requiring full codebase context
+- Security-sensitive implementations
+
+### Prompt Quality Standards
+
+<prompt_quality>
+A **GOOD** subagent prompt is:
+
+- ✅ **Specific**: No ambiguity about what "done" means
+- ✅ **Complete**: All context needed to start immediately
+- ✅ **Constrained**: Clear boundaries on what NOT to do
+- ✅ **Structured**: Uses XML/markdown for scanability
+- ✅ **Example-driven**: Shows desired patterns when applicable
+- ✅ **Token-aware**: Guides agent to be concise or thorough as needed
+
+A **BAD** subagent prompt is:
+
+- ❌ **Vague**: "Implement the handler"
+- ❌ **Context-free**: Agent must search blindly for patterns
+- ❌ **Unconstrained**: Agent makes architectural decisions randomly
+- ❌ **Wall-of-text**: No structure, hard to parse
+- ❌ **Missing success criteria**: "Done" is subjective
+  </prompt_quality>
+
+### Task Specification Template
+
+```xml
+<task>
+  <id><!-- unique identifier, e.g., feat-user-auth-001 --></id>
+  <type><!-- feature | fix | refactor | test | docs | research --></type>
+  <name><!-- Human-readable task name --></name>
+
+  <context>
+    <!-- What the subagent needs to know BEFORE starting -->
+    <codebase_location><!-- Relevant directories/files --></codebase_location>
+    <existing_patterns><!-- Patterns to follow --></existing_patterns>
+    <dependencies><!-- What this task depends on --></dependencies>
+  </context>
+
+  <requirements>
+    <functional>
+      <!-- What the feature/fix must DO -->
+      - Requirement 1
+      - Requirement 2
+    </functional>
+
+    <technical>
+      <!-- HOW it should be implemented -->
+      - Use Effect-TS patterns from src/lib/
+      - Follow existing service layer conventions
+      - Maintain 100% type safety
+    </technical>
+
+    <files_to_create>
+      <!-- Explicit file list with purposes -->
+      - src/lib/[name].ts (service implementation)
+      - src/lib/[name].test.ts (unit tests)
+    </files_to_create>
+
+    <files_to_modify>
+      <!-- Existing files that need changes -->
+      - src/routes/index.tsx (add route)
+    </files_to_modify>
+  </requirements>
+
+  <success_criteria>
+    <!-- Checkboxes that define "done" -->
+    - [ ] All functional requirements implemented
+    - [ ] bun run typecheck passes
+    - [ ] bun run lint passes
+    - [ ] bun run test passes with 100% coverage
+    - [ ] TSDoc comments on all exports
+  </success_criteria>
+
+  <constraints>
+    <do_not>
+      <!-- Explicit boundaries -->
+      - Add new dependencies without approval
+      - Modify files outside specified scope
+      - Make architectural decisions
+      - Skip tests or coverage
+      - Use `any` or unsafe type assertions
+    </do_not>
+
+    <ask_before>
+      <!-- When to escalate to main agent -->
+      - Unclear requirements
+      - Need to modify shared utilities
+      - Performance concerns
+      - Security implications
+    </ask_before>
+  </constraints>
+
+  <examples>
+    <!-- Code snippets showing expected patterns -->
+    <example name="service-pattern">
+      // Follow this pattern for services
+      export class MyService extends Context.Tag("MyService")<
+        MyService,
+        { readonly method: (input: Input) => Effect.Effect<Output, MyError> }
+      >() {}
+    </example>
+  </examples>
+</task>
+```
+
+### Task Templates by Type
+
+#### Feature Implementation Task
+
+```xml
+<task>
+  <id>feat-[name]-001</id>
+  <type>feature</type>
+  <name>Implement [Feature Name]</name>
+
+  <context>
+    <codebase_location>
+      - src/lib/ for services
+      - src/component/ for UI
+      - src/routes/ for routing
+    </codebase_location>
+    <existing_patterns>
+      - Read src/lib/telemetry.ts for service pattern
+      - Read src/component/Button.tsx for component pattern
+    </existing_patterns>
+  </context>
+
+  <requirements>
+    <functional>
+      - [Specific user-facing behavior 1]
+      - [Specific user-facing behavior 2]
+    </functional>
+    <technical>
+      - Effect-TS for all async operations
+      - Proper error handling with TaggedError
+      - OpenTelemetry spans for observability
+    </technical>
+    <files_to_create>
+      - src/lib/[feature].ts
+      - src/lib/[feature].test.ts
+      - src/component/[Feature].tsx
+      - src/component/[Feature].test.tsx
+    </files_to_create>
+  </requirements>
+
+  <success_criteria>
+    - [ ] Feature works as specified
+    - [ ] 100% test coverage
+    - [ ] bun run validate passes
+    - [ ] TSDoc on all exports
+  </success_criteria>
+
+  <constraints>
+    <do_not>
+      - Add external dependencies
+      - Modify unrelated code
+      - Skip error handling
+    </do_not>
+  </constraints>
+</task>
+```
+
+#### Test Writing Task
+
+```xml
+<task>
+  <id>test-[module]-001</id>
+  <type>test</type>
+  <name>Add tests for [Module Name]</name>
+
+  <context>
+    <target_file>src/lib/[module].ts</target_file>
+    <test_file>src/lib/[module].test.ts</test_file>
+    <testing_patterns>
+      - Read docs/guides/testing.md
+      - Use @effect/vitest for Effect code
+      - See src/lib/telemetry.test.ts for examples
+    </testing_patterns>
+  </context>
+
+  <requirements>
+    <coverage_targets>
+      - 100% line coverage
+      - 100% branch coverage
+      - 100% function coverage
+    </coverage_targets>
+    <test_categories>
+      - Happy path scenarios
+      - Error conditions
+      - Edge cases
+      - Integration points
+    </test_categories>
+  </requirements>
+
+  <success_criteria>
+    - [ ] All exports have tests
+    - [ ] All branches covered
+    - [ ] bun run test:coverage shows 100%
+    - [ ] Tests are deterministic (no flakiness)
+  </success_criteria>
+
+  <constraints>
+    <do_not>
+      - Mock unnecessarily (test real behavior)
+      - Write tests that pass but don't verify behavior
+      - Skip edge cases
+    </do_not>
+  </constraints>
+</task>
+```
+
+#### Refactor Task
+
+```xml
+<task>
+  <id>refactor-[scope]-001</id>
+  <type>refactor</type>
+  <name>Refactor [Component/Module]</name>
+
+  <context>
+    <current_state>
+      <!-- What exists now and why it needs refactoring -->
+    </current_state>
+    <target_state>
+      <!-- What it should look like after -->
+    </target_state>
+    <scope>
+      - src/lib/[file1].ts
+      - src/lib/[file2].ts
+    </scope>
+  </context>
+
+  <requirements>
+    <preserve>
+      - All existing functionality
+      - All existing tests pass
+      - Public API compatibility
+    </preserve>
+    <improve>
+      - [Specific improvement 1]
+      - [Specific improvement 2]
+    </improve>
+  </requirements>
+
+  <success_criteria>
+    - [ ] All existing tests pass unchanged
+    - [ ] No functional regression
+    - [ ] bun run validate passes
+    - [ ] Improvement goals achieved
+  </success_criteria>
+
+  <constraints>
+    <do_not>
+      - Change public APIs without approval
+      - "Improve" unrelated code
+      - Add features disguised as refactoring
+    </do_not>
+  </constraints>
+</task>
+```
+
+### Subagent Report Format
+
+<report_specification>
+**EVERY subagent MUST conclude with this structured report.**
+
+The main agent uses this to:
+
+1. Verify task completion
+2. Understand what changed
+3. Identify follow-up work
+4. Track blockers across parallel tasks
+   </report_specification>
+
+```xml
+<agent_report>
+  <task_id><!-- Must match the task specification ID --></task_id>
+  <status><!-- complete | partial | blocked | failed --></status>
+
+  <work_completed>
+    <!-- Bullet list of what was actually done -->
+    - Implemented UserService with CRUD operations
+    - Added comprehensive test suite (24 tests)
+    - Created TSDoc for all exports
+  </work_completed>
+
+  <files_changed>
+    <!-- List with change type and line counts -->
+    <file action="created" lines="142">src/lib/user.ts</file>
+    <file action="created" lines="287">src/lib/user.test.ts</file>
+    <file action="modified" lines="+12/-3">src/routes/index.tsx</file>
+  </files_changed>
+
+  <verification>
+    <!-- Results of running checks -->
+    <typecheck>pass</typecheck>
+    <lint>pass</lint>
+    <test>pass (24/24)</test>
+    <coverage>100% lines, 100% branches</coverage>
+  </verification>
+
+  <outcomes>
+    <what_worked>
+      - Effect service pattern worked well
+      - Test helpers simplified setup
+    </what_worked>
+    <what_failed>
+      <!-- Be honest about issues encountered -->
+      - Initial approach to caching was too complex, simplified
+    </what_failed>
+  </outcomes>
+
+  <incomplete_tasks>
+    <!-- If status != complete, what remains -->
+    - Integration with external API (blocked on credentials)
+  </incomplete_tasks>
+
+  <blockers>
+    <!-- If status == blocked, what's preventing progress -->
+    - Need API_KEY environment variable for ExternalService
+    - Unclear requirement: should deleted users be soft-deleted?
+  </blockers>
+
+  <decisions_made>
+    <!-- Architectural/design decisions within scope -->
+    - Used branded types for UserId to prevent confusion
+    - Chose optimistic locking over pessimistic for updates
+  </decisions_made>
+
+  <follow_up_tasks>
+    <!-- Suggested next steps for main agent -->
+    - Add integration tests once API credentials available
+    - Consider adding caching layer for frequent reads
+  </follow_up_tasks>
+
+  <notes>
+    <!-- Any additional context for the main agent -->
+    - Found potential bug in related module (src/lib/auth.ts:47)
+    - Performance could be improved with connection pooling
+  </notes>
+</agent_report>
+```
+
+### Status Definitions
+
+| Status     | Meaning                            | Main Agent Action                        |
+| ---------- | ---------------------------------- | ---------------------------------------- |
+| `complete` | All success criteria met, verified | Integrate and continue                   |
+| `partial`  | Some work done, can continue       | Review incomplete_tasks, decide priority |
+| `blocked`  | Cannot proceed without input       | Resolve blockers, re-delegate            |
+| `failed`   | Unrecoverable error                | Analyze failure, adjust approach         |
+
+### Handoff Document Template
+
+For complex multi-stage tasks, create a handoff document in `docs/handoffs/`:
+
+```markdown
+# Handoff: [Task Name]
+
+## Context
+
+- **Original Task**: [Link to PRD or issue]
+- **Main Agent**: [Session/timestamp]
+- **Subagent**: [Task ID]
+
+## Current State
+
+[What exists now, what was attempted]
+
+## Remaining Work
+
+1. [Specific task 1]
+2. [Specific task 2]
+
+## Key Files
+
+- `src/lib/feature.ts` - Main implementation
+- `src/lib/feature.test.ts` - Tests (80% complete)
+
+## Decisions Already Made
+
+- [Decision 1 and rationale]
+- [Decision 2 and rationale]
+
+## Open Questions
+
+- [ ] [Question needing resolution]
+
+## How to Continue
+
+[Specific instructions for next agent]
+```
+
+### Parallel Execution Pattern
+
+```mermaid
+sequenceDiagram
+    participant Main as Main Agent
+    participant S1 as Subagent 1
+    participant S2 as Subagent 2
+    participant S3 as Subagent 3
+
+    Main->>Main: Analyze task, identify parallelizable work
+
+    par Parallel Execution
+        Main->>S1: Task Spec: Implement Service
+        Main->>S2: Task Spec: Write Tests
+        Main->>S3: Task Spec: Update Docs
+    end
+
+    S1-->>Main: agent_report (complete)
+    S2-->>Main: agent_report (partial - needs service)
+    S3-->>Main: agent_report (complete)
+
+    Main->>Main: Integrate S1 work
+    Main->>S2: Resume with updated context
+    S2-->>Main: agent_report (complete)
+
+    Main->>Main: Final validation, PR creation
+```
+
+### Common Pitfalls to Avoid
+
+<pitfalls>
+**When Delegating:**
+- ❌ Vague prompts: "implement the feature" → Agent guesses incorrectly
+- ❌ Missing context: Agent searches blindly, wastes tokens
+- ❌ No constraints: Agent over-engineers or makes wrong decisions
+- ❌ Unclear success criteria: "Done" becomes subjective
+
+**When Reporting:**
+
+- ❌ Claiming "complete" when tests don't pass
+- ❌ Omitting blockers (hoping main agent won't notice)
+- ❌ Vague work_completed: "did some stuff"
+- ❌ Missing file list: Main agent can't review changes
+  </pitfalls>
+
+---
+
 ## 📖 Remember
 
 **You are not just writing code. You are maintaining a system.**
