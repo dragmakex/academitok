@@ -60,6 +60,12 @@ bun run dev
 
 Visit http://localhost:3000
 
+### Optional: Nix Dev Shell
+
+```bash
+nix develop
+```
+
 ### Option 2: Full Stack with LAOS (Recommended)
 
 ```bash
@@ -71,6 +77,7 @@ cd ../laos
 docker compose up -d
 
 # Configure app env (add DSN/API keys from LAOS UIs)
+cd -
 cp .env.example .env
 echo "SENTRY_DSN=http://...@localhost:9000/1" >> .env
 echo "VITE_SENTRY_DSN=http://...@localhost:9000/1" >> .env
@@ -308,6 +315,7 @@ const fetchUser = (userId: string) =>
 - 📊 [Telemetry Guide](./docs/guides/telemetry.md) - Monitoring and observability
 - 📈 [PostHog Guide](./docs/guides/posthog.md) - Analytics and feature flags
 - 🧭 [Observability Setup](./docs/guides/observability-setup.md) - LAOS stack setup
+- 🐳 [App Docker Guide](./docs/guides/app-docker.md) - Containerize the app only
 - 🗄️ [PostgreSQL Guide](./docs/guides/database-postgresql.md) - PostgreSQL with Drizzle ORM
 - 💾 [SQLite Guide](./docs/guides/database-sqlite.md) - SQLite with Drizzle ORM
 - ✨ [Code Quality Guide](./docs/guides/code-quality.md) - Linting and formatting
@@ -468,4 +476,10 @@ For the full observability stack (outside this repo):
 git clone https://github.com/dtechvision/laos.git ../laos
 cd ../laos
 docker compose up -d
+```
+
+Build the app docker image (Nix helper):
+
+```bash
+nix run .#build-docker
 ```

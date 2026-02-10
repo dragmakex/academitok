@@ -118,7 +118,7 @@ DATABASE_PATH=":memory:"
 # DATABASE_PATH="./data/test.sqlite"
 ```
 
-Add to `.env.docker`:
+Add to `.env` (app container or local env):
 
 ```bash
 # Docker SQLite (persisted via volume)
@@ -684,7 +684,7 @@ EXPOSE 3000
 CMD ["bun", "run", ".output/server/index.mjs"]
 ```
 
-### 2. Update docker-compose.yml
+### 2. Update container setup
 
 ```yaml
 services:
@@ -717,16 +717,17 @@ networks:
 
 ```bash
 # Start app
-docker-compose up -d app
+docker build -t effect-tanstack-start .
+docker run --rm -p 3000:3000 --env-file .env effect-tanstack-start
 
 # Run migrations
-docker-compose exec app bun run db:migrate
+docker exec <app_container> bun run db:migrate
 
 # Seed database
-docker-compose exec app bun run db:seed
+docker exec <app_container> bun run db:seed
 
 # Access SQLite shell
-docker-compose exec app sqlite3 /app/data/database.sqlite
+docker exec <app_container> sqlite3 /app/data/database.sqlite
 ```
 
 ---
@@ -1369,7 +1370,7 @@ const checkDatabaseHealth = Effect.gen(function*() {
 1. Install dependencies: `bun add drizzle-orm better-sqlite3`
 2. Create schema files in `src/db/schema/`
 3. Generate migrations: `bun run db:generate`
-4. Update docker-compose.yml with volume for SQLite
+4. Update container volume for SQLite
 5. Run migrations: `bun run db:migrate`
 6. Seed database: `bun run db:seed`
 7. Start building repositories and services

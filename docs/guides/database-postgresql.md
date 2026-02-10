@@ -102,7 +102,7 @@ POSTGRES_IDLE_TIMEOUT="30000"
 POSTGRES_CONNECTION_TIMEOUT="2000"
 ```
 
-Add to `.env.docker`:
+Add to `.env` (app container or local env):
 
 ```bash
 # Docker PostgreSQL Connection
@@ -553,7 +553,7 @@ Effect.runPromise(program.pipe(Effect.provide(DatabaseLayer)))
 
 ## Docker Setup
 
-### 1. Add PostgreSQL to docker-compose.yml
+### 1. Add PostgreSQL to your container setup
 
 ```yaml
 services:
@@ -622,16 +622,21 @@ ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT SELECT ON TABLES TO readonly;
 
 ```bash
 # Start PostgreSQL only
-docker-compose up -d postgres
+docker run --rm -d --name app-postgres -p 5432:5432 \
+  -e POSTGRES_PASSWORD=postgres \
+  -e POSTGRES_USER=postgres \
+  -e POSTGRES_DB=myapp \
+  postgres:16-alpine
 
 # Wait for health check
-docker-compose ps
+docker ps
 
 # Start all services
-docker-compose up -d
+docker build -t effect-tanstack-start .
+docker run --rm -p 3000:3000 --env-file .env effect-tanstack-start
 
 # Run migrations in Docker
-docker-compose exec app bun run db:migrate
+docker exec <app_container> bun run db:migrate
 ```
 
 ---
@@ -983,13 +988,13 @@ await db
 
 ```bash
 # Check if PostgreSQL is running
-docker-compose ps postgres
+docker ps | rg app-postgres
 
 # View PostgreSQL logs
-docker-compose logs postgres
+docker logs app-postgres
 
 # Connect to PostgreSQL shell
-docker-compose exec postgres psql -U postgres -d myapp
+docker exec -it app-postgres psql -U postgres -d myapp
 
 # Test connection
 psql $DATABASE_URL
@@ -999,8 +1004,12 @@ psql $DATABASE_URL
 
 ```bash
 # Reset database (DANGER: deletes all data)
-docker-compose down -v postgres
-docker-compose up -d postgres
+docker stop app-postgres && docker rm app-postgres
+docker run --rm -d --name app-postgres -p 5432:5432 \
+  -e POSTGRES_PASSWORD=postgres \
+  -e POSTGRES_USER=postgres \
+  -e POSTGRES_DB=myapp \
+  postgres:16-alpine
 bun run db:migrate
 
 # Check migration status
@@ -1071,10 +1080,10 @@ export const readDb = drizzle(readClient)
 
 ```bash
 # Automated backup script
-docker-compose exec postgres pg_dump -U postgres myapp > backup.sql
+docker exec app-postgres pg_dump -U postgres myapp > backup.sql
 
 # Restore
-docker-compose exec -T postgres psql -U postgres myapp < backup.sql
+docker exec -i app-postgres psql -U postgres myapp < backup.sql
 ```
 
 ---
@@ -1093,7 +1102,7 @@ docker-compose exec -T postgres psql -U postgres myapp < backup.sql
 1. Install dependencies: `bun add drizzle-orm postgres`
 2. Create schema files in `src/db/schema/`
 3. Generate migrations: `bun run db:generate`
-4. Update docker-compose.yml with PostgreSQL service
+4. Update container setup with PostgreSQL service
 5. Run migrations: `bun run db:migrate`
 6. Start building repositories and services
 7. Add tests for database operations

@@ -27,9 +27,13 @@ docker compose exec sentry-web sentry createuser --email admin@localhost --passw
 # - Sentry: http://localhost:9000 → Create project → Copy DSN
 # - PostHog: http://localhost:8001 → Setup → Copy API key
 
-# 4. Add to .env
-echo "SENTRY_DSN=http://...@localhost:9000/1" >> /path/to/effect-tanstack-start/.env
-echo "VITE_SENTRY_DSN=http://...@localhost:9000/1" >> /path/to/effect-tanstack-start/.env
+# LAOS starter / quickstart reference
+# https://github.com/dtechvision/laos
+
+# 4. Add to .env (app repo)
+cd -
+echo "SENTRY_DSN=http://...@localhost:9000/1" >> .env
+echo "VITE_SENTRY_DSN=http://...@localhost:9000/1" >> .env
 
 # 5. Wire into app (see Phase 2-3 below)
 
@@ -608,12 +612,12 @@ NODE_ENV=development
 # Sentry
 SENTRY_DSN=
 VITE_SENTRY_DSN=
-SENTRY_SECRET_KEY=  # For self-hosted only
+# SENTRY_SECRET_KEY is managed by LAOS
 
 # PostHog
 VITE_POSTHOG_KEY=
 VITE_POSTHOG_HOST=http://localhost:8001
-POSTHOG_SECRET_KEY=  # For self-hosted only
+# POSTHOG_SECRET_KEY is managed by LAOS
 
 # Grafana Stack (OTLP)
 OTLP_ENDPOINT=http://localhost:4318

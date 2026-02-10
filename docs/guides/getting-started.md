@@ -24,6 +24,7 @@ Welcome to the Effect TanStack Start project! This guide will help you get up an
 
 - **[Docker](https://docs.docker.com/get-docker/)** v20.10+
 - **[Docker Compose](https://docs.docker.com/compose/install/)** v2.0+
+- **[Nix](https://nixos.org/download/)** (optional for reproducible dev shell)
 
 ### Recommended Tools
 
@@ -59,6 +60,12 @@ bun run dev
 
 The application will be available at http://localhost:3000
 
+### Nix Dev Shell (Optional)
+
+```bash
+nix develop
+```
+
 ### Quick Start (LAOS)
 
 ```bash
@@ -71,6 +78,15 @@ docker compose up -d
 ```
 
 See [Observability Setup](./observability-setup.md) for full LAOS setup.
+
+### Quick Start (App Docker)
+
+```bash
+docker build -t effect-tanstack-start .
+docker run --rm -p 3000:3000 --env-file .env effect-tanstack-start
+```
+
+See [App Docker Guide](./app-docker.md) for details.
 
 ---
 
@@ -413,7 +429,8 @@ Now that you're set up, explore these guides:
 2. **[Telemetry Guide](telemetry.md)** - Set up monitoring and observability
 3. **[PostHog Guide](posthog.md)** - Integrate analytics and feature flags
 4. **[Observability Setup](./observability-setup.md)** - LAOS stack setup
-5. **[Architecture Overview](../architecture/overview.md)** - Understand the system design
+5. **[App Docker Guide](./app-docker.md)** - Containerize the app
+6. **[Architecture Overview](../architecture/overview.md)** - Understand the system design
 
 ---
 
