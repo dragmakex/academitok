@@ -96,3 +96,6 @@ todos.json
 
 # Ignore worktrees directory
 .worktrees/
+
+# Local LAOS clone (keep out of git)
+laos/

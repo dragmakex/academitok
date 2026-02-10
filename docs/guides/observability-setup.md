@@ -15,8 +15,8 @@ Atomic, verifiable tasks to set up complete observability infrastructure.
 ```bash
 # 1. Start LAOS stack (external repo)
 # https://github.com/dtechvision/laos
-git clone https://github.com/dtechvision/laos.git
-cd laos
+git clone https://github.com/dtechvision/laos.git ../laos
+cd ../laos
 docker compose up -d
 
 # 2. Initialize Sentry (first time, in LAOS repo)
@@ -67,8 +67,8 @@ Frontend (React)                         Backend (Effect-TS)
 ```bash
 # Use LAOS stack repo
 # https://github.com/dtechvision/laos
-git clone https://github.com/dtechvision/laos.git
-cd laos
+git clone https://github.com/dtechvision/laos.git ../laos
+cd ../laos
 ```
 
 **Verify:** `docker compose ps` → all services running/healthy

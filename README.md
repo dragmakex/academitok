@@ -60,30 +60,33 @@ bun run dev
 
 Visit http://localhost:3000
 
-### Option 2: Full Stack with Docker (Recommended)
+### Option 2: Full Stack with LAOS (Recommended)
 
 ```bash
-# Generate secret keys
-openssl rand -hex 32  # For SENTRY_SECRET_KEY
-openssl rand -hex 32  # For POSTHOG_SECRET_KEY
+# Clone LAOS stack (keep it outside this repo)
+git clone https://github.com/dtechvision/laos.git ../laos
+cd ../laos
 
-# Configure environment
-cp .env.docker .env
-# Edit .env and update secret keys
+# Start observability stack
+docker compose up -d
 
-# Start everything (app + monitoring + analytics)
-docker-compose up
+# Configure app env (add DSN/API keys from LAOS UIs)
+cp .env.example .env
+echo "SENTRY_DSN=http://...@localhost:9000/1" >> .env
+echo "VITE_SENTRY_DSN=http://...@localhost:9000/1" >> .env
+echo "VITE_POSTHOG_KEY=phc_..." >> .env
+echo "VITE_POSTHOG_HOST=http://localhost:8001" >> .env
 ```
 
 **Access Services:**
 
 - 🌐 **Application**: http://localhost:3000
-- 📊 **Grafana** (Logs, Traces, Metrics): http://localhost:3001 (admin/admin)
+- 📊 **Grafana** (Logs, Traces, Metrics): http://localhost:3010 (admin/admin)
 - 🐛 **Sentry** (Errors): http://localhost:9000
 - 📈 **PostHog** (Analytics): http://localhost:8001
 - 📉 **Prometheus** (Metrics): http://localhost:9090
 
-📚 **See [DOCKER_SETUP.md](./DOCKER_SETUP.md) for complete Docker documentation**
+📚 **See [Observability Setup](./docs/guides/observability-setup.md) for full LAOS + telemetry instructions**
 
 ---
 
@@ -100,8 +103,6 @@ effect-tanstack-start/
 │       ├── testing.md             # Testing guide
 │       ├── telemetry.md           # Observability guide
 │       ├── posthog.md            # Analytics guide
-│       └── docker.md             # Docker guide
-├── docker/                        # Docker configurations
 ├── src/
 │   ├── api/                       # API schemas and clients
 │   ├── lib/                       # Shared utilities
@@ -115,9 +116,7 @@ effect-tanstack-start/
 │   ├── visual/                    # Visual regression tests
 │   └── *.test.ts                  # Unit tests
 ├── Dockerfile                     # Container build
-├── docker-compose.yml             # Service orchestration
 ├── CONTRIBUTING.md                # Contribution guidelines
-├── DOCKER_SETUP.md                # Docker documentation
 └── TESTING_AND_TELEMETRY.md       # Testing & observability
 ```
 
@@ -308,7 +307,7 @@ const fetchUser = (userId: string) =>
 - 🧪 [Testing Guide](./docs/guides/testing.md) - Writing and running tests
 - 📊 [Telemetry Guide](./docs/guides/telemetry.md) - Monitoring and observability
 - 📈 [PostHog Guide](./docs/guides/posthog.md) - Analytics and feature flags
-- 🐳 [Docker Guide](./docs/guides/docker.md) - Running with Docker
+- 🧭 [Observability Setup](./docs/guides/observability-setup.md) - LAOS stack setup
 - 🗄️ [PostgreSQL Guide](./docs/guides/database-postgresql.md) - PostgreSQL with Drizzle ORM
 - 💾 [SQLite Guide](./docs/guides/database-sqlite.md) - SQLite with Drizzle ORM
 - ✨ [Code Quality Guide](./docs/guides/code-quality.md) - Linting and formatting
@@ -318,7 +317,6 @@ const fetchUser = (userId: string) =>
 ### Complete Documentation
 
 - 📖 [CONTRIBUTING.md](./CONTRIBUTING.md) - Contribution guidelines
-- 🐳 [DOCKER_SETUP.md](./DOCKER_SETUP.md) - Complete Docker setup
 - 🧪 [TESTING_AND_TELEMETRY.md](./TESTING_AND_TELEMETRY.md) - Testing & observability
 
 ---
@@ -464,8 +462,10 @@ bun install
 bun run dev
 ```
 
-For the full experience with monitoring and analytics:
+For the full observability stack (outside this repo):
 
 ```bash
-docker-compose up
+git clone https://github.com/dtechvision/laos.git ../laos
+cd ../laos
+docker compose up -d
 ```

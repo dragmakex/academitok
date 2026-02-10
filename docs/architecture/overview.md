@@ -497,4 +497,4 @@ graph TB
 - [Getting Started Guide](../guides/getting-started.md)
 - [Testing Guide](../guides/testing.md)
 - [Telemetry Guide](../guides/telemetry.md)
-- [Docker Guide](../guides/docker.md)
+- [Observability Setup](../guides/observability-setup.md)

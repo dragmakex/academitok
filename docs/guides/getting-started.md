@@ -20,7 +20,7 @@ Welcome to the Effect TanStack Start project! This guide will help you get up an
 - **[Bun](https://bun.sh)** v1.0+ - JavaScript runtime and package manager
 - **[Git](https://git-scm.com/)** - Version control
 
-### Optional (for Docker)
+### Optional (for LAOS)
 
 - **[Docker](https://docs.docker.com/get-docker/)** v20.10+
 - **[Docker Compose](https://docs.docker.com/compose/install/)** v2.0+
@@ -59,26 +59,18 @@ bun run dev
 
 The application will be available at http://localhost:3000
 
-### Quick Start (Docker)
+### Quick Start (LAOS)
 
 ```bash
-# Clone the repository
-git clone <repository-url>
-cd effect-tanstack-start
+# Clone LAOS stack
+git clone https://github.com/dtechvision/laos.git
+cd laos
 
-# Generate secret keys
-openssl rand -hex 32  # For Sentry
-openssl rand -hex 32  # For PostHog
-
-# Configure environment
-cp .env.docker .env
-# Edit .env and update secret keys
-
-# Start all services
-docker-compose up
+# Start observability stack
+docker compose up -d
 ```
 
-See [Docker Guide](docker.md) for detailed Docker setup.
+See [Observability Setup](./observability-setup.md) for full LAOS setup.
 
 ---
 
@@ -89,12 +81,6 @@ effect-tanstack-start/
 ├── docs/                          # Documentation
 │   ├── architecture/              # Architecture diagrams and docs
 │   └── guides/                    # How-to guides
-├── docker/                        # Docker configurations
-│   ├── grafana/
-│   ├── loki/
-│   ├── tempo/
-│   ├── prometheus/
-│   └── posthog/
 ├── src/
 │   ├── api/                       # API schemas and clients
 │   │   ├── api-client.ts          # HTTP API client
@@ -119,7 +105,6 @@ effect-tanstack-start/
 │   ├── telemetry-example.ts       # Telemetry demo
 │   └── styles.css                 # Global styles
 ├── Dockerfile                     # Docker build configuration
-├── docker-compose.yml             # Multi-service orchestration
 ├── package.json                   # Dependencies and scripts
 ├── vite.config.ts                 # Vite configuration
 ├── tsconfig.json                  # TypeScript configuration
@@ -427,7 +412,7 @@ Now that you're set up, explore these guides:
 1. **[Testing Guide](testing.md)** - Learn how to write and run tests
 2. **[Telemetry Guide](telemetry.md)** - Set up monitoring and observability
 3. **[PostHog Guide](posthog.md)** - Integrate analytics and feature flags
-4. **[Docker Guide](docker.md)** - Run the full stack with Docker
+4. **[Observability Setup](./observability-setup.md)** - LAOS stack setup
 5. **[Architecture Overview](../architecture/overview.md)** - Understand the system design
 
 ---
