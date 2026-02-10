@@ -96,6 +96,7 @@ effect-tanstack-start/
 │   │   └── overview.md            # System architecture
 │   └── guides/                    # How-to guides
 │       ├── getting-started.md     # Setup guide
+│       ├── observability-setup.md # Full observability + LAOS setup
 │       ├── testing.md             # Testing guide
 │       ├── telemetry.md           # Observability guide
 │       ├── posthog.md            # Analytics guide
@@ -162,6 +163,12 @@ bun run build
 # Preview production build
 bun run preview
 ```
+
+---
+
+## 📘 Observability Setup
+
+📚 **See [Observability Setup](./docs/guides/observability-setup.md) for full LAOS + telemetry instructions**
 
 ---
 
