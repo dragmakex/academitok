@@ -7,13 +7,13 @@ Atomic, verifiable tasks to set up complete observability infrastructure.
 ## Quick Start (Experienced Engineers)
 
 ```bash
-# 1. Generate secrets and start stack
-cp .env.example .env
-echo "SENTRY_SECRET_KEY=$(openssl rand -hex 32)" >> .env
-echo "POSTHOG_SECRET_KEY=$(openssl rand -hex 32)" >> .env
+# 1. Start LAOS stack (external repo)
+# https://github.com/dtechvision/laos
+git clone https://github.com/dtechvision/laos.git
+cd laos
 docker compose up -d
 
-# 2. Initialize Sentry (first time)
+# 2. Initialize Sentry (first time, in LAOS repo)
 docker compose exec sentry-web sentry upgrade --noinput
 docker compose exec sentry-web sentry createuser --email admin@localhost --password admin123 --superuser --no-input
 
@@ -22,8 +22,8 @@ docker compose exec sentry-web sentry createuser --email admin@localhost --passw
 # - PostHog: http://localhost:8001 → Setup → Copy API key
 
 # 4. Add to .env
-echo "SENTRY_DSN=http://...@localhost:9000/1" >> .env
-echo "VITE_SENTRY_DSN=http://...@localhost:9000/1" >> .env
+echo "SENTRY_DSN=http://...@localhost:9000/1" >> /path/to/effect-tanstack-start/.env
+echo "VITE_SENTRY_DSN=http://...@localhost:9000/1" >> /path/to/effect-tanstack-start/.env
 
 # 5. Wire into app (see Phase 2-3 below)
 
@@ -54,17 +54,18 @@ Frontend (React)                         Backend (Effect-TS)
 
 ---
 
-## Phase 1: Infrastructure
+## Phase 1: Infrastructure (LAOS)
 
 ### 1.1 Generate Secrets
 
 ```bash
-cp .env.example .env
-echo "SENTRY_SECRET_KEY=$(openssl rand -hex 32)" >> .env
-echo "POSTHOG_SECRET_KEY=$(openssl rand -hex 32)" >> .env
+# Use LAOS stack repo
+# https://github.com/dtechvision/laos
+git clone https://github.com/dtechvision/laos.git
+cd laos
 ```
 
-**Verify:** `grep -E "^(SENTRY|POSTHOG)_SECRET_KEY=" .env | wc -l` → 2
+**Verify:** `docker compose ps` → all services running/healthy
 
 - [ ] Done
 
@@ -329,6 +330,7 @@ function RootDocument({ children }: { children: React.ReactNode }) {
 ## Phase 4: Database Instrumentation
 
 > **Goal:** See query performance in traces + aggregate metrics in Prometheus.
+> **Profiling note:** Pyroscope profiling requires Node; Bun runs without profiling.
 
 ### 4.1 Install PG Instrumentation
 
@@ -373,7 +375,7 @@ export function initServer() {
 
 ### 4.3 Add postgres_exporter (Optional - Aggregate Metrics)
 
-**Edit:** `docker-compose.yml` - add service:
+**Edit (in LAOS repo):** `docker-compose.yml` - add service:
 
 ```yaml
 postgres-exporter:
@@ -386,7 +388,7 @@ postgres-exporter:
     - monitoring
 ```
 
-**Edit:** `docker/prometheus/prometheus.yml` - add scrape:
+**Edit (in LAOS repo):** `docker/prometheus/prometheus.yml` - add scrape:
 
 ```yaml
 scrape_configs:
@@ -624,9 +626,6 @@ src/lib/
 ├── server-init.ts      # Server startup (Sentry + DB instrumentation)
 └── client-init.ts      # Client startup (Sentry + PostHog)
 
-docker/
-├── grafana/provisioning/
-├── loki/loki-config.yaml
-├── tempo/tempo-config.yaml
-└── prometheus/prometheus.yml
+# Observability stack lives in:
+# https://github.com/dtechvision/laos
 ```
