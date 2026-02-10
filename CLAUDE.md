@@ -49,30 +49,13 @@ This is a **TanStack Start** full-stack application built with **Effect-TS**, **
 
 ### Before ANY Code Change
 
-1. **CREATE A GIT WORKTREE - ALWAYS**
-
-   **This project uses git worktrees for ALL development work.** Never work directly on master.
-
-   ```bash
-   # Create a new worktree for your feature/fix
-   git worktree add .worktrees/feature-name -b feature-name
-
-   # Navigate to the worktree
-   cd .worktrees/feature-name
-   ```
+1. Version Control Hygene
 
    **Worktree Workflow:**
-   - **One worktree per feature/fix** - keeps work isolated
    - **Branch naming**: `feature/name`, `fix/name`, `refactor/name`, `docs/name`
    - **Master stays clean** - never commit directly to master
    - **Commit frequently** - step-wise commits document your thought process
    - **Open PR when done** - merge into master via pull request and watch the pipeline for errors
-
-   **Why Worktrees?**
-   - Work on multiple features simultaneously without stashing
-   - Keep master clean and deployable at all times
-   - Easy context switching without losing work
-   - Each worktree is a complete working directory
 
    **Commit Frequency:**
    - ✅ Commit after each logical step (not just when "done")
@@ -84,28 +67,23 @@ This is a **TanStack Start** full-stack application built with **Effect-TS**, **
 
    **Example Workflow:**
    ```bash
-   # 1. Create worktree
-   git worktree add .worktrees/feature-user-auth -b feature/user-auth
-   cd .worktrees/feature-user-auth
-
-   # 2. Make changes, commit frequently
+   # 1. Make changes, commit frequently
    git commit -m "feat: add User schema with validation"
    git commit -m "feat: implement JWT token generation"
    git commit -m "test: add user authentication tests"
    git commit -m "docs: document auth flow in docs/app/user-auth/"
 
-   # 3. Push and create PR
+   # 2. Push and create PR
    git push -u origin feature/user-auth
    gh pr create --title "Add user authentication" --body "..."
 
-   # 3.5. Watch CI and fix any failures
+   # 2.5. Watch CI and fix any failures
    ./scripts/ci-watch.sh
    # Shows spinner progress, then final status with logs on failure
    # If CI fails: read the logs, fix the issue, commit, push, run again
 
-   # 4. After PR merged, cleanup
+   # 3. After PR merged, cleanup
    cd ../..
-   git worktree remove .worktrees/feature-user-auth
    git branch -d feature/user-auth
    ```
 

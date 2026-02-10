@@ -23,6 +23,8 @@ See [TESTING_AND_TELEMETRY.md](../../TESTING_AND_TELEMETRY.md) for complete docu
 
 ### Server-Side Tracing
 
+**Profiling note:** Continuous profiling (Pyroscope) is **Node-only**. Bun runs without profiling.
+
 ```typescript
 import { Effect } from "effect"
 import { createSentryTelemetryLayer } from "./lib/telemetry-server"
@@ -41,6 +43,21 @@ const program = Effect
 
 Effect.runPromise(program.pipe(Effect.provide(TelemetryLive)))
 ```
+
+#### Effect.fn Spans (Automatic)
+
+Use `Effect.fn` for named, traced functions. This creates spans automatically at call sites when OpenTelemetry is enabled.
+
+```typescript
+import { Effect } from "effect"
+
+const fetchUser = Effect.fn("fetchUser")(function*(userId: string) {
+  // business logic
+  return { id: userId }
+})
+```
+
+Minimal rule: use `Effect.fn` for important service functions, and `Effect.withSpan` for ad-hoc blocks or extra attributes.
 
 ### Client-Side Error Tracking
 
