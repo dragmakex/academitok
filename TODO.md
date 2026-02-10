@@ -4,6 +4,12 @@ Atomic, verifiable tasks to set up complete observability infrastructure.
 
 ---
 
+## LAOS Policy (Required)
+
+- LAOS is **never vendored** into this repo and must **not** appear in git history here.
+- Always use LAOS from the upstream git repo: `https://github.com/dtechvision/laos`.
+- Any fixes or improvements to the stack must be **upstreamed to LAOS**, not patched locally.
+
 ## Quick Start (Experienced Engineers)
 
 ```bash
