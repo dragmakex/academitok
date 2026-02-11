@@ -28,6 +28,7 @@
     "validate": "bun run typecheck && bun run lint && bun run format:check && bun run docs:check && bun run test:coverage && bun run perf:check"
   },
   "dependencies": {
+    "@datadog/pprof": "github:SamuelLHuber/pprof-nodejs#pyroscope-ts-bun-compat-2026-02-10",
     "@effect-atom/atom": "^0.4.8",
     "@effect-atom/atom-react": "^0.4.3",
     "@effect/platform": "^0.93.6",
@@ -38,6 +39,7 @@
     "@tanstack/react-router-ssr-query": "^1.131.7",
     "@tanstack/react-start": "^1.132.0",
     "@tanstack/router-plugin": "^1.132.0",
+    "@pyroscope/nodejs": "^0.4.9",
     "effect": "^3.19.10",
     "lucide-react": "^0.544.0",
     "nitro": "latest",
@@ -47,6 +49,9 @@
     "react-dom": "^19.2.0",
     "tailwindcss": "^4.0.6",
     "vite-tsconfig-paths": "^5.1.4"
+  },
+  "overrides": {
+    "@datadog/pprof": "github:SamuelLHuber/pprof-nodejs#pyroscope-ts-bun-compat-2026-02-10"
   },
   "devDependencies": {
     "@effect/eslint-plugin": "^0.3.2",

@@ -1,5 +1,9 @@
 import { DomainApi } from "@/api/domain-api"
 import { DomainRpc } from "@/api/domain-rpc"
+import {
+  initPyroscopeServer,
+  shutdownPyroscopeServer,
+} from "@/lib/pyroscope-server"
 import * as HttpLayerRouter from "@effect/platform/HttpLayerRouter"
 import * as HttpServer from "@effect/platform/HttpServer"
 import * as HttpServerResponse from "@effect/platform/HttpServerResponse"
@@ -133,6 +137,8 @@ if (globalHmr.__EFFECT_DISPOSE__) {
   delete globalHmr.__EFFECT_DISPOSE__
 }
 
+await initPyroscopeServer()
+
 const { dispose, handler } = HttpLayerRouter.toWebHandler(AllRoutes, {
   memoMap,
 })
@@ -142,6 +148,7 @@ const effectHandler = ({ request }: { request: Request }) => handler(request)
 export const serverRuntime = ManagedRuntime.make(TodosService.Default, memoMap)
 
 globalHmr.__EFFECT_DISPOSE__ = async () => {
+  await shutdownPyroscopeServer()
   await dispose()
   await serverRuntime.dispose()
 }
