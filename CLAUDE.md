@@ -49,9 +49,9 @@ This is a **TanStack Start** full-stack application built with **Effect-TS**, **
 
 ### Before ANY Code Change
 
-1. Version Control Hygene
+1. Version Control Hygiene
 
-   **Worktree Workflow:**
+   **Branch Workflow:**
    - **Branch naming**: `feature/name`, `fix/name`, `refactor/name`, `docs/name`
    - **Master stays clean** - never commit directly to master
    - **Commit frequently** - step-wise commits document your thought process
@@ -67,27 +67,31 @@ This is a **TanStack Start** full-stack application built with **Effect-TS**, **
 
    **Example Workflow:**
    ```bash
-   # 1. Make changes, commit frequently
+   # 1. Create and checkout feature branch
+   git checkout -b feature/user-auth
+
+   # 2. Make changes, commit frequently
    git commit -m "feat: add User schema with validation"
    git commit -m "feat: implement JWT token generation"
    git commit -m "test: add user authentication tests"
    git commit -m "docs: document auth flow in docs/app/user-auth/"
 
-   # 2. Push and create PR
+   # 3. Push and create PR
    git push -u origin feature/user-auth
    gh pr create --title "Add user authentication" --body "..."
 
-   # 2.5. Watch CI and fix any failures
+   # 3.5. Watch CI and fix any failures
    ./scripts/ci-watch.sh
    # Shows spinner progress, then final status with logs on failure
    # If CI fails: read the logs, fix the issue, commit, push, run again
 
-   # 3. After PR merged, cleanup
-   cd ../..
+   # 4. After PR merged, cleanup
+   git checkout master
+   git pull
    git branch -d feature/user-auth
    ```
 
-   If we can and don't need to do the work outselves use handoff documents and the PRDs to handoff tasks to subagents. let them report back with a handoff themselves so you can work efficiently like a true german 🇩🇪
+   If we can and don't need to do the work ourselves use handoff documents and the PRDs to handoff tasks to subagents. Let them report back with a handoff themselves so you can work efficiently like a true german 🇩🇪
 
 2. **READ EXISTING DOCUMENTATION**
    - Check `docs/architecture/overview.md` for system architecture
@@ -294,15 +298,9 @@ This is a **TanStack Start** full-stack application built with **Effect-TS**, **
 11. **CLEANUP AFTER MERGE**
 
     ```bash
-    # Return to main repository
-    cd ../..
-
     # Update master
     git checkout master
     git pull
-
-    # Remove worktree
-    git worktree remove .worktrees/feature-your-feature-name
 
     # Delete local branch (after PR merged)
     git branch -d feature/your-feature-name
@@ -456,7 +454,7 @@ bun run validate         # typecheck + lint + format + test + perf
 
 ## 🚫 Anti-Patterns - DO NOT DO THESE
 
-1. **Working directly on master** - "It's a small change" ❌ → **ALWAYS use git worktrees**
+1. **Working directly on master** - "It's a small change" ❌ → **ALWAYS create a feature branch**
 2. **One giant commit** - "I'll commit when it's done" ❌ → **Commit step-wise**
 3. **Squashing commits** - "Clean history looks better" ❌ → **Preserve step-wise history**
 4. **Skipping verification** - "It compiles so it's fine" ❌
@@ -476,7 +474,7 @@ bun run validate         # typecheck + lint + format + test + perf
 
 ### Before You Start
 
-- [ ] Created git worktree for this work (`git worktree add .worktrees/feature-name -b feature-name`)
+- [ ] Created feature branch for this work (`git checkout -b feature-name`)
 - [ ] Read relevant documentation in `docs/`
 - [ ] Understand existing patterns in codebase
 - [ ] Check Effect Solutions for relevant patterns
