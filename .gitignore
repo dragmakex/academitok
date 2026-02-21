@@ -94,6 +94,14 @@ Desktop.ini
 count.txt
 todos.json
 
+# Smithers workflow artifacts
+smithers.db
+smithers.db-shm
+smithers.db-wal
+workflows/*.db
+workflows/*.db-shm
+workflows/*.db-wal
+
 # Ignore worktrees directory
 .worktrees/
 

@@ -1,4 +1,5 @@
-import { Result, useAtom } from "@effect-atom/atom-react"
+import { useAtom } from "@effect/atom-react"
+import * as AsyncResult from "effect/unstable/reactivity/AsyncResult"
 import { useState } from "react"
 import { createTodoAtom } from "./atoms"
 
@@ -21,7 +22,7 @@ export function CreateTodoForm() {
     setTitle("")
   }
 
-  const hasError = Result.isFailure(createResult)
+  const hasError = AsyncResult.isFailure(createResult)
 
   return (
     <div className="mb-6">

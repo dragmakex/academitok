@@ -24,7 +24,7 @@ it.effect("createRpcLoggerHandler - returns success exit on success", () =>
   Effect.gen(function*() {
     const successEffect = Effect.succeed("test-result")
     const result = yield* createRpcLoggerHandler({
-      next: successEffect,
+      effect: successEffect,
       rpc: { _tag: "test_rpc" },
       clientId: "test-client-123",
     })
@@ -39,7 +39,7 @@ it.effect("createRpcLoggerHandler - returns failure exit on failure", () =>
   Effect.gen(function*() {
     const failureEffect = Effect.fail("test-error" as const)
     const result = yield* createRpcLoggerHandler({
-      next: failureEffect,
+      effect: failureEffect,
       rpc: { _tag: "failing_rpc" },
       clientId: "test-client-456",
     })

@@ -101,7 +101,7 @@ effect-tanstack-start/
 │   ├── api/                       # API schemas and clients
 │   │   ├── api-client.ts          # HTTP API client
 │   │   ├── domain-api.ts          # REST API definitions
-│   │   ├── domain-rpc.ts          # RPC definitions
+│   │   ├── domain-rpc.ts          # RPC definitions (effect/unstable/rpc)
 │   │   └── todo-schema.ts         # Shared schemas
 │   ├── lib/                       # Shared utilities
 │   │   ├── atom-utils.ts          # Atom helpers
@@ -133,7 +133,7 @@ effect-tanstack-start/
 
 - Shared schemas between client and server
 - Type-safe API clients
-- RPC definitions using @effect/rpc
+- RPC definitions using effect/unstable/rpc
 
 **`src/lib/`** - Shared libraries
 
@@ -270,21 +270,18 @@ Available at `/api/hello`
 ### Adding State with Atoms
 
 ```typescript
-import { atom } from "@effect-atom/atom"
-import { useAtom } from "@effect-atom/atom-react"
+import * as Atom from "effect/unstable/reactivity/Atom"
+import { useAtom } from "@effect/atom-react"
 
 // Define atom
-const counterAtom = atom({
-  key: "counter",
-  effects: Effect.succeed(0),
-})
+const counterAtom = Atom.make(0)
 
 // Use in component
 function Counter() {
   const [count, setCount] = useAtom(counterAtom)
 
   return (
-    <button onClick={() => setCount(Effect.succeed(count + 1))}>
+    <button onClick={() => setCount((value) => value + 1)}>
       Count: {count}
     </button>
   )
@@ -431,6 +428,7 @@ Now that you're set up, explore these guides:
 4. **[Observability Setup](./observability-setup.md)** - LAOS stack setup
 5. **[App Docker Guide](./app-docker.md)** - Containerize the app
 6. **[Architecture Overview](../architecture/overview.md)** - Understand the system design
+7. **[Effect v4 Migration Guide](effect-v4-migration.md)** - Upgrade guidance and API mapping
 
 ---
 

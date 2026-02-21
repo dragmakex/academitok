@@ -18,7 +18,7 @@ it.effect("list returns empty array initially", () =>
       const todos = yield* service.list
       expect(todos).toEqual([])
     })
-    .pipe(Effect.provide(TodosService.Default)))
+    .pipe(Effect.provide(TodosService.layer)))
 
 it.effect("create adds a new todo", () =>
   Effect
@@ -35,7 +35,7 @@ it.effect("create adds a new todo", () =>
       expect(todos).toHaveLength(1)
       expect(todos[0]).toEqual(created)
     })
-    .pipe(Effect.provide(TodosService.Default)))
+    .pipe(Effect.provide(TodosService.layer)))
 
 it.effect("getById returns the correct todo", () =>
   Effect
@@ -46,7 +46,7 @@ it.effect("getById returns the correct todo", () =>
       const found = yield* service.getById(created.id)
       expect(found).toEqual(created)
     })
-    .pipe(Effect.provide(TodosService.Default)))
+    .pipe(Effect.provide(TodosService.layer)))
 
 it.effect("getById fails with TodoNotFound for non-existent id", () =>
   Effect
@@ -66,7 +66,7 @@ it.effect("getById fails with TodoNotFound for non-existent id", () =>
         }
       }
     })
-    .pipe(Effect.provide(TodosService.Default)))
+    .pipe(Effect.provide(TodosService.layer)))
 
 it.effect("update modifies todo title", () =>
   Effect
@@ -83,7 +83,7 @@ it.effect("update modifies todo title", () =>
       expect(updated.title).toBe("Updated")
       expect(updated.completed).toBe(false)
     })
-    .pipe(Effect.provide(TodosService.Default)))
+    .pipe(Effect.provide(TodosService.layer)))
 
 it.effect("update modifies todo completed status", () =>
   Effect
@@ -99,7 +99,7 @@ it.effect("update modifies todo completed status", () =>
       expect(updated.title).toBe("Task")
       expect(updated.completed).toBe(true)
     })
-    .pipe(Effect.provide(TodosService.Default)))
+    .pipe(Effect.provide(TodosService.layer)))
 
 it.effect("update modifies both title and completed", () =>
   Effect
@@ -115,7 +115,7 @@ it.effect("update modifies both title and completed", () =>
       expect(updated.title).toBe("New Title")
       expect(updated.completed).toBe(true)
     })
-    .pipe(Effect.provide(TodosService.Default)))
+    .pipe(Effect.provide(TodosService.layer)))
 
 it.effect("update fails with TodoNotFound for non-existent id", () =>
   Effect
@@ -132,7 +132,7 @@ it.effect("update fails with TodoNotFound for non-existent id", () =>
 
       expect(Exit.isFailure(result)).toBe(true)
     })
-    .pipe(Effect.provide(TodosService.Default)))
+    .pipe(Effect.provide(TodosService.layer)))
 
 it.effect("remove deletes a todo", () =>
   Effect
@@ -145,7 +145,7 @@ it.effect("remove deletes a todo", () =>
       const todos = yield* service.list
       expect(todos).toHaveLength(0)
     })
-    .pipe(Effect.provide(TodosService.Default)))
+    .pipe(Effect.provide(TodosService.layer)))
 
 it.effect("remove fails with TodoNotFound for non-existent id", () =>
   Effect
@@ -156,7 +156,7 @@ it.effect("remove fails with TodoNotFound for non-existent id", () =>
       const result = yield* Effect.exit(service.remove(fakeId))
       expect(Exit.isFailure(result)).toBe(true)
     })
-    .pipe(Effect.provide(TodosService.Default)))
+    .pipe(Effect.provide(TodosService.layer)))
 
 it.effect("multiple todos are stored correctly", () =>
   Effect
@@ -176,7 +176,7 @@ it.effect("multiple todos are stored correctly", () =>
       expect(ids).toContain(todo2.id)
       expect(ids).toContain(todo3.id)
     })
-    .pipe(Effect.provide(TodosService.Default)))
+    .pipe(Effect.provide(TodosService.layer)))
 
 it.effect("each todo gets a unique id", () =>
   Effect
@@ -188,4 +188,4 @@ it.effect("each todo gets a unique id", () =>
 
       expect(todo1.id).not.toBe(todo2.id)
     })
-    .pipe(Effect.provide(TodosService.Default)))
+    .pipe(Effect.provide(TodosService.layer)))

@@ -16,7 +16,12 @@ const config = defineConfig({
       projects: ["./tsconfig.json"],
     }),
     tailwindcss(),
-    tanstackStart(),
+    tanstackStart({
+      router: {
+        // Exclude test/spec files from the file-based routes scan.
+        routeFileIgnorePattern: ".*\\.(test|spec)\\.[jt]sx?$",
+      },
+    }),
     viteReact(),
   ],
   build: {

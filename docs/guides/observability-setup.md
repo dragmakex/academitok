@@ -153,8 +153,8 @@ docker compose exec sentry-web sentry createuser \
  * Unified observability - traces, logs, metrics via OTLP.
  */
 import * as Otlp from "@effect/opentelemetry/Otlp"
-import { NodeHttpClient } from "@effect/platform-node"
 import { Layer } from "effect"
+import * as FetchHttpClient from "effect/unstable/http/FetchHttpClient"
 
 export const ObservabilityLive = Otlp
   .layer({
@@ -167,7 +167,7 @@ export const ObservabilityLive = Otlp
       },
     },
   })
-  .pipe(Layer.provide(NodeHttpClient.layerUndici))
+  .pipe(Layer.provide(FetchHttpClient.layer))
 ```
 
 **Verify:** `bun run typecheck`

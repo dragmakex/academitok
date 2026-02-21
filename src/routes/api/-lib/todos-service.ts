@@ -8,13 +8,15 @@ import { TodoNotFound } from "@/api/todo-schema"
 import * as EffectArray from "effect/Array"
 import * as DateTime from "effect/DateTime"
 import * as Effect from "effect/Effect"
+import * as Layer from "effect/Layer"
 import * as Option from "effect/Option"
 import * as Ref from "effect/Ref"
+import * as ServiceMap from "effect/ServiceMap"
 
-export class TodosService extends Effect.Service<TodosService>()(
+export class TodosService extends ServiceMap.Service<TodosService>()(
   "TodosService",
   {
-    effect: Effect.gen(function*() {
+    make: Effect.gen(function*() {
       const todosRef = yield* Ref.make<Map<TodoId, Todo>>(new Map())
 
       const generateId = (): TodoId => {
@@ -32,7 +34,7 @@ export class TodosService extends Effect.Service<TodosService>()(
           const todos = yield* Ref.get(todosRef)
           const todo = todos.get(id)
           if (!todo) {
-            return yield* new TodoNotFound({ id })
+            return yield* Effect.fail(new TodoNotFound({ id }))
           }
           return todo
         })
@@ -93,4 +95,6 @@ export class TodosService extends Effect.Service<TodosService>()(
       } as const
     }),
   },
-) {}
+) {
+  static readonly layer = Layer.effect(this, this.make)
+}

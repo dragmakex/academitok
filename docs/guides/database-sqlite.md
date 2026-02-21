@@ -307,22 +307,19 @@ Create `src/db/client.ts`:
 ```typescript
 import Database from "better-sqlite3"
 import { drizzle } from "drizzle-orm/better-sqlite3"
-import { Context, Effect, Layer } from "effect"
+import { Effect, Layer, ServiceMap } from "effect"
 import fs from "fs"
 import path from "path"
 import * as schema from "./schema"
 
 // Database service tag
-export class DatabaseService extends Context.Tag("DatabaseService")<
-  DatabaseService,
-  {
-    readonly db: ReturnType<typeof drizzle>
-    readonly sqlite: Database.Database
-  }
->() {}
+export class DatabaseService extends ServiceMap.Service<DatabaseService, {
+  readonly db: ReturnType<typeof drizzle>
+  readonly sqlite: Database.Database
+}>()("DatabaseService") {}
 
 // Create database layer
-export const DatabaseLive = Layer.scoped(
+export const DatabaseLive = Layer.effect(
   DatabaseService,
   Effect.gen(function*() {
     const databasePath = process.env.DATABASE_PATH || "./data/database.sqlite"

@@ -19,20 +19,13 @@ vi.mock("@/lib/atom-utils", () => ({
   dehydrate: vi.fn((remote, result) => ({ remote, result })),
 }))
 
-// Mock @effect-atom/atom-react
-vi.mock("@effect-atom/atom-react", () => ({
-  Result: {
-    initial: () => ({ waiting: false }),
-    success: (value: unknown) => ({ value, _tag: "Success" }),
-    failure: () => ({ _tag: "Failure" }),
-    fromExit: (exit: unknown) => exit,
-    isSuccess: (r: { _tag?: string }) => r._tag === "Success",
-    isFailure: (r: { _tag?: string }) => r._tag === "Failure",
-  },
+// Mock AsyncResult
+vi.mock("effect/unstable/reactivity/AsyncResult", () => ({
+  fromExit: (exit: unknown) => exit,
 }))
 
-// Mock ReactHydration
-vi.mock("@effect-atom/atom-react/ReactHydration", () => ({
+// Mock HydrationBoundary
+vi.mock("@/lib/atom-hydration", () => ({
   HydrationBoundary: ({ children }: { children: React.ReactNode }) => children,
 }))
 
@@ -75,7 +68,7 @@ vi.mock("./api/$", () => ({
 
 // Mock TodosService
 vi.mock("./api/-lib/todos-service", () => ({
-  TodosService: { _tag: "TodosService" },
+  TodosService: { _tag: "TodosService", asEffect: () => ({ _tag: "TodosServiceEffect" }) },
 }))
 
 describe("index route", () => {

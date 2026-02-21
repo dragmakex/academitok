@@ -1,8 +1,8 @@
 import * as Config from "effect/Config"
-import * as Context from "effect/Context"
 import * as Effect from "effect/Effect"
 import * as Layer from "effect/Layer"
 import * as Option from "effect/Option"
+import * as ServiceMap from "effect/ServiceMap"
 
 type PyroscopeApi = {
   init: (options: {
@@ -14,7 +14,7 @@ type PyroscopeApi = {
   stop?: () => void | Promise<void>
 }
 
-class PyroscopeServerConfig extends Context.Tag("@app/PyroscopeServerConfig")<
+class PyroscopeServerConfig extends ServiceMap.Service<
   PyroscopeServerConfig,
   {
     readonly serverAddress: Option.Option<string>
@@ -22,37 +22,36 @@ class PyroscopeServerConfig extends Context.Tag("@app/PyroscopeServerConfig")<
     readonly environment: string
     readonly runtimeOverride: Option.Option<"bun" | "node">
   }
->() {
-  static readonly layer = Layer.effect(
-    PyroscopeServerConfig,
-    Effect.gen(function*() {
-      const serverAddress = yield* Config.option(
-        Config.string("PYROSCOPE_SERVER_ADDRESS"),
+>()("@app/PyroscopeServerConfig", {
+  make: Effect.gen(function*() {
+    const serverAddress = yield* Config.option(
+      Config.string("PYROSCOPE_SERVER_ADDRESS"),
+    )
+    const serviceName = yield* Config.string("SERVICE_NAME").pipe(
+      Config.orElse(() => Config.succeed("effect-tanstack-start")),
+    )
+    const environment = yield* Config.string("NODE_ENV").pipe(
+      Config.orElse(() => Config.succeed("development")),
+    )
+    const runtimeOverride = yield* Config
+      .option(
+        Config.string("DATADOG_PPROF_RUNTIME"),
       )
-      const serviceName = yield* Config.string("SERVICE_NAME").pipe(
-        Config.orElse(() => Config.succeed("effect-tanstack-start")),
+      .pipe(
+        Config.map(
+          Option.filter((value) => value === "bun" || value === "node"),
+        ),
       )
-      const environment = yield* Config.string("NODE_ENV").pipe(
-        Config.orElse(() => Config.succeed("development")),
-      )
-      const runtimeOverride = yield* Config
-        .option(
-          Config.string("DATADOG_PPROF_RUNTIME"),
-        )
-        .pipe(
-          Effect.map(
-            Option.filter((value) => value === "bun" || value === "node"),
-          ),
-        )
 
-      return PyroscopeServerConfig.of({
-        serverAddress,
-        serviceName,
-        environment,
-        runtimeOverride,
-      })
-    }),
-  )
+    return {
+      serverAddress,
+      serviceName,
+      environment,
+      runtimeOverride,
+    }
+  }),
+}) {
+  static readonly layer = Layer.effect(this, this.make)
 }
 
 const state = {

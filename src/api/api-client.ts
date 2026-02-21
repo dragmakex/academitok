@@ -1,13 +1,14 @@
-import * as FetchHttpClient from "@effect/platform/FetchHttpClient"
-import * as HttpApiClient from "@effect/platform/HttpApiClient"
-import * as HttpClient from "@effect/platform/HttpClient"
-import * as RpcClient from "@effect/rpc/RpcClient"
-import * as RpcSerialization from "@effect/rpc/RpcSerialization"
 import * as Effect from "effect/Effect"
 import * as Layer from "effect/Layer"
 import { hasProperty } from "effect/Predicate"
 import * as Schedule from "effect/Schedule"
+import * as ServiceMap from "effect/ServiceMap"
 import * as Stream from "effect/Stream"
+import * as FetchHttpClient from "effect/unstable/http/FetchHttpClient"
+import * as HttpClient from "effect/unstable/http/HttpClient"
+import * as HttpApiClient from "effect/unstable/httpapi/HttpApiClient"
+import * as RpcClient from "effect/unstable/rpc/RpcClient"
+import * as RpcSerialization from "effect/unstable/rpc/RpcSerialization"
 import { DomainApi } from "./domain-api"
 import { DomainRpc } from "./domain-rpc"
 
@@ -31,10 +32,10 @@ export const addRpcErrorLogging = <Client>(client: Client): Client => {
     ): ReturnType<F> {
       const result = fn.apply(this, args)
       if (Effect.isEffect(result)) {
-        return result.pipe(Effect.tapErrorCause(logCause)) as ReturnType<F>
+        return result.pipe(Effect.tapCause(logCause)) as ReturnType<F>
       }
       if (isStream(result)) {
-        return result.pipe(Stream.tapErrorCause(logCause)) as ReturnType<F>
+        return result.pipe(Stream.tapCause(logCause)) as ReturnType<F>
       }
       return result as ReturnType<F>
     } as F
@@ -68,26 +69,32 @@ const RpcConfigLive = RpcClient
   })
   .pipe(Layer.provide([FetchHttpClient.layer, RpcSerialization.layerNdjson]))
 
-export class ApiClient extends Effect.Service<ApiClient>()("ApiClient", {
-  dependencies: [RpcConfigLive, FetchHttpClient.layer],
-  scoped: Effect.gen(function*() {
-    const rpcClient = yield* RpcClient.make(DomainRpc)
+export class ApiClient extends ServiceMap.Service<ApiClient>()(
+  "ApiClient",
+  {
+    make: Effect.gen(function*() {
+      const rpcClient = yield* RpcClient.make(DomainRpc)
 
-    const httpClient = yield* HttpApiClient.make(DomainApi, {
-      baseUrl: `${getBaseUrl()}/api`,
-      transformClient: (client) =>
-        client.pipe(
-          HttpClient.filterStatusOk,
-          HttpClient.retryTransient({
-            times: 3,
-            schedule: Schedule.exponential("1 second"),
-          }),
-        ),
-    })
+      const httpClient = yield* HttpApiClient.make(DomainApi, {
+        baseUrl: `${getBaseUrl()}/api`,
+        transformClient: (client) =>
+          client.pipe(
+            HttpClient.filterStatusOk,
+            HttpClient.retryTransient({
+              times: 3,
+              schedule: Schedule.exponential("1 second"),
+            }),
+          ),
+      })
 
-    return {
-      rpc: addRpcErrorLogging(rpcClient),
-      http: httpClient,
-    }
-  }),
-}) {}
+      return {
+        rpc: addRpcErrorLogging(rpcClient),
+        http: httpClient,
+      }
+    }),
+  },
+) {
+  static readonly layer = Layer.effect(this, this.make).pipe(
+    Layer.provide([RpcConfigLive, FetchHttpClient.layer]),
+  )
+}

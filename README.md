@@ -10,8 +10,8 @@ A modern, full-stack TypeScript application built with **Effect-TS**, **TanStack
 - ⚡ **[Effect-TS](https://effect.website)** - Powerful functional effect system
 - 🎯 **[TanStack Start](https://tanstack.com/router/latest/docs/framework/react/start/getting-started)** - Full-stack React framework with SSR
 - 🎨 **[Tailwind CSS 4](https://tailwindcss.com)** - Utility-first CSS framework
-- 📦 **[@effect-atom](https://github.com/effect-ts-app/atom)** - Atomic state management
-- 🔄 **[@effect/rpc](https://effect.website/docs/guides/rpc/overview)** - Type-safe client-server communication
+- 📦 **effect/unstable/reactivity + @effect/atom-react** - Atomic state management
+- 🔄 **[effect/unstable/rpc](https://effect.website/docs/guides/rpc/overview)** - Type-safe client-server communication
 
 ### Testing & Quality
 
@@ -363,7 +363,7 @@ bun run dprint:check     # Check Dprint formatting
 ### Type Safety
 
 - **End-to-end type safety** with TypeScript and Effect-TS
-- **Type-safe RPC** with @effect/rpc
+- **Type-safe RPC** with effect/unstable/rpc
 - **Type-safe routing** with TanStack Router
 
 ### Developer Experience

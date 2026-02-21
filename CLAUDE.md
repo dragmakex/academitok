@@ -1,6 +1,8 @@
 # Agent Instructions
 
-This is a **TanStack Start** full-stack application built with **Effect-TS**, **Bun**, and **React**. The project uses Effect for functional programming patterns, state management with @effect-atom, and type-safe RPC communication.
+This is a **TanStack Start** full-stack application built with **Effect-TS**, **Bun**, and **React**. The project uses Effect for functional programming patterns, state management with effect/unstable/reactivity + @effect/atom-react, and type-safe RPC communication.
+
+Note: Playwright MCP may fail to handshake until browser binaries are installed (run the Playwright MCP install to add Chrome).
 
 ---
 
@@ -368,8 +370,8 @@ effect-solutions show testing            # @effect/vitest integration
 - **Effect-TS** - Functional effect system for type-safe async/sync operations
 - **TanStack Start** - Full-stack React framework with SSR and file-based routing
 - **Bun** - Runtime and package manager
-- **@effect-atom** - Atomic state management (similar to Jotai)
-- **@effect/rpc** - Type-safe client-server communication
+- **effect/unstable/reactivity + @effect/atom-react** - Atomic state management (similar to Jotai)
+- **effect/unstable/rpc** - Type-safe client-server communication
 - **Vitest** - Testing with @effect/vitest integration
 - **Playwright** - Browser testing (Chromium, Firefox, WebKit)
 

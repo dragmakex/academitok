@@ -194,7 +194,7 @@ const program = Effect
     Effect.withLogSpan("requestDuration"),
     // Make it scoped so annotateLogsScoped works
     Effect.scoped,
-    Effect.catchAll((error) =>
+    Effect.catch((error) =>
       Effect.gen(function*() {
         yield* Effect.logError("Application failed", error)
 
@@ -215,7 +215,7 @@ Effect
   .runPromise(
     program.pipe(
       Effect.provide(AppLayer),
-      Effect.catchAllCause((cause) => {
+      Effect.catchCause((cause) => {
         // Log any unhandled errors
         return Effect.logError("Unhandled error", cause)
       }),

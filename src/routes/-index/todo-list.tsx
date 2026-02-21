@@ -1,4 +1,5 @@
-import { Result, useAtomRefresh, useAtomValue } from "@effect-atom/atom-react"
+import { useAtomRefresh, useAtomValue } from "@effect/atom-react"
+import * as AsyncResult from "effect/unstable/reactivity/AsyncResult"
 import { todosAtom } from "./atoms"
 import { TodoItem } from "./todo-item"
 
@@ -13,7 +14,7 @@ export function TodoList() {
 
   return (
     <div>
-      {Result
+      {AsyncResult
         .builder(result)
         .onInitial(() => (
           <p className="text-gray-500 dark:text-gray-400">
