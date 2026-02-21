@@ -52,6 +52,7 @@ playwright/.cache
 *.png-actual
 *.png-diff
 __snapshots__/__diff_output__
+.vitest-attachments
 
 # Vitest browser artifacts
 browser-snapshots
