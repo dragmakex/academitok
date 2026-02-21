@@ -270,8 +270,8 @@ Available at `/api/hello`
 ### Adding State with Atoms
 
 ```typescript
-import * as Atom from "effect/unstable/reactivity/Atom"
 import { useAtom } from "@effect/atom-react"
+import * as Atom from "effect/unstable/reactivity/Atom"
 
 // Define atom
 const counterAtom = Atom.make(0)

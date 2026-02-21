@@ -115,7 +115,7 @@ export function createLokiLogger(
 
       // Group logs by level
       for (const log of logs) {
-        const levelKey = log.level.label
+        const levelKey = log.level
         if (!streams[levelKey]) {
           streams[levelKey] = []
         }
@@ -219,7 +219,7 @@ export function createLokiLogger(
  */
 export function createLokiLoggerLayer(config: LokiConfig) {
   const lokiLogger = createLokiLogger(config)
-  return Logger.replace(Logger.defaultLogger, lokiLogger)
+  return Logger.layer([lokiLogger])
 }
 
 /**
@@ -250,6 +250,5 @@ export function createLokiLoggerLayer(config: LokiConfig) {
  */
 export function createCombinedLoggerLayer(config: LokiConfig) {
   const lokiLogger = createLokiLogger(config)
-  const combinedLogger = Logger.zip(Logger.defaultLogger, lokiLogger)
-  return Logger.replace(Logger.defaultLogger, combinedLogger)
+  return Logger.layer([Logger.defaultLogger, lokiLogger])
 }

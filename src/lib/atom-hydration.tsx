@@ -1,6 +1,7 @@
 "use client"
 
 import { RegistryContext } from "@effect/atom-react"
+import * as Arr from "effect/Array"
 import * as Atom from "effect/unstable/reactivity/Atom"
 import * as React from "react"
 import type { DehydratedAtom } from "./atom-utils"
@@ -18,7 +19,9 @@ export type HydrationBoundaryProps = {
  * @param props.state - Dehydrated atom payloads.
  * @returns The hydrated subtree.
  */
-export const HydrationBoundary = ({ children, state }: HydrationBoundaryProps) => {
+export const HydrationBoundary = (
+  { children, state }: HydrationBoundaryProps,
+) => {
   const registry = React.useContext(RegistryContext)
 
   React.useMemo(() => {
@@ -26,7 +29,7 @@ export const HydrationBoundary = ({ children, state }: HydrationBoundaryProps) =
       return
     }
 
-    const incoming = Array.from(state)
+    const incoming = Arr.fromIterable(state)
     const nodes = registry.getNodes()
 
     for (const dehydratedAtom of incoming) {
@@ -42,12 +45,22 @@ export const HydrationBoundary = ({ children, state }: HydrationBoundaryProps) =
         continue
       }
 
-      const decoded = atom[Atom.SerializableTypeId].decode(dehydratedAtom.value)
-      if ("setValue" in existingNode && typeof existingNode.setValue === "function") {
-        existingNode.setValue(decoded)
+      const serializable = atom[Atom.SerializableTypeId] as {
+        readonly decode: (value: unknown) => unknown
+      }
+      const decoded = serializable.decode(dehydratedAtom.value)
+      const nodeWithSetter = existingNode as {
+        readonly setValue?: (value: unknown) => void
+      }
+      if (typeof nodeWithSetter.setValue === "function") {
+        nodeWithSetter.setValue(decoded)
       }
     }
   }, [registry, state])
 
-  return <>{children}</>
+  return (
+    <>
+      {children}
+    </>
+  )
 }

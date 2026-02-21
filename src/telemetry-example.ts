@@ -130,12 +130,6 @@ const program = Effect
   .gen(function*() {
     yield* Effect.log("Application starting...")
 
-    // Add custom annotations for all logs in this scope
-    yield* Effect.annotateLogsScoped({
-      requestId: "req-123",
-      version: "1.0.0",
-    })
-
     // Track application start in PostHog
     yield* trackServerEvent("application_started", {
       distinctId: "server",
@@ -205,6 +199,12 @@ const program = Effect
         })
       })
     ),
+  )
+  .pipe(
+    Effect.annotateLogs({
+      requestId: "req-123",
+      version: "1.0.0",
+    }),
   )
 
 // ====================

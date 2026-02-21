@@ -35,6 +35,8 @@ const config = defineConfig({
   },
   test: {
     globals: true,
+    include: ["src/**/*.test.{ts,tsx}"],
+    exclude: ["**/.worktrees/**", ".worktrees/**"],
     // Browser mode configuration for component and visual regression testing
     browser: {
       enabled: true,

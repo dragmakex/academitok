@@ -1,8 +1,10 @@
 import { TodoId, TodoNotFound } from "@/api/todo-schema"
 import { expect, it } from "@effect/vitest"
+import * as Cause from "effect/Cause"
 import * as Effect from "effect/Effect"
 import * as Exit from "effect/Exit"
 import * as Option from "effect/Option"
+import * as Schema from "effect/Schema"
 import { TodosService } from "./todos-service"
 
 /**
@@ -52,17 +54,16 @@ it.effect("getById fails with TodoNotFound for non-existent id", () =>
   Effect
     .gen(function*() {
       const service = yield* TodosService
-      const fakeId = TodoId.make("non-existent-id")
+      const fakeId = Schema.decodeSync(TodoId)("non-existent-id")
 
       const result = yield* Effect.exit(service.getById(fakeId))
       expect(Exit.isFailure(result)).toBe(true)
 
       if (Exit.isFailure(result)) {
-        const error = result.cause
-        expect(error._tag).toBe("Fail")
-        if (error._tag === "Fail") {
-          expect(error.error).toBeInstanceOf(TodoNotFound)
-          expect((error.error as TodoNotFound).id).toBe(fakeId)
+        const failReason = result.cause.reasons.find(Cause.isFailReason)
+        expect(failReason?.error).toBeInstanceOf(TodoNotFound)
+        if (failReason?.error instanceof TodoNotFound) {
+          expect(failReason.error.id).toBe(fakeId)
         }
       }
     })
@@ -121,7 +122,7 @@ it.effect("update fails with TodoNotFound for non-existent id", () =>
   Effect
     .gen(function*() {
       const service = yield* TodosService
-      const fakeId = TodoId.make("non-existent")
+      const fakeId = Schema.decodeSync(TodoId)("non-existent")
 
       const result = yield* Effect.exit(
         service.update(fakeId, {
@@ -151,7 +152,7 @@ it.effect("remove fails with TodoNotFound for non-existent id", () =>
   Effect
     .gen(function*() {
       const service = yield* TodosService
-      const fakeId = TodoId.make("non-existent")
+      const fakeId = Schema.decodeSync(TodoId)("non-existent")
 
       const result = yield* Effect.exit(service.remove(fakeId))
       expect(Exit.isFailure(result)).toBe(true)

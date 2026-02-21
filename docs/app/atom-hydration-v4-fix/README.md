@@ -16,6 +16,21 @@ This change repairs SSR-to-client atom hydration for the Todo route after the Ef
 - Todos atom cache update logic in `src/routes/-index/atoms.tsx`.
 - JSON-safe encoding for hydrated AsyncResult values.
 
+## Usage Example
+
+```tsx
+import { HydrationBoundary } from "@/lib/atom-hydration"
+
+function AppWrapper() {
+  const dehydrated = Route.useLoaderData()
+  return (
+    <HydrationBoundary state={[dehydrated]}>
+      <App />
+    </HydrationBoundary>
+  )
+}
+```
+
 ## Key Files
 
 - `src/lib/atom-hydration.tsx`

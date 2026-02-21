@@ -1,6 +1,5 @@
 import * as Effect from "effect/Effect"
 import * as Layer from "effect/Layer"
-import { hasProperty } from "effect/Predicate"
 import * as Schedule from "effect/Schedule"
 import * as ServiceMap from "effect/ServiceMap"
 import * as Stream from "effect/Stream"
@@ -15,8 +14,7 @@ import { DomainRpc } from "./domain-rpc"
 export const addRpcErrorLogging = <Client>(client: Client): Client => {
   const isStream = (
     u: unknown,
-  ): u is Stream.Stream<unknown, unknown, unknown> =>
-    hasProperty(u, Stream.StreamTypeId)
+  ): u is Stream.Stream<unknown, unknown, unknown> => Stream.isStream(u)
 
   const wrapCall = <F extends (...args: Array<unknown>) => unknown>(
     fn: F,
@@ -58,10 +56,17 @@ export const addRpcErrorLogging = <Client>(client: Client): Client => {
   return visit(client, []) as Client
 }
 
-const getBaseUrl = (): string =>
-  typeof window !== "undefined"
-    ? window.location.origin
-    : "http://localhost:3000"
+type BaseWindow = {
+  readonly location: {
+    readonly origin: string
+  }
+}
+
+export const getBaseUrl = (
+  baseWindow: BaseWindow | null | undefined = typeof window === "undefined"
+    ? null
+    : window,
+): string => baseWindow ? baseWindow.location.origin : "http://localhost:3000"
 
 const RpcConfigLive = RpcClient
   .layerProtocolHttp({

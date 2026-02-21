@@ -1,3 +1,4 @@
+import type { layer as nodeLayer } from "@effect/opentelemetry/NodeSdk"
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 import {
   createCombinedTelemetryLayer,
@@ -23,30 +24,36 @@ vi.mock("@sentry/node", () => ({
 
 // Mock @sentry/opentelemetry
 vi.mock("@sentry/opentelemetry", () => ({
-  SentrySpanProcessor: vi.fn().mockImplementation(() => ({
-    onStart: vi.fn(),
-    onEnd: vi.fn(),
-    shutdown: vi.fn(),
-    forceFlush: vi.fn(),
-  })),
+  SentrySpanProcessor: vi.fn().mockImplementation(function() {
+    return {
+      onStart: vi.fn(),
+      onEnd: vi.fn(),
+      shutdown: vi.fn(),
+      forceFlush: vi.fn(),
+    }
+  }),
 }))
 
 // Mock @opentelemetry/exporter-trace-otlp-http
 vi.mock("@opentelemetry/exporter-trace-otlp-http", () => ({
-  OTLPTraceExporter: vi.fn().mockImplementation(() => ({
-    export: vi.fn(),
-    shutdown: vi.fn(),
-  })),
+  OTLPTraceExporter: vi.fn().mockImplementation(function() {
+    return {
+      export: vi.fn(),
+      shutdown: vi.fn(),
+    }
+  }),
 }))
 
 // Mock @opentelemetry/sdk-trace-base
 vi.mock("@opentelemetry/sdk-trace-base", () => ({
-  BatchSpanProcessor: vi.fn().mockImplementation(() => ({
-    onStart: vi.fn(),
-    onEnd: vi.fn(),
-    shutdown: vi.fn(),
-    forceFlush: vi.fn(),
-  })),
+  BatchSpanProcessor: vi.fn().mockImplementation(function() {
+    return {
+      onStart: vi.fn(),
+      onEnd: vi.fn(),
+      shutdown: vi.fn(),
+      forceFlush: vi.fn(),
+    }
+  }),
 }))
 
 // Mock @effect/opentelemetry/NodeSdk
@@ -55,6 +62,27 @@ vi.mock("@effect/opentelemetry/NodeSdk", () => ({
     _tag: "Layer",
   }),
 }))
+
+type NodeSdkModule = {
+  layer: typeof nodeLayer
+}
+
+const getLayerFactory = (NodeSdk: NodeSdkModule): () => unknown => {
+  const layerFactory = (NodeSdk.layer as unknown as {
+    mock: { calls: Array<[() => unknown]> }
+  })
+    .mock
+    .calls
+    .at(-1)
+    ?.[0]
+  if (typeof layerFactory !== "function") {
+    throw new Error("Expected NodeSdk.layer to receive a factory function")
+  }
+  return layerFactory
+}
+
+const getLayerOptions = (NodeSdk: NodeSdkModule): unknown =>
+  getLayerFactory(NodeSdk)()
 
 describe("telemetry-server", () => {
   beforeEach(() => {
@@ -138,14 +166,30 @@ describe("telemetry-server", () => {
 
       expect(layer).toBeDefined()
       expect(NodeSdk.layer).toHaveBeenCalled()
+      const options = getLayerOptions(NodeSdk)
+      expect(options).toMatchObject({
+        resource: {
+          serviceName: "test-service",
+          environment: "test",
+        },
+      })
     })
 
     it("uses default environment", async () => {
+      const NodeSdk = await import("@effect/opentelemetry/NodeSdk")
       const layer = createSentryTelemetryLayer({
         serviceName: "test-service",
       })
 
       expect(layer).toBeDefined()
+      expect(NodeSdk.layer).toHaveBeenCalled()
+      const options = getLayerOptions(NodeSdk)
+      expect(options).toMatchObject({
+        resource: {
+          serviceName: "test-service",
+          environment: "development",
+        },
+      })
     })
   })
 
@@ -160,6 +204,13 @@ describe("telemetry-server", () => {
 
       expect(layer).toBeDefined()
       expect(NodeSdk.layer).toHaveBeenCalled()
+      const options = getLayerOptions(NodeSdk)
+      expect(options).toMatchObject({
+        resource: {
+          serviceName: "test-service",
+          environment: "development",
+        },
+      })
     })
 
     it("uses default OTLP endpoint when not provided", async () => {
@@ -182,6 +233,13 @@ describe("telemetry-server", () => {
 
       expect(layer).toBeDefined()
       expect(NodeSdk.layer).toHaveBeenCalled()
+      const options = getLayerOptions(NodeSdk)
+      expect(options).toMatchObject({
+        resource: {
+          serviceName: "test-service",
+          environment: "development",
+        },
+      })
     })
 
     it("uses default OTLP endpoint in combined layer", async () => {

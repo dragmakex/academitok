@@ -1,7 +1,7 @@
 import type { Todo } from "@/api/todo-schema"
+import { useAtom, useAtomRefresh } from "@effect/atom-react"
 import * as Option from "effect/Option"
 import * as AsyncResult from "effect/unstable/reactivity/AsyncResult"
-import { useAtom, useAtomRefresh } from "@effect/atom-react"
 import { useState } from "react"
 import { deleteTodoAtom, todosAtom, updateTodoAtom } from "./atoms"
 

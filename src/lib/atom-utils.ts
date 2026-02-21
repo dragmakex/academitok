@@ -10,17 +10,19 @@ export interface TypedSerializable<A, I> {
 }
 
 export const serializable: {
-  <R extends Atom.Atom<unknown>, I>(options: {
-    readonly key: string
-    readonly schema: Schema.Schema<Atom.Type<R>, I>
-  }): (self: R) => R & TypedSerializable<Atom.Type<R>, I>
-  <R extends Atom.Atom<unknown>, I>(
+  <R extends Atom.Atom<unknown>, S extends Schema.Schema<Atom.Type<R>>>(
+    options: {
+      readonly key: string
+      readonly schema: S
+    },
+  ): (self: R) => R & TypedSerializable<Atom.Type<R>, Schema.Codec.Encoded<S>>
+  <R extends Atom.Atom<unknown>, S extends Schema.Schema<Atom.Type<R>>>(
     self: R,
     options: {
       readonly key: string
-      readonly schema: Schema.Schema<Atom.Type<R>, I>
+      readonly schema: S
     },
-  ): R & TypedSerializable<Atom.Type<R>, I>
+  ): R & TypedSerializable<Atom.Type<R>, Schema.Codec.Encoded<S>>
 } = Atom.serializable as typeof serializable
 
 export interface DehydratedAtom {

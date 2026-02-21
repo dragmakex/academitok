@@ -1,4 +1,5 @@
 import { TodoId } from "@/api/todo-schema"
+import * as Schema from "effect/Schema"
 import { describe, expect, it, vi } from "vitest"
 
 /**
@@ -52,7 +53,7 @@ describe("atoms", () => {
       const update = {
         _tag: "Upsert" as const,
         todo: {
-          id: TodoId.make("test-id"),
+          id: Schema.decodeSync(TodoId)("test-id"),
           title: "Test",
           completed: false,
         },
@@ -64,7 +65,7 @@ describe("atoms", () => {
       // Test that the Delete tag is valid
       const update = {
         _tag: "Delete" as const,
-        id: TodoId.make("test-id"),
+        id: Schema.decodeSync(TodoId)("test-id"),
       }
       expect(update._tag).toBe("Delete")
     })

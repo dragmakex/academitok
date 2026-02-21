@@ -80,11 +80,14 @@ export const todosAtom = (() => {
               return existingIndex === undefined
                 ? Arr.prepend(current.value, update.todo)
                 : Arr.replace(current.value, existingIndex, update.todo)
+                  ?? current.value
             }
             case "Delete": {
               return Arr.filter(current.value, (t) => t.id !== update.id)
             }
           }
+          const _exhaustive: never = update
+          return _exhaustive
         })()
 
         ctx.setSelf(AsyncResult.success(nextValue))

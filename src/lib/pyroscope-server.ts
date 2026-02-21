@@ -1,4 +1,5 @@
 import * as Config from "effect/Config"
+import * as ConfigProvider from "effect/ConfigProvider"
 import * as Effect from "effect/Effect"
 import * as Layer from "effect/Layer"
 import * as Option from "effect/Option"
@@ -71,13 +72,10 @@ const initProgram = Effect
       return
     }
 
-    const hasBunRuntime = typeof process.versions.bun === "string"
     // This app runs on Bun. In some dev paths, route modules execute on a Node-like runtime.
     // Default to Bun backend unless the user explicitly overrides runtime.
     const runtime = Option.isSome(config.runtimeOverride)
       ? config.runtimeOverride.value
-      : hasBunRuntime
-      ? "bun"
       : "bun"
     process.env.DATADOG_PPROF_RUNTIME = runtime
 
@@ -128,9 +126,19 @@ const shutdownProgram = Effect.gen(function*() {
 /**
  * Initialize Pyroscope continuous profiling for server runtime.
  * Safe to call multiple times.
+ *
+ * @param options - Optional overrides for initialization.
+ * @param options.configProvider - Config provider supplying Pyroscope settings.
  */
-export async function initPyroscopeServer() {
-  await Effect.runPromise(initProgram)
+export async function initPyroscopeServer(options?: {
+  readonly configProvider?: ConfigProvider.ConfigProvider
+}) {
+  const program = options?.configProvider
+    ? initProgram.pipe(
+      Effect.provide(ConfigProvider.layer(options.configProvider)),
+    )
+    : initProgram
+  await Effect.runPromise(program)
 }
 
 /**

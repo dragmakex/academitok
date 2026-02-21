@@ -68,7 +68,10 @@ vi.mock("./api/$", () => ({
 
 // Mock TodosService
 vi.mock("./api/-lib/todos-service", () => ({
-  TodosService: { _tag: "TodosService", asEffect: () => ({ _tag: "TodosServiceEffect" }) },
+  TodosService: {
+    _tag: "TodosService",
+    asEffect: () => ({ _tag: "TodosServiceEffect" }),
+  },
 }))
 
 describe("index route", () => {

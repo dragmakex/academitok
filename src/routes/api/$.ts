@@ -26,7 +26,9 @@ import { TodosService } from "./-lib/todos-service"
  * RPC logging middleware - logs errors for failed RPC requests.
  * Exported for testing.
  */
-export class RpcLogger extends RpcMiddleware.Service<RpcLogger>()("RpcLogger") {}
+export class RpcLogger
+  extends RpcMiddleware.Service<RpcLogger>()("RpcLogger")
+{}
 
 type RpcMiddlewareOptions = Parameters<RpcMiddleware.Any>[1]
 
@@ -35,7 +37,7 @@ type RpcMiddlewareOptions = Parameters<RpcMiddleware.Any>[1]
  * Exported for testing.
  *
  * @param opts - The options for the RPC logger handler.
- * @param opts.next - The next effect to execute.
+ * @param opts.effect - The effect to execute.
  * @param opts.rpc - The RPC request metadata.
  * @param opts.rpc._tag - The RPC method tag.
  * @param opts.clientId - The client identifier.
@@ -44,7 +46,7 @@ type RpcMiddlewareOptions = Parameters<RpcMiddleware.Any>[1]
 export const createRpcLoggerHandler = <A, E>(
   opts: {
     effect: Effect.Effect<A, E>
-    rpc: RpcMiddlewareOptions["rpc"]
+    rpc: { readonly _tag: string }
     clientId: string
   },
 ): Effect.Effect<Exit.Exit<A, E>, never, never> =>
@@ -52,7 +54,7 @@ export const createRpcLoggerHandler = <A, E>(
     Exit.match(exit, {
       onSuccess: () => Effect.succeed(exit),
       onFailure: (cause: Cause<E>) =>
-        Effect.zipRight(
+        Effect.andThen(
           Effect.annotateLogs(
             Effect.logError(`RPC request failed: ${opts.rpc._tag}`, cause),
             {
@@ -68,8 +70,8 @@ export const createRpcLoggerHandler = <A, E>(
  * RPC logger middleware handler that wraps the next effect with logging.
  * Returns the original result or re-raises the error after logging.
  *
+ * @param effect - The effect to execute.
  * @param opts - The options for the RPC logger middleware.
- * @param opts.next - The next effect to execute.
  * @param opts.rpc - The RPC request metadata.
  * @param opts.rpc._tag - The RPC method tag.
  * @param opts.clientId - The client identifier.
@@ -83,7 +85,7 @@ const rpcLoggerMiddleware = <A, E>(
     Exit.match(exit, {
       onSuccess: (value) => Effect.succeed(value),
       onFailure: (cause: Cause<E>) =>
-        Effect.zipRight(
+        Effect.andThen(
           Effect.annotateLogs(
             Effect.logError(`RPC request failed: ${opts.rpc._tag}`, cause),
             {
@@ -153,7 +155,9 @@ const { dispose, handler } = HttpRouter.toWebHandler(AllRoutes, {
 const effectHandler = ({ request }: { request: Request }) => handler(request)
 
 // ManagedRuntime for use in loaders/server functions
-export const serverRuntime = ManagedRuntime.make(TodosService.layer, memoMap)
+export const serverRuntime = ManagedRuntime.make(TodosService.layer, {
+  memoMap,
+})
 
 globalHmr.__EFFECT_DISPOSE__ = async () => {
   await shutdownPyroscopeServer()

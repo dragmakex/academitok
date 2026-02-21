@@ -1,5 +1,12 @@
-/** @jsxImportSource smithers-orchestrator */
-import { CodexAgent, createSmithers, Ralph, Sequence, Task, Workflow } from "smithers-orchestrator"
+/* @jsxImportSource smithers-orchestrator */
+import {
+  CodexAgent,
+  createSmithers,
+  Ralph,
+  Sequence,
+  Task,
+  Workflow,
+} from "smithers-orchestrator"
 import { z } from "zod"
 
 const repoRoot = process.cwd()
@@ -22,7 +29,7 @@ const reviewSchema = z.object({
   nextSteps: z.array(z.string()),
 })
 
-const { smithers, outputs } = createSmithers(
+const { outputs, smithers } = createSmithers(
   {
     assess: assessSchema,
     implement: implementSchema,

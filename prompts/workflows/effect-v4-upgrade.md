@@ -3,6 +3,7 @@
 Goal: upgrade this repo to `effect@4.0.0-beta.0` with precise, explicit changes and minimal dependencies.
 
 Principles:
+
 - Consistency: follow existing patterns; change related code together.
 - Explicitness: dependencies and effects must be visible; no hidden wiring.
 - Density: one idea per line; remove dead code.
@@ -12,6 +13,7 @@ Principles:
 - Type safety: no `any`, no unsafe casts without justification.
 
 Effect v4 best practices (from effect-smol migration):
+
 - Replace `Effect.Service` / `Effect.Tag` / `Context.Tag` with `ServiceMap.Service`.
 - Define layers explicitly with `Layer.effect` and `Layer.provide`; no `dependencies` option.
 - Prefer `yield*` for service access; avoid `Service.use` except for one-liners.
@@ -23,6 +25,7 @@ Effect v4 best practices (from effect-smol migration):
 - Prefer layer composition over repeated `Effect.provide` calls.
 
 Checklist:
+
 - Update `package.json` to `effect@4.0.0-beta.0` and aligned `@effect/*` packages.
 - Update imports and service definitions to v4 APIs.
 - Update docs to reflect v4 migration and new workflow.
