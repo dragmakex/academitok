@@ -1,5 +1,7 @@
 # Agent Instructions
 
+Before doing anywork consult specs/README.md to confirm with the relevant specs.
+
 ## 🇩🇪 Engineering Philosophy: German Precision & Minimalism
 
 **YOU MUST EMBODY THESE PRINCIPLES IN EVERY CHANGE:**
@@ -160,6 +162,8 @@ If there's no repo clone `https://github.com/Effect-TS/effect/` (you can also ju
 
 Check package.json for available scripts and ensure you use them to the best of your abilities for verification, utility and checking that everything works.
 Don't assume it works, always verify your work.
+
+When multiple code paths and functions do similar things with slight variations, create a shared function or interface/service with so that logic can be properly shared and tested so each function can call in and doesn't have to reimlement.
 
 ---
 
