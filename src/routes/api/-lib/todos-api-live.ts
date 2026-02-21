@@ -4,9 +4,9 @@ import type {
   TodoId,
   UpdateTodoInput,
 } from "@/api/todo-schema"
-import * as HttpApiBuilder from "@effect/platform/HttpApiBuilder"
 import * as Effect from "effect/Effect"
 import * as Layer from "effect/Layer"
+import * as HttpApiBuilder from "effect/unstable/httpapi/HttpApiBuilder"
 import { TodosService } from "./todos-service"
 
 /**
@@ -49,12 +49,12 @@ export const TodosApiLive = HttpApiBuilder
     (handlers) =>
       handlers
         .handle("list", () => listHandler)
-        .handle("getById", ({ path }) => getByIdHandler(path.id))
+        .handle("getById", ({ params }) => getByIdHandler(params.id))
         .handle("create", ({ payload }) => createHandler(payload))
         .handle(
           "update",
-          ({ path, payload }) => updateHandler(path.id, payload),
+          ({ params, payload }) => updateHandler(params.id, payload),
         )
-        .handle("remove", ({ path }) => removeHandler(path.id)),
+        .handle("remove", ({ params }) => removeHandler(params.id)),
   )
-  .pipe(Layer.provide(TodosService.Default))
+  .pipe(Layer.provide(TodosService.layer))

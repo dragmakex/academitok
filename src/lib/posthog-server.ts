@@ -6,6 +6,7 @@
 
 import * as Effect from "effect/Effect"
 import * as Layer from "effect/Layer"
+import * as ServiceMap from "effect/ServiceMap"
 import { PostHog } from "posthog-node"
 
 /**
@@ -20,10 +21,9 @@ export interface PostHogServerConfig {
 /**
  * PostHog service tag
  */
-export class PostHogService extends Effect.Tag("PostHogService")<
-  PostHogService,
-  { readonly client: PostHog }
->() {}
+export class PostHogService extends ServiceMap.Service<PostHogService, {
+  readonly client: PostHog
+}>()("PostHogService") {}
 
 /**
  * Create a PostHog client instance

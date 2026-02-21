@@ -1,6 +1,12 @@
 {
-  "include": ["**/*.ts", "**/*.tsx"],
-  "exclude": ["./.worktrees"],
+  "include": [
+    "src/**/*.ts",
+    "src/**/*.tsx",
+    "scripts/**/*.ts",
+    "tests/**/*.ts",
+    "tests/**/*.tsx"
+  ],
+  "exclude": ["./.worktrees", "node_modules"],
   "compilerOptions": {
     "target": "ES2022",
     "jsx": "react-jsx",

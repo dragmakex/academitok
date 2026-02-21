@@ -6,23 +6,20 @@ import { describe, expect, it, vi } from "vitest"
  * We test exports. The component itself is tested via visual regression tests.
  */
 
-// Mock @effect-atom/atom-react
-vi.mock("@effect-atom/atom-react", () => ({
-  Result: {
-    initial: () => ({ waiting: false }),
-    success: (value: unknown) => ({ value, _tag: "Success" }),
-    failure: () => ({ _tag: "Failure" }),
-    isSuccess: (r: { _tag?: string }) => r._tag === "Success",
-    isFailure: (r: { _tag?: string }) => r._tag === "Failure",
-    builder: () => ({
-      onInitial: vi.fn().mockReturnThis(),
-      onSuccess: vi.fn().mockReturnThis(),
-      onFailure: vi.fn().mockReturnThis(),
-      render: vi.fn(),
-    }),
-  },
+// Mock @effect/atom-react
+vi.mock("@effect/atom-react", () => ({
   useAtomValue: () => ({ waiting: false }),
   useAtomRefresh: () => vi.fn(),
+}))
+
+// Mock AsyncResult
+vi.mock("effect/unstable/reactivity/AsyncResult", () => ({
+  builder: () => ({
+    onInitial: vi.fn().mockReturnThis(),
+    onSuccess: vi.fn().mockReturnThis(),
+    onFailure: vi.fn().mockReturnThis(),
+    render: vi.fn(),
+  }),
 }))
 
 // Mock atoms

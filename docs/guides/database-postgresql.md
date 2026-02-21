@@ -248,21 +248,18 @@ Create `src/db/client.ts`:
 
 ```typescript
 import { drizzle } from "drizzle-orm/postgres-js"
-import { Context, Effect, Layer } from "effect"
+import { Effect, Layer, ServiceMap } from "effect"
 import postgres from "postgres"
 import * as schema from "./schema"
 
 // Database service tag
-export class DatabaseService extends Context.Tag("DatabaseService")<
-  DatabaseService,
-  {
-    readonly db: ReturnType<typeof drizzle>
-    readonly client: ReturnType<typeof postgres>
-  }
->() {}
+export class DatabaseService extends ServiceMap.Service<DatabaseService, {
+  readonly db: ReturnType<typeof drizzle>
+  readonly client: ReturnType<typeof postgres>
+}>()("DatabaseService") {}
 
 // Create database layer
-export const DatabaseLive = Layer.scoped(
+export const DatabaseLive = Layer.effect(
   DatabaseService,
   Effect.gen(function*() {
     const connectionString = yield* Effect.promise(() =>

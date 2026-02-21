@@ -1,7 +1,7 @@
-import * as HttpApi from "@effect/platform/HttpApi"
-import * as HttpApiEndpoint from "@effect/platform/HttpApiEndpoint"
-import * as HttpApiGroup from "@effect/platform/HttpApiGroup"
 import * as Schema from "effect/Schema"
+import * as HttpApi from "effect/unstable/httpapi/HttpApi"
+import * as HttpApiEndpoint from "effect/unstable/httpapi/HttpApiEndpoint"
+import * as HttpApiGroup from "effect/unstable/httpapi/HttpApiGroup"
 import {
   CreateTodoInput,
   Todo,
@@ -12,34 +12,38 @@ import {
 
 export class TodosApiGroup extends HttpApiGroup
   .make("todos")
-  .add(HttpApiEndpoint.get("list", "/todos").addSuccess(Schema.Array(Todo)))
   .add(
-    HttpApiEndpoint
-      .get("getById", "/todos/:id")
-      .setPath(Schema.Struct({ id: TodoId }))
-      .addSuccess(Todo)
-      .addError(TodoNotFound),
+    HttpApiEndpoint.get("list", "/todos", {
+      success: Schema.Array(Todo),
+    }),
   )
   .add(
-    HttpApiEndpoint
-      .post("create", "/todos")
-      .setPayload(CreateTodoInput)
-      .addSuccess(Todo),
+    HttpApiEndpoint.get("getById", "/todos/:id", {
+      params: { id: TodoId },
+      success: Todo,
+      error: TodoNotFound,
+    }),
   )
   .add(
-    HttpApiEndpoint
-      .patch("update", "/todos/:id")
-      .setPath(Schema.Struct({ id: TodoId }))
-      .setPayload(UpdateTodoInput)
-      .addSuccess(Todo)
-      .addError(TodoNotFound),
+    HttpApiEndpoint.post("create", "/todos", {
+      payload: CreateTodoInput,
+      success: Todo,
+    }),
   )
   .add(
-    HttpApiEndpoint
-      .del("remove", "/todos/:id")
-      .setPath(Schema.Struct({ id: TodoId }))
-      .addSuccess(Schema.Void)
-      .addError(TodoNotFound),
+    HttpApiEndpoint.patch("update", "/todos/:id", {
+      params: { id: TodoId },
+      payload: UpdateTodoInput,
+      success: Todo,
+      error: TodoNotFound,
+    }),
+  )
+  .add(
+    HttpApiEndpoint.delete("remove", "/todos/:id", {
+      params: { id: TodoId },
+      success: Schema.Void,
+      error: TodoNotFound,
+    }),
   )
 {}
 

@@ -130,12 +130,6 @@ const program = Effect
   .gen(function*() {
     yield* Effect.log("Application starting...")
 
-    // Add custom annotations for all logs in this scope
-    yield* Effect.annotateLogsScoped({
-      requestId: "req-123",
-      version: "1.0.0",
-    })
-
     // Track application start in PostHog
     yield* trackServerEvent("application_started", {
       distinctId: "server",
@@ -194,7 +188,7 @@ const program = Effect
     Effect.withLogSpan("requestDuration"),
     // Make it scoped so annotateLogsScoped works
     Effect.scoped,
-    Effect.catchAll((error) =>
+    Effect.catch((error) =>
       Effect.gen(function*() {
         yield* Effect.logError("Application failed", error)
 
@@ -206,6 +200,12 @@ const program = Effect
       })
     ),
   )
+  .pipe(
+    Effect.annotateLogs({
+      requestId: "req-123",
+      version: "1.0.0",
+    }),
+  )
 
 // ====================
 // Run the Program
@@ -215,7 +215,7 @@ Effect
   .runPromise(
     program.pipe(
       Effect.provide(AppLayer),
-      Effect.catchAllCause((cause) => {
+      Effect.catchCause((cause) => {
         // Log any unhandled errors
         return Effect.logError("Unhandled error", cause)
       }),

@@ -1,4 +1,3 @@
-import * as HttpApiSchema from "@effect/platform/HttpApiSchema"
 import * as Schema from "effect/Schema"
 
 export const TodoId = Schema.String.pipe(Schema.brand("TodoId"))
@@ -13,22 +12,20 @@ export const Todo = Schema.Struct({
 export type Todo = typeof Todo.Type
 
 export const CreateTodoInput = Schema.Struct({
-  title: Schema.String.pipe(Schema.minLength(1)),
+  title: Schema.NonEmptyString,
 })
 export type CreateTodoInput = typeof CreateTodoInput.Type
 
 export const UpdateTodoInput = Schema.Struct({
-  title: Schema.optionalWith(Schema.String.pipe(Schema.minLength(1)), {
-    as: "Option",
-  }),
-  completed: Schema.optionalWith(Schema.Boolean, { as: "Option" }),
+  title: Schema.OptionFromOptionalKey(Schema.NonEmptyString),
+  completed: Schema.OptionFromOptionalKey(Schema.Boolean),
 })
 export type UpdateTodoInput = typeof UpdateTodoInput.Type
 
-export class TodoNotFound extends Schema.TaggedError<TodoNotFound>()(
+export class TodoNotFound extends Schema.TaggedErrorClass<TodoNotFound>()(
   "TodoNotFound",
   {
     id: TodoId,
   },
-  HttpApiSchema.annotations({ status: 404 }),
+  { httpApiStatus: 404 },
 ) {}

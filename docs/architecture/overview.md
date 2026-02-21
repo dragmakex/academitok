@@ -92,8 +92,8 @@ graph LR
     end
 
     subgraph "State Management"
-        Atoms[@effect-atom]
-        RPC[@effect/rpc]
+        Atoms[effect/unstable/reactivity]
+        RPC[effect/unstable/rpc]
     end
 
     React --> TanStack
@@ -108,8 +108,8 @@ graph LR
 - **React 19** - UI framework with server components
 - **TanStack Router** - Type-safe routing with SSR
 - **Effect-TS** - Functional effect system for business logic
-- **@effect-atom** - Atomic state management
-- **@effect/rpc** - Type-safe RPC between client and server
+- **effect/unstable/reactivity + @effect/atom-react** - Atomic state management
+- **effect/unstable/rpc** - Type-safe RPC between client and server
 - **Tailwind CSS 4** - Utility-first CSS framework
 
 ### Backend Stack
@@ -120,7 +120,7 @@ graph LR
         Bun[Bun Runtime]
         Nitro[Nitro Server]
         Effect[Effect-TS]
-        RPC[@effect/rpc]
+        RPC[effect/unstable/rpc]
     end
 
     subgraph "APIs"
@@ -140,7 +140,7 @@ graph LR
 - **Bun** - Fast JavaScript runtime
 - **Nitro** - Universal server framework
 - **Effect-TS** - Functional effect system
-- **@effect/rpc** - Type-safe client-server communication
+- **effect/unstable/rpc** - Type-safe client-server communication
 
 ---
 

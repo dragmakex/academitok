@@ -6,19 +6,20 @@ import type {
 } from "@/api/todo-schema"
 import { Todo } from "@/api/todo-schema"
 import { serializable } from "@/lib/atom-utils"
-import { Atom, Result } from "@effect-atom/atom-react"
-import * as RpcClientError from "@effect/rpc/RpcClientError"
 import * as Arr from "effect/Array"
 import type * as Data from "effect/Data"
 import * as Effect from "effect/Effect"
-import * as Option from "effect/Option"
+import * as Layer from "effect/Layer"
 import * as Schema from "effect/Schema"
+import * as ServiceMap from "effect/ServiceMap"
+import * as AsyncResult from "effect/unstable/reactivity/AsyncResult"
+import * as Atom from "effect/unstable/reactivity/Atom"
+import * as RpcClientError from "effect/unstable/rpc/RpcClientError"
 
 const TodosSchema = Schema.Array(Todo)
 
-class Api extends Effect.Service<Api>()("@app/index/Api", {
-  dependencies: [ApiClient.Default],
-  effect: Effect.gen(function*() {
+class Api extends ServiceMap.Service<Api>()("@app/index/Api", {
+  make: Effect.gen(function*() {
     const { rpc } = yield* ApiClient
 
     return {
@@ -29,9 +30,13 @@ class Api extends Effect.Service<Api>()("@app/index/Api", {
       remove: (id: TodoId) => rpc.todos_remove({ id }),
     } as const
   }),
-}) {}
+}) {
+  static readonly layer = Layer.effect(this, this.make).pipe(
+    Layer.provide(ApiClient.layer),
+  )
+}
 
-export const runtime = Atom.runtime(Api.Default)
+export const runtime = Atom.runtime(Api.layer)
 
 type TodosCacheUpdate = Data.TaggedEnum<{
   Upsert: { readonly todo: Todo }
@@ -49,10 +54,10 @@ export const todosAtom = (() => {
     .pipe(
       serializable({
         key: "@app/index/todos",
-        schema: Result.Schema({
+        schema: Schema.toCodecJson(AsyncResult.Schema({
           success: TodosSchema,
           error: RpcClientError.RpcClientError,
-        }),
+        })),
       }),
     )
 
@@ -61,7 +66,7 @@ export const todosAtom = (() => {
       (get) => get(remoteAtom),
       (ctx, update: TodosCacheUpdate) => {
         const current = ctx.get(todosAtom)
-        if (!Result.isSuccess(current)) {
+        if (!AsyncResult.isSuccess(current)) {
           return
         }
 
@@ -72,19 +77,20 @@ export const todosAtom = (() => {
                 current.value,
                 (t) => t.id === update.todo.id,
               )
-              return Option.match(existingIndex, {
-                onNone: () => Arr.prepend(current.value, update.todo),
-                onSome: (index) =>
-                  Arr.replace(current.value, index, update.todo),
-              })
+              return existingIndex === undefined
+                ? Arr.prepend(current.value, update.todo)
+                : Arr.replace(current.value, existingIndex, update.todo)
+                  ?? current.value
             }
             case "Delete": {
               return Arr.filter(current.value, (t) => t.id !== update.id)
             }
           }
+          const _exhaustive: never = update
+          return _exhaustive
         })()
 
-        ctx.setSelf(Result.success(nextValue))
+        ctx.setSelf(AsyncResult.success(nextValue))
       },
       (refresh) => {
         refresh(remoteAtom)

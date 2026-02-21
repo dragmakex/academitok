@@ -1,5 +1,6 @@
 import { expect, it } from "@effect/vitest"
 import * as Effect from "effect/Effect"
+import { PostHog } from "posthog-node"
 import { afterEach, beforeEach, describe, vi } from "vitest"
 import {
   createPostHogClient,
@@ -24,10 +25,38 @@ vi.mock("posthog-node", () => {
   const MockPostHog = class {
     capture = vi.fn()
     identify = vi.fn()
-    getFeatureFlag = vi.fn().mockResolvedValue(true)
-    isFeatureEnabled = vi.fn().mockResolvedValue(true)
-    flush = vi.fn().mockResolvedValue(undefined)
-    shutdown = vi.fn().mockResolvedValue(undefined)
+    /**
+     * Returns a feature flag value for a user.
+     *
+     * @returns The resolved feature flag value.
+     */
+    getFeatureFlag() {
+      return Promise.resolve(true)
+    }
+    /**
+     * Returns whether a feature flag is enabled for a user.
+     *
+     * @returns The resolved enabled status.
+     */
+    isFeatureEnabled() {
+      return Promise.resolve(true)
+    }
+    /**
+     * Flushes pending events.
+     *
+     * @returns A resolved flush promise.
+     */
+    flush() {
+      return Promise.resolve(undefined)
+    }
+    /**
+     * Shuts down the client.
+     *
+     * @returns A resolved shutdown promise.
+     */
+    shutdown() {
+      return Promise.resolve(undefined)
+    }
   }
   return { PostHog: MockPostHog }
 })
@@ -145,13 +174,15 @@ describe("getServerFeatureFlag", () => {
   it.effect("returns default value when flag is undefined", () =>
     Effect
       .gen(function*() {
-        // The mock returns true, but this tests the parameter passing
+        vi
+          .spyOn(PostHog.prototype, "getFeatureFlag")
+          .mockResolvedValueOnce(undefined)
         const value = yield* getServerFeatureFlag(
           "test-flag",
           "user-123",
           false,
         )
-        expect(value).toBe(true) // Mock returns true
+        expect(value).toBe(false)
       })
       .pipe(Effect.provide(TestLayer)))
 
@@ -179,6 +210,20 @@ describe("isServerFeatureFlagEnabled", () => {
           "user-123",
         )
         expect(isEnabled).toBe(true)
+      })
+      .pipe(Effect.provide(TestLayer)))
+
+  it.effect("returns false when flag is undefined", () =>
+    Effect
+      .gen(function*() {
+        vi
+          .spyOn(PostHog.prototype, "isFeatureEnabled")
+          .mockResolvedValueOnce(undefined)
+        const isEnabled = yield* isServerFeatureFlagEnabled(
+          "test-flag",
+          "user-123",
+        )
+        expect(isEnabled).toBe(false)
       })
       .pipe(Effect.provide(TestLayer)))
 })

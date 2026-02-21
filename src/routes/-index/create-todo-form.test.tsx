@@ -6,15 +6,8 @@ import { describe, expect, it, vi } from "vitest"
  * We test exports. The component itself is tested via visual regression tests.
  */
 
-// Mock @effect-atom/atom-react
-vi.mock("@effect-atom/atom-react", () => ({
-  Result: {
-    initial: () => ({ waiting: false }),
-    success: (value: unknown) => ({ value, _tag: "Success" }),
-    failure: () => ({ _tag: "Failure" }),
-    isSuccess: (r: { _tag?: string }) => r._tag === "Success",
-    isFailure: (r: { _tag?: string }) => r._tag === "Failure",
-  },
+// Mock @effect/atom-react
+vi.mock("@effect/atom-react", () => ({
   useAtom: () => [{ waiting: false }, vi.fn()],
 }))
 

@@ -2,7 +2,7 @@ import { expect, it } from "@effect/vitest"
 import * as EffectArray from "effect/Array"
 import * as Effect from "effect/Effect"
 import * as Stream from "effect/Stream"
-import { addRpcErrorLogging } from "./api-client"
+import { addRpcErrorLogging, getBaseUrl } from "./api-client"
 
 /**
  * Tests for api-client.ts utilities.
@@ -128,4 +128,16 @@ it.effect("addRpcErrorLogging - handles deeply nested values", () =>
     expect(result).toBe("nested-result")
     // Non-function values should be preserved
     expect(wrapped.level1.level2.plainValue).toBe("not-a-function")
+  }))
+
+it.effect("getBaseUrl - uses window origin when available", () =>
+  Effect.sync(() => {
+    expect(getBaseUrl({ location: { origin: "https://example.com" } })).toBe(
+      "https://example.com",
+    )
+  }))
+
+it.effect("getBaseUrl - falls back to localhost when window is undefined", () =>
+  Effect.sync(() => {
+    expect(getBaseUrl(null)).toBe("http://localhost:3000")
   }))

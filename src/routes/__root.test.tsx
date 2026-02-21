@@ -11,8 +11,8 @@ vi.mock("../styles.css?url", () => ({
   default: "/styles.css",
 }))
 
-// Mock @effect-atom/atom-react
-vi.mock("@effect-atom/atom-react", () => ({
+// Mock @effect/atom-react
+vi.mock("@effect/atom-react", () => ({
   RegistryProvider: ({ children }: { children: React.ReactNode }) => children,
 }))
 

@@ -35,4 +35,4 @@ export const createRpcHandlers = Effect.gen(function*() {
 
 export const TodosRpcLive = DomainRpc
   .toLayer(createRpcHandlers)
-  .pipe(Layer.provide(TodosService.Default))
+  .pipe(Layer.provide(TodosService.layer))

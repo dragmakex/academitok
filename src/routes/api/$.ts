@@ -4,12 +4,6 @@ import {
   initPyroscopeServer,
   shutdownPyroscopeServer,
 } from "@/lib/pyroscope-server"
-import * as HttpLayerRouter from "@effect/platform/HttpLayerRouter"
-import * as HttpServer from "@effect/platform/HttpServer"
-import * as HttpServerResponse from "@effect/platform/HttpServerResponse"
-import * as RpcMiddleware from "@effect/rpc/RpcMiddleware"
-import * as RpcSerialization from "@effect/rpc/RpcSerialization"
-import * as RpcServer from "@effect/rpc/RpcServer"
 import { createFileRoute } from "@tanstack/react-router"
 import type { Cause } from "effect/Cause"
 import * as Effect from "effect/Effect"
@@ -17,6 +11,13 @@ import * as Exit from "effect/Exit"
 import * as Layer from "effect/Layer"
 import * as Logger from "effect/Logger"
 import * as ManagedRuntime from "effect/ManagedRuntime"
+import * as HttpRouter from "effect/unstable/http/HttpRouter"
+import * as HttpServer from "effect/unstable/http/HttpServer"
+import * as HttpServerResponse from "effect/unstable/http/HttpServerResponse"
+import * as HttpApiBuilder from "effect/unstable/httpapi/HttpApiBuilder"
+import * as RpcMiddleware from "effect/unstable/rpc/RpcMiddleware"
+import * as RpcSerialization from "effect/unstable/rpc/RpcSerialization"
+import * as RpcServer from "effect/unstable/rpc/RpcServer"
 import { TodosApiLive } from "./-lib/todos-api-live"
 import { TodosRpcLive } from "./-lib/todos-rpc-live"
 import { TodosService } from "./-lib/todos-service"
@@ -25,30 +26,35 @@ import { TodosService } from "./-lib/todos-service"
  * RPC logging middleware - logs errors for failed RPC requests.
  * Exported for testing.
  */
-export class RpcLogger extends RpcMiddleware.Tag<RpcLogger>()("RpcLogger", {
-  wrap: true,
-  optional: true,
-}) {}
+export class RpcLogger
+  extends RpcMiddleware.Service<RpcLogger>()("RpcLogger")
+{}
+
+type RpcMiddlewareOptions = Parameters<RpcMiddleware.Any>[1]
 
 /**
  * RPC logger handler implementation.
  * Exported for testing.
  *
  * @param opts - The options for the RPC logger handler.
- * @param opts.next - The next effect to execute.
+ * @param opts.effect - The effect to execute.
  * @param opts.rpc - The RPC request metadata.
  * @param opts.rpc._tag - The RPC method tag.
  * @param opts.clientId - The client identifier.
  * @returns An Effect that yields the Exit result after logging any errors.
  */
 export const createRpcLoggerHandler = <A, E>(
-  opts: { next: Effect.Effect<A, E>; rpc: { _tag: string }; clientId: string },
+  opts: {
+    effect: Effect.Effect<A, E>
+    rpc: { readonly _tag: string }
+    clientId: string
+  },
 ): Effect.Effect<Exit.Exit<A, E>, never, never> =>
-  Effect.flatMap(Effect.exit(opts.next), (exit) =>
+  Effect.flatMap(Effect.exit(opts.effect), (exit) =>
     Exit.match(exit, {
       onSuccess: () => Effect.succeed(exit),
       onFailure: (cause: Cause<E>) =>
-        Effect.zipRight(
+        Effect.andThen(
           Effect.annotateLogs(
             Effect.logError(`RPC request failed: ${opts.rpc._tag}`, cause),
             {
@@ -64,21 +70,22 @@ export const createRpcLoggerHandler = <A, E>(
  * RPC logger middleware handler that wraps the next effect with logging.
  * Returns the original result or re-raises the error after logging.
  *
+ * @param effect - The effect to execute.
  * @param opts - The options for the RPC logger middleware.
- * @param opts.next - The next effect to execute.
  * @param opts.rpc - The RPC request metadata.
  * @param opts.rpc._tag - The RPC method tag.
  * @param opts.clientId - The client identifier.
  * @returns An Effect that yields the result or fails with the original error.
  */
 const rpcLoggerMiddleware = <A, E>(
-  opts: { next: Effect.Effect<A, E>; rpc: { _tag: string }; clientId: number },
+  effect: Effect.Effect<A, E>,
+  opts: RpcMiddlewareOptions,
 ): Effect.Effect<A, E, never> =>
-  Effect.flatMap(Effect.exit(opts.next), (exit) =>
+  Effect.flatMap(Effect.exit(effect), (exit) =>
     Exit.match(exit, {
       onSuccess: (value) => Effect.succeed(value),
       onFailure: (cause: Cause<E>) =>
-        Effect.zipRight(
+        Effect.andThen(
           Effect.annotateLogs(
             Effect.logError(`RPC request failed: ${opts.rpc._tag}`, cause),
             {
@@ -99,35 +106,38 @@ export const RpcLoggerLive = Layer.succeed(
  * Router layers - exported for testing.
  */
 export const RpcRouter = RpcServer
-  .layerHttpRouter({
-    group: DomainRpc.middleware(RpcLogger),
-    path: "/api/rpc",
-    protocol: "http",
+  .layer(DomainRpc.middleware(RpcLogger), {
     spanPrefix: "rpc",
     disableFatalDefects: true,
   })
   .pipe(
     Layer.provide(TodosRpcLive),
     Layer.provide(RpcLoggerLive),
-    Layer.provide(RpcSerialization.layerNdjson),
+    Layer.provide(
+      RpcServer.layerProtocolHttp({ path: "/api/rpc" }).pipe(
+        Layer.provide(RpcSerialization.layerNdjson),
+      ),
+    ),
   )
 
-export const HttpApiRouter = HttpLayerRouter.addHttpApi(DomainApi).pipe(
+export const HttpApiRouter = HttpApiBuilder.layer(DomainApi).pipe(
   Layer.provide(TodosApiLive),
-  Layer.provide(HttpServer.layerContext),
+  Layer.provide(HttpServer.layerServices),
 )
 
-export const HealthRoute = HttpLayerRouter.use((router) =>
-  router.add("GET", "/api/health", HttpServerResponse.text("OK"))
+export const HealthRoute = HttpRouter.add(
+  "GET",
+  "/api/health",
+  Effect.succeed(HttpServerResponse.text("OK")),
 )
 
 export const AllRoutes = Layer
   .mergeAll(RpcRouter, HttpApiRouter, HealthRoute)
   .pipe(
-    Layer.provide(Logger.pretty),
+    Layer.provide(Logger.layer([Logger.consolePretty()])),
   )
 
-const memoMap = Effect.runSync(Layer.makeMemoMap)
+const memoMap = Layer.makeMemoMapUnsafe()
 
 const globalHmr = globalThis as unknown as {
   __EFFECT_DISPOSE__?: () => Promise<void>
@@ -139,13 +149,15 @@ if (globalHmr.__EFFECT_DISPOSE__) {
 
 await initPyroscopeServer()
 
-const { dispose, handler } = HttpLayerRouter.toWebHandler(AllRoutes, {
+const { dispose, handler } = HttpRouter.toWebHandler(AllRoutes, {
   memoMap,
 })
 const effectHandler = ({ request }: { request: Request }) => handler(request)
 
 // ManagedRuntime for use in loaders/server functions
-export const serverRuntime = ManagedRuntime.make(TodosService.Default, memoMap)
+export const serverRuntime = ManagedRuntime.make(TodosService.layer, {
+  memoMap,
+})
 
 globalHmr.__EFFECT_DISPOSE__ = async () => {
   await shutdownPyroscopeServer()

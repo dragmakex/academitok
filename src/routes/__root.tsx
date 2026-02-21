@@ -1,7 +1,8 @@
-import { RegistryProvider } from "@effect-atom/atom-react"
+import { RegistryProvider } from "@effect/atom-react"
 import { TanStackDevtools } from "@tanstack/react-devtools"
 import { createRootRoute, HeadContent, Scripts } from "@tanstack/react-router"
 import { TanStackRouterDevtoolsPanel } from "@tanstack/react-router-devtools"
+import * as React from "react"
 import appCss from "../styles.css?url"
 
 export const Route = createRootRoute({
@@ -37,6 +38,12 @@ export const Route = createRootRoute({
  * @returns The rendered HTML document.
  */
 function RootDocument({ children }: { children: React.ReactNode }) {
+  const [isClient, setIsClient] = React.useState(false)
+
+  React.useEffect(() => {
+    setIsClient(true)
+  }, [])
+
   return (
     <html lang="en">
       <head>
@@ -46,17 +53,19 @@ function RootDocument({ children }: { children: React.ReactNode }) {
         <RegistryProvider defaultIdleTTL={60_000}>
           {children}
         </RegistryProvider>
-        <TanStackDevtools
-          config={{
-            position: "bottom-right",
-          }}
-          plugins={[
-            {
-              name: "Tanstack Router",
-              render: <TanStackRouterDevtoolsPanel />,
-            },
-          ]}
-        />
+        {isClient && (
+          <TanStackDevtools
+            config={{
+              position: "bottom-right",
+            }}
+            plugins={[
+              {
+                name: "Tanstack Router",
+                render: <TanStackRouterDevtoolsPanel />,
+              },
+            ]}
+          />
+        )}
         <Scripts />
       </body>
     </html>

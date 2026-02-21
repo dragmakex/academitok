@@ -1,6 +1,7 @@
 import type { Todo } from "@/api/todo-schema"
-import { Result, useAtom, useAtomRefresh } from "@effect-atom/atom-react"
+import { useAtom, useAtomRefresh } from "@effect/atom-react"
 import * as Option from "effect/Option"
+import * as AsyncResult from "effect/unstable/reactivity/AsyncResult"
 import { useState } from "react"
 import { deleteTodoAtom, todosAtom, updateTodoAtom } from "./atoms"
 
@@ -41,8 +42,8 @@ export function TodoItem({ todo }: { readonly todo: Todo }) {
   }
 
   const isLoading = updateResult.waiting || deleteResult.waiting
-  const hasError = Result.isFailure(updateResult)
-    || Result.isFailure(deleteResult)
+  const hasError = AsyncResult.isFailure(updateResult)
+    || AsyncResult.isFailure(deleteResult)
 
   return (
     <li

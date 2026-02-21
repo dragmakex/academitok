@@ -29,18 +29,15 @@
   },
   "dependencies": {
     "@datadog/pprof": "github:SamuelLHuber/pprof-nodejs#pyroscope-ts-bun-compat-2026-02-10",
-    "@effect-atom/atom": "^0.4.8",
-    "@effect-atom/atom-react": "^0.4.3",
-    "@effect/platform": "^0.93.6",
-    "@effect/platform-browser": "^0.73.0",
-    "@effect/rpc": "^0.72.2",
+    "@effect/atom-react": "4.0.0-beta.0",
+    "@effect/platform-browser": "4.0.0-beta.0",
     "@tailwindcss/vite": "^4.0.6",
     "@tanstack/react-router": "^1.132.0",
     "@tanstack/react-router-ssr-query": "^1.131.7",
     "@tanstack/react-start": "^1.132.0",
     "@tanstack/router-plugin": "^1.132.0",
     "@pyroscope/nodejs": "^0.4.9",
-    "effect": "^3.19.10",
+    "effect": "4.0.0-beta.0",
     "lucide-react": "^0.544.0",
     "nitro": "latest",
     "posthog-js": "^1.306.1",
@@ -56,8 +53,8 @@
   "devDependencies": {
     "@effect/eslint-plugin": "^0.3.2",
     "@effect/language-service": "^0.62.2",
-    "@effect/opentelemetry": "^0.59.3",
-    "@effect/vitest": "^0.27.0",
+    "@effect/opentelemetry": "4.0.0-beta.0",
+    "@effect/vitest": "4.0.0-beta.0",
     "@eslint/compat": "^1.2.4",
     "@eslint/eslintrc": "^3.2.0",
     "@eslint/js": "^9.17.0",
@@ -93,7 +90,9 @@
     "vite": "^7.1.7",
     "vitest": "^4.0.15",
     "vitest-browser-react": "^2.0.2",
-    "web-vitals": "^5.1.0"
+    "web-vitals": "^5.1.0",
+    "smithers-orchestrator": "^0.7.0",
+    "zod": "^4.3.6"
   },
   "patchedDependencies": {
     "srvx@0.9.7": "patches/srvx@0.9.7.patch",

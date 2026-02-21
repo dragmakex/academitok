@@ -1,8 +1,10 @@
 import { TodoId, TodoNotFound } from "@/api/todo-schema"
 import { expect, it } from "@effect/vitest"
+import * as Cause from "effect/Cause"
 import * as Effect from "effect/Effect"
 import * as Exit from "effect/Exit"
 import * as Option from "effect/Option"
+import * as Schema from "effect/Schema"
 import { TodosService } from "./todos-service"
 
 /**
@@ -18,7 +20,7 @@ it.effect("list returns empty array initially", () =>
       const todos = yield* service.list
       expect(todos).toEqual([])
     })
-    .pipe(Effect.provide(TodosService.Default)))
+    .pipe(Effect.provide(TodosService.layer)))
 
 it.effect("create adds a new todo", () =>
   Effect
@@ -35,7 +37,7 @@ it.effect("create adds a new todo", () =>
       expect(todos).toHaveLength(1)
       expect(todos[0]).toEqual(created)
     })
-    .pipe(Effect.provide(TodosService.Default)))
+    .pipe(Effect.provide(TodosService.layer)))
 
 it.effect("getById returns the correct todo", () =>
   Effect
@@ -46,27 +48,26 @@ it.effect("getById returns the correct todo", () =>
       const found = yield* service.getById(created.id)
       expect(found).toEqual(created)
     })
-    .pipe(Effect.provide(TodosService.Default)))
+    .pipe(Effect.provide(TodosService.layer)))
 
 it.effect("getById fails with TodoNotFound for non-existent id", () =>
   Effect
     .gen(function*() {
       const service = yield* TodosService
-      const fakeId = TodoId.make("non-existent-id")
+      const fakeId = Schema.decodeSync(TodoId)("non-existent-id")
 
       const result = yield* Effect.exit(service.getById(fakeId))
       expect(Exit.isFailure(result)).toBe(true)
 
       if (Exit.isFailure(result)) {
-        const error = result.cause
-        expect(error._tag).toBe("Fail")
-        if (error._tag === "Fail") {
-          expect(error.error).toBeInstanceOf(TodoNotFound)
-          expect((error.error as TodoNotFound).id).toBe(fakeId)
+        const failReason = result.cause.reasons.find(Cause.isFailReason)
+        expect(failReason?.error).toBeInstanceOf(TodoNotFound)
+        if (failReason?.error instanceof TodoNotFound) {
+          expect(failReason.error.id).toBe(fakeId)
         }
       }
     })
-    .pipe(Effect.provide(TodosService.Default)))
+    .pipe(Effect.provide(TodosService.layer)))
 
 it.effect("update modifies todo title", () =>
   Effect
@@ -83,7 +84,7 @@ it.effect("update modifies todo title", () =>
       expect(updated.title).toBe("Updated")
       expect(updated.completed).toBe(false)
     })
-    .pipe(Effect.provide(TodosService.Default)))
+    .pipe(Effect.provide(TodosService.layer)))
 
 it.effect("update modifies todo completed status", () =>
   Effect
@@ -99,7 +100,7 @@ it.effect("update modifies todo completed status", () =>
       expect(updated.title).toBe("Task")
       expect(updated.completed).toBe(true)
     })
-    .pipe(Effect.provide(TodosService.Default)))
+    .pipe(Effect.provide(TodosService.layer)))
 
 it.effect("update modifies both title and completed", () =>
   Effect
@@ -115,13 +116,13 @@ it.effect("update modifies both title and completed", () =>
       expect(updated.title).toBe("New Title")
       expect(updated.completed).toBe(true)
     })
-    .pipe(Effect.provide(TodosService.Default)))
+    .pipe(Effect.provide(TodosService.layer)))
 
 it.effect("update fails with TodoNotFound for non-existent id", () =>
   Effect
     .gen(function*() {
       const service = yield* TodosService
-      const fakeId = TodoId.make("non-existent")
+      const fakeId = Schema.decodeSync(TodoId)("non-existent")
 
       const result = yield* Effect.exit(
         service.update(fakeId, {
@@ -132,7 +133,7 @@ it.effect("update fails with TodoNotFound for non-existent id", () =>
 
       expect(Exit.isFailure(result)).toBe(true)
     })
-    .pipe(Effect.provide(TodosService.Default)))
+    .pipe(Effect.provide(TodosService.layer)))
 
 it.effect("remove deletes a todo", () =>
   Effect
@@ -145,18 +146,18 @@ it.effect("remove deletes a todo", () =>
       const todos = yield* service.list
       expect(todos).toHaveLength(0)
     })
-    .pipe(Effect.provide(TodosService.Default)))
+    .pipe(Effect.provide(TodosService.layer)))
 
 it.effect("remove fails with TodoNotFound for non-existent id", () =>
   Effect
     .gen(function*() {
       const service = yield* TodosService
-      const fakeId = TodoId.make("non-existent")
+      const fakeId = Schema.decodeSync(TodoId)("non-existent")
 
       const result = yield* Effect.exit(service.remove(fakeId))
       expect(Exit.isFailure(result)).toBe(true)
     })
-    .pipe(Effect.provide(TodosService.Default)))
+    .pipe(Effect.provide(TodosService.layer)))
 
 it.effect("multiple todos are stored correctly", () =>
   Effect
@@ -176,7 +177,7 @@ it.effect("multiple todos are stored correctly", () =>
       expect(ids).toContain(todo2.id)
       expect(ids).toContain(todo3.id)
     })
-    .pipe(Effect.provide(TodosService.Default)))
+    .pipe(Effect.provide(TodosService.layer)))
 
 it.effect("each todo gets a unique id", () =>
   Effect
@@ -188,4 +189,4 @@ it.effect("each todo gets a unique id", () =>
 
       expect(todo1.id).not.toBe(todo2.id)
     })
-    .pipe(Effect.provide(TodosService.Default)))
+    .pipe(Effect.provide(TodosService.layer)))
