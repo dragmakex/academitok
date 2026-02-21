@@ -2,23 +2,24 @@
 
 This directory contains **detailed documentation for all features and significant changes** made to the application.
 
-## Purpose
+## Purpose & Structure
 
-When AI agents or developers implement features, fix bugs, or make significant changes to the system, they **must document their work here** with the precision and thoroughness of a German technical manual.
+When AI agents or developers implement features, fix bugs, or make significant changes to the system, they **must document their work here** with the precision and thoroughness of a German technical manual. For Bugs that means writing a clear commit description that includes the big and reasoning using conventional commits and the reasoning for the fix/change. We can therefore save on documentation scope because version control extends it with the details of why something changed. Documentation therefore does not need to document every single small thing. It needs to be available to serve as reference, guide and overarching map to the system.
 
-## Structure
-
-Each feature, bug fix, or significant change gets its own directory:
+Each feature, bug fix, or significant change only gets its own file if it is not better suited in a comprehensive document that aligns well.
+We want to minimize cognitive overhead and increase density of our documentation. That is most paramount. Striking the balance between just enough so context is explicitly clear and not too much so it's overwhelming. Code for example documents it self with TSDoc and the actual code, so we merely need to document decisions, assumptions and how the code ties together in data flows and on the architectural level.
 
 ```
-docs/app/[feature-name]/
-├── README.md           # Overview, purpose, usage examples
-├── architecture.md     # Design decisions, trade-offs, alternatives considered
-├── implementation.md   # Technical details, key files, integration points
-└── diagrams/          # Mermaid diagrams for visual clarity
-    ├── flow.md        # Data flow, control flow, sequence diagrams
-    └── structure.md   # Component structure, module dependencies
+docs/app/[functional-unit]/<document>.md 
+├── # Overview, purpose, usage examples
+├── # Design decisions, trade-offs, alternatives considered
+├── # Technical details, key files, integration points
+├── # Mermaid diagrams for visual clarity
+├── # Data flow, control flow, sequence diagrams
+└── # Component structure, module dependencies
 ```
+
+Be aware to not just write what is already in code, if that's the case we can just mention the codefile/function.
 
 ## Documentation Standards
 
@@ -51,30 +52,28 @@ docs/app/[feature-name]/
 
 ### Good Feature Documentation
 
-**docs/app/user-authentication/**
+docs/app/
 
 ```
-user-authentication/
-├── README.md           # What: JWT-based auth with refresh tokens
-│                       # Why: Stateless, scalable, works with SSR
-│                       # Usage: Login, logout, protected routes
+user-authentication.md
+├── # What: JWT-based auth with refresh tokens
+│   # Why: Stateless, scalable, works with SSR
+│   # Usage: Login, logout, protected routes
 │
-├── architecture.md     # Decision: JWT over sessions (why?)
-│                       # Trade-off: Token size vs database queries
-│                       # Security: HTTPS-only, HttpOnly cookies
+├── # Decision: JWT over sessions (why?)
+│   # Trade-off: Token size vs database queries
+│   # Security: HTTPS-only, HttpOnly cookies
 │
-├── implementation.md   # Files: src/lib/auth.ts, src/routes/api/auth/
-│                       # Integration: Effect services, middleware
-│                       # Testing: Auth flow tests, token validation
+├── # Files: src/lib/auth.ts, src/routes/api/auth/
+│   # Integration: Effect services, middleware
+│   # Testing: Auth flow tests, token validation
 │
-└── diagrams/
-    ├── flow.md        # Sequence: Login → Token → Refresh → Logout
-    └── structure.md   # Components: AuthService, TokenValidator, etc.
+├── # diagrams/  (mermaid for complex diagrams, ascii for illustrations)
+│   # Flow:      # Sequence: Login → Token → Refresh → Logout
+│   # Structure: # Components: AuthService, TokenValidator, etc.
 ```
 
 ### Mermaid Diagram Example
-
-From `diagrams/flow.md`:
 
 ````markdown
 # Authentication Flow
@@ -110,8 +109,8 @@ sequenceDiagram
 
 - ✅ New features (authentication, payments, API integrations)
 - ✅ Significant refactors (state management changes, architecture shifts)
-- ✅ Complex bug fixes (root cause analysis, solution explanation)
-- ✅ Performance optimizations (before/after, trade-offs)
+- ✅ Complex bug fixes (root cause analysis, solution explanation) -> if not well suited in docs then append to general LEARNINGS.md
+- ✅ Performance optimizations (before/after, trade-offs) -> if not well suited in docs then append to general LEARNINGS.md
 - ✅ Integration with external services (APIs, databases, analytics)
 
 ### Optional (but encouraged)
@@ -136,3 +135,4 @@ sequenceDiagram
 ---
 
 **Remember**: You are not just writing code. You are maintaining a system. Document with the precision of a German engineering manual.
+If we don't need to update docs or write new ones we are good too. Don't overcomplicate things. Keep it simple. For simple learnings we have LEARNINGS.md
