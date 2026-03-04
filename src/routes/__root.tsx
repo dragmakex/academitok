@@ -2,6 +2,7 @@ import { RegistryProvider } from "@effect/atom-react"
 import { TanStackDevtools } from "@tanstack/react-devtools"
 import { createRootRoute, HeadContent, Scripts } from "@tanstack/react-router"
 import { TanStackRouterDevtoolsPanel } from "@tanstack/react-router-devtools"
+import { useEffect } from "react"
 import * as React from "react"
 import appCss from "../styles.css?url"
 
@@ -38,6 +39,12 @@ export const Route = createRootRoute({
  * @returns The rendered HTML document.
  */
 function RootDocument({ children }: { children: React.ReactNode }) {
+  useEffect(() => {
+    if (import.meta.env.DEV) {
+      void import("react-grab")
+    }
+  }, [])
+
   const [isClient, setIsClient] = React.useState(false)
 
   React.useEffect(() => {
