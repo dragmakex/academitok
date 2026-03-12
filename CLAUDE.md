@@ -1,6 +1,6 @@
 # Agent Instructions
 
-Before doing anywork consult specs/README.md to confirm with the relevant specs.
+Before doing any work, consult `specs/README.md` when it exists to confirm the relevant specs.
 
 ## 🇩🇪 Engineering Philosophy: German Precision & Minimalism
 
@@ -49,20 +49,10 @@ Before doing anywork consult specs/README.md to confirm with the relevant specs.
 
 1. Version Control Hygiene
 
-   **Branch Workflow:**
-   - **Branch naming**: `feature/name`, `fix/name`, `refactor/name`, `docs/name`
-   - **Master stays clean** - never commit directly to master/main, we prefer master
-   - **Commit frequently** - step-wise commits document your thought process in the extended commmit description
+   Follow `docs/guides/versioncontrol.md` for all version control work.
+   That guide defines the required branch strategy, commit structure, publication flow, and history hygiene for this repository.
 
-   **Commit Frequency:**
-   - ✅ Commit after each logical step (not just when "done")
-   - ✅ Each commit should have a clear, single purpose
-   - ✅ Commits tell a story - future you will thank you
-   - ✅ Step-wise commits make PRs easier to review
-   - ❌ Don't wait until everything is perfect to commit
-   - ❌ Don't create giant "implement everything" commits
-
-   If we can and don't need to do the work ourselves use handoff documents and the PRDs to handoff tasks to subagents. Let them report back with a handoff themselves so you can work efficiently like a true german 🇩🇪
+   If we can and do not need to do the work ourselves, use handoff documents and PRDs to hand work to subagents and have them report back with a written handoff.
 
 2. **READ EXISTING DOCUMENTATION**
    - Check `docs/` if you want to learn anything.
@@ -87,7 +77,7 @@ Before doing anywork consult specs/README.md to confirm with the relevant specs.
 6. **COMMIT FREQUENTLY (Step-wise Commits)**
    - Commit after each logical unit of work
    - Each commit should pass verification (typecheck, lint, test)
-   - Write clear commit messages following conventional commits format
+   - Follow `docs/guides/versioncontrol.md` for commit message structure and history hygiene
    - Don't wait until feature is "complete" - commit as you go
    - Step-wise commits create documentation of your thought process
 
@@ -169,7 +159,7 @@ When multiple code paths and functions do similar things with slight variations,
 
 ## 🚫 Anti-Patterns - DO NOT DO THESE
 
-1. **Working directly on master** - "It's a small change" ❌ → **ALWAYS create a feature branch**
+1. **Working directly on master** - "It's a small change" ❌ → **ALWAYS create a feature branch and follow `docs/guides/versioncontrol.md`**
 2. **One giant commit** - "I'll commit when it's done" ❌ → **Commit step-wise**
 3. **Squashing commits** - "Clean history looks better" ❌ → **Preserve step-wise history**
 4. **Skipping verification** - "It compiles so it's fine" ❌
@@ -189,7 +179,7 @@ When multiple code paths and functions do similar things with slight variations,
 
 ### Before You Start
 
-- [ ] Created feature branch for this work (`git checkout -b feature-name`)
+- [ ] Created feature branch for this work following `docs/guides/versioncontrol.md`
 - [ ] Read relevant documentation in `docs/`
 - [ ] Understand existing patterns in codebase
 - [ ] Check Effect Solutions for relevant patterns
@@ -203,7 +193,7 @@ When multiple code paths and functions do similar things with slight variations,
 - [ ] Keep changes minimal and focused
 - [ ] **Commit frequently** - step-wise commits after each logical unit
 - [ ] Each commit passes verification (typecheck, lint, test)
-- [ ] Commit messages follow conventional commits format
+- [ ] Commit messages follow the standard in `docs/guides/versioncontrol.md`
 
 ### After Implementation
 
@@ -220,7 +210,7 @@ When multiple code paths and functions do similar things with slight variations,
 - [ ] Documentation matches actual implementation
 - [ ] Step-wise commits tell a clear story
 - [ ] Pull request created with detailed description
-- [ ] Ready for merge via PR (merge commit, not squash)
+- [ ] Ready for merge via PR according to `docs/guides/versioncontrol.md`
 
 ---
 

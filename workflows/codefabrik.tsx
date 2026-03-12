@@ -17,6 +17,8 @@ const repoRoot = process.cwd()
 /**
  * Run a command via Bun shell deterministically. Captures stdout, stderr, exitCode.
  * Never throws — caller decides how to handle non-zero exits.
+ * @param command
+ * @param cwd
  */
 async function shell(command: string, cwd = repoRoot) {
   const result = await $`${{ raw: command }}`.cwd(cwd).nothrow().quiet()
@@ -27,12 +29,18 @@ async function shell(command: string, cwd = repoRoot) {
   }
 }
 
-/** Run a shell command, throw on non-zero exit. */
+/**
+ * Run a shell command, throw on non-zero exit.
+ * @param command
+ * @param cwd
+ */
 async function shellOrThrow(command: string, cwd = repoRoot) {
   const result = await shell(command, cwd)
   if (result.exitCode !== 0) {
     throw new Error(
-      `Command failed (exit ${result.exitCode}): ${command}\n${result.stderr || result.stdout}`,
+      `Command failed (exit ${result.exitCode}): ${command}\n${
+        result.stderr || result.stdout
+      }`,
     )
   }
   return result
@@ -45,7 +53,10 @@ async function runValidation() {
   const test = await shell("bun run test:coverage")
   const build = await shell("bun run build")
 
-  const collect = (r: Awaited<ReturnType<typeof shell>>, filter: (l: string) => boolean) => ({
+  const collect = (
+    r: Awaited<ReturnType<typeof shell>>,
+    filter: (l: string) => boolean,
+  ) => ({
     success: r.exitCode === 0,
     errors: r.exitCode !== 0
       ? (r.stderr || r.stdout).split("\n").filter(filter).slice(0, 50)
@@ -54,8 +65,12 @@ async function runValidation() {
 
   const tc = collect(typecheck, (l) => l.includes("error TS"))
   const lt = collect(lint, (l) => l.trim().length > 0)
-  const ts = collect(test, (l) =>
-    l.includes("FAIL") || l.includes("✗") || l.includes("×") || l.includes("Error"),
+  const ts = collect(
+    test,
+    (l) =>
+      l.includes("FAIL") || l.includes("✗") || l
+        .includes("×") || l
+        .includes("Error"),
   )
   const bd = collect(build, (l) => l.trim().length > 0)
 
@@ -68,18 +83,41 @@ async function runValidation() {
   }
 }
 
-/** Format validation errors as a prompt section for Codex. */
+/**
+ * Format validation errors as a prompt section for Codex.
+ * @param v
+ * @param v.typecheck
+ * @param v.typecheck.success
+ * @param v.typecheck.errors
+ * @param v.lint
+ * @param v.lint.success
+ * @param v.lint.errors
+ * @param v.test
+ * @param v.test.success
+ * @param v.test.errors
+ * @param v.build
+ * @param v.build.success
+ * @param v.build.errors
+ */
 function formatValidationErrors(v: {
-  typecheck: { success: boolean; errors: string[] }
-  lint: { success: boolean; errors: string[] }
-  test: { success: boolean; errors: string[] }
-  build: { success: boolean; errors: string[] }
+  typecheck: { success: boolean; errors: Array<string> }
+  lint: { success: boolean; errors: Array<string> }
+  test: { success: boolean; errors: Array<string> }
+  build: { success: boolean; errors: Array<string> }
 }): string {
-  const sections: string[] = []
-  if (!v.typecheck.success) sections.push(`## TypeScript errors\n${v.typecheck.errors.join("\n")}`)
-  if (!v.lint.success) sections.push(`## Lint errors\n${v.lint.errors.join("\n")}`)
-  if (!v.test.success) sections.push(`## Test failures\n${v.test.errors.join("\n")}`)
-  if (!v.build.success) sections.push(`## Build errors\n${v.build.errors.join("\n")}`)
+  const sections: Array<string> = []
+  if (!v.typecheck.success) {
+    sections.push(`## TypeScript errors\n${v.typecheck.errors.join("\n")}`)
+  }
+  if (!v.lint.success) {
+    sections.push(`## Lint errors\n${v.lint.errors.join("\n")}`)
+  }
+  if (!v.test.success) {
+    sections.push(`## Test failures\n${v.test.errors.join("\n")}`)
+  }
+  if (!v.build.success) {
+    sections.push(`## Build errors\n${v.build.errors.join("\n")}`)
+  }
   return sections.join("\n\n") || "No errors found."
 }
 
@@ -172,16 +210,19 @@ export default smithers((ctx) => {
   return (
     <Workflow name="codefabrik">
       <Sequence>
-
         {/* ── Phase 0: Deterministic jj branch setup ── */}
         <Task id="branch" output={outputs.branch}>
           {async () => {
             const branch = branchName ?? `codefabrik/${Date.now()}`
-            const base = await shellOrThrow("jj log -r @ --no-graph -T change_id")
+            const base = await shellOrThrow(
+              "jj log -r @ --no-graph -T change_id",
+            )
 
             await shellOrThrow(`jj new -m ${$.escape(`wip: ${branch}`)}`)
 
-            const bookmark = await shell(`jj bookmark set ${$.escape(branch)} -r @`)
+            const bookmark = await shell(
+              `jj bookmark set ${$.escape(branch)} -r @`,
+            )
             if (bookmark.exitCode !== 0) {
               console.warn(`jj bookmark set warning: ${bookmark.stderr}`)
             }
@@ -200,12 +241,15 @@ export default smithers((ctx) => {
           maxIterations={20}
           onMaxReached="return-last"
         >
-
           {/* 1. Discover: read spec, identify next work item */}
           <Task id="discover" output={outputs.discover} agent={codex}>
             {`You are a spec-driven ticket decomposer.
 
-${spec ? `## Spec\n${spec}` : "## Spec\nRead specs/README.md and follow its references to find the full specification."}
+${
+              spec
+                ? `## Spec\n${spec}`
+                : "## Spec\nRead specs/README.md and follow its references to find the full specification."
+            }
 
 ## Your job
 Read the spec and the current codebase. Identify what remains to be done.
@@ -214,18 +258,26 @@ Return the NEXT SINGLE ticket to implement — the smallest meaningful unit of w
 If everything in the spec is already implemented, tested, and passing, set done=true.
 
 ## Previous work this run
-${(() => {
-  const commits = ctx.outputs("commit")
-  if (!commits || commits.length === 0) return "No commits yet — this is the first iteration."
-  return commits.map((c) => `- [${c.changeId}] ${c.description}`).join("\n")
-})()}
+${
+              (() => {
+                const commits = ctx.outputs("commit")
+                if (!commits || commits.length === 0) {
+                  return "No commits yet — this is the first iteration."
+                }
+                return commits
+                  .map((c) => `- [${c.changeId}] ${c.description}`)
+                  .join("\n")
+              })()
+            }
 
 ## Previous discovery
-${(() => {
-  const prev = ctx.latest("discover", "discover")
-  if (!prev) return "First discovery."
-  return `Last ticket: "${prev.ticket}" (remaining: ${prev.remainingCount})`
-})()}
+${
+              (() => {
+                const prev = ctx.latest("discover", "discover")
+                if (!prev) {return "First discovery."}
+                return `Last ticket: "${prev.ticket}" (remaining: ${prev.remainingCount})`
+              })()
+            }
 
 Return done=false with a clear ticket description, or done=true if the spec is fully implemented.`}
           </Task>
@@ -286,10 +338,8 @@ If issues found, list them — the next iteration's implement step will see them
             id="fix"
             output={outputs.fix}
             agent={codex}
-            skipIf={
-              ctx.latest("discover", "discover")?.done === true
-              || ctx.latest("validate", "validate")?.success === true
-            }
+            skipIf={ctx.latest("discover", "discover")?.done === true
+              || ctx.latest("validate", "validate")?.success === true}
           >
             {`Validation failed after implementing this ticket. Fix the errors.
 Do NOT disable lint rules, skip tests, or use \`any\`. Fix root causes.
@@ -301,14 +351,16 @@ ${ctx.latest("discover", "discover")?.ticket ?? ""}
 ${ctx.latest("review", "review")?.issues?.join("\n") ?? "None"}
 
 ## Validation errors
-${formatValidationErrors(
-  ctx.latest("validate", "validate") ?? {
-    typecheck: { success: true, errors: [] },
-    lint: { success: true, errors: [] },
-    test: { success: true, errors: [] },
-    build: { success: true, errors: [] },
-  },
-)}`}
+${
+              formatValidationErrors(
+                ctx.latest("validate", "validate") ?? {
+                  typecheck: { success: true, errors: [] },
+                  lint: { success: true, errors: [] },
+                  test: { success: true, errors: [] },
+                  build: { success: true, errors: [] },
+                },
+              )
+            }`}
           </Task>
 
           {/* 6. Commit: deterministic jj describe + new change for next iteration */}
@@ -318,11 +370,14 @@ ${formatValidationErrors(
             skipIf={ctx.latest("discover", "discover")?.done === true}
           >
             {async () => {
-              const ticket = ctx.latest("discover", "discover")?.ticket ?? "work"
+              const ticket = ctx.latest("discover", "discover")?.ticket
+                ?? "work"
               const description = `feat: ${ticket}`
 
               await shellOrThrow(`jj describe -m ${$.escape(description)}`)
-              const log = await shellOrThrow("jj log -r @ --no-graph -T change_id")
+              const log = await shellOrThrow(
+                "jj log -r @ --no-graph -T change_id",
+              )
               const changeId = log.stdout
 
               // Create a fresh change for the next iteration
@@ -331,9 +386,7 @@ ${formatValidationErrors(
               return { changeId, description }
             }}
           </Task>
-
         </Ralph>
-
       </Sequence>
     </Workflow>
   )
