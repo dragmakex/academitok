@@ -1,29 +1,87 @@
-# PGlite Local Database
+# PGlite with Drizzle and Effect
 
-This app now uses one Postgres-shaped database model:
+Minimal guide for a local embedded Postgres setup using:
 
-- local development without `DATABASE_URL`: PGlite persisted at `./data/pglite`
-- shared or deployed environments with `DATABASE_URL`: PostgreSQL via `postgres`
+- `drizzle-orm/pglite` for queries
+- `@electric-sql/pglite` for a single-file local database
+- `effect` for dependency injection
 
-## Configuration
+Use this for local development and deterministic repository tests when you want
+Postgres semantics without running a separate server.
 
-Use PostgreSQL when `DATABASE_URL` is set:
-
-```bash
-DATABASE_URL="postgresql://postgres:postgres@localhost:5432/myapp"
-```
-
-Use PGlite for a local embedded database by omitting `DATABASE_URL`. Optionally
-override the local data directory:
+## Install
 
 ```bash
-PGLITE_DATA_DIR="./data/pglite"
+bun add drizzle-orm @electric-sql/pglite effect
 ```
 
-## Notes
+## Why PGlite
 
-- The app schema is defined once with `drizzle-orm/pg-core`.
-- Local PGlite storage uses the same Postgres-oriented schema and query path as
-  the networked PostgreSQL adapter.
-- The todo table is created automatically on startup for now; migration tooling
-  can be added later once the schema grows beyond this baseline.
+- same Postgres-oriented Drizzle schema as remote PostgreSQL
+- file-backed local persistence
+- good fit for seeded invariant tests in node mode
+
+## Minimal Schema
+
+Use `pg-core`, not SQLite schema types:
+
+```ts
+import { boolean, pgTable, text, timestamp } from "drizzle-orm/pg-core"
+
+export const todosTable = pgTable("todos", {
+  id: text("id").primaryKey(),
+  title: text("title").notNull(),
+  completed: boolean("completed").notNull().default(false),
+  createdAt: timestamp("created_at", {
+    mode: "date",
+    withTimezone: true,
+  }).notNull(),
+})
+```
+
+## Minimal Effect Layer
+
+```ts
+import { PGlite } from "@electric-sql/pglite"
+import { drizzle } from "drizzle-orm/pglite"
+import * as Context from "effect/Context"
+import * as Effect from "effect/Effect"
+import * as Layer from "effect/Layer"
+
+export class Db extends Context.Tag("Db")<Db, ReturnType<typeof makeDb>>() {}
+
+const makeDb = async () => {
+  const client = new PGlite("./data/pglite")
+  return drizzle({ client })
+}
+
+export const DbLive = Layer.scoped(
+  Db,
+  Effect.acquireRelease(
+    Effect.promise(makeDb),
+    (db) => Effect.promise(() => db.$client.close()),
+  ),
+)
+```
+
+## Testing Pattern
+
+Prefer seeded PGlite instances for repository and service tests:
+
+- one isolated DB per test or suite
+- explicit named seeds
+- node-mode tests, not browser-mode tests
+
+This proves invariants against persisted state instead of mocks.
+
+## Practical Rules
+
+- keep the schema in Drizzle `pg-core`
+- inject the DB through an Effect service
+- do not introduce a separate SQLite path
+- use PGlite for local and test, PostgreSQL for shared environments
+
+## Related
+
+- [PostgreSQL Guide](./database-postgresql.md)
+- [Testing Guide](./testing.md)
