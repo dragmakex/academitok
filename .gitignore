@@ -57,6 +57,7 @@ __snapshots__/__diff_output__
 # Vitest browser artifacts
 browser-snapshots
 __browser_snapshots__
+src/visual/__screenshots__/
 
 # Temporary files
 *.tmp
