@@ -1,10 +1,12 @@
+// @vitest-environment node
+
 import type { TodoId } from "@/api/todo-schema"
+import { makeTodosServiceTestLayer } from "@/db/todos-test-support"
 import { expect, it } from "@effect/vitest"
 import * as Effect from "effect/Effect"
 import * as Exit from "effect/Exit"
 import * as Option from "effect/Option"
 import { createRpcHandlers, TodosRpcLive } from "./todos-rpc-live"
-import { TodosService } from "./todos-service"
 
 /**
  * Tests for TodosRpcLive - the RPC layer for todo operations.
@@ -24,7 +26,7 @@ it.effect("createRpcHandlers - creates handler object", () =>
       expect(handlers.todos_update).toBeDefined()
       expect(handlers.todos_remove).toBeDefined()
     })
-    .pipe(Effect.provide(TodosService.layer)))
+    .pipe(Effect.provide(makeTodosServiceTestLayer())))
 
 it.effect("createRpcHandlers - todos_list returns empty initially", () =>
   Effect
@@ -33,7 +35,22 @@ it.effect("createRpcHandlers - todos_list returns empty initially", () =>
       const todos = yield* handlers.todos_list()
       expect(todos).toEqual([])
     })
-    .pipe(Effect.provide(TodosService.layer)))
+    .pipe(Effect.provide(makeTodosServiceTestLayer("empty"))))
+
+it.effect("createRpcHandlers - todos_list returns seeded rows", () =>
+  Effect
+    .gen(function*() {
+      const handlers = yield* createRpcHandlers
+      const todos = yield* handlers.todos_list()
+
+      expect(todos.map((todo) => todo.title)).toEqual([
+        "Alpha todo",
+        "Bravo done",
+        "Charlie todo",
+      ])
+      expect(todos[1]?.completed).toBe(true)
+    })
+    .pipe(Effect.provide(makeTodosServiceTestLayer("mixedState"))))
 
 it.effect("createRpcHandlers - todos_create creates a todo", () =>
   Effect
@@ -47,7 +64,7 @@ it.effect("createRpcHandlers - todos_create creates a todo", () =>
       expect(created.completed).toBe(false)
       expect(created.id).toBeDefined()
     })
-    .pipe(Effect.provide(TodosService.layer)))
+    .pipe(Effect.provide(makeTodosServiceTestLayer())))
 
 it.effect("createRpcHandlers - todos_getById finds a todo", () =>
   Effect
@@ -61,7 +78,7 @@ it.effect("createRpcHandlers - todos_getById finds a todo", () =>
       expect(found.id).toBe(created.id)
       expect(found.title).toBe("Find via RPC")
     })
-    .pipe(Effect.provide(TodosService.layer)))
+    .pipe(Effect.provide(makeTodosServiceTestLayer())))
 
 it.effect("createRpcHandlers - todos_getById returns error for missing", () =>
   Effect
@@ -72,7 +89,7 @@ it.effect("createRpcHandlers - todos_getById returns error for missing", () =>
       const result = yield* Effect.exit(handlers.todos_getById({ id: fakeId }))
       expect(Exit.isFailure(result)).toBe(true)
     })
-    .pipe(Effect.provide(TodosService.layer)))
+    .pipe(Effect.provide(makeTodosServiceTestLayer())))
 
 it.effect("createRpcHandlers - todos_update modifies a todo", () =>
   Effect
@@ -93,7 +110,7 @@ it.effect("createRpcHandlers - todos_update modifies a todo", () =>
       expect(updated.title).toBe("Updated RPC")
       expect(updated.completed).toBe(true)
     })
-    .pipe(Effect.provide(TodosService.layer)))
+    .pipe(Effect.provide(makeTodosServiceTestLayer())))
 
 it.effect("createRpcHandlers - todos_remove deletes a todo", () =>
   Effect
@@ -108,7 +125,7 @@ it.effect("createRpcHandlers - todos_remove deletes a todo", () =>
       const todos = yield* handlers.todos_list()
       expect(todos).toHaveLength(0)
     })
-    .pipe(Effect.provide(TodosService.layer)))
+    .pipe(Effect.provide(makeTodosServiceTestLayer())))
 
 it.effect("createRpcHandlers - todos_remove returns error for missing", () =>
   Effect
@@ -119,7 +136,7 @@ it.effect("createRpcHandlers - todos_remove returns error for missing", () =>
       const result = yield* Effect.exit(handlers.todos_remove({ id: fakeId }))
       expect(Exit.isFailure(result)).toBe(true)
     })
-    .pipe(Effect.provide(TodosService.layer)))
+    .pipe(Effect.provide(makeTodosServiceTestLayer())))
 
 it.effect("TodosRpcLive - layer builds successfully", () =>
   Effect.sync(() => {

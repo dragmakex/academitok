@@ -317,7 +317,7 @@ const fetchUser = (userId: string) =>
 - 🧭 [Observability Setup](./docs/guides/observability-setup.md) - LAOS stack setup
 - 🐳 [App Docker Guide](./docs/guides/app-docker.md) - Containerize the app only
 - 🗄️ [PostgreSQL Guide](./docs/guides/database-postgresql.md) - PostgreSQL with Drizzle ORM
-- 💾 [SQLite Guide](./docs/guides/database-sqlite.md) - SQLite with Drizzle ORM
+- 💾 [PGlite Guide](./docs/guides/database-pglite.md) - Local embedded Postgres with Drizzle ORM
 - ✨ [Code Quality Guide](./docs/guides/code-quality.md) - Linting and formatting
 - 🤖 [AI Code Review Guide](./docs/guides/ai-code-review.md) - AI-powered code review
 - ⚡ [Performance Monitoring](./docs/guides/performance-monitoring.md) - Bundle size & Web Vitals

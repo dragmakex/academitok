@@ -24,6 +24,7 @@ build
 data/*.sqlite
 data/*.sqlite-shm
 data/*.sqlite-wal
+data/pglite/
 !data/.gitkeep
 
 # Backups

@@ -1,4 +1,7 @@
+// @vitest-environment node
+
 import type { TodoId } from "@/api/todo-schema"
+import { makeTodosServiceTestLayer } from "@/db/todos-test-support"
 import { expect, it } from "@effect/vitest"
 import * as Effect from "effect/Effect"
 import * as Exit from "effect/Exit"
@@ -25,7 +28,21 @@ it.effect("listHandler - returns empty initially", () =>
       const todos = yield* listHandler
       expect(todos).toEqual([])
     })
-    .pipe(Effect.provide(TodosService.layer)))
+    .pipe(Effect.provide(makeTodosServiceTestLayer("empty"))))
+
+it.effect("listHandler - returns seeded rows", () =>
+  Effect
+    .gen(function*() {
+      const todos = yield* listHandler
+
+      expect(todos.map((todo) => todo.title)).toEqual([
+        "Alpha todo",
+        "Bravo done",
+        "Charlie todo",
+      ])
+      expect(todos[1]?.completed).toBe(true)
+    })
+    .pipe(Effect.provide(makeTodosServiceTestLayer("mixedState"))))
 
 it.effect("listHandler - returns created todos", () =>
   Effect
@@ -37,7 +54,7 @@ it.effect("listHandler - returns created todos", () =>
       const todos = yield* listHandler
       expect(todos).toHaveLength(2)
     })
-    .pipe(Effect.provide(TodosService.layer)))
+    .pipe(Effect.provide(makeTodosServiceTestLayer())))
 
 it.effect("createHandler - creates a todo", () =>
   Effect
@@ -48,7 +65,7 @@ it.effect("createHandler - creates a todo", () =>
       expect(created.completed).toBe(false)
       expect(created.id).toBeDefined()
     })
-    .pipe(Effect.provide(TodosService.layer)))
+    .pipe(Effect.provide(makeTodosServiceTestLayer())))
 
 it.effect("getByIdHandler - finds a todo", () =>
   Effect
@@ -59,7 +76,7 @@ it.effect("getByIdHandler - finds a todo", () =>
       expect(found.id).toBe(created.id)
       expect(found.title).toBe("Find via HTTP")
     })
-    .pipe(Effect.provide(TodosService.layer)))
+    .pipe(Effect.provide(makeTodosServiceTestLayer())))
 
 it.effect("getByIdHandler - returns error for missing", () =>
   Effect
@@ -69,7 +86,7 @@ it.effect("getByIdHandler - returns error for missing", () =>
       const result = yield* Effect.exit(getByIdHandler(fakeId))
       expect(Exit.isFailure(result)).toBe(true)
     })
-    .pipe(Effect.provide(TodosService.layer)))
+    .pipe(Effect.provide(makeTodosServiceTestLayer())))
 
 it.effect("updateHandler - updates a todo", () =>
   Effect
@@ -84,7 +101,7 @@ it.effect("updateHandler - updates a todo", () =>
       expect(updated.title).toBe("Updated HTTP")
       expect(updated.completed).toBe(true)
     })
-    .pipe(Effect.provide(TodosService.layer)))
+    .pipe(Effect.provide(makeTodosServiceTestLayer())))
 
 it.effect("removeHandler - removes a todo", () =>
   Effect
@@ -96,7 +113,7 @@ it.effect("removeHandler - removes a todo", () =>
       const todos = yield* listHandler
       expect(todos).toHaveLength(0)
     })
-    .pipe(Effect.provide(TodosService.layer)))
+    .pipe(Effect.provide(makeTodosServiceTestLayer())))
 
 it.effect("removeHandler - returns error for missing", () =>
   Effect
@@ -106,7 +123,7 @@ it.effect("removeHandler - returns error for missing", () =>
       const result = yield* Effect.exit(removeHandler(fakeId))
       expect(Exit.isFailure(result)).toBe(true)
     })
-    .pipe(Effect.provide(TodosService.layer)))
+    .pipe(Effect.provide(makeTodosServiceTestLayer())))
 
 it.effect("TodosApiLive - layer builds successfully", () =>
   Effect.sync(() => {

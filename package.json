@@ -28,6 +28,7 @@
     "validate": "bun run typecheck && bun run lint && bun run format:check && bun run docs:check && bun run test:coverage && bun run perf:check"
   },
   "dependencies": {
+    "@electric-sql/pglite": "^0.3.7",
     "@datadog/pprof": "github:SamuelLHuber/pprof-nodejs#pyroscope-ts-bun-compat-2026-02-10",
     "@effect/atom-react": "4.0.0-beta.0",
     "@effect/platform-browser": "4.0.0-beta.0",
@@ -37,11 +38,13 @@
     "@tanstack/react-start": "^1.132.0",
     "@tanstack/router-plugin": "^1.132.0",
     "@pyroscope/nodejs": "^0.4.9",
+    "drizzle-orm": "^0.45.1",
     "effect": "4.0.0-beta.0",
     "lucide-react": "^0.544.0",
     "nitro": "latest",
     "posthog-js": "^1.306.1",
     "posthog-node": "^5.17.2",
+    "postgres": "^3.4.7",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
     "tailwindcss": "^4.0.6",

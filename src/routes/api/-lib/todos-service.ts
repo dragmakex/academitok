@@ -2,99 +2,53 @@ import type {
   CreateTodoInput,
   Todo,
   TodoId,
+  TodoNotFound,
   UpdateTodoInput,
 } from "@/api/todo-schema"
-import { TodoNotFound } from "@/api/todo-schema"
-import * as EffectArray from "effect/Array"
-import * as DateTime from "effect/DateTime"
+import { type TodoSeed, TodosRepository } from "@/db/todos-repository"
 import * as Effect from "effect/Effect"
 import * as Layer from "effect/Layer"
-import * as Option from "effect/Option"
-import * as Ref from "effect/Ref"
 import * as ServiceMap from "effect/ServiceMap"
 
 export class TodosService extends ServiceMap.Service<TodosService>()(
   "TodosService",
   {
     make: Effect.gen(function*() {
-      const todosRef = yield* Ref.make<Map<TodoId, Todo>>(new Map())
-
-      const generateId = (): TodoId => {
-        const id = crypto.randomUUID()
-        return id as TodoId
-      }
-
-      const list = Effect.gen(function*() {
-        const todos = yield* Ref.get(todosRef)
-        return EffectArray.fromIterable(todos.values())
-      })
-
-      const getById = (id: TodoId) =>
-        Effect.gen(function*() {
-          const todos = yield* Ref.get(todosRef)
-          const todo = todos.get(id)
-          if (!todo) {
-            return yield* Effect.fail(new TodoNotFound({ id }))
-          }
-          return todo
-        })
-
-      const create = (input: CreateTodoInput) =>
-        Effect.gen(function*() {
-          const id = generateId()
-          const now = yield* DateTime.now
-          const todo: Todo = {
-            id,
-            title: input.title,
-            completed: false,
-            createdAt: now,
-          }
-          yield* Ref.update(todosRef, (todos) => {
-            const newTodos = new Map(todos)
-            newTodos.set(id, todo)
-            return newTodos
-          })
-          return todo
-        })
-
-      const update = (id: TodoId, input: UpdateTodoInput) =>
-        Effect.gen(function*() {
-          const existing = yield* getById(id)
-          const updated: Todo = {
-            ...existing,
-            title: Option.getOrElse(input.title, () => existing.title),
-            completed: Option.getOrElse(
-              input.completed,
-              () => existing.completed,
-            ),
-          }
-          yield* Ref.update(todosRef, (todos) => {
-            const newTodos = new Map(todos)
-            newTodos.set(id, updated)
-            return newTodos
-          })
-          return updated
-        })
-
-      const remove = (id: TodoId) =>
-        Effect.gen(function*() {
-          yield* getById(id)
-          yield* Ref.update(todosRef, (todos) => {
-            const newTodos = new Map(todos)
-            newTodos.delete(id)
-            return newTodos
-          })
-        })
+      const repository = yield* TodosRepository
 
       return {
-        list,
-        getById,
-        create,
-        update,
-        remove,
+        list: repository.list,
+        getById: (id: TodoId): Effect.Effect<Todo, TodoNotFound> =>
+          repository.getById(id),
+        create: (input: CreateTodoInput): Effect.Effect<Todo> =>
+          repository.create(input),
+        update: (
+          id: TodoId,
+          input: UpdateTodoInput,
+        ): Effect.Effect<Todo, TodoNotFound> => repository.update(id, input),
+        remove: (id: TodoId): Effect.Effect<void, TodoNotFound> =>
+          repository.remove(id),
       } as const
     }),
   },
 ) {
-  static readonly layer = Layer.effect(this, this.make)
+  static readonly layer = Layer.effect(this, this.make).pipe(
+    Layer.provide(TodosRepository.layer),
+  )
+
+  static readonly testLayer = Layer.effect(this, this.make).pipe(
+    Layer.provide(TodosRepository.testLayer),
+  )
+
+  /**
+   * Creates a service layer backed by an in-memory seeded PGlite repository.
+   *
+   * @param seed - The deterministic rows to preload before the test runs.
+   * @returns A todo service layer for invariant-style tests.
+   */
+  static layerFromSeed(seed: TodoSeed): Layer.Layer<TodosService> {
+    return Layer.effect(this, this.make).pipe(
+      Layer.provide(TodosRepository.layerFromSeed(seed)),
+    )
+  }
 }
