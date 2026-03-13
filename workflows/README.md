@@ -68,3 +68,21 @@ jj --ignore-working-copy git push --allow-empty-description --remote origin --bo
 instead of the fresh empty `@`. The commit step also abandons orphaned empty
 undescribed transitions before describing the finished slice so interrupted runs
 do not leave push-blocking ancestry behind.
+
+## Debugging Stuck Tests
+
+If workflow validation runs `bun run test:coverage` for more than roughly 5
+minutes at high CPU with no output, check for recursive discovery inside nested
+jj workspaces.
+
+Useful checks:
+
+```bash
+ps -o pid,etime,time,pcpu,command -p <PID>
+t1=$(ps -o time= -p <PID> | tr -d ' '); sleep 30; t2=$(ps -o time= -p <PID> | tr -d ' '); echo "$t1 -> $t2"
+lsof -p <PID> | grep ".jj-workspaces"
+```
+
+This repository excludes both `.worktrees/**` and `.jj-workspaces/**` from
+Vitest discovery in [vite.config.ts](/Users/samuel/git/effect-tanstack-baseline/vite.config.ts). If you see `.jj-workspaces/.jj-workspaces/...`
+paths in `lsof`, that exclusion is the first thing to verify.

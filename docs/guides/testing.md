@@ -356,6 +356,11 @@ bun run test:watch
 # Update visual regression baselines
 bun run test:visual:update
 
+# Baselines in this repo are tracked under src/visual/__screenshots__/.
+# Numbered failure captures such as *-1.png are transient and should not be committed.
+# Visual tests disable browser file parallelism to reduce local Playwright startup crashes.
+# If browser launch failures only reproduce inside a sandboxed agent run, verify once outside the sandbox before treating them as repo regressions.
+
 # Run tests for specific browser
 bun run test -- --project=chromium
 bun run test -- --project=firefox
