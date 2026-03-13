@@ -15,6 +15,8 @@ import {
   buildFixPrompt,
   buildImplementPrompt,
   buildReviewPrompt,
+  isRevisionStateEmptyUndescribed,
+  parseRevisionState,
   type PromptContext,
   type ValidationResult,
   type ValidationSection,
@@ -26,6 +28,12 @@ type ShellResult = {
   stdout: string
   stderr: string
   exitCode: number
+}
+
+type RevisionState = {
+  changeId: string
+  hasDescription: boolean
+  isEmpty: boolean
 }
 
 /**
@@ -62,6 +70,37 @@ async function shellOrThrow(
     )
   }
   return result
+}
+
+/**
+ * Read the current jj revision state.
+ * @returns Current revision metadata.
+ */
+async function getCurrentRevisionState(): Promise<RevisionState> {
+  const result = await shellOrThrow(
+    "jj log -r @ --no-graph -T 'change_id ++ \"\\n\" ++ if(empty, \"true\", \"false\") ++ \"\\n\" ++ if(description, \"true\", \"false\")'",
+  )
+  return parseRevisionState(result.stdout)
+}
+
+/**
+ * Determine whether the current revision is an orphaned empty transition.
+ * @returns Whether the current revision should be abandoned before commit.
+ */
+async function isCurrentRevisionEmptyUndescribed(): Promise<boolean> {
+  const current = await getCurrentRevisionState()
+  return isRevisionStateEmptyUndescribed(current)
+}
+
+/**
+ * Abandon a stray empty revision left behind by an interrupted workflow run.
+ */
+async function abandonOrphanedEmptyRevision(): Promise<void> {
+  if (!(await isCurrentRevisionEmptyUndescribed())) {
+    return
+  }
+
+  await shellOrThrow("jj abandon @")
 }
 
 /**
@@ -232,9 +271,10 @@ async function createCommit(ctx: WorkflowContext) {
     throw new Error("Missing workflow branch output.")
   }
 
+  await abandonOrphanedEmptyRevision()
   await shellOrThrow(`jj describe -m ${$.escape(description)}`)
-  const log = await shellOrThrow("jj log -r @ --no-graph -T change_id")
-  const changeId = log.stdout
+  const current = await getCurrentRevisionState()
+  const changeId = current.changeId
 
   await shellOrThrow(`jj bookmark set ${$.escape(branch)} -r @`)
   await shellOrThrow("jj new")

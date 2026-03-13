@@ -44,7 +44,12 @@ const config = defineConfig(({ mode }) => {
     test: {
       globals: true,
       include: ["src/**/*.test.{ts,tsx}"],
-      exclude: ["**/.worktrees/**", ".worktrees/**"],
+      exclude: [
+        "**/.worktrees/**",
+        ".worktrees/**",
+        "**/.jj-workspaces/**",
+        ".jj-workspaces/**",
+      ],
       // Browser mode configuration for component and visual regression testing
       browser: {
         enabled: true,
@@ -158,7 +163,10 @@ const config = defineConfig(({ mode }) => {
     },
     server: {
       watch: {
-        ignored: [".worktrees/**"],
+        ignored: [
+          ".worktrees/**",
+          ".jj-workspaces/**",
+        ],
       },
     },
   }

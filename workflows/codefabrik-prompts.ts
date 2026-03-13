@@ -19,6 +19,7 @@ type CommitOutput = {
 }
 
 type DiscoverOutput = {
+  done: boolean
   ticket: string
   context: string
   remainingCount: number
@@ -39,6 +40,39 @@ export type PromptContext = {
   latest(output: "review", id: "review"): ReviewOutput | undefined
   latest(output: "validate", id: "validate"): ValidationResult | undefined
   outputs(output: "commit"): Array<CommitOutput> | undefined
+}
+
+type RevisionState = {
+  changeId: string
+  hasDescription: boolean
+  isEmpty: boolean
+}
+
+/**
+ * Parse jj revision state from a fixed newline-delimited template.
+ * @param stdout Raw jj log output.
+ * @returns Parsed revision metadata.
+ */
+export function parseRevisionState(stdout: string): RevisionState {
+  const [changeId = "", isEmpty = "false", hasDescription = "false"] = stdout
+    .split("\n")
+
+  return {
+    changeId,
+    hasDescription: hasDescription === "true",
+    isEmpty: isEmpty === "true",
+  }
+}
+
+/**
+ * Determine whether a revision is an orphaned empty transition commit.
+ * @param state Parsed revision metadata.
+ * @returns Whether the revision should be abandoned before commit.
+ */
+export function isRevisionStateEmptyUndescribed(
+  state: RevisionState,
+): boolean {
+  return state.isEmpty && !state.hasDescription
 }
 
 const emptyValidationResult: ValidationResult = {
