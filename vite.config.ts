@@ -55,9 +55,6 @@ const config = defineConfig(({ mode }) => {
         enabled: true,
         provider: playwright(),
         headless: true,
-        // Coverage only needs one browser to exercise instrumented code. Keeping
-        // the full browser matrix for non-coverage runs preserves visual checks
-        // without reintroducing flaky multi-browser startup during coverage.
         instances: isCoverageRun
           ? [
             {
@@ -79,6 +76,9 @@ const config = defineConfig(({ mode }) => {
               viewport: { width: 1280, height: 720 },
             },
           ],
+        // Coverage only needs one browser to exercise instrumented code. Keeping
+        // the full browser matrix for non-coverage runs preserves visual checks
+        // without reintroducing flaky multi-browser startup during coverage.
         expect: {
           toMatchScreenshot: {
             comparatorName: "pixelmatch",
