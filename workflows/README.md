@@ -49,10 +49,11 @@ bookmarks.
 
 When a slice is ready, the template:
 
-1. runs `jj describe -m ...`
-2. captures the finished change id
-3. moves the workflow bookmark to `@`
-4. opens a fresh empty change with `jj new`
+1. abandons `@` if it is an empty, undescribed orphan left by a prior interrupted run
+2. runs `jj describe -m ...`
+3. captures the finished change id
+4. moves the workflow bookmark to `@`
+5. opens a fresh empty change with `jj new`
 
 The bookmark move must happen before `jj new`, otherwise the bookmark points at
 the new empty working copy instead of the finished slice.
@@ -64,5 +65,6 @@ jj --ignore-working-copy git push --allow-empty-description --remote origin --bo
 ```
 
 `--ignore-working-copy` ensures the push targets the finished bookmarked slice
-instead of the fresh empty `@`. `--allow-empty-description` avoids older empty
-local scratch commits blocking publication.
+instead of the fresh empty `@`. The commit step also abandons orphaned empty
+undescribed transitions before describing the finished slice so interrupted runs
+do not leave push-blocking ancestry behind.
