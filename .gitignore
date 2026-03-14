@@ -24,6 +24,7 @@ build
 data/*.sqlite
 data/*.sqlite-shm
 data/*.sqlite-wal
+data/pglite/
 !data/.gitkeep
 
 # Backups
@@ -57,7 +58,7 @@ __snapshots__/__diff_output__
 # Vitest browser artifacts
 browser-snapshots
 __browser_snapshots__
-src/visual/__screenshots__/**/*-[0-9].png
+src/visual/__screenshots__/**/*-[0-9]*.png
 
 # Temporary files
 *.tmp
@@ -106,6 +107,7 @@ workflows/*.db-wal
 
 # Ignore worktrees directory
 .worktrees/
+.jj-workspaces/
 
 # Local LAOS clone (keep out of git)
 laos/

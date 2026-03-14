@@ -83,6 +83,42 @@ it.effect("simulates time passage", () =>
   }))
 ```
 
+#### Seeded PGlite Invariants
+
+For server-side persistence tests, prefer node-mode `it.effect(...)` cases that
+provide a seeded PGlite layer instead of mocking the repository or constructing
+state indirectly through multiple setup calls.
+
+This project exposes named seeds in `src/db/todos-test-support.ts`. Use them to
+state the invariant under test directly:
+
+```typescript
+// @vitest-environment node
+
+import { makeTodosServiceTestLayer } from "@/db/todos-test-support"
+import { TodosService } from "@/routes/api/-lib/todos-service"
+import { expect, it } from "@effect/vitest"
+import * as Effect from "effect/Effect"
+
+it.effect("seeded list order is stable", () =>
+  Effect
+    .gen(function*() {
+      const service = yield* TodosService
+      const todos = yield* service.list
+
+      expect(todos.map((todo) => todo.title)).toEqual([
+        "Alpha todo",
+        "Bravo done",
+        "Charlie todo",
+      ])
+    })
+    .pipe(Effect.provide(makeTodosServiceTestLayer("mixedState"))))
+```
+
+Use this pattern when you need to prove repository and service invariants
+against realistic persisted state. Keep these tests in node mode because the
+browser runner is not the right environment for server-side PGlite modules.
+
 ### 2. Component Tests
 
 Test React components in real browsers.

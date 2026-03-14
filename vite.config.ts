@@ -10,6 +10,9 @@ import { defineConfig } from "vitest/config"
 
 const config = defineConfig(({ mode }) => {
   const isVitest = mode === "test" || process.env.VITEST === "true"
+  const isBrowserRun = process.argv.some((arg) =>
+    arg === "--browser.enabled" || arg === "--browser.enabled=true"
+  )
   const isCoverageRun = process.argv.includes("--coverage")
   const plugins: Array<PluginOption> = [
     // Vitest only needs the client-side transforms and aliases. Starting
@@ -52,7 +55,7 @@ const config = defineConfig(({ mode }) => {
       ],
       // Browser mode configuration for component and visual regression testing
       browser: {
-        enabled: true,
+        enabled: isBrowserRun,
         provider: playwright(),
         headless: true,
         instances: isCoverageRun

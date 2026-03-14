@@ -1,4 +1,7 @@
+// @vitest-environment node
+
 import { TodoId, TodoNotFound } from "@/api/todo-schema"
+import { makeTodosServiceTestLayer } from "@/db/todos-test-support"
 import { expect, it } from "@effect/vitest"
 import * as Cause from "effect/Cause"
 import * as Effect from "effect/Effect"
@@ -20,7 +23,32 @@ it.effect("list returns empty array initially", () =>
       const todos = yield* service.list
       expect(todos).toEqual([])
     })
-    .pipe(Effect.provide(TodosService.layer)))
+    .pipe(Effect.provide(makeTodosServiceTestLayer("empty"))))
+
+it.effect("list preserves deterministic seeded order", () =>
+  Effect
+    .gen(function*() {
+      const service = yield* TodosService
+      const todos = yield* service.list
+
+      expect(todos.map((todo) => todo.title)).toEqual([
+        "Alpha todo",
+        "Bravo done",
+        "Charlie todo",
+      ])
+    })
+    .pipe(Effect.provide(makeTodosServiceTestLayer("mixedState"))))
+
+it.effect("seeded completed todos remain completed", () =>
+  Effect
+    .gen(function*() {
+      const service = yield* TodosService
+      const [todo] = yield* service.list
+
+      expect(todo?.title).toBe("Seeded completed todo")
+      expect(todo?.completed).toBe(true)
+    })
+    .pipe(Effect.provide(makeTodosServiceTestLayer("singleCompleted"))))
 
 it.effect("create adds a new todo", () =>
   Effect
@@ -37,7 +65,7 @@ it.effect("create adds a new todo", () =>
       expect(todos).toHaveLength(1)
       expect(todos[0]).toEqual(created)
     })
-    .pipe(Effect.provide(TodosService.layer)))
+    .pipe(Effect.provide(makeTodosServiceTestLayer())))
 
 it.effect("getById returns the correct todo", () =>
   Effect
@@ -48,7 +76,7 @@ it.effect("getById returns the correct todo", () =>
       const found = yield* service.getById(created.id)
       expect(found).toEqual(created)
     })
-    .pipe(Effect.provide(TodosService.layer)))
+    .pipe(Effect.provide(makeTodosServiceTestLayer())))
 
 it.effect("getById fails with TodoNotFound for non-existent id", () =>
   Effect
@@ -67,7 +95,7 @@ it.effect("getById fails with TodoNotFound for non-existent id", () =>
         }
       }
     })
-    .pipe(Effect.provide(TodosService.layer)))
+    .pipe(Effect.provide(makeTodosServiceTestLayer())))
 
 it.effect("update modifies todo title", () =>
   Effect
@@ -84,7 +112,7 @@ it.effect("update modifies todo title", () =>
       expect(updated.title).toBe("Updated")
       expect(updated.completed).toBe(false)
     })
-    .pipe(Effect.provide(TodosService.layer)))
+    .pipe(Effect.provide(makeTodosServiceTestLayer())))
 
 it.effect("update modifies todo completed status", () =>
   Effect
@@ -100,7 +128,7 @@ it.effect("update modifies todo completed status", () =>
       expect(updated.title).toBe("Task")
       expect(updated.completed).toBe(true)
     })
-    .pipe(Effect.provide(TodosService.layer)))
+    .pipe(Effect.provide(makeTodosServiceTestLayer())))
 
 it.effect("update modifies both title and completed", () =>
   Effect
@@ -116,7 +144,26 @@ it.effect("update modifies both title and completed", () =>
       expect(updated.title).toBe("New Title")
       expect(updated.completed).toBe(true)
     })
-    .pipe(Effect.provide(TodosService.layer)))
+    .pipe(Effect.provide(makeTodosServiceTestLayer())))
+
+it.effect("update with no fields is identity for seeded rows", () =>
+  Effect
+    .gen(function*() {
+      const service = yield* TodosService
+      const [seededTodo] = yield* service.list
+
+      if (seededTodo === undefined) {
+        return yield* Effect.die(new Error("Expected a seeded todo"))
+      }
+
+      const updated = yield* service.update(seededTodo.id, {
+        title: Option.none(),
+        completed: Option.none(),
+      })
+
+      expect(updated).toEqual(seededTodo)
+    })
+    .pipe(Effect.provide(makeTodosServiceTestLayer("mixedState"))))
 
 it.effect("update fails with TodoNotFound for non-existent id", () =>
   Effect
@@ -133,7 +180,7 @@ it.effect("update fails with TodoNotFound for non-existent id", () =>
 
       expect(Exit.isFailure(result)).toBe(true)
     })
-    .pipe(Effect.provide(TodosService.layer)))
+    .pipe(Effect.provide(makeTodosServiceTestLayer())))
 
 it.effect("remove deletes a todo", () =>
   Effect
@@ -146,7 +193,27 @@ it.effect("remove deletes a todo", () =>
       const todos = yield* service.list
       expect(todos).toHaveLength(0)
     })
-    .pipe(Effect.provide(TodosService.layer)))
+    .pipe(Effect.provide(makeTodosServiceTestLayer())))
+
+it.effect("remove deletes exactly one seeded row", () =>
+  Effect
+    .gen(function*() {
+      const service = yield* TodosService
+      const [firstTodo] = yield* service.list
+
+      if (firstTodo === undefined) {
+        return yield* Effect.die(new Error("Expected a seeded todo"))
+      }
+
+      yield* service.remove(firstTodo.id)
+
+      const todos = yield* service.list
+      expect(todos.map((todo) => todo.title)).toEqual([
+        "Bravo done",
+        "Charlie todo",
+      ])
+    })
+    .pipe(Effect.provide(makeTodosServiceTestLayer("mixedState"))))
 
 it.effect("remove fails with TodoNotFound for non-existent id", () =>
   Effect
@@ -157,7 +224,7 @@ it.effect("remove fails with TodoNotFound for non-existent id", () =>
       const result = yield* Effect.exit(service.remove(fakeId))
       expect(Exit.isFailure(result)).toBe(true)
     })
-    .pipe(Effect.provide(TodosService.layer)))
+    .pipe(Effect.provide(makeTodosServiceTestLayer())))
 
 it.effect("multiple todos are stored correctly", () =>
   Effect
@@ -172,12 +239,12 @@ it.effect("multiple todos are stored correctly", () =>
       expect(todos).toHaveLength(3)
 
       // Verify all todos are present
-      const ids = todos.map((t) => t.id)
+      const ids = todos.map((todo) => todo.id)
       expect(ids).toContain(todo1.id)
       expect(ids).toContain(todo2.id)
       expect(ids).toContain(todo3.id)
     })
-    .pipe(Effect.provide(TodosService.layer)))
+    .pipe(Effect.provide(makeTodosServiceTestLayer())))
 
 it.effect("each todo gets a unique id", () =>
   Effect
@@ -189,4 +256,4 @@ it.effect("each todo gets a unique id", () =>
 
       expect(todo1.id).not.toBe(todo2.id)
     })
-    .pipe(Effect.provide(TodosService.layer)))
+    .pipe(Effect.provide(makeTodosServiceTestLayer())))

@@ -8,15 +8,18 @@
         "@datadog/pprof": "github:SamuelLHuber/pprof-nodejs#pyroscope-ts-bun-compat-2026-02-10",
         "@effect/atom-react": "4.0.0-beta.0",
         "@effect/platform-browser": "4.0.0-beta.0",
+        "@electric-sql/pglite": "^0.3.7",
         "@pyroscope/nodejs": "^0.4.9",
         "@tailwindcss/vite": "^4.0.6",
         "@tanstack/react-router": "^1.132.0",
         "@tanstack/react-router-ssr-query": "^1.131.7",
         "@tanstack/react-start": "^1.132.0",
         "@tanstack/router-plugin": "^1.132.0",
+        "drizzle-orm": "^0.45.1",
         "effect": "4.0.0-beta.0",
         "lucide-react": "^0.544.0",
         "nitro": "latest",
+        "postgres": "^3.4.7",
         "posthog-js": "^1.306.1",
         "posthog-node": "^5.17.2",
         "react": "^19.2.0",
@@ -207,6 +210,8 @@
     "@effect/platform-browser": ["@effect/platform-browser@4.0.0-beta.0", "", { "dependencies": { "multipasta": "^0.2.7" }, "peerDependencies": { "effect": "^4.0.0-beta.0" } }, "sha512-xYNThGZl7XufCl7VPuoc26c1lrbtdk7hN/d5ZUJmRU1pdZu7Zy868O/4eQfzXX4lTMSydiiIkVSRjVmo25tNCg=="],
 
     "@effect/vitest": ["@effect/vitest@4.0.0-beta.0", "", { "peerDependencies": { "effect": "^4.0.0-beta.0", "vitest": "^3.0.0" } }, "sha512-7AdZVL0gjzrp9iQL+0syjJY/HyBm+hxyAfDV9dLk9ryOZ67Muj3eV3NWYaqmLmiutUsTFBdEZ/7f8V9RWAkH4w=="],
+
+    "@electric-sql/pglite": ["@electric-sql/pglite@0.3.16", "", {}, "sha512-mZkZfOd9OqTMHsK+1cje8OSzfAQcpD7JmILXTl5ahdempjUDdmg4euf1biDex5/LfQIDJ3gvCu6qDgdnDxfJmA=="],
 
     "@emnapi/core": ["@emnapi/core@1.7.1", "", { "dependencies": { "@emnapi/wasi-threads": "1.1.0", "tslib": "^2.4.0" } }, "sha512-o1uhUASyo921r2XtHYOHy7gdkGLge8ghBEQHMWmyJFoXlpU58kIrhhN3w26lpQb6dspetweapMn2CSNwQ8I4wg=="],
 
@@ -1561,6 +1566,8 @@
     "possible-typed-array-names": ["possible-typed-array-names@1.1.0", "", {}, "sha512-/+5VFTchJDoVj3bhoqi6UeymcD00DAwb1nJwamzPvHEszJ4FpF6SNNbUbOS8yI56qHzdV8eK0qEfOSiodkTdxg=="],
 
     "postcss": ["postcss@8.5.6", "", { "dependencies": { "nanoid": "^3.3.11", "picocolors": "^1.1.1", "source-map-js": "^1.2.1" } }, "sha512-3Ybi1tAuwAP9s0r1UQ2J4n5Y0G05bJkpUIO0/bI9MhwmD70S5aTWbXGBwxHrelT+XM1k6dM0pk+SwNkpTRN7Pg=="],
+
+    "postgres": ["postgres@3.4.8", "", {}, "sha512-d+JFcLM17njZaOLkv6SCev7uoLaBtfK86vMUXhW1Z4glPWh4jozno9APvW/XKFJ3CCxVoC7OL38BqRydtu5nGg=="],
 
     "postgres-array": ["postgres-array@2.0.0", "", {}, "sha512-VpZrUqU5A69eQyW2c5CA1jtLecCsN2U/bD6VilrFDWq5+5UIEVO7nazS3TEcHf1zuPYO/sqGvUvW62g86RXZuA=="],
 
