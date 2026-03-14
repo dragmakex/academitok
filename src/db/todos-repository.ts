@@ -17,7 +17,7 @@ import * as Layer from "effect/Layer"
 import * as Option from "effect/Option"
 import * as Schema from "effect/Schema"
 import * as ServiceMap from "effect/ServiceMap"
-import { mkdirSync } from "node:fs"
+import { mkdir } from "node:fs/promises"
 import postgres from "postgres"
 
 type RepositoryDatabaseConfig =
@@ -108,9 +108,118 @@ function makeRepository(config: RepositoryDatabaseConfig) {
     : makePgliteRepository(config.dataDir)
 }
 
-const makeLiveRepository = Effect.orDie(
-  Effect.flatMap(liveDatabaseConfig, makeRepository),
-)
+const makeLiveRepository = Effect
+  .flatMap(
+    liveDatabaseConfig,
+    makeRepository,
+  )
+  .pipe(
+    Effect.mapError(
+      (error) =>
+        new Error(
+          `Failed to initialize TodosRepository: ${
+            error instanceof Error ? error.message : String(error)
+          }`,
+        ),
+    ),
+    Effect.orDie,
+  )
+
+type TodoRow = typeof todosTable.$inferSelect
+
+type TodoRepository = {
+  readonly list: Effect.Effect<ReadonlyArray<Todo>>
+  readonly getById: (id: TodoId) => Effect.Effect<Todo, TodoNotFound>
+  readonly create: (input: CreateTodoInput) => Effect.Effect<Todo>
+  readonly update: (
+    id: TodoId,
+    input: UpdateTodoInput,
+  ) => Effect.Effect<Todo, TodoNotFound>
+  readonly remove: (id: TodoId) => Effect.Effect<void, TodoNotFound>
+}
+
+type RepositoryQueries = {
+  readonly listRows: () => Promise<Array<TodoRow>>
+  readonly findRowById: (id: TodoId) => Promise<TodoRow | undefined>
+  readonly insertRow: (
+    id: TodoId,
+    input: CreateTodoInput,
+    now: Date,
+  ) => Promise<TodoRow | undefined>
+  readonly updateRow: (
+    id: TodoId,
+    patch: {
+      readonly title?: string
+      readonly completed?: boolean
+    },
+  ) => Promise<TodoRow | undefined>
+  readonly deleteRow: (
+    id: TodoId,
+  ) => Promise<TodoId | undefined>
+}
+
+/**
+ *
+ * @param queries
+ */
+function makeCrudRepository(queries: RepositoryQueries): TodoRepository {
+  const getById = (id: TodoId) =>
+    Effect.gen(function*() {
+      const todo = yield* Effect.promise(() => queries.findRowById(id))
+
+      if (todo === undefined) {
+        return yield* Effect.fail(new TodoNotFound({ id }))
+      }
+
+      return toTodo(todo)
+    })
+
+  return {
+    list: Effect.promise(() =>
+      queries.listRows().then((rows) => rows.map(toTodo))
+    ),
+    getById,
+    create: (input: CreateTodoInput) =>
+      Effect.gen(function*() {
+        const id = decodeTodoId(crypto.randomUUID())
+        const now = yield* DateTime.now
+        const todo = yield* Effect.promise(() =>
+          queries.insertRow(id, input, DateTime.toDateUtc(now))
+        )
+
+        if (todo === undefined) {
+          return yield* Effect.die(
+            new Error("Todo insert did not return a row"),
+          )
+        }
+
+        return toTodo(todo)
+      }),
+    update: (id: TodoId, input: UpdateTodoInput) =>
+      Effect.gen(function*() {
+        const patch = getUpdatePatch(input)
+        if (Object.keys(patch).length === 0) {
+          return yield* getById(id)
+        }
+
+        const todo = yield* Effect.promise(() => queries.updateRow(id, patch))
+
+        if (todo === undefined) {
+          return yield* Effect.fail(new TodoNotFound({ id }))
+        }
+
+        return toTodo(todo)
+      }),
+    remove: (id: TodoId) =>
+      Effect.gen(function*() {
+        const removed = yield* Effect.promise(() => queries.deleteRow(id))
+
+        if (removed === undefined) {
+          return yield* Effect.fail(new TodoNotFound({ id }))
+        }
+      }),
+  }
+}
 
 export class TodosRepository extends ServiceMap.Service<TodosRepository>()(
   "TodosRepository",
@@ -161,104 +270,65 @@ export class TodosRepository extends ServiceMap.Service<TodosRepository>()(
  * @returns A scoped repository Effect backed by postgres.js and Drizzle.
  */
 function makePostgresRepository(databaseUrl: string) {
-  return Effect.gen(function*() {
-    const client = postgres(databaseUrl, {
-      prepare: false,
-    })
-    const db = drizzlePostgres(client, {
-      schema: { todosTable },
-    })
-
-    yield* Effect.promise(() => db.execute(createTodoRowSql))
-    yield* Effect.addFinalizer(() => Effect.promise(() => client.end()))
-
-    const getById = (id: TodoId) =>
-      Effect.gen(function*() {
-        const row = yield* Effect.promise(() =>
-          db.select().from(todosTable).where(eq(todosTable.id, id)).limit(1)
-        )
-
-        const todo = row[0]
-        if (todo === undefined) {
-          return yield* Effect.fail(new TodoNotFound({ id }))
-        }
-
-        return toTodo(todo)
+  return Effect
+    .gen(function*() {
+      const client = postgres(databaseUrl, {
+        prepare: false,
+      })
+      const db = drizzlePostgres(client, {
+        schema: { todosTable },
       })
 
-    return {
-      list: Effect.promise(() =>
-        db
-          .select()
-          .from(todosTable)
-          .orderBy(
-            asc(todosTable.createdAt),
-            asc(todosTable.id),
-          )
-          .then((rows) => rows.map(toTodo))
-      ),
-      getById,
-      create: (input: CreateTodoInput) =>
-        Effect.gen(function*() {
-          const id = decodeTodoId(crypto.randomUUID())
-          const now = yield* DateTime.now
-          const inserted = yield* Effect.promise(() =>
-            db
-              .insert(todosTable)
-              .values({
-                id,
-                title: input.title,
-                completed: false,
-                createdAt: DateTime.toDateUtc(now),
-              })
-              .returning()
-          )
+      yield* Effect.promise(() => db.execute(createTodoRowSql))
+      yield* Effect.addFinalizer(() => Effect.promise(() => client.end()))
 
-          const todo = inserted[0]
-          if (todo === undefined) {
-            return yield* Effect.die(
-              new Error("Todo insert did not return a row"),
-            )
-          }
-
-          return toTodo(todo)
-        }),
-      update: (id: TodoId, input: UpdateTodoInput) =>
-        Effect.gen(function*() {
-          const patch = getUpdatePatch(input)
-          if (Object.keys(patch).length === 0) {
-            return yield* getById(id)
-          }
-
-          const updated = yield* Effect.promise(() =>
-            db
-              .update(todosTable)
-              .set(patch)
-              .where(eq(todosTable.id, id))
-              .returning()
-          )
-
-          const todo = updated[0]
-          if (todo === undefined) {
-            return yield* Effect.fail(new TodoNotFound({ id }))
-          }
-
-          return toTodo(todo)
-        }),
-      remove: (id: TodoId) =>
-        Effect.gen(function*() {
-          const removed = yield* Effect.promise(() =>
-            db.delete(todosTable).where(eq(todosTable.id, id)).returning({
-              id: todosTable.id,
+      return makeCrudRepository({
+        listRows: () =>
+          db
+            .select()
+            .from(todosTable)
+            .orderBy(
+              asc(todosTable.createdAt),
+              asc(todosTable.id),
+            ),
+        findRowById: (id) =>
+          db
+            .select()
+            .from(todosTable)
+            .where(eq(todosTable.id, id))
+            .limit(1)
+            .then(
+              ([todo]) => todo,
+            ),
+        insertRow: (id, input, now) =>
+          db
+            .insert(todosTable)
+            .values({
+              id,
+              title: input.title,
+              completed: false,
+              createdAt: now,
             })
-          )
-
-          if (removed[0] === undefined) {
-            return yield* Effect.fail(new TodoNotFound({ id }))
-          }
-        }),
-    } as const
-  })
+            .returning()
+            .then(([todo]) => todo),
+        updateRow: (id, patch) =>
+          db
+            .update(todosTable)
+            .set(patch)
+            .where(eq(todosTable.id, id))
+            .returning()
+            .then(([todo]) => todo),
+        deleteRow: (id) =>
+          db
+            .delete(todosTable)
+            .where(eq(todosTable.id, id))
+            .returning({ id: todosTable.id })
+            .then((
+              [todo],
+            ) => (todo === undefined ? undefined : decodeTodoId(todo.id))),
+      })
+    })
+    .pipe(Effect.orDie)
 }
 
 /**
@@ -272,118 +342,79 @@ function makePgliteRepository(
   dataDir: string | undefined,
   seed: TodoSeed = [],
 ) {
-  return Effect.gen(function*() {
-    if (dataDir !== undefined) {
-      yield* Effect.sync(() => mkdirSync(dataDir, { recursive: true }))
-    }
-
-    const PGlite = yield* Effect.promise(async () => {
-      if (typeof globalThis.Buffer === "undefined") {
-        globalThis.Buffer = Buffer
+  return Effect
+    .gen(function*() {
+      if (dataDir !== undefined) {
+        yield* Effect.promise(() => mkdir(dataDir, { recursive: true }))
       }
 
-      const module = await import("@electric-sql/pglite")
-      return module.PGlite
-    })
-    const client = yield* Effect.sync(() =>
-      dataDir === undefined ? new PGlite() : new PGlite(dataDir)
-    )
-    const db = drizzlePglite({
-      client,
-      schema: { todosTable },
-    })
-
-    yield* Effect.promise(() => db.execute(createTodoRowSql))
-    yield* seedPgliteRows(db, seed)
-    yield* Effect.addFinalizer(() => Effect.promise(() => client.close()))
-
-    const getById = (id: TodoId) =>
-      Effect.gen(function*() {
-        const row = yield* Effect.promise(() =>
-          db.select().from(todosTable).where(eq(todosTable.id, id)).limit(1)
-        )
-
-        const todo = row[0]
-        if (todo === undefined) {
-          return yield* Effect.fail(new TodoNotFound({ id }))
+      const PGlite = yield* Effect.promise(async () => {
+        if (typeof globalThis.Buffer === "undefined") {
+          globalThis.Buffer = Buffer
         }
 
-        return toTodo(todo)
+        const module = await import("@electric-sql/pglite")
+        return module.PGlite
+      })
+      const client = yield* Effect.sync(() =>
+        dataDir === undefined ? new PGlite() : new PGlite(dataDir)
+      )
+      const db = drizzlePglite({
+        client,
+        schema: { todosTable },
       })
 
-    return {
-      list: Effect.promise(() =>
-        db
-          .select()
-          .from(todosTable)
-          .orderBy(
-            asc(todosTable.createdAt),
-            asc(todosTable.id),
-          )
-          .then((rows) => rows.map(toTodo))
-      ),
-      getById,
-      create: (input: CreateTodoInput) =>
-        Effect.gen(function*() {
-          const id = decodeTodoId(crypto.randomUUID())
-          const now = yield* DateTime.now
-          const inserted = yield* Effect.promise(() =>
-            db
-              .insert(todosTable)
-              .values({
-                id,
-                title: input.title,
-                completed: false,
-                createdAt: DateTime.toDateUtc(now),
-              })
-              .returning()
-          )
+      yield* Effect.promise(() => db.execute(createTodoRowSql))
+      yield* seedPgliteRows(db, seed)
+      yield* Effect.addFinalizer(() => Effect.promise(() => client.close()))
 
-          const todo = inserted[0]
-          if (todo === undefined) {
-            return yield* Effect.die(
-              new Error("Todo insert did not return a row"),
-            )
-          }
-
-          return toTodo(todo)
-        }),
-      update: (id: TodoId, input: UpdateTodoInput) =>
-        Effect.gen(function*() {
-          const patch = getUpdatePatch(input)
-          if (Object.keys(patch).length === 0) {
-            return yield* getById(id)
-          }
-
-          const updated = yield* Effect.promise(() =>
-            db
-              .update(todosTable)
-              .set(patch)
-              .where(eq(todosTable.id, id))
-              .returning()
-          )
-
-          const todo = updated[0]
-          if (todo === undefined) {
-            return yield* Effect.fail(new TodoNotFound({ id }))
-          }
-
-          return toTodo(todo)
-        }),
-      remove: (id: TodoId) =>
-        Effect.gen(function*() {
-          const removed = yield* Effect.promise(() =>
-            db.delete(todosTable).where(eq(todosTable.id, id)).returning({
-              id: todosTable.id,
+      return makeCrudRepository({
+        listRows: () =>
+          db
+            .select()
+            .from(todosTable)
+            .orderBy(
+              asc(todosTable.createdAt),
+              asc(todosTable.id),
+            ),
+        findRowById: (id) =>
+          db
+            .select()
+            .from(todosTable)
+            .where(eq(todosTable.id, id))
+            .limit(1)
+            .then(
+              ([todo]) => todo,
+            ),
+        insertRow: (id, input, now) =>
+          db
+            .insert(todosTable)
+            .values({
+              id,
+              title: input.title,
+              completed: false,
+              createdAt: now,
             })
-          )
-
-          if (removed[0] === undefined) {
-            return yield* Effect.fail(new TodoNotFound({ id }))
-          }
-        }),
-    } as const
-  })
+            .returning()
+            .then(([todo]) => todo),
+        updateRow: (id, patch) =>
+          db
+            .update(todosTable)
+            .set(patch)
+            .where(eq(todosTable.id, id))
+            .returning()
+            .then(([todo]) => todo),
+        deleteRow: (id) =>
+          db
+            .delete(todosTable)
+            .where(eq(todosTable.id, id))
+            .returning({ id: todosTable.id })
+            .then((
+              [todo],
+            ) => (todo === undefined ? undefined : decodeTodoId(todo.id))),
+      })
+    })
+    .pipe(Effect.orDie)
 }
 
 /**
