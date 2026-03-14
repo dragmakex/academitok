@@ -58,7 +58,7 @@ __snapshots__/__diff_output__
 # Vitest browser artifacts
 browser-snapshots
 __browser_snapshots__
-src/visual/__screenshots__/
+src/visual/__screenshots__/**/*-[0-9]*.png
 
 # Temporary files
 *.tmp
@@ -107,6 +107,7 @@ workflows/*.db-wal
 
 # Ignore worktrees directory
 .worktrees/
+.jj-workspaces/
 
 # Local LAOS clone (keep out of git)
 laos/

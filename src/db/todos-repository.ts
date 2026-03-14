@@ -6,7 +6,6 @@ import type {
 } from "@/api/todo-schema"
 import { TodoId as TodoIdSchema, TodoNotFound } from "@/api/todo-schema"
 import { todosTable } from "@/db/schema"
-import { PGlite } from "@electric-sql/pglite"
 import { Buffer } from "buffer"
 import { asc, eq, sql } from "drizzle-orm"
 import { drizzle as drizzlePglite } from "drizzle-orm/pglite"
@@ -20,10 +19,6 @@ import * as Schema from "effect/Schema"
 import * as ServiceMap from "effect/ServiceMap"
 import { mkdirSync } from "node:fs"
 import postgres from "postgres"
-
-if (typeof globalThis.Buffer === "undefined") {
-  globalThis.Buffer = Buffer
-}
 
 type RepositoryDatabaseConfig =
   | {
@@ -282,6 +277,14 @@ function makePgliteRepository(
       yield* Effect.sync(() => mkdirSync(dataDir, { recursive: true }))
     }
 
+    const PGlite = yield* Effect.promise(async () => {
+      if (typeof globalThis.Buffer === "undefined") {
+        globalThis.Buffer = Buffer
+      }
+
+      const module = await import("@electric-sql/pglite")
+      return module.PGlite
+    })
     const client = yield* Effect.sync(() =>
       dataDir === undefined ? new PGlite() : new PGlite(dataDir)
     )

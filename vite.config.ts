@@ -10,6 +10,9 @@ import { defineConfig } from "vitest/config"
 
 const config = defineConfig(({ mode }) => {
   const isVitest = mode === "test" || process.env.VITEST === "true"
+  const isBrowserRun = process.argv.some((arg) =>
+    arg === "--browser.enabled" || arg === "--browser.enabled=true"
+  )
   const isCoverageRun = process.argv.includes("--coverage")
   const plugins: Array<PluginOption> = [
     // Vitest only needs the client-side transforms and aliases. Starting
@@ -44,15 +47,17 @@ const config = defineConfig(({ mode }) => {
     test: {
       globals: true,
       include: ["src/**/*.test.{ts,tsx}"],
-      exclude: ["**/.worktrees/**", ".worktrees/**"],
+      exclude: [
+        "**/.worktrees/**",
+        ".worktrees/**",
+        "**/.jj-workspaces/**",
+        ".jj-workspaces/**",
+      ],
       // Browser mode configuration for component and visual regression testing
       browser: {
-        enabled: true,
+        enabled: isBrowserRun,
         provider: playwright(),
         headless: true,
-        // Coverage only needs one browser to exercise instrumented code. Keeping
-        // the full browser matrix for non-coverage runs preserves visual checks
-        // without reintroducing flaky multi-browser startup during coverage.
         instances: isCoverageRun
           ? [
             {
@@ -74,6 +79,9 @@ const config = defineConfig(({ mode }) => {
               viewport: { width: 1280, height: 720 },
             },
           ],
+        // Coverage only needs one browser to exercise instrumented code. Keeping
+        // the full browser matrix for non-coverage runs preserves visual checks
+        // without reintroducing flaky multi-browser startup during coverage.
         expect: {
           toMatchScreenshot: {
             comparatorName: "pixelmatch",
@@ -158,7 +166,10 @@ const config = defineConfig(({ mode }) => {
     },
     server: {
       watch: {
-        ignored: [".worktrees/**"],
+        ignored: [
+          ".worktrees/**",
+          ".jj-workspaces/**",
+        ],
       },
     },
   }

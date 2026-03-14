@@ -80,7 +80,8 @@ export const todosTable = pgTable("todos", {
   createdAt: timestamp("created_at", {
     mode: "date",
     withTimezone: true,
-  }).notNull(),
+  })
+    .notNull(),
 })
 ```
 
@@ -119,7 +120,9 @@ import * as Effect from "effect/Effect"
 import * as Layer from "effect/Layer"
 import { makeDb } from "./client"
 
-export class Db extends Context.Tag("Db")<Db, Awaited<ReturnType<typeof makeDb>>>() {}
+export class Db
+  extends Context.Tag("Db")<Db, Awaited<ReturnType<typeof makeDb>>>()
+{}
 
 export const DbLive = Layer.scoped(
   Db,
