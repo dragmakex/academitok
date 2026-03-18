@@ -176,6 +176,8 @@ export const ObservabilityLive = NodeSdk.layer(
 
 **Why two endpoints:** Tempo (port 4318) handles traces only. Loki (port 3100) has its own OTLP receiver at `/otlp/v1/logs`. They are separate services.
 
+**Config convention:** All runtime config flows through `effect/Config`, not `process.env`. The sole exception is `process.env.npm_package_version` — a build-time constant injected by the package manager, not a runtime configuration value.
+
 **Verify:** `bun run typecheck`
 
 - [ ] Done
@@ -183,6 +185,8 @@ export const ObservabilityLive = NodeSdk.layer(
 ### 2.2 Create Server Entry
 
 **Create:** `src/lib/server-init.ts`
+
+**`process.env` note:** Sentry's `init()` is an imperative SDK call that runs outside the Effect runtime, before any Effect program starts. `effect/Config` is not available here. This is acceptable for one-time startup calls. If you prefer full Effect-native config, wrap the init in `Effect.gen` with `Config.string` and run it via `Effect.runSync` at startup.
 
 ```typescript
 /**
@@ -232,6 +236,9 @@ export const AllRoutes = Layer
 **Do not** also provide `Logger.layer([Logger.consolePretty()])` after `ObservabilityLive` — the OTLP layer already replaces the default logger. If you want console output during development:
 
 ```typescript
+// NODE_ENV is read at module load time as a static build-time decision,
+// not as runtime config. This is acceptable — it determines layer
+// composition, not business logic.
 const DevConsoleLive = process.env.NODE_ENV === "development"
   ? Logger.layer([Logger.consolePretty()])
   : Layer.empty
@@ -313,6 +320,8 @@ RPC todos_create (50ms)
 ## Phase 3: Client Observability
 
 ### 3.1 Create Client Init Module
+
+> **Config note:** Client-side code runs in the browser where `effect/Config` is not available at init time. `import.meta.env.VITE_*` values are build-time constants injected by Vite — they are not runtime `process.env` reads. This is standard for browser SDKs.
 
 **Create:** `src/lib/client-init.ts`
 
