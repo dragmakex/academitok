@@ -3,7 +3,7 @@
  *
  * Provides a single `ObservabilityLive` layer that replaces Effect's
  * default tracer and logger with OpenTelemetry-backed implementations.
- * Traces flow to Tempo, logs flow to Loki (via OTLP), metrics to Prometheus.
+ * Traces flow to Tempo (via OTLP), logs flow to Loki (via OTLP).
  *
  * All configuration is sourced through `effect/Config` — no direct
  * `process.env` access.
@@ -25,17 +25,25 @@ import type * as Layer from "effect/Layer"
 /**
  * Full OTLP observability layer — traces (Tempo) + logs (Loki) + resource.
  *
- * Provide this to your Effect runtime to enable tracing and structured
- * log export via OpenTelemetry. All `Effect.log` calls become OTLP
- * log records; all `Effect.withSpan` calls become OTLP spans.
+ * Configuration:
+ * - `OTLP_ENDPOINT` — Tempo OTLP base URL (default: http://localhost:4318)
+ * - `LOKI_OTLP_ENDPOINT` — Loki OTLP log endpoint (default: http://localhost:3100/otlp)
+ * - `SERVICE_NAME` — service identity in traces and logs
+ * - `NODE_ENV` — deployment environment attribute
+ *
+ * All `Effect.log` calls become OTLP log records sent to Loki.
+ * All `Effect.withSpan` calls become OTLP spans sent to Tempo.
  */
 export const ObservabilityLive: Layer.Layer<
   Resource.Resource,
   Config.ConfigError
 > = NodeSdk.layer(
   Effect.gen(function*() {
-    const baseUrl = yield* Config.string("OTLP_ENDPOINT").pipe(
+    const traceEndpoint = yield* Config.string("OTLP_ENDPOINT").pipe(
       Config.orElse(() => Config.succeed("http://localhost:4318")),
+    )
+    const lokiOtlpEndpoint = yield* Config.string("LOKI_OTLP_ENDPOINT").pipe(
+      Config.orElse(() => Config.succeed("http://localhost:3100/otlp")),
     )
     const serviceName = yield* Config.string("SERVICE_NAME").pipe(
       Config.orElse(() => Config.succeed("effect-tanstack-start")),
@@ -55,10 +63,10 @@ export const ObservabilityLive: Layer.Layer<
         },
       },
       spanProcessor: new BatchSpanProcessor(
-        new OTLPTraceExporter({ url: `${baseUrl}/v1/traces` }),
+        new OTLPTraceExporter({ url: `${traceEndpoint}/v1/traces` }),
       ),
       logRecordProcessor: new BatchLogRecordProcessor(
-        new OTLPLogExporter({ url: `${baseUrl}/v1/logs` }),
+        new OTLPLogExporter({ url: `${lokiOtlpEndpoint}/v1/logs` }),
       ),
     }
   }),

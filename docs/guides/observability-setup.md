@@ -49,17 +49,18 @@ curl http://localhost:9090/-/ready  # Prometheus
 
 ```
 Frontend (React)                         Backend (Effect-TS)
-├── Sentry (errors + replay)             ├── Otlp.layer() → Tempo (traces)
-├── PostHog (analytics + flags)          │                → Loki (logs)
-└── PostHog (session recording)          │                → Prometheus (metrics)
-                                         ├── Sentry (errors + profiling)
+├── Sentry (errors + replay)             ├── NodeSdk.layer() → Tempo (traces via OTLP)
+├── PostHog (analytics + flags)          │                   → Loki (logs via OTLP)
+└── PostHog (session recording)          ├── Pyroscope (CPU + memory profiling)
+                                         ├── Sentry (errors)
                                          └── PostHog (server events)
 ```
 
 **Tool Responsibilities:**
 
 - **Grafana** → "Is it broken?" (system health, SLOs)
-- **Sentry** → "Why is it broken?" (errors, profiling)
+- **Sentry** → "Why is it broken?" (errors, stack traces)
+- **Pyroscope** → "What's slow?" (CPU, memory, performance bottlenecks)
 - **PostHog** → "What did it do to users?" (funnels, replay)
 
 ---
@@ -144,82 +145,29 @@ docker compose exec sentry-web sentry createuser \
 
 > **Key:** Use `Otlp.layer()` for unified traces + logs + metrics in one layer.
 
-### 2.1 Create Observability Module
+### 2.1 Observability Module
 
-**Create:** `src/lib/observability.ts`
+**File:** `src/lib/observability.ts` ✅ Implemented
 
-```typescript
-/**
- * Unified observability - traces, logs, metrics via OTLP.
- */
-import * as Otlp from "@effect/opentelemetry/Otlp"
-import { Layer } from "effect"
-import * as FetchHttpClient from "effect/unstable/http/FetchHttpClient"
+Uses `NodeSdk.layer` with `BatchSpanProcessor` (traces → Tempo) and `BatchLogRecordProcessor` (logs → Loki). Config sourced through `effect/Config`.
 
-export const ObservabilityLive = Otlp
-  .layer({
-    baseUrl: process.env.OTLP_ENDPOINT ?? "http://localhost:4318",
-    resource: {
-      serviceName: "effect-tanstack-start",
-      serviceVersion: process.env.npm_package_version,
-      attributes: {
-        "deployment.environment": process.env.NODE_ENV ?? "development",
-      },
-    },
-  })
-  .pipe(Layer.provide(FetchHttpClient.layer))
-```
+- [x] Done
 
-**Verify:** `bun run typecheck`
+### 2.2 Server Entry
 
-- [ ] Done
+**File:** `src/lib/server-init.ts` ✅ Implemented
 
-### 2.2 Create Server Entry
+Sentry initialization, called once at startup from `$.ts`.
 
-**Create:** `src/lib/server-init.ts`
-
-```typescript
-/**
- * Server-side initialization - call once at startup.
- */
-import * as Sentry from "@sentry/node"
-
-let initialized = false
-
-export function initServer() {
-  if (initialized) return
-
-  // Sentry for error tracking (separate from OTLP observability)
-  if (process.env.SENTRY_DSN) {
-    Sentry.init({
-      dsn: process.env.SENTRY_DSN,
-      environment: process.env.NODE_ENV ?? "development",
-      tracesSampleRate: 1.0,
-    })
-  }
-
-  initialized = true
-  console.log("[Server] Initialized (Sentry + Observability ready)")
-}
-```
-
-- [ ] Done
+- [x] Done
 
 ### 2.3 Wire into API Runtime
 
-Add to your server entry point (e.g., API handler or server.ts):
+**File:** `src/routes/api/$.ts` ✅ Implemented
 
-```typescript
-import { ObservabilityLive } from "./lib/observability"
-import { initServer } from "./lib/server-init"
+`initServer()` called at startup. `ObservabilityLive` provided to `AllRoutes`. Pyroscope initialized via `initPyroscopeServer()`. Spans added to `TodosService` and `TodosRepository`.
 
-initServer()
-
-// Provide ObservabilityLive to your Effect programs
-const program = myEffect.pipe(Effect.provide(ObservabilityLive))
-```
-
-- [ ] Done
+- [x] Done
 
 ### 2.4 Verify Server Observability
 
@@ -229,8 +177,8 @@ const program = myEffect.pipe(Effect.provide(ObservabilityLive))
    - **Tempo:** Search for service `effect-tanstack-start`
    - **Loki:** Query `{service_name="effect-tanstack-start"}`
 
-- [ ] Traces visible in Tempo
-- [ ] Logs visible in Loki
+- [x] Traces visible in Tempo
+- [x] Logs visible in Loki
 
 ---
 
@@ -621,6 +569,11 @@ VITE_POSTHOG_HOST=http://localhost:8001
 
 # Grafana Stack (OTLP)
 OTLP_ENDPOINT=http://localhost:4318
+LOKI_OTLP_ENDPOINT=http://localhost:3100/otlp
+
+# Pyroscope (Profiling)
+PYROSCOPE_SERVER_ADDRESS=http://localhost:4040
+SERVICE_NAME=effect-tanstack-start
 
 # Database (if applicable)
 DATABASE_URL=
@@ -632,10 +585,12 @@ DATABASE_URL=
 
 ```
 src/lib/
-├── observability.ts    # Otlp.layer() - traces, logs, metrics
-├── server-init.ts      # Server startup (Sentry + DB instrumentation)
-└── client-init.ts      # Client startup (Sentry + PostHog)
+├── observability.ts     # NodeSdk.layer() - traces (Tempo) + logs (Loki)
+├── server-init.ts       # Server startup (Sentry init)
+├── client-init.ts       # Client startup (Sentry + PostHog)
+└── pyroscope-server.ts  # Pyroscope continuous profiling
 
 # Observability stack lives in:
 # https://github.com/dtechvision/laos
+# See LAOS docs/APP-WIRING.md for integration guide
 ```
