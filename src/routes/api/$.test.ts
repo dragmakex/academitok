@@ -11,6 +11,7 @@ import {
   RpcLoggerLive,
   RpcRouter,
   serverRuntime,
+  ServerRuntimeLive,
 } from "./$.ts"
 
 /**
@@ -85,4 +86,9 @@ it.effect("Route - is defined with handlers", () =>
 it.effect("serverRuntime - is defined", () =>
   Effect.sync(() => {
     expect(serverRuntime).toBeDefined()
+  }))
+
+it.effect("ServerRuntimeLive - is defined", () =>
+  Effect.sync(() => {
+    expect(ServerRuntimeLive).toBeDefined()
   }))

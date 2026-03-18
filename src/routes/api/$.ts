@@ -139,20 +139,28 @@ export const HealthRoute = HttpRouter.add(
  * default logger).
  */
 const DevConsoleLive = process.env.NODE_ENV === "development"
-  ? Logger.layer([Logger.consolePretty()])
+  ? Logger.layer([Logger.consolePretty()], { mergeWithExisting: true })
   : Layer.empty
+
+const ObservabilityRuntimeLive = Layer.orDie(ObservabilityLive)
+
+export const ServerRuntimeLive = TodosService.layer.pipe(
+  Layer.provideMerge(ObservabilityRuntimeLive),
+  Layer.provideMerge(DevConsoleLive),
+)
 
 export const AllRoutes = Layer
   .mergeAll(RpcRouter, HttpApiRouter, HealthRoute)
-  .pipe(
-    Layer.provide(ObservabilityLive),
-    Layer.provideMerge(DevConsoleLive),
-  )
+  .pipe(Layer.provideMerge(ServerRuntimeLive))
 
 const memoMap = Layer.makeMemoMapUnsafe()
 
 const globalHmr = globalThis as unknown as {
   __EFFECT_DISPOSE__?: () => Promise<void>
+  __EFFECT_PROCESS_SHUTDOWN__?: {
+    readonly sigintHandler: () => void
+    readonly sigtermHandler: () => void
+  }
 }
 if (globalHmr.__EFFECT_DISPOSE__) {
   await globalHmr.__EFFECT_DISPOSE__()
@@ -168,14 +176,50 @@ const { dispose, handler } = HttpRouter.toWebHandler(AllRoutes, {
 const effectHandler = ({ request }: { request: Request }) => handler(request)
 
 // ManagedRuntime for use in loaders/server functions
-export const serverRuntime = ManagedRuntime.make(TodosService.layer, {
+export const serverRuntime = ManagedRuntime.make(ServerRuntimeLive, {
   memoMap,
 })
 
+let cleanupPromise: Promise<void> | undefined
+
+const cleanupServerResources = async () => {
+  if (cleanupPromise) {
+    return cleanupPromise
+  }
+
+  cleanupPromise = (async () => {
+    await shutdownPyroscopeServer()
+    await dispose()
+    await serverRuntime.dispose()
+  })()
+
+  return cleanupPromise
+}
+
+if (!globalHmr.__EFFECT_PROCESS_SHUTDOWN__) {
+  const handleProcessShutdown = () => {
+    void cleanupServerResources().finally(() => {
+      process.exit(0)
+    })
+  }
+
+  globalHmr.__EFFECT_PROCESS_SHUTDOWN__ = {
+    sigintHandler: handleProcessShutdown,
+    sigtermHandler: handleProcessShutdown,
+  }
+
+  process.once("SIGINT", handleProcessShutdown)
+  process.once("SIGTERM", handleProcessShutdown)
+}
+
 globalHmr.__EFFECT_DISPOSE__ = async () => {
-  await shutdownPyroscopeServer()
-  await dispose()
-  await serverRuntime.dispose()
+  if (globalHmr.__EFFECT_PROCESS_SHUTDOWN__) {
+    process.off("SIGINT", globalHmr.__EFFECT_PROCESS_SHUTDOWN__.sigintHandler)
+    process.off("SIGTERM", globalHmr.__EFFECT_PROCESS_SHUTDOWN__.sigtermHandler)
+    delete globalHmr.__EFFECT_PROCESS_SHUTDOWN__
+  }
+
+  await cleanupServerResources()
 }
 
 export const Route = createFileRoute("/api/$")({

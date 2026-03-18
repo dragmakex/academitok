@@ -230,23 +230,25 @@ initServer()
 // Provide ObservabilityLive to all route layers
 export const AllRoutes = Layer
   .mergeAll(RpcRouter, HttpApiRouter, HealthRoute)
-  .pipe(Layer.provide(ObservabilityLive))
+  .pipe(Layer.provideMerge(ObservabilityLive))
 ```
 
-**Do not** also provide `Logger.layer([Logger.consolePretty()])` after `ObservabilityLive` — the OTLP layer already replaces the default logger. If you want console output during development:
+**Important:** Use `Layer.provideMerge`, not `Layer.provide`. The OTLP tracer and logger must be merged into the runtime output — `Layer.provide` only satisfies dependencies without activating the logger/tracer.
+
+If you want console output during development alongside OTLP:
 
 ```typescript
 // NODE_ENV is read at module load time as a static build-time decision,
 // not as runtime config. This is acceptable — it determines layer
 // composition, not business logic.
 const DevConsoleLive = process.env.NODE_ENV === "development"
-  ? Logger.layer([Logger.consolePretty()])
+  ? Logger.layer([Logger.consolePretty()], { mergeWithExisting: true })
   : Layer.empty
 
 export const AllRoutes = Layer
   .mergeAll(RpcRouter, HttpApiRouter, HealthRoute)
   .pipe(
-    Layer.provide(ObservabilityLive),
+    Layer.provideMerge(ObservabilityLive),
     Layer.provideMerge(DevConsoleLive),
   )
 ```
