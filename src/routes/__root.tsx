@@ -1,3 +1,4 @@
+import { initClient, SentryErrorBoundary } from "@/lib/client-init"
 import { RegistryProvider } from "@effect/atom-react"
 import { TanStackDevtools } from "@tanstack/react-devtools"
 import { createRootRoute, HeadContent, Scripts } from "@tanstack/react-router"
@@ -5,6 +6,10 @@ import { TanStackRouterDevtoolsPanel } from "@tanstack/react-router-devtools"
 import { useEffect } from "react"
 import * as React from "react"
 import appCss from "../styles.css?url"
+
+if (typeof window !== "undefined") {
+  initClient()
+}
 
 export const Route = createRootRoute({
   head: () => ({
@@ -57,9 +62,17 @@ function RootDocument({ children }: { children: React.ReactNode }) {
         <HeadContent />
       </head>
       <body>
-        <RegistryProvider defaultIdleTTL={60_000}>
-          {children}
-        </RegistryProvider>
+        <SentryErrorBoundary
+          fallback={
+            <div>
+              Something went wrong
+            </div>
+          }
+        >
+          <RegistryProvider defaultIdleTTL={60_000}>
+            {children}
+          </RegistryProvider>
+        </SentryErrorBoundary>
         {isClient && (
           <TanStackDevtools
             config={{
