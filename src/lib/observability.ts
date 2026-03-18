@@ -22,6 +22,20 @@ import * as Config from "effect/Config"
 import * as Effect from "effect/Effect"
 import type * as Layer from "effect/Layer"
 
+const OTLP_TRACES_PATH = "/v1/traces"
+const OTLP_LOGS_PATH = "/v1/logs"
+const OTLP_LOG_EXPORT_DELAY_MILLIS = 1000
+
+export const toOtlpSignalUrl = (
+  endpoint: string,
+  signalPath: typeof OTLP_TRACES_PATH | typeof OTLP_LOGS_PATH,
+): string => {
+  const normalizedEndpoint = endpoint.trim().replace(/\/+$/, "")
+  return normalizedEndpoint.endsWith(signalPath)
+    ? normalizedEndpoint
+    : `${normalizedEndpoint}${signalPath}`
+}
+
 /**
  * Full OTLP observability layer — traces (Tempo) + logs (Loki) + resource.
  *
@@ -63,10 +77,17 @@ export const ObservabilityLive: Layer.Layer<
         },
       },
       spanProcessor: new BatchSpanProcessor(
-        new OTLPTraceExporter({ url: `${traceEndpoint}/v1/traces` }),
+        new OTLPTraceExporter({
+          url: toOtlpSignalUrl(traceEndpoint, OTLP_TRACES_PATH),
+        }),
       ),
       logRecordProcessor: new BatchLogRecordProcessor(
-        new OTLPLogExporter({ url: `${lokiOtlpEndpoint}/v1/logs` }),
+        new OTLPLogExporter({
+          url: toOtlpSignalUrl(lokiOtlpEndpoint, OTLP_LOGS_PATH),
+        }),
+        {
+          scheduledDelayMillis: OTLP_LOG_EXPORT_DELAY_MILLIS,
+        },
       ),
     }
   }),
