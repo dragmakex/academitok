@@ -139,13 +139,13 @@ export const HealthRoute = HttpRouter.add(
  * default logger).
  */
 const DevConsoleLive = process.env.NODE_ENV === "development"
-  ? Logger.layer([Logger.consolePretty()])
+  ? Logger.layer([Logger.consolePretty()], { mergeWithExisting: true })
   : Layer.empty
 
 export const AllRoutes = Layer
   .mergeAll(RpcRouter, HttpApiRouter, HealthRoute)
   .pipe(
-    Layer.provide(ObservabilityLive),
+    Layer.provideMerge(ObservabilityLive),
     Layer.provideMerge(DevConsoleLive),
   )
 
