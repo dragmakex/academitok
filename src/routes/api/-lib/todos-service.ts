@@ -17,17 +17,36 @@ export class TodosService extends ServiceMap.Service<TodosService>()(
       const repository = yield* TodosRepository
 
       return {
-        list: repository.list,
+        list: repository.list.pipe(
+          Effect.withSpan("TodosService.list"),
+        ),
         getById: (id: TodoId): Effect.Effect<Todo, TodoNotFound> =>
-          repository.getById(id),
+          repository.getById(id).pipe(
+            Effect.withSpan("TodosService.getById", {
+              attributes: { "todo.id": id },
+            }),
+          ),
         create: (input: CreateTodoInput): Effect.Effect<Todo> =>
-          repository.create(input),
+          repository.create(input).pipe(
+            Effect.withSpan("TodosService.create", {
+              attributes: { "todo.title": input.title },
+            }),
+          ),
         update: (
           id: TodoId,
           input: UpdateTodoInput,
-        ): Effect.Effect<Todo, TodoNotFound> => repository.update(id, input),
+        ): Effect.Effect<Todo, TodoNotFound> =>
+          repository.update(id, input).pipe(
+            Effect.withSpan("TodosService.update", {
+              attributes: { "todo.id": id },
+            }),
+          ),
         remove: (id: TodoId): Effect.Effect<void, TodoNotFound> =>
-          repository.remove(id),
+          repository.remove(id).pipe(
+            Effect.withSpan("TodosService.remove", {
+              attributes: { "todo.id": id },
+            }),
+          ),
       } as const
     }),
   },

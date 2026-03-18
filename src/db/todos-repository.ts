@@ -159,8 +159,10 @@ type RepositoryQueries = {
 }
 
 /**
+ * Builds a CRUD repository from a set of low-level query functions.
  *
- * @param queries
+ * @param queries - The adapter-specific query implementations.
+ * @returns A repository implementing list, getById, create, update, remove.
  */
 function makeCrudRepository(queries: RepositoryQueries): TodoRepository {
   const getById = (id: TodoId) =>
@@ -175,49 +177,72 @@ function makeCrudRepository(queries: RepositoryQueries): TodoRepository {
     })
 
   return {
-    list: Effect.promise(() =>
-      queries.listRows().then((rows) => rows.map(toTodo))
-    ),
-    getById,
+    list: Effect
+      .promise(() => queries.listRows().then((rows) => rows.map(toTodo)))
+      .pipe(Effect.withSpan("TodosRepository.list")),
+    getById: (id: TodoId) =>
+      getById(id).pipe(
+        Effect.withSpan("TodosRepository.getById", {
+          attributes: { "todo.id": id },
+        }),
+      ),
     create: (input: CreateTodoInput) =>
-      Effect.gen(function*() {
-        const id = decodeTodoId(crypto.randomUUID())
-        const now = yield* DateTime.now
-        const todo = yield* Effect.promise(() =>
-          queries.insertRow(id, input, DateTime.toDateUtc(now))
-        )
-
-        if (todo === undefined) {
-          return yield* Effect.die(
-            new Error("Todo insert did not return a row"),
+      Effect
+        .gen(function*() {
+          const id = decodeTodoId(crypto.randomUUID())
+          const now = yield* DateTime.now
+          const todo = yield* Effect.promise(() =>
+            queries.insertRow(id, input, DateTime.toDateUtc(now))
           )
-        }
 
-        return toTodo(todo)
-      }),
+          if (todo === undefined) {
+            return yield* Effect.die(
+              new Error("Todo insert did not return a row"),
+            )
+          }
+
+          return toTodo(todo)
+        })
+        .pipe(
+          Effect.withSpan("TodosRepository.create", {
+            attributes: { "todo.title": input.title },
+          }),
+        ),
     update: (id: TodoId, input: UpdateTodoInput) =>
-      Effect.gen(function*() {
-        const patch = getUpdatePatch(input)
-        if (Object.keys(patch).length === 0) {
-          return yield* getById(id)
-        }
+      Effect
+        .gen(function*() {
+          const patch = getUpdatePatch(input)
+          if (Object.keys(patch).length === 0) {
+            return yield* getById(id)
+          }
 
-        const todo = yield* Effect.promise(() => queries.updateRow(id, patch))
+          const todo = yield* Effect.promise(() => queries.updateRow(id, patch))
 
-        if (todo === undefined) {
-          return yield* Effect.fail(new TodoNotFound({ id }))
-        }
+          if (todo === undefined) {
+            return yield* Effect.fail(new TodoNotFound({ id }))
+          }
 
-        return toTodo(todo)
-      }),
+          return toTodo(todo)
+        })
+        .pipe(
+          Effect.withSpan("TodosRepository.update", {
+            attributes: { "todo.id": id },
+          }),
+        ),
     remove: (id: TodoId) =>
-      Effect.gen(function*() {
-        const removed = yield* Effect.promise(() => queries.deleteRow(id))
+      Effect
+        .gen(function*() {
+          const removed = yield* Effect.promise(() => queries.deleteRow(id))
 
-        if (removed === undefined) {
-          return yield* Effect.fail(new TodoNotFound({ id }))
-        }
-      }),
+          if (removed === undefined) {
+            return yield* Effect.fail(new TodoNotFound({ id }))
+          }
+        })
+        .pipe(
+          Effect.withSpan("TodosRepository.remove", {
+            attributes: { "todo.id": id },
+          }),
+        ),
   }
 }
 

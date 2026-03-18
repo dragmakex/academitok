@@ -1,9 +1,11 @@
 import { DomainApi } from "@/api/domain-api"
 import { DomainRpc } from "@/api/domain-rpc"
+import { ObservabilityLive } from "@/lib/observability"
 import {
   initPyroscopeServer,
   shutdownPyroscopeServer,
 } from "@/lib/pyroscope-server"
+import { initServer } from "@/lib/server-init"
 import { createFileRoute } from "@tanstack/react-router"
 import type { Cause } from "effect/Cause"
 import * as Effect from "effect/Effect"
@@ -131,10 +133,20 @@ export const HealthRoute = HttpRouter.add(
   Effect.succeed(HttpServerResponse.text("OK")),
 )
 
+/**
+ * Development console logger — provides pretty console output alongside OTLP.
+ * In production, only OTLP logs are emitted (ObservabilityLive replaces the
+ * default logger).
+ */
+const DevConsoleLive = process.env.NODE_ENV === "development"
+  ? Logger.layer([Logger.consolePretty()])
+  : Layer.empty
+
 export const AllRoutes = Layer
   .mergeAll(RpcRouter, HttpApiRouter, HealthRoute)
   .pipe(
-    Layer.provide(Logger.layer([Logger.consolePretty()])),
+    Layer.provide(ObservabilityLive),
+    Layer.provideMerge(DevConsoleLive),
   )
 
 const memoMap = Layer.makeMemoMapUnsafe()
@@ -147,6 +159,7 @@ if (globalHmr.__EFFECT_DISPOSE__) {
   delete globalHmr.__EFFECT_DISPOSE__
 }
 
+initServer()
 await initPyroscopeServer()
 
 const { dispose, handler } = HttpRouter.toWebHandler(AllRoutes, {
