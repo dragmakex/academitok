@@ -41,12 +41,12 @@ const sanityChecks: Array<SanityCheck> = [
   },
 ]
 
-const RED = "\x1b[31m"
-const GREEN = "\x1b[32m"
-const YELLOW = "\x1b[33m"
-const CYAN = "\x1b[36m"
-const BLUE = "\x1b[34m"
-const RESET = "\x1b[0m"
+const RED = "\u001b[31m"
+const GREEN = "\u001b[32m"
+const YELLOW = "\u001b[33m"
+const CYAN = "\u001b[36m"
+const BLUE = "\u001b[34m"
+const RESET = "\u001b[0m"
 
 interface FileSize {
   path: string

@@ -30,6 +30,8 @@ vi.mock("@sentry/react", () => ({
   startSpan: vi.fn().mockImplementation((_opts, callback) => callback()),
 }))
 
+const TestComponent = () => null
+
 beforeEach(() => {
   vi.clearAllMocks()
 })
@@ -179,7 +181,6 @@ describe("withSentryProfiler", () => {
   })
 
   it("wraps a component", () => {
-    const TestComponent = () => null
     const wrapped = withSentryProfiler(TestComponent)
     expect(wrapped).toBe(TestComponent) // Mock returns the same component
   })

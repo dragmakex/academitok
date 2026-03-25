@@ -8,7 +8,7 @@ echo ""
 echo "✨ Formatting files with Dprint..."
 bun run format
 
-# 2. Lint all files with ESLint
+# 2. Lint all files with Oxlint
 echo "🔍 Linting files..."
 bun run lint:fix || true
 

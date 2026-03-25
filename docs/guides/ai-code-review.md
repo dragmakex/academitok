@@ -664,14 +664,14 @@ graph LR
     Code[Code Changes] --> Static[Static Analysis]
     Code --> AI[AI Review]
 
-    Static --> ESLint
+    Static --> Oxlint
     Static --> TypeScript
     Static --> Tests
 
     AI --> Patterns[Pattern Check]
     AI --> Context[Context Analysis]
 
-    ESLint --> Pass{All Pass?}
+    Oxlint --> Pass{All Pass?}
     TypeScript --> Pass
     Tests --> Pass
     Patterns --> Pass

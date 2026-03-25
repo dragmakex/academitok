@@ -1,717 +1,209 @@
 # Code Quality Guide
 
-Complete guide to linting, formatting, and code quality tools in the Effect TanStack Start project.
+Code quality in this repository is enforced with **Oxlint**, **TypeScript**, and **Dprint**.
 
 ## Overview
 
 ```mermaid
 graph TB
-    Code[Source Code] --> ESLint[ESLint]
-    Code --> Prettier[Prettier]
-    Code --> Dprint[Dprint]
+    Code[Source Code] --> Oxlint[Oxlint]
     Code --> TypeScript[TypeScript]
+    Code --> Dprint[Dprint]
 
-    ESLint --> Standard[Standard Rules]
-    ESLint --> Effect[Effect Plugin]
-    ESLint --> Local[Local Custom Rules]
-    ESLint --> Advanced[Advanced Effect Rules]
+    Oxlint --> Nkzw[@nkzw/oxlint-config]
+    Oxlint --> Jsdoc[TSDoc Rules]
+    Oxlint --> Local[Local Effect Rules]
 
-    Standard --> Fix[Auto-fix Issues]
-    Effect --> Fix
-    Local --> Fix
-    Advanced --> Fix
+    TypeScript --> Types[Strict Type Safety]
+    Dprint --> Format[Formatting]
 
-    Prettier --> Format[Format Code]
-    Dprint --> Format
-
-    TypeScript --> Check[Type Check]
-
-    Fix --> Quality[Code Quality]
+    Nkzw --> Quality[Code Quality]
+    Jsdoc --> Quality
+    Local --> Quality
+    Types --> Quality
     Format --> Quality
-    Check --> Quality
 
     style Quality fill:#4ecdc4
 ```
 
-This guide covers:
+## Toolchain
 
-- ESLint configuration with Effect-specific rules
-- Custom local ESLint rules for Effect patterns
-- Prettier configuration
-- Dprint configuration
-- Code quality scripts
-- Pre-commit hooks setup
-- CI/CD integration
+### 1. Oxlint
 
----
+Oxlint is the repository linter.
 
-## Tools Overview
+It combines:
 
-### 1. ESLint
+- `@nkzw/oxlint-config` for the main baseline
+- `eslint-plugin-jsdoc` through Oxlint JS plugin support for TSDoc enforcement
+- local project rules for Effect-specific patterns
+- `@effect/eslint-plugin` for barrel import protection
 
-ESLint enforces code quality and consistency with:
+The repository intentionally disables a few stricter defaults from the shared
+`@nkzw/oxlint-config` baseline when they conflict with established project
+patterns, especially:
 
-- Standard TypeScript rules
-- Effect-specific patterns from `@effect/eslint-plugin`
-- Custom local rules for Effect.gen patterns
-- Import sorting and organization
+- namespace imports used by Effect modules
+- object/interface sorting rules
+- `no-console`
 
-### 2. Prettier
+### 2. TypeScript
 
-Prettier handles basic code formatting:
+TypeScript remains responsible for type safety and several checks that are
+better handled by the compiler than by lint rules.
 
-- No semicolons
-- 120 character line width
-- No trailing commas
+Important compiler checks include:
+
+- `strict`
+- `noUnusedLocals`
+- `noUnusedParameters`
+- `noImplicitOverride`
+- `exactOptionalPropertyTypes`
 
 ### 3. Dprint
 
-Dprint provides advanced formatting:
+Dprint handles formatting.
 
-- Effect-integrated via `@effect/dprint`
-- TypeScript, JSON, Markdown, SQL, TOML, CSS
-- Consistent 80-character line width
-- ASI (Automatic Semicolon Insertion)
+Use Dprint for formatting and Oxlint for linting. They serve different roles.
 
-### 4. TypeScript
-
-TypeScript ensures type safety:
-
-- Strict mode enabled
-- No implicit any
-- Consistent type imports
-
----
-
-## Quick Start
-
-### Install Dependencies
+## Commands
 
 ```bash
-bun install
-```
-
-All linting and formatting dependencies are included in `package.json`.
-
-### Run Linting
-
-```bash
-# Check for linting errors
+# Lint
 bun run lint
-
-# Auto-fix linting errors
-bun run lint:fix
-```
-
-### Run Formatting
-
-```bash
-# Format with Prettier
-bun run format
-
-# Check formatting without changing files
-bun run format:check
-
-# Format with Dprint
-bun run dprint:format
-
-# Check Dprint formatting
-bun run dprint:check
-```
-
-### Type Checking
-
-```bash
-# Check TypeScript types
-bun run typecheck
-```
-
----
-
-## ESLint Configuration
-
-### Configuration File
-
-**File:** `eslint.config.js`
-
-The ESLint configuration uses the new flat config format:
-
-```javascript
-import effectPlugin from "@effect/eslint-plugin"
-import { fixupPluginRules } from "@eslint/compat"
-import { FlatCompat } from "@eslint/eslintrc"
-import js from "@eslint/js"
-import tsParser from "@typescript-eslint/parser"
-
-export default [
-  {
-    ignores: [
-      "**/dist",
-      "**/build",
-      "**/docs",
-      "**/*.md",
-      "**/*.cjs",
-      "**/*.js",
-    ],
-  },
-  // ... rest of config
-]
-```
-
-### Enabled Rules
-
-#### Standard Rules
-
-- **camelcase**: Enforce camelCase naming
-- **max-lines**: Max 500 lines per file
-- **complexity**: Max cyclomatic complexity of 20
-- **max-depth**: Max nesting depth of 4
-- **max-lines-per-function**: Max 150 lines per function
-- **eqeqeq**: Require === and !==
-- **prefer-template**: Use template literals
-- **curly**: Require curly braces
-- **dot-notation**: Use dot notation when possible
-
-#### TypeScript Rules
-
-- **@typescript-eslint/array-type**: Use `Array<T>` syntax
-- **@typescript-eslint/consistent-type-imports**: Prefer type imports
-- **@typescript-eslint/no-unused-vars**: Error on unused variables (except `_` prefixed)
-
-#### Effect Rules
-
-- **@effect/no-import-from-barrel-package**: Prevent imports from barrel files
-- **@effect/dprint**: Enforce Effect formatting standards
-
-#### Import Rules
-
-- **import/first**: Imports must come first
-- **import/newline-after-import**: Blank line after imports
-- **import/no-duplicates**: No duplicate imports
-- **sort-destructure-keys/sort-destructure-keys**: Sort destructured keys
-
----
-
-## Custom Local Rules
-
-### Basic Local Rules
-
-**File:** `eslint-local-rules.cjs`
-
-#### no-opaque-instance-fields
-
-Prevents instance fields in classes extending `Schema.Opaque(...)`:
-
-```typescript
-// ❌ Bad - instance field in Opaque class
-class UserId extends Schema.Opaque("UserId")(Schema.String) {
-  name: string // ERROR: No instance fields allowed
-}
-
-// ✅ Good - no instance fields
-class UserId extends Schema.Opaque("UserId")(Schema.String) {
-  static make(value: string) {
-    return value as UserId
-  }
-}
-```
-
-### Advanced Local Rules
-
-**File:** `eslint-local-rules-advanced.cjs`
-
-#### no-try-catch-in-effect-gen
-
-Prevents try-catch blocks inside Effect.gen:
-
-```typescript
-// ❌ Bad - try-catch in Effect.gen
-const program = Effect.gen(function*() {
-  try {
-    const result = yield* someEffect
-  } catch (error) {
-    console.error(error)
-  }
-})
-
-// ✅ Good - use Effect error handling
-const program = Effect.gen(function*() {
-  const result = yield* Effect.tryPromise(() => someAsyncOperation())
-})
-```
-
-#### no-type-assertions
-
-Prevents dangerous type assertions:
-
-```typescript
-// ❌ Bad - dangerous type assertions
-const value = something as any
-const value2 = something as never
-const value3 = something as unknown
-
-// ✅ Good - proper typing
-const value: SomeType = something
-```
-
-#### require-return-yield-for-errors
-
-Requires `return yield*` pattern for terminal effects:
-
-```typescript
-// ❌ Bad - missing return
-const program = Effect.gen(function*() {
-  if (condition) {
-    yield* Effect.fail(new Error("Failed"))
-  }
-})
-
-// ✅ Good - return yield* for terminal effects
-const program = Effect.gen(function*() {
-  if (condition) {
-    return yield* Effect.fail(new Error("Failed"))
-  }
-})
-```
-
-#### no-effect-runsync-in-gen
-
-Prevents Effect.runSync inside Effect.gen:
-
-```typescript
-// ❌ Bad - runSync inside generator
-const program = Effect.gen(function*() {
-  const result = Effect.runSync(otherEffect) // ERROR
-})
-
-// ✅ Good - use yield*
-const program = Effect.gen(function*() {
-  const result = yield* otherEffect
-})
-```
-
-#### prefer-effect-constructors
-
-Suggests Effect equivalents for native constructors:
-
-```typescript
-// ⚠️ Warning - prefer Effect version
-const arr = Array.from(iterable)
-
-// ✅ Good - use Effect constructor
-const arr = Array.fromIterable(iterable)
-```
-
----
-
-## Prettier Configuration
-
-**File:** `.prettierrc`
-
-```json
-{
-  "semi": false,
-  "printWidth": 120,
-  "trailingComma": "none"
-}
-```
-
-### Prettier Settings
-
-- **semi**: No semicolons (use ASI)
-- **printWidth**: 120 characters max
-- **trailingComma**: Never add trailing commas
-
-### Usage
-
-```bash
-# Format all files
-bun run format
-
-# Check formatting
-bun run format:check
-
-# Format specific file
-bunx prettier --write src/my-file.ts
-```
-
----
-
-## Dprint Configuration
-
-**File:** `dprint.json`
-
-```json
-{
-  "$schema": "https://dprint.dev/schemas/v0.json",
-  "indentWidth": 2,
-  "lineWidth": 80,
-  "newLineKind": "lf",
-  "typescript": {
-    "semiColons": "asi",
-    "binaryExpression.linePerExpression": true,
-    "preferSingleLine": false,
-    "jsx.forceNewLinesSurroundingContent": true,
-    "memberExpression.linePerExpression": true,
-    "enumDeclaration.memberSpacing": "newLine",
-    "exportDeclaration.forceMultiLine": "always",
-    "importDeclaration.preferSingleLine": true
-  }
-}
-```
-
-### Dprint Plugins
-
-- TypeScript/JavaScript
-- JSON
-- Markdown
-- TOML
-- CSS (Malva)
-- Markup (HTML/XML)
-- SQL
-
-### Usage
-
-```bash
-# Format all files
-bun run dprint:format
-
-# Check formatting
-bun run dprint:check
-
-# Format specific file
-bunx dprint fmt src/my-file.ts
-```
-
----
-
-## Code Quality Workflow
-
-### During Development
-
-```bash
-# 1. Write code
-# 2. Auto-format on save (configure in your editor)
-# 3. Run type check
-bun run typecheck
-
-# 4. Run linter
 bun run lint:fix
 
-# 5. Commit changes
-git add .
-git commit -m "feat: add new feature"
+# Type safety
+bun run typecheck
+
+# Formatting
+bun run format
+bun run format:check
+
+# Full verification
+bun run validate
 ```
 
-### Before Committing
+## Configuration Files
+
+### Oxlint
+
+- `oxlint.config.js`
+- `oxlint-local-plugin.cjs`
+- `oxlint-local-advanced-plugin.cjs`
+- `eslint-local-rules.cjs`
+- `eslint-local-rules-advanced.cjs`
+
+`oxlint.config.js` extends `@nkzw/oxlint-config` and adds repository-specific
+rules and ignores.
+
+The lint script intentionally runs Oxlint through Node:
 
 ```bash
-# Run all quality checks
-bun run typecheck && bun run lint && bun run format:check
+node ./node_modules/oxlint/bin/oxlint --config oxlint.config.js .
 ```
 
-### Pre-commit Hook (Recommended)
+This is required because Oxlint's JavaScript configuration support currently
+expects a Node runtime.
 
-Install Husky and lint-staged:
+### TypeScript
+
+- `tsconfig.json`
+
+### Formatting
+
+- `dprint.json`
+
+## Repository-Specific Rules
+
+### TSDoc enforcement
+
+TSDoc is enforced through the `eslint-plugin-jsdoc` rules loaded by Oxlint.
+
+Important enforced checks include:
+
+- descriptions are required
+- parameter names must match
+- parameter descriptions are required
+- return descriptions are required
+- function and method docs are required where configured
+
+### Effect rules
+
+The repository keeps the custom Effect-focused rules that existed before the
+migration:
+
+- `local/no-opaque-instance-fields`
+- `local-advanced/no-try-catch-in-effect-gen`
+- `local-advanced/no-type-assertions`
+- `local-advanced/require-return-yield-for-errors`
+- `local-advanced/no-effect-runsync-in-gen`
+- `local-advanced/prefer-effect-constructors`
+- `@effect/no-import-from-barrel-package`
+
+These rules protect project invariants that are not covered well by generic
+lint presets.
+
+## Ignore Policy
+
+Oxlint ignores generated or non-source files such as:
+
+- `dist`
+- `build`
+- `docs`
+- `*.md`
+- `*.js`
+- `*.cjs`
+- `.output`
+- `.worktrees/`
+
+This keeps linting focused on the TypeScript source of record.
+
+## Development Workflow
+
+Recommended loop:
 
 ```bash
-bun add -d husky lint-staged
-bunx husky init
+bun run typecheck
+bun run lint:fix
+bun run format
 ```
 
-Create `.husky/pre-commit`:
+Before publishing:
 
 ```bash
-#!/usr/bin/env sh
-. "$(dirname -- "$0")/_/husky.sh"
-
-bunx lint-staged
+bun run validate
 ```
 
-Create `lint-staged.config.js`:
+## Pre-commit Hooks
 
-```javascript
-export default {
-  "*.{ts,tsx}": [
-    "eslint --fix",
-    "prettier --write",
-    "dprint fmt",
-  ],
-  "*.{json,md}": [
-    "prettier --write",
-    "dprint fmt",
-  ],
-}
-```
+The repository pre-commit hook runs:
 
----
-
-## Editor Integration
-
-### VS Code
-
-Create `.vscode/settings.json`:
-
-```json
-{
-  "editor.formatOnSave": true,
-  "editor.defaultFormatter": "esbenp.prettier-vscode",
-  "editor.codeActionsOnSave": {
-    "source.fixAll.eslint": true
-  },
-  "eslint.validate": [
-    "javascript",
-    "javascriptreact",
-    "typescript",
-    "typescriptreact"
-  ],
-  "typescript.tsdk": "node_modules/typescript/lib"
-}
-```
-
-Install extensions:
-
-- ESLint (`dbaeumer.vscode-eslint`)
-- Prettier (`esbenp.prettier-vscode`)
-- Dprint (`dprint.dprint`)
-
-### IntelliJ IDEA / WebStorm
-
-1. **Enable ESLint:**
-   - Preferences → Languages & Frameworks → JavaScript → Code Quality Tools → ESLint
-   - Select "Automatic ESLint configuration"
-   - Check "Run eslint --fix on save"
-
-2. **Enable Prettier:**
-   - Preferences → Languages & Frameworks → JavaScript → Prettier
-   - Select "On code reformat" and "On save"
-
----
-
-## CI/CD Integration
-
-### GitHub Actions
-
-Create `.github/workflows/quality.yml`:
-
-```yaml
-name: Code Quality
-
-on:
-  pull_request:
-  push:
-    branches: [main]
-
-jobs:
-  quality:
-    runs-on: ubuntu-latest
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: oven-sh/setup-bun@v2
-        with:
-          bun-version: latest
-
-      - name: Install dependencies
-        run: bun install
-
-      - name: Type check
-        run: bun run typecheck
-
-      - name: Lint
-        run: bun run lint
-
-      - name: Format check
-        run: bun run format:check
-
-      - name: Dprint check
-        run: bun run dprint:check
-
-      - name: Run tests
-        run: bun run test
-```
-
----
-
-## Common Patterns
-
-### Effect.gen Best Practices
-
-```typescript
-// ✅ Good - proper Effect.gen usage
-const program = Effect.gen(function*() {
-  // Use yield* for effects
-  const user = yield* fetchUser(id)
-
-  // Use Effect error handling
-  const result = yield* Effect.tryPromise({
-    try: () => fetch("/api/data"),
-    catch: (error) => new FetchError(error),
-  })
-
-  // Return yield* for terminal effects
-  if (!result.ok) {
-    return yield* Effect.fail(new Error("Request failed"))
-  }
-
-  // Use Effect.log for logging
-  yield* Effect.log(`User: ${user.name}`)
-
-  return result
-})
-```
-
-### Type Safety
-
-```typescript
-// ✅ Good - explicit typing
-interface User {
-  id: number
-  name: string
-}
-
-const fetchUser = (id: number): Effect.Effect<User, FetchError> =>
-  Effect.gen(function*() {
-    const response = yield* Effect.tryPromise(() => fetch(`/api/users/${id}`))
-    const user: User = yield* Effect.tryPromise(() => response.json())
-    return user
-  })
-```
-
-### Import Organization
-
-```typescript
-// ✅ Good - organized imports
-import { Effect, Layer } from "effect"
-import { fetchUser } from "./api"
-import type { User } from "./types"
-```
-
----
+1. `bun run format`
+2. `bun run lint:fix`
+3. re-stages the updated files
 
 ## Troubleshooting
 
-### ESLint Not Running
+### Oxlint config does not load
 
-```bash
-# Check ESLint is installed
-bun pm ls eslint
+Make sure the lint script runs Oxlint via Node, not by invoking the binary
+without Node when using `oxlint.config.js`.
 
-# Run with debug
-DEBUG=eslint:* bun run lint
-```
+### TSDoc messages mention `jsdoc-js/...`
 
-### Prettier Conflicts with ESLint
+That is expected. The repository uses the JS plugin alias `jsdoc-js` because
+Oxlint reserves the native `jsdoc` plugin name.
 
-The configs are designed to work together. Prettier handles formatting, ESLint handles code quality.
+### Unused imports
 
-If conflicts occur:
+Unused imports are enforced by Oxlint. Unused locals and parameters are also
+caught by TypeScript.
 
-1. Run Prettier first: `bun run format`
-2. Then run ESLint: `bun run lint:fix`
+## Best Practices
 
-### Dprint Performance
-
-Dprint is very fast, but for large codebases:
-
-```bash
-# Format incrementally
-bunx dprint fmt --incremental
-```
-
-### Custom Rule Errors
-
-To disable a custom rule temporarily:
-
-```typescript
-/* eslint-disable local-advanced/no-try-catch-in-effect-gen */
-const program = Effect.gen(function*() {
-  try {
-    // ...
-  } catch (e) {
-    // ...
-  }
-})
-/* eslint-enable local-advanced/no-try-catch-in-effect-gen */
-```
-
----
-
-## Custom Rule Development
-
-### Adding New Local Rules
-
-Edit `eslint-local-rules.cjs` or `eslint-local-rules-advanced.cjs`:
-
-```javascript
-module.exports = {
-  "my-custom-rule": {
-    meta: {
-      type: "problem",
-      docs: {
-        description: "My custom rule description",
-        category: "Best Practices",
-        recommended: true,
-      },
-      schema: [],
-      messages: {
-        myMessage: "Error message here",
-      },
-    },
-    create(context) {
-      return {
-        // AST node visitors
-        CallExpression(node) {
-          // Check conditions
-          if (shouldReport) {
-            context.report({
-              node,
-              messageId: "myMessage",
-            })
-          }
-        },
-      }
-    },
-  },
-}
-```
-
-Enable in `eslint.config.js`:
-
-```javascript
-{
-  rules: {
-    "local/my-custom-rule": "error",
-  }
-}
-```
-
----
-
-## Resources
-
-- [ESLint Documentation](https://eslint.org)
-- [Prettier Documentation](https://prettier.io)
-- [Dprint Documentation](https://dprint.dev)
-- [Effect ESLint Plugin](https://github.com/Effect-TS/eslint-plugin)
-- [TypeScript ESLint](https://typescript-eslint.io)
-
----
-
-## Best Practices Summary
-
-1. **Run linting before commits** - Catch issues early
-2. **Use auto-fix** - `bun run lint:fix` saves time
-3. **Enable editor integration** - Real-time feedback
-4. **Follow Effect patterns** - Let custom rules guide you
-5. **Keep functions small** - Max 150 lines per function
-6. **Use type imports** - `import type { ... }`
-7. **No type assertions** - Fix underlying type issues
-8. **Use Effect error handling** - No try-catch in Effect.gen
-9. **Consistent formatting** - Run format tools regularly
-10. **Type everything** - No `any` types
-
----
-
-**Ready to maintain high code quality?** Run `bun run lint && bun run format` to get started!
+1. Prefer fixing the underlying type or control-flow problem over suppressing a rule.
+2. Keep namespace imports only where they match established Effect module patterns.
+3. Update docs when a lint rule changes expected contributor behavior.
+4. Use `bun run validate` before considering the task complete.
+5. Treat lint, typecheck, formatting, and tests as one quality system.
