@@ -1,23 +1,22 @@
 # Code Quality Guide
 
-Code quality in this repository is enforced with **Oxlint**, **TypeScript**, and **Dprint**.
+Code quality in this repository is enforced with **Oxlint**, **TypeScript Go**, **TypeScript**, and **Dprint**.
 
 ## Overview
 
 ```mermaid
 graph TB
     Code[Source Code] --> Oxlint[Oxlint]
-    Code --> TypeScript[TypeScript]
+    Code --> Tsgo[TypeScript Go]
     Code --> Dprint[Dprint]
 
-    Oxlint --> Nkzw[@nkzw/oxlint-config]
+    Oxlint --> Native[Native Oxlint Rules]
     Oxlint --> Jsdoc[TSDoc Rules]
     Oxlint --> Local[Local Effect Rules]
-
-    TypeScript --> Types[Strict Type Safety]
+    Tsgo --> Types[Strict Type Safety]
     Dprint --> Format[Formatting]
 
-    Nkzw --> Quality[Code Quality]
+    Native --> Quality[Code Quality]
     Jsdoc --> Quality
     Local --> Quality
     Types --> Quality
@@ -34,31 +33,35 @@ Oxlint is the repository linter.
 
 It combines:
 
-- `@nkzw/oxlint-config` for the main baseline
+- native Oxlint rules configured directly in `oxlint.config.js`
 - `eslint-plugin-jsdoc` through Oxlint JS plugin support for TSDoc enforcement
 - local project rules for Effect-specific patterns
 - `@effect/eslint-plugin` for barrel import protection
 
-The repository intentionally disables a few stricter defaults from the shared
-`@nkzw/oxlint-config` baseline when they conflict with established project
-patterns, especially:
+The repository intentionally keeps the lint configuration self-contained instead
+of depending on a shared third-party preset.
+
+The repository also keeps a small set of explicit exceptions for established
+project patterns, especially:
 
 - namespace imports used by Effect modules
-- object/interface sorting rules
 - `no-console`
+- a few Unicorn defaults that conflict with current project practices
 
-### 2. TypeScript
+### 2. TypeScript Go
 
-TypeScript remains responsible for type safety and several checks that are
-better handled by the compiler than by lint rules.
+Type checking runs through TypeScript Go via `tsgo`.
 
-Important compiler checks include:
+Important compiler checks still come from `tsconfig.json`, including:
 
 - `strict`
 - `noUnusedLocals`
 - `noUnusedParameters`
 - `noImplicitOverride`
 - `exactOptionalPropertyTypes`
+
+A `typecheck:legacy` script remains available as a fallback path through the
+JavaScript TypeScript compiler while validating parity.
 
 ### 3. Dprint
 
@@ -72,9 +75,11 @@ Use Dprint for formatting and Oxlint for linting. They serve different roles.
 # Lint
 bun run lint
 bun run lint:fix
+bun run lint:type-aware
 
 # Type safety
 bun run typecheck
+bun run typecheck:legacy
 
 # Formatting
 bun run format
@@ -94,21 +99,43 @@ bun run validate
 - `eslint-local-rules.cjs`
 - `eslint-local-rules-advanced.cjs`
 
-`oxlint.config.js` extends `@nkzw/oxlint-config` and adds repository-specific
-rules and ignores.
+`oxlint.config.js` is the source of truth for lint behavior in this repository.
+It inlines the native Oxlint baseline and adds repository-specific JS plugins,
+rules, and ignores.
 
-The lint script intentionally runs Oxlint through Node:
+The lint scripts intentionally run Oxlint through Node:
 
 ```bash
 node ./node_modules/oxlint/bin/oxlint --config oxlint.config.js .
 ```
 
-This is required because Oxlint's JavaScript configuration support currently
-expects a Node runtime.
+This remains necessary because Oxlint's JavaScript configuration support
+currently expects a Node runtime.
+
+Type-aware linting is enforced with warnings denied:
+
+```bash
+node ./node_modules/oxlint/bin/oxlint --config oxlint.config.js --type-aware --deny-warnings .
+```
 
 ### TypeScript
 
 - `tsconfig.json`
+- `.vscode/settings.json`
+
+Type checking uses:
+
+```bash
+tsgo --noEmit -p tsconfig.json
+```
+
+VS Code is configured to opt into tsgo with:
+
+```json
+{
+  "typescript.experimental.useTsgo": true
+}
+```
 
 ### Formatting
 
@@ -195,10 +222,15 @@ without Node when using `oxlint.config.js`.
 That is expected. The repository uses the JS plugin alias `jsdoc-js` because
 Oxlint reserves the native `jsdoc` plugin name.
 
+### Type-aware linting is slower
+
+That is expected. Use plain `bun run lint` for the fast pass and
+`bun run lint:type-aware` when validating semantic lint rules.
+
 ### Unused imports
 
 Unused imports are enforced by Oxlint. Unused locals and parameters are also
-caught by TypeScript.
+caught by TypeScript Go through the repository's compiler settings.
 
 ## Best Practices
 

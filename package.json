@@ -14,9 +14,11 @@
     "test:watch": "vitest",
     "test:coverage": "vitest run src/lib src/api src/routes/api/-lib src/routes/api/$.test.ts src/*.test.ts --exclude src/lib/atom-hydration.test.tsx --exclude src/lib/posthog-client.test.ts --coverage",
     "test:coverage:ui": "vitest run --coverage --ui",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "tsgo --noEmit -p tsconfig.json",
+    "typecheck:legacy": "tsc --noEmit -p tsconfig.json",
     "lint": "node ./node_modules/oxlint/bin/oxlint --config oxlint.config.js .",
     "lint:fix": "node ./node_modules/oxlint/bin/oxlint --config oxlint.config.js --fix .",
+    "lint:type-aware": "node ./node_modules/oxlint/bin/oxlint --config oxlint.config.js --type-aware --deny-warnings .",
     "format": "dprint fmt",
     "format:check": "dprint check",
     "docs:check": "bun run scripts/check-docs-quality.ts",
@@ -25,7 +27,7 @@
     "perf:check": "bun run build && bun run size",
     "prepare": "effect-language-service patch",
     "postinstall": "bash scripts/install-git-hooks.sh",
-    "validate": "bun run typecheck && bun run lint && bun run format:check && bun run docs:check && bun run test:coverage && bun run perf:check"
+    "validate": "bun run typecheck && bun run lint && bun run lint:type-aware && bun run format:check && bun run docs:check && bun run test:coverage && bun run perf:check"
   },
   "dependencies": {
     "@datadog/pprof": "github:SamuelLHuber/pprof-nodejs#pyroscope-ts-bun-compat-2026-02-10",
@@ -55,6 +57,7 @@
     "@datadog/pprof": "github:SamuelLHuber/pprof-nodejs#pyroscope-ts-bun-compat-2026-02-10"
   },
   "devDependencies": {
+    "@effect/eslint-plugin": "^0.3.2",
     "@effect/language-service": "^0.62.2",
     "@effect/opentelemetry": "4.0.0-beta.0",
     "@effect/vitest": "4.0.0-beta.0",
@@ -72,6 +75,7 @@
     "@types/node": "^22.10.2",
     "@types/react": "^19.2.0",
     "@types/react-dom": "^19.2.0",
+    "@typescript/native-preview": "^7.0.0-dev.20260325.1",
     "@vitejs/plugin-react": "^5.0.4",
     "@vitest/browser": "^4.0.15",
     "@vitest/browser-playwright": "^4.0.15",
@@ -79,6 +83,8 @@
     "@vitest/coverage-v8": "^4.0.15",
     "dprint": "^0.47.2",
     "eslint-plugin-jsdoc": "^61.5.0",
+    "oxlint": "^1.51.0",
+    "oxlint-tsgolint": "^0.17.4",
     "playwright": "^1.57.0",
     "react-grab": "^0.1.21",
     "smithers-orchestrator": "^0.7.0",
@@ -87,15 +93,7 @@
     "vitest": "^4.0.15",
     "vitest-browser-react": "^2.0.2",
     "web-vitals": "^5.1.0",
-    "zod": "^4.3.6",
-    "@nkzw/eslint-plugin": "^2.0.0",
-    "@nkzw/oxlint-config": "^1.0.1",
-    "eslint-plugin-no-only-tests": "^3.3.0",
-    "eslint-plugin-perfectionist": "^5.6.0",
-    "eslint-plugin-react-hooks": "^7.0.1",
-    "eslint-plugin-unused-imports": "^4.4.1",
-    "oxlint": "^1.51.0",
-    "@effect/eslint-plugin": "^0.3.2"
+    "zod": "^4.3.6"
   },
   "patchedDependencies": {
     "srvx@0.9.7": "patches/srvx@0.9.7.patch",

@@ -321,4 +321,4 @@ async function checkBundleSizes(): Promise<void> {
   )
 }
 
-checkBundleSizes()
+void checkBundleSizes()
