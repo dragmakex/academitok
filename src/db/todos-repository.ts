@@ -6,6 +6,7 @@ import type {
 } from "@/api/todo-schema"
 import { TodoId as TodoIdSchema, TodoNotFound } from "@/api/todo-schema"
 import { todosTable } from "@/db/schema"
+import { TodoIdGenerator, TodoIdGeneratorLive } from "@/lib/todo-id-generator"
 import { Buffer } from "buffer"
 import { asc, eq, sql } from "drizzle-orm"
 import { drizzle as drizzlePglite } from "drizzle-orm/pglite"
@@ -162,9 +163,13 @@ type RepositoryQueries = {
  * Builds a CRUD repository from a set of low-level query functions.
  *
  * @param queries - The adapter-specific query implementations.
+ * @param todoIdGenerator - The explicit id generator used for new todos.
  * @returns A repository implementing list, getById, create, update, remove.
  */
-function makeCrudRepository(queries: RepositoryQueries): TodoRepository {
+function makeCrudRepository(
+  queries: RepositoryQueries,
+  todoIdGenerator: TodoIdGenerator,
+): TodoRepository {
   const getById = (id: TodoId) =>
     Effect.gen(function*() {
       const todo = yield* Effect.promise(() => queries.findRowById(id))
@@ -189,7 +194,7 @@ function makeCrudRepository(queries: RepositoryQueries): TodoRepository {
     create: (input: CreateTodoInput) =>
       Effect
         .gen(function*() {
-          const id = decodeTodoId(crypto.randomUUID())
+          const id = yield* todoIdGenerator.next
           const now = yield* DateTime.now
           const todo = yield* Effect.promise(() =>
             queries.insertRow(id, input, DateTime.toDateUtc(now))
@@ -252,7 +257,9 @@ export class TodosRepository extends ServiceMap.Service<TodosRepository>()(
     make: makeLiveRepository,
   },
 ) {
-  static readonly layer = Layer.effect(this, this.make)
+  static readonly layer = Layer.effect(this, this.make).pipe(
+    Layer.provide(TodoIdGeneratorLive),
+  )
 
   static readonly testLayer = this.layerFromConfig({
     kind: "pglite",
@@ -266,13 +273,15 @@ export class TodosRepository extends ServiceMap.Service<TodosRepository>()(
    * @returns A layer providing the seeded repository service.
    */
   static layerFromSeed(seed: TodoSeed): Layer.Layer<TodosRepository> {
-    return Layer.effect(
-      this,
-      Effect.gen(function*() {
-        const repository = yield* makePgliteRepository(undefined, seed)
-        return TodosRepository.of(repository)
-      }),
-    )
+    return Layer
+      .effect(
+        this,
+        Effect.gen(function*() {
+          const repository = yield* makePgliteRepository(undefined, seed)
+          return TodosRepository.of(repository)
+        }),
+      )
+      .pipe(Layer.provide(TodoIdGeneratorLive))
   }
 
   /**
@@ -284,7 +293,9 @@ export class TodosRepository extends ServiceMap.Service<TodosRepository>()(
   static layerFromConfig(
     config: RepositoryDatabaseConfig,
   ): Layer.Layer<TodosRepository> {
-    return Layer.effect(this, makeRepository(config))
+    return Layer.effect(this, makeRepository(config)).pipe(
+      Layer.provide(TodoIdGeneratorLive),
+    )
   }
 }
 
@@ -297,6 +308,7 @@ export class TodosRepository extends ServiceMap.Service<TodosRepository>()(
 function makePostgresRepository(databaseUrl: string) {
   return Effect
     .gen(function*() {
+      const todoIdGenerator = yield* TodoIdGenerator
       const client = postgres(databaseUrl, {
         prepare: false,
       })
@@ -307,51 +319,54 @@ function makePostgresRepository(databaseUrl: string) {
       yield* Effect.promise(() => db.execute(createTodoRowSql))
       yield* Effect.addFinalizer(() => Effect.promise(() => client.end()))
 
-      return makeCrudRepository({
-        listRows: () =>
-          db
-            .select()
-            .from(todosTable)
-            .orderBy(
-              asc(todosTable.createdAt),
-              asc(todosTable.id),
-            ),
-        findRowById: (id) =>
-          db
-            .select()
-            .from(todosTable)
-            .where(eq(todosTable.id, id))
-            .limit(1)
-            .then(
-              ([todo]) => todo,
-            ),
-        insertRow: (id, input, now) =>
-          db
-            .insert(todosTable)
-            .values({
-              id,
-              title: input.title,
-              completed: false,
-              createdAt: now,
-            })
-            .returning()
-            .then(([todo]) => todo),
-        updateRow: (id, patch) =>
-          db
-            .update(todosTable)
-            .set(patch)
-            .where(eq(todosTable.id, id))
-            .returning()
-            .then(([todo]) => todo),
-        deleteRow: (id) =>
-          db
-            .delete(todosTable)
-            .where(eq(todosTable.id, id))
-            .returning({ id: todosTable.id })
-            .then((
-              [todo],
-            ) => (todo === undefined ? undefined : decodeTodoId(todo.id))),
-      })
+      return makeCrudRepository(
+        {
+          listRows: () =>
+            db
+              .select()
+              .from(todosTable)
+              .orderBy(
+                asc(todosTable.createdAt),
+                asc(todosTable.id),
+              ),
+          findRowById: (id) =>
+            db
+              .select()
+              .from(todosTable)
+              .where(eq(todosTable.id, id))
+              .limit(1)
+              .then(
+                ([todo]) => todo,
+              ),
+          insertRow: (id, input, now) =>
+            db
+              .insert(todosTable)
+              .values({
+                id,
+                title: input.title,
+                completed: false,
+                createdAt: now,
+              })
+              .returning()
+              .then(([todo]) => todo),
+          updateRow: (id, patch) =>
+            db
+              .update(todosTable)
+              .set(patch)
+              .where(eq(todosTable.id, id))
+              .returning()
+              .then(([todo]) => todo),
+          deleteRow: (id) =>
+            db
+              .delete(todosTable)
+              .where(eq(todosTable.id, id))
+              .returning({ id: todosTable.id })
+              .then((
+                [todo],
+              ) => (todo === undefined ? undefined : decodeTodoId(todo.id))),
+        },
+        todoIdGenerator,
+      )
     })
     .pipe(Effect.orDie)
 }
@@ -373,6 +388,7 @@ function makePgliteRepository(
         yield* Effect.promise(() => mkdir(dataDir, { recursive: true }))
       }
 
+      const todoIdGenerator = yield* TodoIdGenerator
       const PGlite = yield* Effect.promise(async () => {
         if (typeof globalThis.Buffer === "undefined") {
           globalThis.Buffer = Buffer
@@ -393,51 +409,54 @@ function makePgliteRepository(
       yield* seedPgliteRows(db, seed)
       yield* Effect.addFinalizer(() => Effect.promise(() => client.close()))
 
-      return makeCrudRepository({
-        listRows: () =>
-          db
-            .select()
-            .from(todosTable)
-            .orderBy(
-              asc(todosTable.createdAt),
-              asc(todosTable.id),
-            ),
-        findRowById: (id) =>
-          db
-            .select()
-            .from(todosTable)
-            .where(eq(todosTable.id, id))
-            .limit(1)
-            .then(
-              ([todo]) => todo,
-            ),
-        insertRow: (id, input, now) =>
-          db
-            .insert(todosTable)
-            .values({
-              id,
-              title: input.title,
-              completed: false,
-              createdAt: now,
-            })
-            .returning()
-            .then(([todo]) => todo),
-        updateRow: (id, patch) =>
-          db
-            .update(todosTable)
-            .set(patch)
-            .where(eq(todosTable.id, id))
-            .returning()
-            .then(([todo]) => todo),
-        deleteRow: (id) =>
-          db
-            .delete(todosTable)
-            .where(eq(todosTable.id, id))
-            .returning({ id: todosTable.id })
-            .then((
-              [todo],
-            ) => (todo === undefined ? undefined : decodeTodoId(todo.id))),
-      })
+      return makeCrudRepository(
+        {
+          listRows: () =>
+            db
+              .select()
+              .from(todosTable)
+              .orderBy(
+                asc(todosTable.createdAt),
+                asc(todosTable.id),
+              ),
+          findRowById: (id) =>
+            db
+              .select()
+              .from(todosTable)
+              .where(eq(todosTable.id, id))
+              .limit(1)
+              .then(
+                ([todo]) => todo,
+              ),
+          insertRow: (id, input, now) =>
+            db
+              .insert(todosTable)
+              .values({
+                id,
+                title: input.title,
+                completed: false,
+                createdAt: now,
+              })
+              .returning()
+              .then(([todo]) => todo),
+          updateRow: (id, patch) =>
+            db
+              .update(todosTable)
+              .set(patch)
+              .where(eq(todosTable.id, id))
+              .returning()
+              .then(([todo]) => todo),
+          deleteRow: (id) =>
+            db
+              .delete(todosTable)
+              .where(eq(todosTable.id, id))
+              .returning({ id: todosTable.id })
+              .then((
+                [todo],
+              ) => (todo === undefined ? undefined : decodeTodoId(todo.id))),
+        },
+        todoIdGenerator,
+      )
     })
     .pipe(Effect.orDie)
 }

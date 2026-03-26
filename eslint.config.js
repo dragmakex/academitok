@@ -209,6 +209,25 @@ export default [
       "local-advanced/require-return-yield-for-errors": "error",
       "local-advanced/no-effect-runsync-in-gen": "error",
       "local-advanced/prefer-effect-constructors": "warn",
+      "local-advanced/no-exported-mutable-bindings": "error",
+    },
+  },
+  {
+    files: ["src/lib/**/*.ts", "src/lib/**/*.tsx"],
+    rules: {
+      "local-advanced/no-ambient-time": "error",
+    },
+  },
+  {
+    files: ["src/db/**/*.ts", "src/db/**/*.tsx"],
+    rules: {
+      "local-advanced/no-ambient-randomness": "error",
+    },
+  },
+  {
+    files: ["src/routes/*.ts", "src/routes/*.tsx", "src/routes/api/$.ts"],
+    rules: {
+      "local-advanced/no-effect-gen-in-routes": "error",
     },
   },
 ]

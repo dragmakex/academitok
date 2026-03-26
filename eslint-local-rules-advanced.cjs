@@ -265,4 +265,225 @@ module.exports = {
       }
     },
   },
+
+  "no-ambient-time": {
+    meta: {
+      type: "problem",
+      docs: {
+        description:
+          "disallow ambient wall-clock reads in modules that should receive time as data",
+        category: "Design Simplicity",
+        recommended: false,
+      },
+      schema: [],
+      messages: {
+        noAmbientTime:
+          "Do not read ambient wall-clock time here. Pass time as data or inject a Clock service instead.",
+      },
+    },
+    create(context) {
+      function isAmbientDateNow(node) {
+        return (
+          node.callee.type === "MemberExpression"
+          && node.callee.object.type === "Identifier"
+          && node.callee.object.name === "Date"
+          && node.callee.property.type === "Identifier"
+          && node.callee.property.name === "now"
+        )
+      }
+
+      function checkCallExpression(node) {
+        if (isAmbientDateNow(node)) {
+          context.report({
+            node,
+            messageId: "noAmbientTime",
+          })
+        }
+      }
+
+      function checkNewExpression(node) {
+        if (
+          node.callee.type === "Identifier"
+          && node.callee.name === "Date"
+          && node.arguments.length === 0
+        ) {
+          context.report({
+            node,
+            messageId: "noAmbientTime",
+          })
+        }
+      }
+
+      return {
+        CallExpression: checkCallExpression,
+        NewExpression: checkNewExpression,
+      }
+    },
+  },
+
+  "no-ambient-randomness": {
+    meta: {
+      type: "problem",
+      docs: {
+        description:
+          "disallow ambient randomness in modules that should receive identity or randomness as data",
+        category: "Design Simplicity",
+        recommended: false,
+      },
+      schema: [],
+      messages: {
+        noAmbientRandomness:
+          "Do not read ambient randomness here. Inject an explicit id/randomness service instead.",
+      },
+    },
+    create(context) {
+      function isMathRandom(node) {
+        return (
+          node.callee.type === "MemberExpression"
+          && node.callee.object.type === "Identifier"
+          && node.callee.object.name === "Math"
+          && node.callee.property.type === "Identifier"
+          && node.callee.property.name === "random"
+        )
+      }
+
+      function isCryptoRandomUuid(node) {
+        if (node.callee.type !== "MemberExpression") {
+          return false
+        }
+
+        const object = node.callee.object
+        const property = node.callee.property
+
+        if (
+          property.type !== "Identifier"
+          || property.name !== "randomUUID"
+        ) {
+          return false
+        }
+
+        return (
+          (object.type === "Identifier" && object.name === "crypto")
+          || (
+            object.type === "MemberExpression"
+            && object.object.type === "Identifier"
+            && object.object.name === "globalThis"
+            && object.property.type === "Identifier"
+            && object.property.name === "crypto"
+          )
+        )
+      }
+
+      function checkCallExpression(node) {
+        if (isMathRandom(node) || isCryptoRandomUuid(node)) {
+          context.report({
+            node,
+            messageId: "noAmbientRandomness",
+          })
+        }
+      }
+
+      return {
+        CallExpression: checkCallExpression,
+      }
+    },
+  },
+
+  "no-exported-mutable-bindings": {
+    meta: {
+      type: "problem",
+      docs: {
+        description: "disallow exported mutable module bindings",
+        category: "Design Simplicity",
+        recommended: false,
+      },
+      schema: [],
+      messages: {
+        noExportedMutableBinding:
+          "Do not export mutable module bindings. Export immutable values or explicit services instead.",
+      },
+    },
+    create(context) {
+      const mutableBindings = new Set()
+
+      function captureMutableDeclaration(node) {
+        if (node.kind !== "let" && node.kind !== "var") {
+          return
+        }
+
+        for (const declaration of node.declarations) {
+          if (declaration.id.type === "Identifier") {
+            mutableBindings.add(declaration.id.name)
+          }
+        }
+      }
+
+      return {
+        VariableDeclaration: captureMutableDeclaration,
+        ExportNamedDeclaration(node) {
+          if (node.declaration?.type === "VariableDeclaration") {
+            if (
+              node.declaration.kind === "let"
+              || node.declaration.kind === "var"
+            ) {
+              context.report({
+                node: node.declaration,
+                messageId: "noExportedMutableBinding",
+              })
+            }
+            return
+          }
+
+          for (const specifier of node.specifiers) {
+            if (
+              specifier.local.type === "Identifier"
+              && mutableBindings.has(specifier.local.name)
+            ) {
+              context.report({
+                node: specifier,
+                messageId: "noExportedMutableBinding",
+              })
+            }
+          }
+        },
+      }
+    },
+  },
+
+  "no-effect-gen-in-routes": {
+    meta: {
+      type: "problem",
+      docs: {
+        description:
+          "disallow Effect.gen orchestration directly inside route entry modules",
+        category: "Design Simplicity",
+        recommended: false,
+      },
+      schema: [],
+      messages: {
+        noEffectGenInRoutes:
+          "Route entry modules should decode, delegate, and render. Move Effect.gen orchestration into a service or helper module.",
+      },
+    },
+    create(context) {
+      function checkCallExpression(node) {
+        if (
+          node.callee.type === "MemberExpression"
+          && node.callee.object.type === "Identifier"
+          && node.callee.object.name === "Effect"
+          && node.callee.property.type === "Identifier"
+          && node.callee.property.name === "gen"
+        ) {
+          context.report({
+            node,
+            messageId: "noEffectGenInRoutes",
+          })
+        }
+      }
+
+      return {
+        CallExpression: checkCallExpression,
+      }
+    },
+  },
 }

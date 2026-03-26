@@ -495,6 +495,7 @@ graph TB
 ## Next Steps
 
 - [Getting Started Guide](../guides/getting-started.md)
+- [Simple Made Easy](./simple-made-easy.md)
 - [Testing Guide](../guides/testing.md)
 - [Telemetry Guide](../guides/telemetry.md)
 - [Observability Setup](../guides/observability-setup.md)

@@ -13,7 +13,7 @@ const listTodos = createServerFn({ method: "GET" }).handler(async () => {
   const todos = await serverRuntime.runPromiseExit(
     Effect.flatMap(TodosService.asEffect(), (s) => s.list),
   )
-  return dehydrate(todosAtom.remote, AsyncResult.fromExit(todos))
+  return dehydrate(todosAtom.remote, AsyncResult.fromExit(todos), Date.now())
 })
 
 export const Route = createFileRoute("/")({

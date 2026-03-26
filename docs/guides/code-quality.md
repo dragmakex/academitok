@@ -302,6 +302,77 @@ const arr = Array.from(iterable)
 const arr = Array.fromIterable(iterable)
 ```
 
+#### no-ambient-time
+
+Shared helpers must not sample ambient wall-clock time directly.
+
+```typescript
+// ❌ Bad - helper reads wall-clock time itself
+const dehydrate = (value: unknown) => ({
+  value,
+  dehydratedAt: Date.now(),
+})
+
+// ✅ Good - caller provides time as plain data
+const dehydrate = (value: unknown, dehydratedAt: number) => ({
+  value,
+  dehydratedAt,
+})
+```
+
+#### no-ambient-randomness
+
+Persistence and similar modules must not mint ids directly from ambient
+randomness.
+
+```typescript
+// ❌ Bad - repository samples randomness itself
+const createTodo = () => ({ id: crypto.randomUUID() })
+
+// ✅ Good - identity arrives through an explicit dependency
+const createTodo = (nextId: () => string) => ({ id: nextId() })
+```
+
+#### no-exported-mutable-bindings
+
+Modules must not export mutable `let` / `var` bindings.
+
+```typescript
+// ❌ Bad
+export let initialized = false
+
+// ✅ Good
+export const initialized = false
+```
+
+#### no-effect-gen-in-routes
+
+Top-level route entry modules should delegate to services or helpers instead of
+owning orchestration.
+
+```typescript
+// ❌ Bad - route entry becomes an orchestration sink
+const loader = Effect.gen(function*() {
+  return yield* loadTodos()
+})
+
+// ✅ Good - route entry delegates
+const loader = loadTodos
+```
+
+### Simplicity Review Checklist
+
+For every new module, ask:
+
+- Does this file have **one role**?
+- Is **what** separated from **how**?
+- Are time and randomness supplied explicitly where they matter?
+- Are exports immutable and therefore stable across time?
+- If this file changed, what unrelated modules would be forced to change too?
+
+A module is not simple because it is short or familiar. A module is simple when
+it stays unentangled.
+
 ---
 
 ## Prettier Configuration

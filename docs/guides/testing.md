@@ -36,6 +36,24 @@ graph TB
 2. **Moderate Component Tests** - User interaction testing in real browsers
 3. **Few Visual Tests** - Critical UI components across browsers
 
+### Lint Rules As Architectural Tests
+
+Some simplicity guarantees are cheap enough to prove statically.
+When a rule is mainly structural, encode it in lint and then verify it with
+positive and negative examples.
+
+This repository now uses lint-backed examples to protect a few design
+boundaries directly:
+
+- shared helpers receive time as data,
+- repositories receive identity generation explicitly,
+- route entry modules delegate instead of orchestrating,
+- module exports remain immutable.
+
+The verification examples live in `src/lint/simple-made-easy-rules.test.ts`.
+Treat them as architectural tests: they prove not only that code passes lint,
+but that the lint policy matches the design intent.
+
 ---
 
 ## Test Types
