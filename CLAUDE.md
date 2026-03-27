@@ -101,6 +101,10 @@ Before implementing substantial Effect code, inspect the relevant Effect guidanc
 
 The change is only done when the implementation, tests, documentation, and version control history all satisfy the referenced guides.
 
+## Take notes
+
+Please make note of mistakes you make in MISTAKES.md. If you find you wish you had more context or tools, write that down in DESIRES.md. If you learn anything about your env write that down in LEARNINGS.md.
+
 ## 📖 Remember
 
 You are not just writing code. You are maintaining a system.
