@@ -218,17 +218,17 @@ function checkMainDocsForDiagrams(): void {
 }
 
 /**
- * Check TSDoc coverage via existing ESLint errors
- * This doesn't re-run ESLint, just reminds about the requirement
+ * Check TSDoc coverage via the lint configuration
+ * This doesn't re-run Oxlint, just reminds about the requirement
  */
 function checkTSDocRequirement(): void {
   console.log("\n📚 TSDoc Quality:")
   console.log(
-    "  TSDoc is enforced via ESLint (eslint-plugin-jsdoc)",
+    "  TSDoc is enforced via Oxlint using eslint-plugin-jsdoc",
   )
   console.log("  Run `bun run lint` to check TSDoc completeness")
   console.log(
-    "  All functions must have: description, @param types, @returns",
+    "  All functions must have: description, @param entries, @returns",
   )
 }
 

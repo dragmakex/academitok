@@ -6,7 +6,6 @@ import type {
 } from "@/api/todo-schema"
 import { TodoId as TodoIdSchema, TodoNotFound } from "@/api/todo-schema"
 import { todosTable } from "@/db/schema"
-import { Buffer } from "buffer"
 import { asc, eq, sql } from "drizzle-orm"
 import { drizzle as drizzlePglite } from "drizzle-orm/pglite"
 import { drizzle as drizzlePostgres } from "drizzle-orm/postgres-js"
@@ -17,6 +16,7 @@ import * as Layer from "effect/Layer"
 import * as Option from "effect/Option"
 import * as Schema from "effect/Schema"
 import * as ServiceMap from "effect/ServiceMap"
+import { Buffer } from "node:buffer"
 import { mkdir } from "node:fs/promises"
 import postgres from "postgres"
 
@@ -374,7 +374,7 @@ function makePgliteRepository(
       }
 
       const PGlite = yield* Effect.promise(async () => {
-        if (typeof globalThis.Buffer === "undefined") {
+        if (globalThis.Buffer === undefined) {
           globalThis.Buffer = Buffer
         }
 

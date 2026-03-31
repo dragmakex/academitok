@@ -232,7 +232,7 @@ Effect
     },
   )
 
-/* eslint-disable jsdoc/check-indentation */
+/* eslint-disable jsdoc-js/check-indentation */
 /**
  * To run this example:
  *

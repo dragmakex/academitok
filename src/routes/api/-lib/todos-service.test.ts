@@ -1,6 +1,6 @@
 // @vitest-environment node
 
-import { TodoId, TodoNotFound } from "@/api/todo-schema"
+import { TodoId } from "@/api/todo-schema"
 import { makeTodosServiceTestLayer } from "@/db/todos-test-support"
 import { expect, it } from "@effect/vitest"
 import * as Cause from "effect/Cause"
@@ -89,10 +89,10 @@ it.effect("getById fails with TodoNotFound for non-existent id", () =>
 
       if (Exit.isFailure(result)) {
         const failReason = result.cause.reasons.find(Cause.isFailReason)
-        expect(failReason?.error).toBeInstanceOf(TodoNotFound)
-        if (failReason?.error instanceof TodoNotFound) {
-          expect(failReason.error.id).toBe(fakeId)
-        }
+        expect(failReason?.error).toMatchObject({
+          _tag: "TodoNotFound",
+          id: fakeId,
+        })
       }
     })
     .pipe(Effect.provide(makeTodosServiceTestLayer())))
