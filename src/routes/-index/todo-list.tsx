@@ -1,7 +1,7 @@
 import { EmptyState } from "@/design-system/components/EmptyState"
 import { ErrorState } from "@/design-system/components/ErrorState"
 import { Text } from "@/design-system/components/Text"
-import { TodoList as TodoListLayout } from "@/design-system/components/TodoLayout"
+import { Stack } from "@/design-system/primitives/Stack"
 import { useAtomRefresh, useAtomValue } from "@effect/atom-react"
 import * as AsyncResult from "effect/unstable/reactivity/AsyncResult"
 import { todosAtom } from "./atoms"
@@ -32,9 +32,9 @@ export function TodoList() {
           />
         )
         : (
-          <TodoListLayout>
+          <Stack gap="s">
             {todos.map((todo) => <TodoItem key={todo.id} todo={todo} />)}
-          </TodoListLayout>
+          </Stack>
         )
     )
     .onFailure(() => (

@@ -5,11 +5,7 @@ import { Checkbox } from "@/design-system/components/Checkbox"
 import { Heading } from "@/design-system/components/Heading"
 import { Text } from "@/design-system/components/Text"
 import { TextField } from "@/design-system/components/TextField"
-import {
-  TodoActions,
-  TodoMain,
-  TodoRow,
-} from "@/design-system/components/TodoLayout"
+import { Expand } from "@/design-system/primitives/Expand"
 import { Inline } from "@/design-system/primitives/Inline"
 import { Stack } from "@/design-system/primitives/Stack"
 import { useAtom, useAtomRefresh } from "@effect/atom-react"
@@ -64,8 +60,8 @@ export function TodoItem({ todo }: { readonly todo: Todo }) {
   return (
     <Card tone={hasError ? "danger" : "default"}>
       <Stack gap="m">
-        <TodoRow>
-          <TodoMain>
+        <Inline align="between" wrap>
+          <Expand>
             <Checkbox
               checked={todo.completed}
               disabled={isLoading}
@@ -76,8 +72,8 @@ export function TodoItem({ todo }: { readonly todo: Todo }) {
                 </Heading>
               }
             />
-          </TodoMain>
-          <TodoActions>
+          </Expand>
+          <Inline gap="xs" wrap>
             <Button
               variant="ghost"
               onClick={() => setIsEditing(true)}
@@ -93,8 +89,8 @@ export function TodoItem({ todo }: { readonly todo: Todo }) {
             >
               Delete
             </Button>
-          </TodoActions>
-        </TodoRow>
+          </Inline>
+        </Inline>
         {isEditing && (
           <Inline gap="s" align="start" wrap>
             <TextField

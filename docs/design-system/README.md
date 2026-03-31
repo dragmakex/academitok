@@ -6,7 +6,7 @@ This design system is a **contract** for application UI work in this repository.
 It is not optional guidance.
 
 The enforcement model is simple: **components are the boundary**.
-Application code composes design-system components with typed props.
+Application code composes design-system primitives and components with typed props.
 It never uses `className`, `style`, or raw HTML elements with styling.
 
 Tailwind CSS is an internal implementation detail of the design-system layer.
@@ -16,23 +16,59 @@ Application code does not touch it.
 
 1. Read the design-system docs in this directory.
 2. Inspect the source of truth under `src/design-system/**`.
-3. Compose from design-system primitives and components.
+3. Compose from primitives and components — do not create thin wrappers.
 4. Run `bun run lint:design-system` to verify the contract.
 
 ## Document map
 
 - `docs/design-system/rules.md` — hard DO / NEVER policy
 - `docs/design-system/tokens.md` — semantic visual language and token roles
-- `docs/design-system/patterns.md` — interaction and layout patterns
+- `docs/design-system/patterns.md` — composition patterns (read this first for UI work)
 - `docs/design-system/enforcement.md` — local, staged, and CI enforcement contract
+
+## Inventory
+
+### Primitives (layout building blocks)
+
+| Component | Purpose                                                      |
+| --------- | ------------------------------------------------------------ |
+| `Stack`   | Vertical flex with semantic gap                              |
+| `Inline`  | Horizontal flex with semantic gap, alignment, wrap           |
+| `Grid`    | Named responsive grid layouts (`stats`, `dashboard`, `form`) |
+| `Expand`  | Flex-grow child container                                    |
+| `Surface` | Semantic background with border and shadow                   |
+
+### Components (semantic UI)
+
+| Component    | Purpose                                         |
+| ------------ | ----------------------------------------------- |
+| `Page`       | Full-page wrapper with content constraints      |
+| `Card`       | Padded surface for content sections             |
+| `Button`     | Semantic action button with variants            |
+| `Heading`    | Typography: page, section, card                 |
+| `Text`       | Typography: body, muted, label, caption, danger |
+| `Badge`      | Compact status indicator                        |
+| `TextField`  | Labeled input with hint/error                   |
+| `Checkbox`   | Labeled checkbox with hint                      |
+| `Tabs`       | Tab list with counts                            |
+| `PageHeader` | Page title with description and actions         |
+| `StatCard`   | Dashboard summary metric                        |
+| `EmptyState` | Empty data surface                              |
+| `ErrorState` | Error recovery surface                          |
+
+### Composition, not wrappers
+
+Common layouts like sidebar stacks, group headers, action rows, and todo lists
+are expressed by composing primitives (`Stack`, `Inline`, `Expand`).
+See `docs/design-system/patterns.md` for examples.
+
+**Do not create single-use wrapper components for layout patterns.**
 
 ## Source of truth
 
-The implementation source of truth lives in:
-
 - `src/design-system/foundation/**` — utility functions and token maps
-- `src/design-system/primitives/**` — layout primitives (Stack, Inline, Surface)
-- `src/design-system/components/**` — all UI components
+- `src/design-system/primitives/**` — layout primitives
+- `src/design-system/components/**` — semantic UI components
 - `src/styles.css` — Tailwind `@theme` tokens and base resets
 
 ## Architecture
@@ -40,12 +76,12 @@ The implementation source of truth lives in:
 ```
 ┌─────────────────────────────────────────────┐
 │  Application code (routes, features)        │
-│  Composes DS components with typed props    │
+│  Composes DS primitives + components        │
 │  No className, no style, no raw elements    │
 ├─────────────────────────────────────────────┤
-│  Design-system components                   │
+│  Design-system components + primitives      │
 │  Typed props → Tailwind utilities internally│
-│  Components do NOT expose className         │
+│  Nothing exposes className                  │
 ├─────────────────────────────────────────────┤
 │  Tailwind CSS + @theme tokens               │
 │  Semantic values: bg-bg-surface, gap-m, etc │
