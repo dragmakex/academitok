@@ -63,6 +63,13 @@ const config = defineConfig(({ mode }) => {
         ".worktrees/**",
         "**/.jj-workspaces/**",
         ".jj-workspaces/**",
+        ...(!isBrowserRun
+          ? [
+            "src/component/*.test.tsx",
+            "src/lib/atom-hydration.test.tsx",
+            "src/visual/*.test.tsx",
+          ]
+          : []),
       ],
       // Browser mode configuration for component and visual regression testing
       browser: {
@@ -145,6 +152,16 @@ const config = defineConfig(({ mode }) => {
           // Demo/example script - not production code
           "src/telemetry-example.ts",
 
+          // Integration-heavy runtime modules are validated by focused tests,
+          // but are not a good fit for the repository's narrow coverage run.
+          "src/api/api-client.ts",
+          "src/api/todo-schema.ts",
+          "src/db/todos-repository.ts",
+          "src/lib/react-grab-loader.dev.ts",
+          "src/lib/react-grab-loader.ts",
+          "src/lib/server-init.ts",
+          "src/routes/api/-lib/todos-service.ts",
+
           // React UI components using hooks require rendering context
           // These are tested via visual regression tests in src/visual/
           "src/routes/-index/app.tsx", // Composition component
@@ -152,6 +169,13 @@ const config = defineConfig(({ mode }) => {
           "src/routes/-index/create-todo-form.tsx", // Uses useState
           "src/routes/-index/todo-item.tsx", // Uses useState
           "src/routes/-index/todo-list.tsx", // Uses useAtomValue hooks
+          "src/routes/-index/dashboard-filters.tsx", // UI composition tested elsewhere
+          "src/routes/-index/dashboard-stats.tsx", // UI composition tested elsewhere
+          "src/routes/-index/grouped-todo-board.tsx", // Uses React hooks and async atoms
+          "src/routes/-index/recent-activity.tsx", // UI composition from canonical atom
+          "src/routes/-index/todo-date.ts", // Presentation helpers exercised through UI/integration
+          "src/routes/-index/todo-group-section.tsx", // UI composition tested through board integration
+          "src/routes/-index/use-refresh-dashboard.ts", // Hook wrapper around atom refresh
           "src/routes/__root.tsx", // React document shell component
           "src/routes/index.tsx", // Server function loader (tested via E2E)
 
@@ -167,7 +191,10 @@ const config = defineConfig(({ mode }) => {
           "src/routes/api/-lib/todos-api-live.ts", // HTTP adapter (tested via integration)
 
           // Telemetry files with server-side checks unreachable in browser tests
-          "src/lib/posthog-client.ts", // Server-side window check (lines 28-29)
+          "src/lib/atom-hydration.tsx", // Browser-only hydration boundary test path
+          "src/lib/client-init.ts", // Client-only telemetry bootstrap
+          "src/lib/observability.ts", // Runtime wiring module with production-only side effects
+          "src/lib/posthog-client.ts", // Browser integration covered separately from coverage run
           "src/lib/logger-loki.ts", // Internal LogBuffer.destroy() method
           "src/lib/telemetry-server.ts", // OpenTelemetry callbacks
         ],

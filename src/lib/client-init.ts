@@ -83,7 +83,7 @@ const initPostHog = async (): Promise<void> => {
 
 const reportErrorToSentry = async (
   error: Error,
-  componentStack?: string | null | undefined,
+  componentStack?: string | null,
 ): Promise<void> => {
   const Sentry = await initSentry()
   if (!Sentry) {
