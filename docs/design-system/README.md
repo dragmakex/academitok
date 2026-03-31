@@ -64,6 +64,13 @@ See `docs/design-system/patterns.md` for examples.
 
 **Do not create single-use wrapper components for layout patterns.**
 
+### Component registry
+
+Every file under `src/design-system/` must be registered in `src/design-system/registry.ts`
+with a justification. The linter enforces this — unregistered files fail the build.
+
+Before adding a new component, apply the decision framework in `docs/design-system/rules.md`.
+
 ## Source of truth
 
 - `src/design-system/foundation/**` — utility functions and token maps

@@ -2,7 +2,10 @@ import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs"
 import { join } from "node:path"
 import { cwd } from "node:process"
 import { afterEach, describe, expect, it } from "vitest"
-import { lintDesignSystem } from "../scripts/lint-design-system-lib"
+import {
+  findUnregisteredComponents,
+  lintDesignSystem,
+} from "../scripts/lint-design-system-lib"
 
 const tempDirectories: Array<string> = []
 
@@ -151,5 +154,28 @@ describe("lintDesignSystem", () => {
     const violations = lintDesignSystem([file])
 
     expect(violations).toHaveLength(0)
+  })
+})
+
+describe("findUnregisteredComponents", () => {
+  it("reports no unregistered files for the current design system", () => {
+    const unregistered = findUnregisteredComponents()
+
+    expect(unregistered).toHaveLength(0)
+  })
+
+  it("detects an unregistered file", () => {
+    const rogue = join(cwd(), "src/design-system/components/Rogue.tsx")
+    writeFileSync(rogue, "export function Rogue() { return null }", {
+      encoding: "utf8",
+      flush: true,
+    })
+    tempDirectories.push("") // placeholder so cleanup runs
+    try {
+      const unregistered = findUnregisteredComponents()
+      expect(unregistered).toContain("components/Rogue.tsx")
+    } finally {
+      rmSync(rogue, { force: true })
+    }
   })
 })

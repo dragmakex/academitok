@@ -1,5 +1,5 @@
-import { readFileSync } from "node:fs"
-import { relative } from "node:path"
+import { readdirSync, readFileSync, statSync } from "node:fs"
+import { join, relative } from "node:path"
 import { cwd, exit } from "node:process"
 
 type DesignSystemViolation = {
@@ -127,6 +127,53 @@ export function lintDesignSystem(
   return violations
 }
 
+// ---------------------------------------------------------------------------
+// Registry enforcement
+// ---------------------------------------------------------------------------
+
+const dsRoot = "src/design-system"
+
+const walkDirectory = (directory: string): Array<string> => {
+  const entries = readdirSync(directory)
+  return entries.flatMap((entry) => {
+    const path = join(directory, entry)
+    return statSync(path).isDirectory() ? walkDirectory(path) : [path]
+  })
+}
+
+/**
+ * Checks that every file under `src/design-system/` is listed in the
+ * component registry. Unregistered files indicate a component was added
+ * without going through the decision framework.
+ *
+ * @returns An array of unregistered file paths relative to `src/design-system/`.
+ */
+export function findUnregisteredComponents(): Array<string> {
+  const registrySource = readFileSync(
+    join(cwd(), dsRoot, "registry.ts"),
+    "utf8",
+  )
+
+  const allFiles = walkDirectory(join(cwd(), dsRoot))
+  const unregistered: Array<string> = []
+
+  for (const absolutePath of allFiles) {
+    const relativePath = relative(join(cwd(), dsRoot), absolutePath)
+
+    // Check if this file path appears as a key in the registry source.
+    // This is intentionally simple: the path string must appear in registry.ts.
+    if (!registrySource.includes(`"${relativePath}"`)) {
+      unregistered.push(relativePath)
+    }
+  }
+
+  return unregistered
+}
+
+// ---------------------------------------------------------------------------
+// Runner
+// ---------------------------------------------------------------------------
+
 /**
  * Prints violations and exits with a non-zero code when the contract is broken.
  *
@@ -134,19 +181,45 @@ export function lintDesignSystem(
  */
 export function runDesignSystemLint(files: ReadonlyArray<string>) {
   const violations = lintDesignSystem(files)
+  const unregistered = findUnregisteredComponents()
 
-  if (violations.length === 0) {
-    console.log("✅ Design-system contract passed")
-    return
+  let failed = false
+
+  if (violations.length > 0) {
+    failed = true
+    console.error("❌ Design-system contract violations:\n")
+    for (const violation of violations) {
+      console.error(`${violation.file}:${violation.line}`)
+      console.error(`  ${violation.message}`)
+      console.error(`  ${violation.snippet}`)
+      console.error("")
+    }
   }
 
-  console.error("❌ Design-system contract violations detected:\n")
-  for (const violation of violations) {
-    console.error(`${violation.file}:${violation.line}`)
-    console.error(`  ${violation.message}`)
-    console.error(`  ${violation.snippet}`)
+  if (unregistered.length > 0) {
+    failed = true
+    console.error("❌ Unregistered design-system files:\n")
+    for (const file of unregistered) {
+      console.error(`  src/design-system/${file}`)
+    }
     console.error("")
+    console.error(
+      "Every file under src/design-system/ must be registered in",
+    )
+    console.error(
+      "src/design-system/registry.ts with a justification.",
+    )
+    console.error(
+      "Apply the decision framework in docs/design-system/rules.md",
+    )
+    console.error(
+      "before adding new components.\n",
+    )
   }
 
-  exit(1)
+  if (failed) {
+    exit(1)
+  }
+
+  console.log("✅ Design-system contract passed")
 }
