@@ -29,8 +29,8 @@ Welcome to the Effect TanStack Start project! This guide will help you get up an
 ### Recommended Tools
 
 - **[VS Code](https://code.visualstudio.com/)** with extensions:
-  - ESLint
-  - Prettier
+  - Oxlint
+  - Dprint
   - Tailwind CSS IntelliSense
   - Effect-TS Language Service
 
