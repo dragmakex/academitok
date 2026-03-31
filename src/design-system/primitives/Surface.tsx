@@ -13,17 +13,20 @@ type SurfaceProps = {
 }
 
 /**
- * Provides a semantic surface container for product UI sections.
+ * Semantic surface container for grouped content.
+ *
+ * Renders as `<section>` — the browser's element for thematically
+ * grouped content with a heading.
  *
  * @param props - Surface props.
  * @param props.children - Surface content.
  * @param props.tone - Surface tone role.
- * @returns A styled semantic surface wrapper.
+ * @returns A semantic section element with visual surface treatment.
  */
 export function Surface({ children, tone = "default" }: SurfaceProps) {
   return (
-    <div className={toneClass[tone]}>
+    <section className={toneClass[tone]}>
       {children}
-    </div>
+    </section>
   )
 }

@@ -12,21 +12,24 @@ type ErrorStateProps = {
 }
 
 /**
- * Renders the standard error-state pattern.
+ * Standard error-state pattern.
+ *
+ * Uses `role="alert"` so assistive technology immediately announces
+ * the error to the user.
  *
  * @param props - Error-state props.
  * @param props.title - Error title.
  * @param props.description - Supporting error text.
  * @param props.actionLabel - Recovery action label.
  * @param props.onAction - Recovery action handler.
- * @returns An error-state surface.
+ * @returns A semantic error-state surface.
  */
 export function ErrorState(
   { actionLabel, description, onAction, title }: ErrorStateProps,
 ) {
   return (
     <Card tone="danger">
-      <div className="p-xl">
+      <div className="p-xl" role="alert">
         <Stack gap="s" align="center">
           <Heading as="h2" tone="section">
             {title}

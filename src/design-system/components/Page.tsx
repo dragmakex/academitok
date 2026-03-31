@@ -7,16 +7,18 @@ type PageProps = {
 /**
  * Full-page application wrapper with centered, constrained content.
  *
+ * Renders as `<main>` — the browser's primary content landmark.
+ *
  * @param props - Page props.
  * @param props.children - Page content.
- * @returns A page wrapper with content constraints.
+ * @returns A semantic page wrapper.
  */
 export function Page({ children }: PageProps) {
   return (
-    <div className="min-h-screen bg-bg-canvas">
+    <main className="min-h-screen bg-bg-canvas">
       <div className="mx-auto max-w-[80rem] px-l py-2xl">
         {children}
       </div>
-    </div>
+    </main>
   )
 }

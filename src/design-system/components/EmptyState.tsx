@@ -11,18 +11,21 @@ type EmptyStateProps = {
 }
 
 /**
- * Renders the standard empty-state pattern.
+ * Standard empty-state pattern.
+ *
+ * Uses `role="status"` so assistive technology announces the
+ * empty state without interrupting the user.
  *
  * @param props - Empty-state props.
  * @param props.title - Empty-state title.
  * @param props.description - Supporting text.
  * @param props.action - Optional recovery or creation action.
- * @returns An empty-state surface.
+ * @returns A semantic empty-state surface.
  */
 export function EmptyState({ action, description, title }: EmptyStateProps) {
   return (
     <Card tone="subtle">
-      <div className="p-xl">
+      <div className="p-xl" role="status">
         <Stack gap="s" align="center">
           <Heading as="h2" tone="section">
             {title}

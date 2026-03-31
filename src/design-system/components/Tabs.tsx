@@ -19,7 +19,10 @@ const tabBase =
 const tabActive = "border-accent-wash bg-bg-surface text-text-primary shadow-sm"
 
 /**
- * Renders a semantic tab list.
+ * Semantic tab list with ARIA roles.
+ *
+ * Renders a `role="tablist"` container with `role="tab"` children.
+ * Pair with `TabPanel` for the corresponding content.
  *
  * @param props - Tabs props.
  * @param props.activeTab - Currently active tab key.
@@ -31,7 +34,10 @@ export function Tabs<T extends string>(
   { activeTab, items, onChange }: TabsProps<T>,
 ) {
   return (
-    <div className="p-xs border border-border-default rounded-lg bg-bg-subtle flex flex-wrap gap-xs">
+    <div
+      role="tablist"
+      className="p-xs border border-border-default rounded-lg bg-bg-subtle flex flex-wrap gap-xs"
+    >
       {items.map((item) => {
         const active = item.key === activeTab
         return (
@@ -60,7 +66,7 @@ export function Tabs<T extends string>(
 }
 
 /**
- * Renders a semantic tab panel wrapper.
+ * Semantic tab panel wrapper.
  *
  * @param props - Panel props.
  * @param props.children - Panel content.

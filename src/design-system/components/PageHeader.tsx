@@ -11,7 +11,9 @@ type PageHeaderProps = {
 }
 
 /**
- * Renders the standard page header pattern for application surfaces.
+ * Page header pattern for application surfaces.
+ *
+ * Renders as `<header>` — the browser's introductory content landmark.
  *
  * @param props - Page header props.
  * @param props.title - Page title.
@@ -21,20 +23,22 @@ type PageHeaderProps = {
  */
 export function PageHeader({ actions, description, title }: PageHeaderProps) {
   return (
-    <Inline align="between" wrap>
-      <Stack gap="2xs">
-        <Heading as="h1" tone="page">
-          {title}
-        </Heading>
-        <Text tone="muted">
-          {description}
-        </Text>
-      </Stack>
-      {actions && (
-        <div>
-          {actions}
-        </div>
-      )}
-    </Inline>
+    <header>
+      <Inline align="between" wrap>
+        <Stack gap="2xs">
+          <Heading as="h1" tone="page">
+            {title}
+          </Heading>
+          <Text tone="muted">
+            {description}
+          </Text>
+        </Stack>
+        {actions && (
+          <div>
+            {actions}
+          </div>
+        )}
+      </Inline>
+    </header>
   )
 }
