@@ -1,6 +1,6 @@
 import { Inline } from "@/design-system/primitives/Inline"
 import { Stack } from "@/design-system/primitives/Stack"
-import type { InputHTMLAttributes, ReactNode } from "react"
+import { type InputHTMLAttributes, type ReactNode, useId } from "react"
 import { Text } from "./Text"
 
 type TextFieldProps =
@@ -24,15 +24,15 @@ type TextFieldProps =
 export function TextField(
   { error, hint, id, label, ...props }: TextFieldProps,
 ) {
-  const fieldId = id ?? label.toLowerCase().replaceAll(/\s+/g, "-")
+  const generatedId = useId()
+  const fieldId = id ?? generatedId
 
   return (
     <Stack gap="2xs">
-      <label
-        htmlFor={fieldId}
-        className="text-text-secondary text-[0.875rem] font-semibold"
-      >
-        {label}
+      <label htmlFor={fieldId}>
+        <Text as="span" tone="label">
+          {label}
+        </Text>
       </label>
       <input
         {...props}

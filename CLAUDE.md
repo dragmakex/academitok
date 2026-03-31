@@ -107,6 +107,7 @@ The change is only done when the implementation, tests, documentation, and versi
 ## Take notes
 
 Please make note of mistakes you make in MISTAKES.md. If you find you wish you had more context or tools, write that down in DESIRES.md. If you learn anything about your env write that down in LEARNINGS.md.
+Make sure to consult these files yourself too. do not add duplicates.
 
 ## 📖 Remember
 

@@ -1,14 +1,14 @@
+import { cx } from "@/design-system/foundation/classes"
 import type { ReactNode } from "react"
 
+const badgeBaseClass =
+  "inline-flex items-center justify-center min-w-7 min-h-6 px-xs border rounded-full text-[0.8rem] font-bold text-text-primary"
+
 const toneClass = {
-  neutral:
-    "inline-flex items-center justify-center min-w-7 min-h-6 px-xs rounded-full text-[0.8rem] font-bold bg-bg-subtle text-text-secondary",
-  accent:
-    "inline-flex items-center justify-center min-w-7 min-h-6 px-xs rounded-full text-[0.8rem] font-bold bg-accent-wash text-text-on-accent",
-  success:
-    "inline-flex items-center justify-center min-w-7 min-h-6 px-xs rounded-full text-[0.8rem] font-bold bg-success-wash text-success-solid",
-  danger:
-    "inline-flex items-center justify-center min-w-7 min-h-6 px-xs rounded-full text-[0.8rem] font-bold bg-danger-wash text-danger-solid",
+  neutral: "border-border-default bg-bg-surface",
+  accent: "border-accent-wash bg-bg-accent",
+  success: "border-success-wash bg-bg-success",
+  danger: "border-danger-wash bg-bg-danger",
 } as const
 
 type BadgeProps = {
@@ -26,7 +26,7 @@ type BadgeProps = {
  */
 export function Badge({ children, tone = "neutral" }: BadgeProps) {
   return (
-    <span className={toneClass[tone]}>
+    <span className={cx(badgeBaseClass, toneClass[tone])}>
       {children}
     </span>
   )

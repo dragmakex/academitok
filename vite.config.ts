@@ -46,7 +46,7 @@ const config = defineConfig(({ mode }) => {
     },
     test: {
       globals: true,
-      include: ["src/**/*.test.{ts,tsx}"],
+      include: ["src/**/*.test.{ts,tsx}", "tests/**/*.test.{ts,tsx}"],
       exclude: [
         "**/.worktrees/**",
         ".worktrees/**",
