@@ -144,6 +144,13 @@ const config = defineConfig(({ mode }) => {
           "src/routes/__root.tsx", // React document shell component
           "src/routes/index.tsx", // Server function loader (tested via E2E)
 
+          // Design-system internals (tested via component and visual tests)
+          "src/design-system/**",
+          "src/component/Footer.tsx", // Composition component
+
+          // Linting scripts (tested separately)
+          "scripts/**",
+
           // HMR code and module-level side effects not testable in unit tests
           "src/routes/api/$.ts", // HMR code, tested via integration tests
           "src/routes/api/-lib/todos-api-live.ts", // HTTP adapter (tested via integration)

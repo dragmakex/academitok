@@ -1,3 +1,10 @@
+import { Card } from "@/design-system/components/Card"
+import { Heading } from "@/design-system/components/Heading"
+import { PageContent } from "@/design-system/components/PageContent"
+import { Text } from "@/design-system/components/Text"
+import { Inline } from "@/design-system/primitives/Inline"
+import { Stack } from "@/design-system/primitives/Stack"
+
 /**
  * Footer component displaying Prussian engineering wisdom.
  *
@@ -12,37 +19,28 @@ export function Footer() {
   const currentYear = new Date().getFullYear()
 
   return (
-    <footer className="mt-auto border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-slate-900">
-      <div className="max-w-4xl mx-auto px-4 py-6">
-        <div className="flex flex-col items-center gap-4 text-center">
-          <div className="text-sm text-gray-600 dark:text-gray-400">
-            <p className="font-medium" data-testid="prussian-motto">
-              Ordnung muss sein! (There must be order!)
-            </p>
-            <p className="mt-1 italic" data-testid="prussian-joke">
-              Why do Prussian programmers never use `any`?
-              <br />
-              Because even Frederick the Great demanded strict typing in his
-              army!
-            </p>
-          </div>
-
-          <div
-            className="text-xs text-gray-500 dark:text-gray-500"
-            data-testid="footer-copyright"
-          >
-            &copy; {currentYear} Built with German Precision
-          </div>
-
-          <div
-            className="text-2xl"
-            data-testid="footer-flag"
-            aria-label="German flag"
-          >
-            🇩🇪
-          </div>
-        </div>
-      </div>
-    </footer>
+    <PageContent>
+      <Card>
+        <Inline align="between" wrap>
+          <Stack gap="2xs">
+            <Heading as="h2" tone="section" data-testid="prussian-motto">
+              Ordnung muss sein!
+            </Heading>
+            <Text tone="muted" data-testid="prussian-joke">
+              Why do Prussian programmers never use `any`? Because even
+              Frederick the Great demanded strict typing in his army.
+            </Text>
+          </Stack>
+          <Stack gap="2xs" align="center">
+            <Text as="span" tone="caption" data-testid="footer-copyright">
+              © {currentYear} Built with German Precision
+            </Text>
+            <Text as="span" data-testid="footer-flag">
+              🇩🇪
+            </Text>
+          </Stack>
+        </Inline>
+      </Card>
+    </PageContent>
   )
 }
