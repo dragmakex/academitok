@@ -29,15 +29,13 @@ export function ErrorState(
 ) {
   return (
     <Card tone="danger">
-      <div className="p-xl" role="alert">
+      <div role="alert">
         <Stack gap="s" align="center">
           <Heading as="h2" tone="section">
             {title}
           </Heading>
-          <Text tone="muted">
-            <span className="text-center block">
-              {description}
-            </span>
+          <Text tone="muted" align="center">
+            {description}
           </Text>
           <Button variant="secondary" onClick={onAction}>
             {actionLabel}

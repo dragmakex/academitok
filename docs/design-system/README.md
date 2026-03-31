@@ -30,31 +30,31 @@ Application code does not touch it.
 
 ### Primitives (layout building blocks)
 
-| Component | Purpose                                                      |
-| --------- | ------------------------------------------------------------ |
-| `Stack`   | Vertical flex with semantic gap                              |
-| `Inline`  | Horizontal flex with semantic gap, alignment, wrap           |
-| `Grid`    | Named responsive grid layouts (`stats`, `dashboard`, `form`) |
-| `Expand`  | Flex-grow child container                                    |
-| `Surface` | Semantic background with border and shadow                   |
+| Component | Purpose                                                           |
+| --------- | ----------------------------------------------------------------- |
+| `Stack`   | Vertical flex with semantic gap                                   |
+| `Inline`  | Horizontal flex with semantic gap, alignment, wrap                |
+| `Grid`    | Named responsive grid layouts (`stats`, `dashboard`, `form`)      |
+| `Expand`  | Flex-grow child container                                         |
+| `Surface` | Semantic background with border and shadow, as `div` or `section` |
 
 ### Components (semantic UI)
 
-| Component    | Purpose                                         |
-| ------------ | ----------------------------------------------- |
-| `Page`       | Full-page wrapper with content constraints      |
-| `Card`       | Padded surface for content sections             |
-| `Button`     | Semantic action button with variants            |
-| `Heading`    | Typography: page, section, card                 |
-| `Text`       | Typography: body, muted, label, caption, danger |
-| `Badge`      | Compact status indicator                        |
-| `TextField`  | Labeled input with hint/error                   |
-| `Checkbox`   | Labeled checkbox with hint                      |
-| `Tabs`       | Tab list with counts                            |
-| `PageHeader` | Page title with description and actions         |
-| `StatCard`   | Dashboard summary metric                        |
-| `EmptyState` | Empty data surface                              |
-| `ErrorState` | Error recovery surface                          |
+| Component    | Purpose                                                     |
+| ------------ | ----------------------------------------------------------- |
+| `Page`       | Full-page wrapper with content constraints                  |
+| `Card`       | Padded surface for content sections                         |
+| `Button`     | Semantic action button with variants                        |
+| `Heading`    | Typography: page, display, section, card                    |
+| `Text`       | Typography: body, muted, label, caption, danger + alignment |
+| `Badge`      | Compact status indicator                                    |
+| `TextField`  | Labeled input with hint/error                               |
+| `Checkbox`   | Labeled checkbox with hint                                  |
+| `Tabs`       | Tab list with counts                                        |
+| `PageHeader` | Page title with description and actions                     |
+| `StatCard`   | Dashboard summary metric                                    |
+| `EmptyState` | Empty data surface                                          |
+| `ErrorState` | Error recovery surface                                      |
 
 ### Composition, not wrappers
 

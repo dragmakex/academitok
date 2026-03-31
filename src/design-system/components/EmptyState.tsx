@@ -25,15 +25,13 @@ type EmptyStateProps = {
 export function EmptyState({ action, description, title }: EmptyStateProps) {
   return (
     <Card tone="subtle">
-      <div className="p-xl" role="status">
+      <div role="status">
         <Stack gap="s" align="center">
           <Heading as="h2" tone="section">
             {title}
           </Heading>
-          <Text tone="muted">
-            <span className="text-center block">
-              {description}
-            </span>
+          <Text tone="muted" align="center">
+            {description}
           </Text>
           {action}
         </Stack>

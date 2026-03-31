@@ -34,14 +34,21 @@ type GridProps = GridDivProps | GridFormProps
  * @returns A responsive grid container.
  */
 export function Grid(props: GridProps) {
-  const { as = "div", children, layout, ...rest } = props
-  const Component = as
+  if (props.as === "form") {
+    const { as: _as, children, layout, ...formProps } = props
+
+    return (
+      <form {...formProps} className={layoutClass[layout]}>
+        {children}
+      </form>
+    )
+  }
+
+  const { children, layout } = props
+
   return (
-    <Component
-      {...(rest as Record<string, unknown>)}
-      className={layoutClass[layout]}
-    >
+    <div className={layoutClass[layout]}>
       {children}
-    </Component>
+    </div>
   )
 }

@@ -10,6 +10,7 @@ const toneClass = {
 type SurfaceProps = {
   readonly children: ReactNode
   readonly tone?: keyof typeof toneClass | undefined
+  readonly as?: "div" | "section" | undefined
 }
 
 /**
@@ -21,12 +22,17 @@ type SurfaceProps = {
  * @param props - Surface props.
  * @param props.children - Surface content.
  * @param props.tone - Surface tone role.
- * @returns A semantic section element with visual surface treatment.
+ * @param props.as - Underlying semantic container.
+ * @returns A semantic container with visual surface treatment.
  */
-export function Surface({ children, tone = "default" }: SurfaceProps) {
+export function Surface(
+  { as = "section", children, tone = "default" }: SurfaceProps,
+) {
+  const Component = as
+
   return (
-    <section className={toneClass[tone]}>
+    <Component className={toneClass[tone]}>
       {children}
-    </section>
+    </Component>
   )
 }

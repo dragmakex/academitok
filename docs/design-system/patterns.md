@@ -114,13 +114,27 @@ Use `Inline align="between"` with `Expand` for the growing child:
 ```tsx
 <Inline align="between" wrap>
   <Expand>
-    <Checkbox label={…} />
+    <Checkbox label={…} hint="Optional helper copy" />
   </Expand>
   <Inline gap="xs" wrap>
     <Button variant="ghost">Edit</Button>
     <Button variant="danger">Delete</Button>
   </Inline>
 </Inline>
+```
+
+`Checkbox` accepts plain text labels or richer label content such as a `Heading`.
+If you provide `hint`, it is linked automatically for assistive technology.
+
+## Tabs
+
+Use a shared `id` / `tabsId` when pairing `Tabs` with `TabPanel` so ARIA linkage stays explicit and predictable:
+
+```tsx
+<Tabs id="todos" activeTab={tab} items={items} onChange={setTab} />
+<TabPanel tabsId="todos" tab="all" activeTab={tab}>
+  …
+</TabPanel>
 ```
 
 ## Inline metadata

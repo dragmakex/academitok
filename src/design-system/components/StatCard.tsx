@@ -30,10 +30,8 @@ export function StatCard(
           <Text tone="label" as="span">
             {label}
           </Text>
-          <Heading as="h3" tone="page">
-            <span className="text-[clamp(1.75rem,3vw,2.25rem)]">
-              {value}
-            </span>
+          <Heading as="h3" tone="display">
+            {value}
           </Heading>
           {helper && (
             <Text tone="caption">

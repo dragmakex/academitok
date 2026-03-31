@@ -66,6 +66,7 @@ Design-system components do not need dark mode logic.
 Typography is expressed through component props:
 
 - `Heading tone="page"` — page title
+- `Heading tone="display"` — prominent metric or summary value
 - `Heading tone="section"` — section title
 - `Heading tone="card"` — card title
 - `Text tone="body"` — body text
@@ -73,3 +74,4 @@ Typography is expressed through component props:
 - `Text tone="label"` — field labels
 - `Text tone="caption"` — small helper text
 - `Text tone="danger"` — error text
+- `Text align="start" | "center"` — semantic text alignment when content needs centering
