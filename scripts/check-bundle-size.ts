@@ -12,9 +12,8 @@ const gzipAsync = promisify(gzip)
 // - Gzip: Universal support, fallback for older browsers/bots
 const COMPRESSION_METHOD: "brotli" | "gzip" = "brotli"
 
-interface BundleSizeLimit {
+interface BundleBudget {
   name: string
-  path: string
   limit: number // in KB (compressed)
 }
 
@@ -24,13 +23,20 @@ interface SanityCheck {
   limitRaw: number // KB (raw, uncompressed - sanity check only)
 }
 
-const limits: Array<BundleSizeLimit> = [
-  {
-    name: "Client Bundle (JS/CSS)",
-    path: ".output/public",
-    limit: 200, // KB (compressed, target: excellent)
-  },
-]
+const appShellBudget: BundleBudget = {
+  name: "App Shell (main JS + CSS)",
+  limit: 200,
+}
+
+const largestAsyncChunkBudget: BundleBudget = {
+  name: "Largest Async Client Chunk",
+  limit: 150,
+}
+
+const totalClientBudget: BundleBudget = {
+  name: "Total Client Bundle (all JS/CSS)",
+  limit: 400,
+}
 
 // Sanity check for server bundle (catches accidental asset bundling)
 const sanityChecks: Array<SanityCheck> = [
@@ -123,12 +129,11 @@ function formatSize(bytes: number): string {
 }
 
 /**
- * Formats a file breakdown table
- * @param {Array<FileSize>} files - the files used
- * @param {number} _totalLimit - total size limit
- * @returns {string} - the file breakdown table
+ * Formats a file breakdown table.
+ * @param files - The files to include in the breakdown.
+ * @returns The formatted table.
  */
-function formatBreakdown(files: Array<FileSize>, _totalLimit: number): string {
+function formatBreakdown(files: Array<FileSize>): string {
   const sortKey = COMPRESSION_METHOD === "brotli" ? "brotli" : "gzip"
 
   // Sort by compressed size, largest first
@@ -206,8 +211,58 @@ async function getTotalRawSize(dirPath: string): Promise<number> {
   return files.reduce((sum, f) => sum + f.raw, 0)
 }
 
+const getCompressedSize = (file: FileSize): number =>
+  COMPRESSION_METHOD === "brotli" ? file.brotli : file.gzip
+
+const sumCompressedSize = (files: ReadonlyArray<FileSize>): number =>
+  files.reduce((sum, file) => sum + getCompressedSize(file), 0)
+
 /**
- * Checks bundle sizes against limits
+ * Reports a compressed client-side budget.
+ * @param budget - The budget to check.
+ * @param bytes - The measured compressed bytes.
+ * @param files - The files that contributed to the measurement.
+ * @returns Whether the budget passed.
+ */
+const reportBudget = (
+  budget: BundleBudget,
+  bytes: number,
+  files: ReadonlyArray<FileSize>,
+): boolean => {
+  const sizeKB = bytes / 1024
+  const passed = sizeKB <= budget.limit
+  const percentage = ((sizeKB / budget.limit) * 100).toFixed(1)
+  const status = passed ? `${GREEN}✓${RESET}` : `${RED}✗${RESET}`
+  const color = passed ? GREEN : sizeKB > budget.limit * 0.9 ? RED : YELLOW
+
+  console.log(
+    `${status} ${budget.name}: ${color}${
+      formatSize(bytes)
+    }${RESET} ${COMPRESSION_METHOD}`,
+  )
+  console.log(
+    `  Limit: ${
+      formatSize(budget.limit * 1024)
+    } | Usage: ${color}${percentage}%${RESET}`,
+  )
+
+  if (!passed) {
+    const excess = sizeKB - budget.limit
+    console.log(
+      `  ${RED}Exceeds limit by ${formatSize(excess * 1024)}${RESET}`,
+    )
+    console.log(formatBreakdown([...files]))
+  }
+
+  console.log("")
+  return passed
+}
+
+const isAppShellFile = (file: FileSize): boolean =>
+  file.path.endsWith(".css") || file.path.startsWith("assets/main-")
+
+/**
+ * Checks bundle sizes against budgets.
  */
 async function checkBundleSizes(): Promise<void> {
   console.log(
@@ -215,52 +270,41 @@ async function checkBundleSizes(): Promise<void> {
   )
 
   let allPassed = true
+  const clientFiles = await getDirectoryFiles(".output/public")
 
-  // Check compressed bundles (critical for performance)
-  for (const config of limits) {
-    const files = await getDirectoryFiles(config.path)
+  if (clientFiles.length === 0) {
+    console.log(
+      `${YELLOW}⚠${RESET} No client files found under .output/public\n`,
+    )
+  } else {
+    formatCompressionBenchmark(clientFiles)
 
-    if (files.length === 0) {
-      console.log(`${YELLOW}⚠${RESET} ${config.name}: No files found\n`)
-      continue
+    const appShellFiles = clientFiles.filter(isAppShellFile)
+    const asyncFiles = clientFiles.filter((file) => !isAppShellFile(file))
+    const largestAsyncFile = [...asyncFiles]
+      .sort(
+        (left, right) => getCompressedSize(right) - getCompressedSize(left),
+      )[0]
+
+    allPassed = reportBudget(
+      appShellBudget,
+      sumCompressedSize(appShellFiles),
+      appShellFiles,
+    ) && allPassed
+
+    if (largestAsyncFile) {
+      allPassed = reportBudget(
+        largestAsyncChunkBudget,
+        getCompressedSize(largestAsyncFile),
+        [largestAsyncFile],
+      ) && allPassed
     }
 
-    const { totalBrotli, totalGzip } = formatCompressionBenchmark(
-      files,
-    )
-
-    const totalCompressed = COMPRESSION_METHOD === "brotli"
-      ? totalBrotli
-      : totalGzip
-    const sizeKB = totalCompressed / 1024
-    const limitKB = config.limit
-    const passed = sizeKB <= limitKB
-    const percentage = ((sizeKB / limitKB) * 100).toFixed(1)
-
-    const status = passed ? `${GREEN}✓${RESET}` : `${RED}✗${RESET}`
-    const color = passed ? GREEN : sizeKB > limitKB * 0.9 ? RED : YELLOW
-
-    console.log(
-      `${status} ${config.name}: ${color}${
-        formatSize(totalCompressed)
-      }${RESET} ${COMPRESSION_METHOD}`,
-    )
-    console.log(
-      `  Limit: ${
-        formatSize(limitKB * 1024)
-      } | Usage: ${color}${percentage}%${RESET}`,
-    )
-
-    if (!passed) {
-      allPassed = false
-      const excess = sizeKB - limitKB
-      console.log(
-        `  ${RED}Exceeds limit by ${formatSize(excess * 1024)}${RESET}`,
-      )
-      console.log(formatBreakdown(files, limitKB))
-    }
-
-    console.log("")
+    allPassed = reportBudget(
+      totalClientBudget,
+      sumCompressedSize(clientFiles),
+      clientFiles,
+    ) && allPassed
   }
 
   // Sanity checks (raw size only, no compression needed)

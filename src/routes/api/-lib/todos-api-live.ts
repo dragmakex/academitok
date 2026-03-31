@@ -18,6 +18,16 @@ export const listHandler = Effect.gen(function*() {
   return yield* todos.list
 })
 
+export const statsHandler = Effect.gen(function*() {
+  const todos = yield* TodosService
+  return yield* todos.stats
+})
+
+export const groupsHandler = Effect.gen(function*() {
+  const todos = yield* TodosService
+  return yield* todos.groups
+})
+
 export const getByIdHandler = (id: TodoId) =>
   Effect.gen(function*() {
     const todos = yield* TodosService
@@ -49,6 +59,8 @@ export const TodosApiLive = HttpApiBuilder
     (handlers) =>
       handlers
         .handle("list", () => listHandler)
+        .handle("stats", () => statsHandler)
+        .handle("groups", () => groupsHandler)
         .handle("getById", ({ params }) => getByIdHandler(params.id))
         .handle("create", ({ payload }) => createHandler(payload))
         .handle(

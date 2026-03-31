@@ -29,6 +29,7 @@
         "vite-tsconfig-paths": "^5.1.4",
       },
       "devDependencies": {
+        "@antithesishq/bombadil": "^0.3.2",
         "@effect/eslint-plugin": "^0.3.2",
         "@effect/language-service": "^0.62.2",
         "@effect/opentelemetry": "4.0.0-beta.0",
@@ -85,6 +86,8 @@
     "@ai-sdk/provider": ["@ai-sdk/provider@3.0.8", "", { "dependencies": { "json-schema": "^0.4.0" } }, "sha512-oGMAgGoQdBXbZqNG0Ze56CHjDZ1IDYOwGYxYjO5KLSlz5HiNQ9udIXsPZ61VWaHGZ5XW/jyjmr6t2xz2jGVwbQ=="],
 
     "@ai-sdk/provider-utils": ["@ai-sdk/provider-utils@4.0.15", "", { "dependencies": { "@ai-sdk/provider": "3.0.8", "@standard-schema/spec": "^1.1.0", "eventsource-parser": "^3.0.6" }, "peerDependencies": { "zod": "^3.25.76 || ^4.1.8" } }, "sha512-8XiKWbemmCbvNN0CLR9u3PQiet4gtEVIrX4zzLxnCj06AwsEDJwJVBbKrEI4t6qE8XRSIvU2irka0dcpziKW6w=="],
+
+    "@antithesishq/bombadil": ["@antithesishq/bombadil@0.3.2", "", {}, "sha512-ATy1w9ZY5gbny1H8DFc7rxZitT7DLLLFDiGcRZe+8TQiUrV5tLO+IJGOVNNLp3RpCqjZqSsxGiKoQsx31ipV1g=="],
 
     "@apm-js-collab/code-transformer": ["@apm-js-collab/code-transformer@0.8.2", "", {}, "sha512-YRjJjNq5KFSjDUoqu5pFUWrrsvGOxl6c3bu+uMFc9HNNptZ2rNU/TI2nLw4jnhQNtka972Ee2m3uqbvDQtPeCA=="],
 

@@ -15,10 +15,13 @@ import { TodosService } from "./todos-service"
 export const createRpcHandlers = Effect.gen(function*() {
   const todos = yield* TodosService
 
-  // RPC method names must match the schema definition in domain-rpc.ts
   /* eslint-disable camelcase */
   return {
     todos_list: () => todos.list,
+
+    todos_stats: () => todos.stats,
+
+    todos_groups: () => todos.groups,
 
     todos_getById: ({ id }: { id: TodoId }) => todos.getById(id),
 

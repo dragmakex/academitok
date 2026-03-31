@@ -4,10 +4,8 @@ import type {
   TodoId,
   UpdateTodoInput,
 } from "@/api/todo-schema"
-import { Todo } from "@/api/todo-schema"
+import { Todo, TodoGroup, TodoStats } from "@/api/todo-schema"
 import { serializable } from "@/lib/atom-utils"
-import * as Arr from "effect/Array"
-import type * as Data from "effect/Data"
 import * as Effect from "effect/Effect"
 import * as Layer from "effect/Layer"
 import * as Schema from "effect/Schema"
@@ -16,7 +14,20 @@ import * as AsyncResult from "effect/unstable/reactivity/AsyncResult"
 import * as Atom from "effect/unstable/reactivity/Atom"
 import * as RpcClientError from "effect/unstable/rpc/RpcClientError"
 
-const TodosSchema = Schema.Array(Todo)
+const TodoListAsyncResultSchema = AsyncResult.Schema({
+  success: Schema.Array(Todo),
+  error: RpcClientError.RpcClientError,
+})
+
+const TodoStatsAsyncResultSchema = AsyncResult.Schema({
+  success: TodoStats,
+  error: RpcClientError.RpcClientError,
+})
+
+const TodoGroupsAsyncResultSchema = AsyncResult.Schema({
+  success: Schema.Array(TodoGroup),
+  error: RpcClientError.RpcClientError,
+})
 
 class Api extends ServiceMap.Service<Api>()("@app/index/Api", {
   make: Effect.gen(function*() {
@@ -24,6 +35,8 @@ class Api extends ServiceMap.Service<Api>()("@app/index/Api", {
 
     return {
       list: () => rpc.todos_list(),
+      stats: () => rpc.todos_stats(),
+      groups: () => rpc.todos_groups(),
       create: (input: CreateTodoInput) => rpc.todos_create({ input }),
       update: (id: TodoId, input: UpdateTodoInput) =>
         rpc.todos_update({ id, input }),
@@ -38,74 +51,101 @@ class Api extends ServiceMap.Service<Api>()("@app/index/Api", {
 
 export const runtime = Atom.runtime(Api.layer)
 
-type TodosCacheUpdate = Data.TaggedEnum<{
-  Upsert: { readonly todo: Todo }
-  Delete: { readonly id: TodoId }
-}>
+type ReplaceValue<A> = {
+  readonly _tag: "Replace"
+  readonly value: A
+}
 
-export const todosAtom = (() => {
-  const remoteAtom = runtime
-    .atom(
-      Effect.gen(function*() {
-        const api = yield* Api
-        return yield* api.list()
-      }),
-    )
-    .pipe(
-      serializable({
-        key: "@app/index/todos",
-        schema: Schema.toCodecJson(AsyncResult.Schema({
-          success: TodosSchema,
-          error: RpcClientError.RpcClientError,
-        })),
-      }),
-    )
-
-  return Object.assign(
-    Atom.writable(
-      (get) => get(remoteAtom),
-      (ctx, update: TodosCacheUpdate) => {
-        const current = ctx.get(todosAtom)
-        if (!AsyncResult.isSuccess(current)) {
-          return
-        }
-
-        const nextValue = (() => {
-          switch (update._tag) {
-            case "Upsert": {
-              const existingIndex = Arr.findFirstIndex(
-                current.value,
-                (t) => t.id === update.todo.id,
-              )
-              return existingIndex === undefined
-                ? Arr.prepend(current.value, update.todo)
-                : Arr.replace(current.value, existingIndex, update.todo)
-                  ?? current.value
-            }
-            case "Delete": {
-              return Arr.filter(current.value, (t) => t.id !== update.id)
-            }
-          }
-          const _exhaustive: never = update
-          return _exhaustive
-        })()
-
-        ctx.setSelf(AsyncResult.success(nextValue))
-      },
-      (refresh) => {
-        refresh(remoteAtom)
-      },
-    ),
-    { remote: remoteAtom },
+/**
+ * Wraps a remote async atom so successful values can be replaced locally.
+ *
+ * @param remoteAtom - The remote async atom to wrap.
+ * @returns A writable async atom with refresh support.
+ */
+function makeWritableAsyncAtom<A>(
+  remoteAtom: Atom.Atom<
+    AsyncResult.AsyncResult<A, RpcClientError.RpcClientError>
+  >,
+) {
+  return Atom.writable(
+    (get) => get(remoteAtom),
+    (ctx, update: ReplaceValue<A>) => {
+      ctx.setSelf(AsyncResult.success(update.value))
+    },
+    (refresh) => {
+      refresh(remoteAtom)
+    },
   )
-})()
+}
+
+const todosRemoteAtom = runtime
+  .atom(
+    Effect.gen(function*() {
+      const api = yield* Api
+      return yield* api.list()
+    }),
+  )
+  .pipe(
+    serializable({
+      key: "@app/index/todos",
+      schema: Schema.toCodecJson(TodoListAsyncResultSchema),
+    }),
+  )
+
+const todoStatsRemoteAtom = runtime
+  .atom(
+    Effect.gen(function*() {
+      const api = yield* Api
+      return yield* api.stats()
+    }),
+  )
+  .pipe(
+    serializable({
+      key: "@app/index/todo-stats",
+      schema: Schema.toCodecJson(TodoStatsAsyncResultSchema),
+    }),
+  )
+
+const todoGroupsRemoteAtom = runtime
+  .atom(
+    Effect.gen(function*() {
+      const api = yield* Api
+      return yield* api.groups()
+    }),
+  )
+  .pipe(
+    serializable({
+      key: "@app/index/todo-groups",
+      schema: Schema.toCodecJson(TodoGroupsAsyncResultSchema),
+    }),
+  )
+
+export const todosAtom = Object.assign(makeWritableAsyncAtom(todosRemoteAtom), {
+  remote: todosRemoteAtom,
+})
+
+export const todoStatsAtom = Object.assign(
+  makeWritableAsyncAtom(todoStatsRemoteAtom),
+  {
+    remote: todoStatsRemoteAtom,
+  },
+)
+
+export const todoGroupsAtom = Object.assign(
+  makeWritableAsyncAtom(todoGroupsRemoteAtom),
+  {
+    remote: todoGroupsRemoteAtom,
+  },
+)
 
 export const createTodoAtom = runtime.fn<CreateTodoInput>()(
   Effect.fnUntraced(function*(input, get) {
     const api = yield* Api
-    const result = yield* api.create(input)
-    get.set(todosAtom, { _tag: "Upsert", todo: result })
-    return result
+    const snapshot = yield* api.create(input)
+    get.set(todosAtom, { _tag: "Replace", value: snapshot.todos })
+    get.set(todoStatsAtom, { _tag: "Replace", value: snapshot.stats })
+    get.set(todoGroupsAtom, { _tag: "Replace", value: snapshot.groups })
+    return snapshot
   }),
 )
 
@@ -115,16 +155,21 @@ export const updateTodoAtom = runtime.fn<{
 }>()(
   Effect.fnUntraced(function*({ id, input }, get) {
     const api = yield* Api
-    const result = yield* api.update(id, input)
-    get.set(todosAtom, { _tag: "Upsert", todo: result })
-    return result
+    const snapshot = yield* api.update(id, input)
+    get.set(todosAtom, { _tag: "Replace", value: snapshot.todos })
+    get.set(todoStatsAtom, { _tag: "Replace", value: snapshot.stats })
+    get.set(todoGroupsAtom, { _tag: "Replace", value: snapshot.groups })
+    return snapshot
   }),
 )
 
 export const deleteTodoAtom = runtime.fn<TodoId>()(
   Effect.fnUntraced(function*(id, get) {
     const api = yield* Api
-    yield* api.remove(id)
-    get.set(todosAtom, { _tag: "Delete", id })
+    const snapshot = yield* api.remove(id)
+    get.set(todosAtom, { _tag: "Replace", value: snapshot.todos })
+    get.set(todoStatsAtom, { _tag: "Replace", value: snapshot.stats })
+    get.set(todoGroupsAtom, { _tag: "Replace", value: snapshot.groups })
+    return snapshot
   }),
 )

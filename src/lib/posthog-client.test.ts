@@ -42,9 +42,15 @@ vi.mock("posthog-js", () => ({
 
 beforeEach(() => {
   vi.clearAllMocks()
+  vi.stubGlobal("window", {
+    location: {
+      href: "http://localhost:3000/current",
+    },
+  })
 })
 
 afterEach(() => {
+  vi.unstubAllGlobals()
   vi.clearAllMocks()
 })
 

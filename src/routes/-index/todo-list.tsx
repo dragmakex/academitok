@@ -1,49 +1,23 @@
-import { EmptyState } from "@/design-system/components/EmptyState"
-import { ErrorState } from "@/design-system/components/ErrorState"
-import { Text } from "@/design-system/components/Text"
-import { Stack } from "@/design-system/primitives/Stack"
-import { useAtomRefresh, useAtomValue } from "@effect/atom-react"
-import * as AsyncResult from "effect/unstable/reactivity/AsyncResult"
-import { todosAtom } from "./atoms"
-import { TodoItem } from "./todo-item"
+import { useState } from "react"
+import { type DashboardFilter, dashboardFilterKeys } from "./dashboard-filters"
+import { GroupedTodoBoard } from "./grouped-todo-board"
+
+const defaultFilter: DashboardFilter = dashboardFilterKeys[0]
 
 /**
- * Renders a list of todo items, handling loading, empty states, and errors.
+ * Legacy compatibility wrapper for the grouped todo board.
  *
- * @returns The rendered todo list.
+ * @returns The grouped todo dashboard board.
  */
 export function TodoList() {
-  const result = useAtomValue(todosAtom)
-  const refreshTodos = useAtomRefresh(todosAtom)
+  const [activeFilter, setActiveFilter] = useState<DashboardFilter>(
+    defaultFilter,
+  )
 
-  return AsyncResult
-    .builder(result)
-    .onInitial(() => (
-      <Text tone="muted">
-        Loading todos…
-      </Text>
-    ))
-    .onSuccess((todos) =>
-      todos.length === 0
-        ? (
-          <EmptyState
-            title="No todos yet"
-            description="Add one above to get started!"
-          />
-        )
-        : (
-          <Stack gap="s">
-            {todos.map((todo) => <TodoItem key={todo.id} todo={todo} />)}
-          </Stack>
-        )
-    )
-    .onFailure(() => (
-      <ErrorState
-        title="Something went wrong"
-        description="Could not load todos."
-        actionLabel="Retry"
-        onAction={refreshTodos}
-      />
-    ))
-    .render()
+  return (
+    <GroupedTodoBoard
+      activeFilter={activeFilter}
+      onChangeFilter={setActiveFilter}
+    />
+  )
 }

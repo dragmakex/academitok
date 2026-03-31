@@ -1,10 +1,15 @@
 import type {
   CreateTodoInput,
   Todo,
+  TodoDate,
   TodoId,
   UpdateTodoInput,
 } from "@/api/todo-schema"
-import { TodoId as TodoIdSchema, TodoNotFound } from "@/api/todo-schema"
+import {
+  TodoDate as TodoDateSchema,
+  TodoId as TodoIdSchema,
+  TodoNotFound,
+} from "@/api/todo-schema"
 import { todosTable } from "@/db/schema"
 import { asc, eq, sql } from "drizzle-orm"
 import { drizzle as drizzlePglite } from "drizzle-orm/pglite"
@@ -33,25 +38,52 @@ type RepositoryDatabaseConfig =
 export type TodoSeed = ReadonlyArray<{
   readonly title: string
   readonly completed: boolean
+  readonly dueDate?: TodoDate | null | undefined
 }>
 
 const decodeTodoId = Schema.decodeUnknownSync(TodoIdSchema)
-const decodeCreatedAt = Schema.decodeUnknownSync(Schema.DateTimeUtcFromDate)
+const decodeDateTime = Schema.decodeUnknownSync(Schema.DateTimeUtcFromDate)
 
 const createTodoRowSql = sql`
   CREATE TABLE IF NOT EXISTS todos (
     id text PRIMARY KEY,
     title text NOT NULL,
     completed boolean NOT NULL DEFAULT false,
-    created_at timestamptz NOT NULL
+    due_date text,
+    created_at timestamptz NOT NULL,
+    updated_at timestamptz NOT NULL
   )
 `
+
+const isTodoDate = Schema.is(TodoDateSchema)
+
+const normalizeTodoDate = (value: string | null): TodoDate | null => {
+  if (value === null) {
+    return null
+  }
+
+  return isTodoDate(value) ? value : null
+}
+
+const todoMigrationSql = [
+  sql`ALTER TABLE todos ADD COLUMN IF NOT EXISTS due_date text`,
+  sql`ALTER TABLE todos ADD COLUMN IF NOT EXISTS updated_at timestamptz`,
+  sql`UPDATE todos SET updated_at = created_at WHERE updated_at IS NULL`,
+  sql`
+    UPDATE todos
+    SET due_date = NULL
+    WHERE due_date IS NOT NULL
+      AND due_date !~ '^\\d{4}-\\d{2}-\\d{2}$'
+  `,
+] as const
 
 const toTodo = (row: typeof todosTable.$inferSelect): Todo => ({
   id: decodeTodoId(row.id),
   title: row.title,
   completed: row.completed,
-  createdAt: decodeCreatedAt(row.createdAt),
+  dueDate: normalizeTodoDate(row.dueDate),
+  createdAt: decodeDateTime(row.createdAt),
+  updatedAt: decodeDateTime(row.updatedAt),
 })
 
 const getUpdatePatch = (
@@ -59,10 +91,12 @@ const getUpdatePatch = (
 ): {
   readonly title?: string
   readonly completed?: boolean
+  readonly dueDate?: TodoDate | null
 } => {
   const patch: {
     title?: string
     completed?: boolean
+    dueDate?: TodoDate | null
   } = {}
 
   if (Option.isSome(input.title)) {
@@ -71,6 +105,10 @@ const getUpdatePatch = (
 
   if (Option.isSome(input.completed)) {
     patch.completed = input.completed.value
+  }
+
+  if (Option.isSome(input.dueDate)) {
+    patch.dueDate = normalizeTodoDate(input.dueDate.value)
   }
 
   return patch
@@ -151,11 +189,11 @@ type RepositoryQueries = {
     patch: {
       readonly title?: string
       readonly completed?: boolean
+      readonly dueDate?: TodoDate | null
+      readonly updatedAt: Date
     },
   ) => Promise<TodoRow | undefined>
-  readonly deleteRow: (
-    id: TodoId,
-  ) => Promise<TodoId | undefined>
+  readonly deleteRow: (id: TodoId) => Promise<TodoId | undefined>
 }
 
 /**
@@ -191,8 +229,9 @@ function makeCrudRepository(queries: RepositoryQueries): TodoRepository {
         .gen(function*() {
           const id = decodeTodoId(crypto.randomUUID())
           const now = yield* DateTime.now
+          const nowDate = DateTime.toDateUtc(now)
           const todo = yield* Effect.promise(() =>
-            queries.insertRow(id, input, DateTime.toDateUtc(now))
+            queries.insertRow(id, input, nowDate)
           )
 
           if (todo === undefined) {
@@ -205,7 +244,10 @@ function makeCrudRepository(queries: RepositoryQueries): TodoRepository {
         })
         .pipe(
           Effect.withSpan("TodosRepository.create", {
-            attributes: { "todo.title": input.title },
+            attributes: {
+              "todo.has_due_date": input.dueDate === null ? "false" : "true",
+              "todo.title": input.title,
+            },
           }),
         ),
     update: (id: TodoId, input: UpdateTodoInput) =>
@@ -216,7 +258,10 @@ function makeCrudRepository(queries: RepositoryQueries): TodoRepository {
             return yield* getById(id)
           }
 
-          const todo = yield* Effect.promise(() => queries.updateRow(id, patch))
+          const updatedAt = DateTime.toDateUtc(yield* DateTime.now)
+          const todo = yield* Effect.promise(() =>
+            queries.updateRow(id, { ...patch, updatedAt })
+          )
 
           if (todo === undefined) {
             return yield* Effect.fail(new TodoNotFound({ id }))
@@ -305,6 +350,10 @@ function makePostgresRepository(databaseUrl: string) {
       })
 
       yield* Effect.promise(() => db.execute(createTodoRowSql))
+      yield* Effect.forEach(
+        todoMigrationSql,
+        (statement) => Effect.promise(() => db.execute(statement)),
+      )
       yield* Effect.addFinalizer(() => Effect.promise(() => client.end()))
 
       return makeCrudRepository({
@@ -322,9 +371,7 @@ function makePostgresRepository(databaseUrl: string) {
             .from(todosTable)
             .where(eq(todosTable.id, id))
             .limit(1)
-            .then(
-              ([todo]) => todo,
-            ),
+            .then(([todo]) => todo),
         insertRow: (id, input, now) =>
           db
             .insert(todosTable)
@@ -332,7 +379,9 @@ function makePostgresRepository(databaseUrl: string) {
               id,
               title: input.title,
               completed: false,
+              dueDate: normalizeTodoDate(input.dueDate),
               createdAt: now,
+              updatedAt: now,
             })
             .returning()
             .then(([todo]) => todo),
@@ -390,6 +439,10 @@ function makePgliteRepository(
       })
 
       yield* Effect.promise(() => db.execute(createTodoRowSql))
+      yield* Effect.forEach(
+        todoMigrationSql,
+        (statement) => Effect.promise(() => db.execute(statement)),
+      )
       yield* seedPgliteRows(db, seed)
       yield* Effect.addFinalizer(() => Effect.promise(() => client.close()))
 
@@ -408,9 +461,7 @@ function makePgliteRepository(
             .from(todosTable)
             .where(eq(todosTable.id, id))
             .limit(1)
-            .then(
-              ([todo]) => todo,
-            ),
+            .then(([todo]) => todo),
         insertRow: (id, input, now) =>
           db
             .insert(todosTable)
@@ -418,7 +469,9 @@ function makePgliteRepository(
               id,
               title: input.title,
               completed: false,
+              dueDate: normalizeTodoDate(input.dueDate),
               createdAt: now,
+              updatedAt: now,
             })
             .returning()
             .then(([todo]) => todo),
@@ -463,7 +516,9 @@ function seedPgliteRows(
         id: decodeTodoId(`seed-${index}`),
         title: item.title,
         completed: item.completed,
+        dueDate: item.dueDate ?? null,
         createdAt: new Date(Date.UTC(2024, 0, 1, 0, 0, 0, index)),
+        updatedAt: new Date(Date.UTC(2024, 0, 1, 0, 0, 1, index)),
       })),
     )
   )

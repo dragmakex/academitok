@@ -9,6 +9,7 @@ import { useAtom } from "@effect/atom-react"
 import * as AsyncResult from "effect/unstable/reactivity/AsyncResult"
 import { type FormEvent, useState } from "react"
 import { createTodoAtom } from "./atoms"
+import { parseTodoDateInput } from "./todo-date"
 
 /**
  * A form component for creating new todo items.
@@ -17,6 +18,7 @@ import { createTodoAtom } from "./atoms"
  */
 export function CreateTodoForm() {
   const [title, setTitle] = useState("")
+  const [dueDate, setDueDate] = useState("")
   const [createResult, create] = useAtom(createTodoAtom)
 
   const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
@@ -25,8 +27,9 @@ export function CreateTodoForm() {
       return
     }
 
-    create({ title: title.trim() })
+    create({ title: title.trim(), dueDate: parseTodoDateInput(dueDate) })
     setTitle("")
+    setDueDate("")
   }
 
   const hasError = AsyncResult.isFailure(createResult)
@@ -36,10 +39,11 @@ export function CreateTodoForm() {
       <Stack gap="m">
         <Stack gap="2xs">
           <Heading as="h2" tone="section">
-            Create todo
+            Create work
           </Heading>
           <Text tone="muted">
-            Add a new task to your list.
+            Give tasks a due date so the dashboard can classify urgency
+            precisely.
           </Text>
         </Stack>
         <Grid layout="form" as="form" onSubmit={handleSubmit}>
@@ -47,7 +51,14 @@ export function CreateTodoForm() {
             label="Task title"
             value={title}
             onChange={(event) => setTitle(event.target.value)}
-            placeholder="What needs to be done?"
+            placeholder="Ship the full dashboard"
+            disabled={createResult.waiting}
+          />
+          <TextField
+            label="Due date"
+            type="date"
+            value={dueDate}
+            onChange={(event) => setDueDate(event.target.value)}
             disabled={createResult.waiting}
           />
           <Button
@@ -55,12 +66,12 @@ export function CreateTodoForm() {
             loading={createResult.waiting}
             disabled={!title.trim()}
           >
-            Add
+            Add task
           </Button>
         </Grid>
         {hasError && (
           <Text tone="danger">
-            Failed to create todo. Please try again.
+            Failed to create the task. Retry after refreshing the dashboard.
           </Text>
         )}
       </Stack>
