@@ -4,6 +4,7 @@ import { tanstackStart } from "@tanstack/react-start/plugin/vite"
 import viteReact from "@vitejs/plugin-react"
 import { playwright } from "@vitest/browser-playwright"
 import { nitro } from "nitro/vite"
+import path from "node:path"
 import type { PluginOption } from "vite"
 import viteTsConfigPaths from "vite-tsconfig-paths"
 import { defineConfig } from "vitest/config"
@@ -35,6 +36,16 @@ const config = defineConfig(({ mode }) => {
 
   return {
     plugins,
+    resolve: {
+      alias: {
+        "@/lib/react-grab-loader": path.resolve(
+          process.cwd(),
+          mode === "development"
+            ? "src/lib/react-grab-loader.dev.ts"
+            : "src/lib/react-grab-loader.ts",
+        ),
+      },
+    },
     build: {
       target: "es2022",
       minify: "esbuild",
