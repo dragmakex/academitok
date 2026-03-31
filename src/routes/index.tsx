@@ -5,19 +5,24 @@ import { createServerFn } from "@tanstack/react-start"
 import * as Effect from "effect/Effect"
 import * as AsyncResult from "effect/unstable/reactivity/AsyncResult"
 import { App } from "./-index/app"
-import { todosAtom } from "./-index/atoms"
+import { todoGroupsAtom, todosAtom, todoStatsAtom } from "./-index/atoms"
 import { serverRuntime } from "./api/$"
 import { TodosService } from "./api/-lib/todos-service"
 
-const listTodos = createServerFn({ method: "GET" }).handler(async () => {
-  const todos = await serverRuntime.runPromiseExit(
-    Effect.flatMap(TodosService.asEffect(), (s) => s.list),
+const getTodoDashboard = createServerFn({ method: "GET" }).handler(async () => {
+  const snapshot = await serverRuntime.runPromise(
+    Effect.flatMap(TodosService.asEffect(), (service) => service.snapshot),
   )
-  return dehydrate(todosAtom.remote, AsyncResult.fromExit(todos))
+
+  return [
+    dehydrate(todosAtom.remote, AsyncResult.success(snapshot.todos)),
+    dehydrate(todoStatsAtom.remote, AsyncResult.success(snapshot.stats)),
+    dehydrate(todoGroupsAtom.remote, AsyncResult.success(snapshot.groups)),
+  ]
 })
 
 export const Route = createFileRoute("/")({
-  loader: () => listTodos(),
+  loader: () => getTodoDashboard(),
   component: AppWrapper,
 })
 
@@ -29,7 +34,7 @@ export const Route = createFileRoute("/")({
 function AppWrapper() {
   const dehydrated = Route.useLoaderData()
   return (
-    <HydrationBoundary state={[dehydrated]}>
+    <HydrationBoundary state={dehydrated}>
       <App />
     </HydrationBoundary>
   )

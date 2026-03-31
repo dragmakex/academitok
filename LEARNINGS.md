@@ -1,1 +1,2 @@
 - 2026-03-31: The local dev server is available at `http://localhost:3000` during this task, which is useful for quick browser verification and screenshots.
+- 2026-03-31: `@antithesishq/bombadil` in this repo is available as type definitions for authoring specs; there is no in-repo local Bombadil runtime/CLI path exposed through `package.json`, so restored Bombadil specs verify locally via typecheck/lint and are intended for external Bombadil execution.
