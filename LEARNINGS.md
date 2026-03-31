@@ -1,0 +1,1 @@
+- 2026-03-31: The local dev server is available at `http://localhost:3000` during this task, which is useful for quick browser verification and screenshots.

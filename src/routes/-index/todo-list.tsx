@@ -1,3 +1,7 @@
+import { EmptyState } from "@/design-system/components/EmptyState"
+import { ErrorState } from "@/design-system/components/ErrorState"
+import { Text } from "@/design-system/components/Text"
+import { Stack } from "@/design-system/primitives/Stack"
 import { useAtomRefresh, useAtomValue } from "@effect/atom-react"
 import * as AsyncResult from "effect/unstable/reactivity/AsyncResult"
 import { todosAtom } from "./atoms"
@@ -12,42 +16,34 @@ export function TodoList() {
   const result = useAtomValue(todosAtom)
   const refreshTodos = useAtomRefresh(todosAtom)
 
-  return (
-    <div>
-      {AsyncResult
-        .builder(result)
-        .onInitial(() => (
-          <p className="text-gray-500 dark:text-gray-400">
-            Loading todos...
-          </p>
-        ))
-        .onSuccess((todos) =>
-          todos.length === 0
-            ? (
-              <p className="text-gray-500 dark:text-gray-400">
-                No todos yet. Add one above!
-              </p>
-            )
-            : (
-              <ul className="space-y-2">
-                {todos.map((todo) => <TodoItem key={todo.id} todo={todo} />)}
-              </ul>
-            )
+  return AsyncResult
+    .builder(result)
+    .onInitial(() => (
+      <Text tone="muted">
+        Loading todos…
+      </Text>
+    ))
+    .onSuccess((todos) =>
+      todos.length === 0
+        ? (
+          <EmptyState
+            title="No todos yet"
+            description="Add one above to get started!"
+          />
         )
-        .onFailure(() => (
-          <div className="p-4 bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-800 rounded-lg">
-            <p className="text-red-700 dark:text-red-200 mb-2">
-              Something went wrong loading todos.
-            </p>
-            <button
-              onClick={refreshTodos}
-              className="px-3 py-1 bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-200 rounded hover:bg-red-200 dark:hover:bg-red-800"
-            >
-              Retry
-            </button>
-          </div>
-        ))
-        .render()}
-    </div>
-  )
+        : (
+          <Stack gap="s">
+            {todos.map((todo) => <TodoItem key={todo.id} todo={todo} />)}
+          </Stack>
+        )
+    )
+    .onFailure(() => (
+      <ErrorState
+        title="Something went wrong"
+        description="Could not load todos."
+        actionLabel="Retry"
+        onAction={refreshTodos}
+      />
+    ))
+    .render()
 }

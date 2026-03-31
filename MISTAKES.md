@@ -1,0 +1,2 @@
+- 2026-03-31: I initially ran `src/component/Badge.test.tsx` through the default Vitest runner even though it imports `vitest/browser`. Browser component tests in this repo must be verified with `bun run test:component`.
+- 2026-03-31: I first rewrote `src/routes/-index/create-todo-form.test.tsx` using `vitest/browser` imports, then tried to run it through the default runner. In this repo, tests that must run in both direct `vitest run` checks and broader validation should avoid browser-only imports unless they are confined to the browser test scripts.
