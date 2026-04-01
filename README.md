@@ -349,12 +349,10 @@ bun run preview          # Preview production build
 
 # Code Quality
 bun run typecheck        # TypeScript type checking
-bun run lint             # Run ESLint
-bun run lint:fix         # Fix ESLint errors automatically
-bun run format           # Format code with Prettier
+bun run lint             # Run Oxlint
+bun run lint:fix         # Fix Oxlint issues automatically
+bun run format           # Format code with Dprint
 bun run format:check     # Check code formatting
-bun run dprint:format    # Format code with Dprint
-bun run dprint:check     # Check Dprint formatting
 ```
 
 ---

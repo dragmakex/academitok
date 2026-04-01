@@ -8,11 +8,15 @@ echo ""
 echo "✨ Formatting files with Dprint..."
 bun run format
 
-# 2. Lint all files with ESLint
+# 2. Lint all files with Oxlint
 echo "🔍 Linting files..."
 bun run lint:fix || true
 
-# 3. Re-add all files to staging
+# 3. Design-system contract lint
+echo "🎨 Checking design-system contract..."
+bun run lint:design-system:staged
+
+# 4. Re-add all files to staging
 echo ""
 echo "📦 Re-staging all files..."
 git add -A

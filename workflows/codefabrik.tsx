@@ -78,7 +78,8 @@ async function shellOrThrow(
  */
 async function getCurrentRevisionState(): Promise<RevisionState> {
   const result = await shellOrThrow(
-    "jj log -r @ --no-graph -T 'change_id ++ \"\\n\" ++ if(empty, \"true\", \"false\") ++ \"\\n\" ++ if(description, \"true\", \"false\")'",
+    String
+      .raw`jj log -r @ --no-graph -T 'change_id ++ "\n" ++ if(empty, "true", "false") ++ "\n" ++ if(description, "true", "false")'`,
   )
   return parseRevisionState(result.stdout)
 }
@@ -234,7 +235,8 @@ type WorkflowContext =
 async function createBranch(branchName: string | undefined) {
   const branch = branchName ?? `codefabrik/${Date.now()}`
   const current = await shellOrThrow(
-    "jj log -r @ --no-graph -T 'change_id ++ \"\\n\" ++ if(empty, \"true\", \"false\")'",
+    String
+      .raw`jj log -r @ --no-graph -T 'change_id ++ "\n" ++ if(empty, "true", "false")'`,
   )
   const [currentChangeId = "", currentEmpty] = current.stdout.split("\n")
   const baseRevision = currentEmpty === "true" ? "@-" : "@"

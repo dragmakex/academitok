@@ -1,145 +1,101 @@
 // @vitest-environment node
 
-import type { TodoId } from "@/api/todo-schema"
-import { makeTodosServiceTestLayer } from "@/db/todos-test-support"
+import { TodoDate, TodoId } from "@/api/todo-schema"
+import { makeTodosApplicationTestLayer } from "@/db/todos-test-support"
 import { expect, it } from "@effect/vitest"
 import * as Effect from "effect/Effect"
 import * as Exit from "effect/Exit"
 import * as Option from "effect/Option"
+import * as Schema from "effect/Schema"
 import { createRpcHandlers, TodosRpcLive } from "./todos-rpc-live"
+const testToday = Schema.decodeSync(TodoDate)("1970-01-01")
 
-/**
- * Tests for TodosRpcLive - the RPC layer for todo operations.
- *
- * We test the RPC handlers by calling createRpcHandlers directly,
- * which creates the handler object with all the delegation functions.
- */
-
-it.effect("createRpcHandlers - creates handler object", () =>
+it.effect("createRpcHandlers exposes dashboard and mutation handlers", () =>
   Effect
     .gen(function*() {
       const handlers = yield* createRpcHandlers
 
       expect(handlers.todos_list).toBeDefined()
+      expect(handlers.todos_stats).toBeDefined()
+      expect(handlers.todos_groups).toBeDefined()
       expect(handlers.todos_getById).toBeDefined()
       expect(handlers.todos_create).toBeDefined()
       expect(handlers.todos_update).toBeDefined()
       expect(handlers.todos_remove).toBeDefined()
     })
-    .pipe(Effect.provide(makeTodosServiceTestLayer())))
+    .pipe(Effect.provide(makeTodosApplicationTestLayer())))
 
-it.effect("createRpcHandlers - todos_list returns empty initially", () =>
+it.effect("dashboard handlers return list, stats, and groups", () =>
   Effect
     .gen(function*() {
       const handlers = yield* createRpcHandlers
+      yield* handlers.todos_create({
+        input: { title: "RPC Todo", dueDate: testToday },
+      })
+
       const todos = yield* handlers.todos_list()
-      expect(todos).toEqual([])
+      const stats = yield* handlers.todos_stats()
+      const groups = yield* handlers.todos_groups()
+
+      expect(todos).toHaveLength(1)
+      expect(stats.dueToday).toBe(1)
+      expect(groups.find((group) => group.key === "today")?.count).toBe(1)
     })
-    .pipe(Effect.provide(makeTodosServiceTestLayer("empty"))))
+    .pipe(Effect.provide(makeTodosApplicationTestLayer())))
 
-it.effect("createRpcHandlers - todos_list returns seeded rows", () =>
-  Effect
-    .gen(function*() {
-      const handlers = yield* createRpcHandlers
-      const todos = yield* handlers.todos_list()
-
-      expect(todos.map((todo) => todo.title)).toEqual([
-        "Alpha todo",
-        "Bravo done",
-        "Charlie todo",
-      ])
-      expect(todos[1]?.completed).toBe(true)
-    })
-    .pipe(Effect.provide(makeTodosServiceTestLayer("mixedState"))))
-
-it.effect("createRpcHandlers - todos_create creates a todo", () =>
+it.effect("mutation handlers return snapshots and keep dashboard views coherent", () =>
   Effect
     .gen(function*() {
       const handlers = yield* createRpcHandlers
       const created = yield* handlers.todos_create({
-        input: { title: "RPC Todo" },
+        input: { title: "Original RPC", dueDate: null },
       })
+      const createdTodo = created.todos[0]
 
-      expect(created.title).toBe("RPC Todo")
-      expect(created.completed).toBe(false)
-      expect(created.id).toBeDefined()
-    })
-    .pipe(Effect.provide(makeTodosServiceTestLayer())))
-
-it.effect("createRpcHandlers - todos_getById finds a todo", () =>
-  Effect
-    .gen(function*() {
-      const handlers = yield* createRpcHandlers
-      const created = yield* handlers.todos_create({
-        input: { title: "Find via RPC" },
-      })
-
-      const found = yield* handlers.todos_getById({ id: created.id })
-      expect(found.id).toBe(created.id)
-      expect(found.title).toBe("Find via RPC")
-    })
-    .pipe(Effect.provide(makeTodosServiceTestLayer())))
-
-it.effect("createRpcHandlers - todos_getById returns error for missing", () =>
-  Effect
-    .gen(function*() {
-      const handlers = yield* createRpcHandlers
-      const fakeId = "non-existent-rpc-id" as TodoId
-
-      const result = yield* Effect.exit(handlers.todos_getById({ id: fakeId }))
-      expect(Exit.isFailure(result)).toBe(true)
-    })
-    .pipe(Effect.provide(makeTodosServiceTestLayer())))
-
-it.effect("createRpcHandlers - todos_update modifies a todo", () =>
-  Effect
-    .gen(function*() {
-      const handlers = yield* createRpcHandlers
-      const created = yield* handlers.todos_create({
-        input: { title: "Original RPC" },
-      })
+      if (createdTodo === undefined) {
+        return yield* Effect.die(new Error("Expected created todo"))
+      }
 
       const updated = yield* handlers.todos_update({
-        id: created.id,
+        id: createdTodo.id,
         input: {
           title: Option.some("Updated RPC"),
           completed: Option.some(true),
+          dueDate: Option.some(testToday),
         },
       })
 
-      expect(updated.title).toBe("Updated RPC")
-      expect(updated.completed).toBe(true)
-    })
-    .pipe(Effect.provide(makeTodosServiceTestLayer())))
-
-it.effect("createRpcHandlers - todos_remove deletes a todo", () =>
-  Effect
-    .gen(function*() {
-      const handlers = yield* createRpcHandlers
-      const created = yield* handlers.todos_create({
-        input: { title: "Delete via RPC" },
+      expect(updated.todos[0]).toMatchObject({
+        title: "Updated RPC",
+        completed: true,
       })
+      expect(updated.stats.completed).toBe(1)
 
-      yield* handlers.todos_remove({ id: created.id })
-
-      const todos = yield* handlers.todos_list()
-      expect(todos).toHaveLength(0)
+      const removed = yield* handlers.todos_remove({ id: createdTodo.id })
+      expect(removed.todos).toEqual([])
+      expect(removed.stats.total).toBe(0)
     })
-    .pipe(Effect.provide(makeTodosServiceTestLayer())))
+    .pipe(Effect.provide(makeTodosApplicationTestLayer())))
 
-it.effect("createRpcHandlers - todos_remove returns error for missing", () =>
+it.effect("todos_getById and todos_remove fail for missing ids", () =>
   Effect
     .gen(function*() {
       const handlers = yield* createRpcHandlers
-      const fakeId = "non-existent-rpc-delete" as TodoId
+      const fakeId = Schema.decodeSync(TodoId)("non-existent-rpc-id")
 
-      const result = yield* Effect.exit(handlers.todos_remove({ id: fakeId }))
-      expect(Exit.isFailure(result)).toBe(true)
+      const getResult = yield* Effect.exit(
+        handlers.todos_getById({ id: fakeId }),
+      )
+      const removeResult = yield* Effect.exit(
+        handlers.todos_remove({ id: fakeId }),
+      )
+
+      expect(Exit.isFailure(getResult)).toBe(true)
+      expect(Exit.isFailure(removeResult)).toBe(true)
     })
-    .pipe(Effect.provide(makeTodosServiceTestLayer())))
+    .pipe(Effect.provide(makeTodosApplicationTestLayer())))
 
-it.effect("TodosRpcLive - layer builds successfully", () =>
+it.effect("TodosRpcLive layer builds successfully", () =>
   Effect.sync(() => {
-    // Just verify the layer can be built without errors
     expect(TodosRpcLive).toBeDefined()
   }))

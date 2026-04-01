@@ -1,23 +1,28 @@
+import { getTodoDashboardSnapshot } from "@/features/todos/application"
 import { HydrationBoundary } from "@/lib/atom-hydration"
 import { dehydrate } from "@/lib/atom-utils"
 import { createFileRoute } from "@tanstack/react-router"
 import { createServerFn } from "@tanstack/react-start"
-import * as Effect from "effect/Effect"
 import * as AsyncResult from "effect/unstable/reactivity/AsyncResult"
 import { App } from "./-index/app"
-import { todosAtom } from "./-index/atoms"
+import { dashboardSnapshotAtom } from "./-index/atoms"
 import { serverRuntime } from "./api/$"
-import { TodosService } from "./api/-lib/todos-service"
 
-const listTodos = createServerFn({ method: "GET" }).handler(async () => {
-  const todos = await serverRuntime.runPromiseExit(
-    Effect.flatMap(TodosService.asEffect(), (s) => s.list),
-  )
-  return dehydrate(todosAtom.remote, AsyncResult.fromExit(todos), Date.now())
+const getTodoDashboard = createServerFn({ method: "GET" }).handler(async () => {
+  const snapshot = await serverRuntime.runPromise(getTodoDashboardSnapshot)
+  const dehydratedAt = Date.now()
+
+  return [
+    dehydrate(
+      dashboardSnapshotAtom.remote,
+      AsyncResult.success(snapshot),
+      dehydratedAt,
+    ),
+  ]
 })
 
 export const Route = createFileRoute("/")({
-  loader: () => listTodos(),
+  loader: () => getTodoDashboard(),
   component: AppWrapper,
 })
 
@@ -29,7 +34,7 @@ export const Route = createFileRoute("/")({
 function AppWrapper() {
   const dehydrated = Route.useLoaderData()
   return (
-    <HydrationBoundary state={[dehydrated]}>
+    <HydrationBoundary state={dehydrated}>
       <App />
     </HydrationBoundary>
   )

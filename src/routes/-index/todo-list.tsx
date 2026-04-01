@@ -1,53 +1,23 @@
-import { useAtomRefresh, useAtomValue } from "@effect/atom-react"
-import * as AsyncResult from "effect/unstable/reactivity/AsyncResult"
-import { todosAtom } from "./atoms"
-import { TodoItem } from "./todo-item"
+import { useState } from "react"
+import { type DashboardFilter, dashboardFilterKeys } from "./dashboard-filters"
+import { GroupedTodoBoard } from "./grouped-todo-board"
+
+const defaultFilter: DashboardFilter = dashboardFilterKeys[0]
 
 /**
- * Renders a list of todo items, handling loading, empty states, and errors.
+ * Legacy compatibility wrapper for the grouped todo board.
  *
- * @returns The rendered todo list.
+ * @returns The grouped todo dashboard board.
  */
 export function TodoList() {
-  const result = useAtomValue(todosAtom)
-  const refreshTodos = useAtomRefresh(todosAtom)
+  const [activeFilter, setActiveFilter] = useState<DashboardFilter>(
+    defaultFilter,
+  )
 
   return (
-    <div>
-      {AsyncResult
-        .builder(result)
-        .onInitial(() => (
-          <p className="text-gray-500 dark:text-gray-400">
-            Loading todos...
-          </p>
-        ))
-        .onSuccess((todos) =>
-          todos.length === 0
-            ? (
-              <p className="text-gray-500 dark:text-gray-400">
-                No todos yet. Add one above!
-              </p>
-            )
-            : (
-              <ul className="space-y-2">
-                {todos.map((todo) => <TodoItem key={todo.id} todo={todo} />)}
-              </ul>
-            )
-        )
-        .onFailure(() => (
-          <div className="p-4 bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-800 rounded-lg">
-            <p className="text-red-700 dark:text-red-200 mb-2">
-              Something went wrong loading todos.
-            </p>
-            <button
-              onClick={refreshTodos}
-              className="px-3 py-1 bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-200 rounded hover:bg-red-200 dark:hover:bg-red-800"
-            >
-              Retry
-            </button>
-          </div>
-        ))
-        .render()}
-    </div>
+    <GroupedTodoBoard
+      activeFilter={activeFilter}
+      onChangeFilter={setActiveFilter}
+    />
   )
 }

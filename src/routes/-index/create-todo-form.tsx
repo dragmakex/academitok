@@ -1,7 +1,15 @@
+import { Button } from "@/design-system/components/Button"
+import { Card } from "@/design-system/components/Card"
+import { Heading } from "@/design-system/components/Heading"
+import { Text } from "@/design-system/components/Text"
+import { TextField } from "@/design-system/components/TextField"
+import { Grid } from "@/design-system/primitives/Grid"
+import { Stack } from "@/design-system/primitives/Stack"
 import { useAtom } from "@effect/atom-react"
 import * as AsyncResult from "effect/unstable/reactivity/AsyncResult"
-import { useState } from "react"
+import { type FormEvent, useState } from "react"
 import { createTodoAtom } from "./atoms"
+import { parseTodoDateInput } from "./todo-date"
 
 /**
  * A form component for creating new todo items.
@@ -10,44 +18,63 @@ import { createTodoAtom } from "./atoms"
  */
 export function CreateTodoForm() {
   const [title, setTitle] = useState("")
+  const [dueDate, setDueDate] = useState("")
   const [createResult, create] = useAtom(createTodoAtom)
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     if (!title.trim()) {
       return
     }
 
-    create({ title: title.trim() })
+    create({ title: title.trim(), dueDate: parseTodoDateInput(dueDate) })
     setTitle("")
+    setDueDate("")
   }
 
   const hasError = AsyncResult.isFailure(createResult)
 
   return (
-    <div className="mb-6">
-      <form onSubmit={handleSubmit} className="flex gap-2">
-        <input
-          type="text"
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
-          placeholder="What needs to be done?"
-          disabled={createResult.waiting}
-          className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-slate-900 text-gray-900 dark:text-gray-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 disabled:opacity-50"
-        />
-        <button
-          type="submit"
-          disabled={createResult.waiting || !title.trim()}
-          className="px-4 py-2 bg-blue-500 dark:bg-blue-600 text-white rounded-lg hover:bg-blue-600 dark:hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          {createResult.waiting ? "Adding..." : "Add"}
-        </button>
-      </form>
-      {hasError && (
-        <div className="mt-2 p-3 bg-red-50 dark:bg-red-950 border border-red-200 dark:border-800 rounded-lg text-red-700 dark:text-red-200 text-sm">
-          Failed to create todo. Please try again.
-        </div>
-      )}
-    </div>
+    <Card>
+      <Stack gap="m">
+        <Stack gap="2xs">
+          <Heading as="h2" tone="section">
+            Create work
+          </Heading>
+          <Text tone="muted">
+            Give tasks a due date so the dashboard can classify urgency
+            precisely.
+          </Text>
+        </Stack>
+        <Grid layout="form" as="form" onSubmit={handleSubmit}>
+          <TextField
+            label="Task title"
+            value={title}
+            onChange={(event) => setTitle(event.target.value)}
+            placeholder="Ship the full dashboard"
+            disabled={createResult.waiting}
+          />
+          <TextField
+            label="Due date"
+            type="date"
+            value={dueDate}
+            onChange={(event) => setDueDate(event.target.value)}
+            disabled={createResult.waiting}
+          />
+          <Button
+            type="submit"
+            loading={createResult.waiting}
+            disabled={!title.trim()}
+          >
+            Add task
+          </Button>
+        </Grid>
+        {hasError && (
+          <Text tone="danger">
+            Failed to create the task. Retry after refreshing the dashboard.
+          </Text>
+        )}
+      </Stack>
+    </Card>
   )
 }

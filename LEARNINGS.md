@@ -1,0 +1,4 @@
+- 2026-03-31: The local dev server is available at `http://localhost:3000` during this task, which is useful for quick browser verification and screenshots.
+- 2026-03-31: `@antithesishq/bombadil` in this repo is available as type definitions for authoring specs; there is no in-repo local Bombadil runtime/CLI path exposed through `package.json`, so restored Bombadil specs verify locally via typecheck/lint and are intended for external Bombadil execution.
+- 2026-03-31: The default `bun run test` path must exclude browser-only Vitest files (`vitest/browser`, `vitest-browser-react`) when browser mode is disabled, otherwise node-mode test discovery fails before execution.
+- 2026-04-01: In this Effect version, the DateTime helpers available in the repo use `DateTime.fromDateUnsafe(...)` rather than `unsafeFromDate(...)`, and current clock reads for pure UTC-date derivation should come from `Clock.currentTimeMillis`.

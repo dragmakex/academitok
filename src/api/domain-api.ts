@@ -5,8 +5,11 @@ import * as HttpApiGroup from "effect/unstable/httpapi/HttpApiGroup"
 import {
   CreateTodoInput,
   Todo,
+  TodoDashboardSnapshot,
+  TodoGroup,
   TodoId,
   TodoNotFound,
+  TodoStats,
   UpdateTodoInput,
 } from "./todo-schema"
 
@@ -15,6 +18,21 @@ export class TodosApiGroup extends HttpApiGroup
   .add(
     HttpApiEndpoint.get("list", "/todos", {
       success: Schema.Array(Todo),
+    }),
+  )
+  .add(
+    HttpApiEndpoint.get("stats", "/todos/stats", {
+      success: TodoStats,
+    }),
+  )
+  .add(
+    HttpApiEndpoint.get("groups", "/todos/groups", {
+      success: Schema.Array(TodoGroup),
+    }),
+  )
+  .add(
+    HttpApiEndpoint.get("snapshot", "/todos/snapshot", {
+      success: TodoDashboardSnapshot,
     }),
   )
   .add(
@@ -27,21 +45,21 @@ export class TodosApiGroup extends HttpApiGroup
   .add(
     HttpApiEndpoint.post("create", "/todos", {
       payload: CreateTodoInput,
-      success: Todo,
+      success: TodoDashboardSnapshot,
     }),
   )
   .add(
     HttpApiEndpoint.patch("update", "/todos/:id", {
       params: { id: TodoId },
       payload: UpdateTodoInput,
-      success: Todo,
+      success: TodoDashboardSnapshot,
       error: TodoNotFound,
     }),
   )
   .add(
     HttpApiEndpoint.delete("remove", "/todos/:id", {
       params: { id: TodoId },
-      success: Schema.Void,
+      success: TodoDashboardSnapshot,
       error: TodoNotFound,
     }),
   )

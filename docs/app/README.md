@@ -9,14 +9,24 @@ When AI agents or developers implement features, fix bugs, or make significant c
 Each feature, bug fix, or significant change only gets its own file if it is not better suited in a comprehensive document that aligns well.
 We want to minimize cognitive overhead and increase density of our documentation. That is most paramount. Striking the balance between just enough so context is explicitly clear and not too much so it's overwhelming. Code for example documents it self with TSDoc and the actual code, so we merely need to document decisions, assumptions and how the code ties together in data flows and on the architectural level.
 
-```
-docs/app/[functional-unit]/<document>.md 
+Preferred compact form:
+
+```text
+docs/app/[functional-unit]/README.md
 ├── # Overview, purpose, usage examples
 ├── # Design decisions, trade-offs, alternatives considered
 ├── # Technical details, key files, integration points
-├── # Mermaid diagrams for visual clarity
-├── # Data flow, control flow, sequence diagrams
-└── # Component structure, module dependencies
+└── # Mermaid diagrams for visual clarity when they help
+```
+
+Expanded form for larger topics:
+
+```text
+docs/app/[functional-unit]/
+├── README.md
+├── architecture.md
+├── implementation.md
+└── diagrams/
 ```
 
 Be aware to not just write what is already in code, if that's the case we can just mention the codefile/function.
@@ -31,7 +41,8 @@ Be aware to not just write what is already in code, if that's the case we can ju
 
 ### Visual Clarity
 
-- **Always include Mermaid diagrams** for architecture and flow
+- Include Mermaid diagrams when they materially improve understanding
+- Prefer one clear diagram over multiple decorative diagrams
 - System diagrams for component relationships
 - Sequence diagrams for interactions
 - Flow charts for decision logic
@@ -52,25 +63,25 @@ Be aware to not just write what is already in code, if that's the case we can ju
 
 ### Good Feature Documentation
 
-docs/app/
+Compact form:
 
-```
-user-authentication.md
+```text
+docs/app/user-authentication/README.md
 ├── # What: JWT-based auth with refresh tokens
-│   # Why: Stateless, scalable, works with SSR
-│   # Usage: Login, logout, protected routes
-│
-├── # Decision: JWT over sessions (why?)
-│   # Trade-off: Token size vs database queries
-│   # Security: HTTPS-only, HttpOnly cookies
-│
+├── # Why: Stateless, scalable, works with SSR
+├── # Trade-off: JWT over sessions
 ├── # Files: src/lib/auth.ts, src/routes/api/auth/
-│   # Integration: Effect services, middleware
-│   # Testing: Auth flow tests, token validation
-│
-├── # diagrams/  (mermaid for complex diagrams, ascii for illustrations)
-│   # Flow:      # Sequence: Login → Token → Refresh → Logout
-│   # Structure: # Components: AuthService, TokenValidator, etc.
+└── # Mermaid diagrams when they clarify the design
+```
+
+Expanded form for larger topics:
+
+```text
+docs/app/user-authentication/
+├── README.md
+├── architecture.md
+├── implementation.md
+└── diagrams/
 ```
 
 ### Mermaid Diagram Example
@@ -125,6 +136,10 @@ sequenceDiagram
 - Self-explanatory code additions
 - Changes already covered in existing docs
 
+## Current Feature Documents
+
+- `docs/app/todo-dashboard.md` — richer todo sample, snapshot data flow, and dashboard invariants
+
 ## Related Documentation
 
 - **System Architecture**: `docs/architecture/overview.md`
@@ -135,4 +150,5 @@ sequenceDiagram
 ---
 
 **Remember**: You are not just writing code. You are maintaining a system. Document with the precision of a German engineering manual.
-If we don't need to update docs or write new ones we are good too. Don't overcomplicate things. Keep it simple. For simple learnings we have LEARNINGS.md
+Default to the smallest documentation shape that explains the change well. One dense README.md per functional unit is preferred unless the topic is large enough to justify splitting into architecture.md, implementation.md, or diagrams/.
+For simple learnings we have LEARNINGS.md

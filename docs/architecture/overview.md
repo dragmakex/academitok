@@ -5,6 +5,7 @@ This document provides a high-level overview of the Effect TanStack Start applic
 ## Table of Contents
 
 - [System Architecture](#system-architecture)
+- [Template Feature Shape](#template-feature-shape)
 - [Application Stack](#application-stack)
 - [Observability Stack](#observability-stack)
 - [Data Flow](#data-flow)
@@ -75,6 +76,29 @@ graph TB
     PostHog --> Kafka
     PostHogWorker --> Kafka
 ```
+
+---
+
+## Template Feature Shape
+
+The template now biases feature code toward a small set of explicit roles:
+
+```text
+src/features/[feature]/
+├── application.ts
+├── projections.ts
+├── events.ts
+└── adapters/
+```
+
+This keeps larger CRUD systems from folding route logic, persistence policy,
+read-model derivation, and replication concerns into one module family.
+
+See:
+
+- `docs/architecture/template-simple-crud.md`
+- `docs/architecture/effect-simple-made-easy-mapping.md`
+- `docs/architecture/simple-made-easy.md`
 
 ---
 

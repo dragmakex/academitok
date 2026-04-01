@@ -16,6 +16,10 @@ modules **unentangled**:
 These constraints are intentionally narrow and aimed at the places where this
 repository most easily drifts from simple to merely familiar.
 
+They are not a complete mechanical encoding of Rich Hickey's talk. They are
+this repository's focused, enforceable interpretation of a few high-signal
+failure modes.
+
 ## Why this exists
 
 The template already had strong guarantees around type safety, testing, and
@@ -49,14 +53,20 @@ encoding happened**.
 `src/db/todos-repository.ts` no longer calls `crypto.randomUUID()` directly.
 Instead, a `TodoIdGenerator` service provides ids.
 
-That keeps persistence code focused on **storage semantics** while allowing id
-policy to vary independently.
+`TodoIdGeneratorLive` still samples randomness, but it does so at an explicit
+boundary. The goal is not to eliminate randomness. The goal is to isolate where
+randomness is chosen so persistence code stays focused on **storage semantics**
+while id policy can vary independently.
 
 #### 3. Route entry modules should not become orchestration sinks
 
-The linter now rejects `Effect.gen(...)` in top-level route entry modules. The
-entry module may still call effects, but orchestration belongs in a service or
-helper module that can be named, tested, and replaced independently.
+The linter now rejects `Effect.gen(...)` in top-level route entry modules. That
+rule is a heuristic, not a claim that `Effect.gen` is universally wrong. The
+real goal is to keep boundary modules focused on decoding, delegating, and
+rendering instead of gradually absorbing orchestration.
+
+The entry module may still call effects, but orchestration belongs in a service
+or helper module that can be named, tested, and replaced independently.
 
 ## Implementation
 
@@ -64,7 +74,7 @@ helper module that can be named, tested, and replaced independently.
 
 ```text
 eslint-local-rules-advanced.cjs
-eslint.config.js
+oxlint.config.js
 src/lib/atom-utils.ts
 src/lib/todo-id-generator.ts
 src/db/todos-repository.ts
@@ -85,7 +95,13 @@ The rules are intentionally scoped to the places where the signal is strong:
 - shared library files for ambient time,
 - repository files for ambient randomness,
 - top-level route entry modules for orchestration,
+- feature `application` and `projections` modules for import boundaries,
+- UI modules for `db` import boundaries,
 - all modules for exported mutable bindings.
+
+This scope is intentionally narrower than Hickey's full argument. It codifies a
+small baseline for a TypeScript web template rather than trying to turn the full
+talk into lint law.
 
 ## Why this is the root-cause fix
 
@@ -185,7 +201,16 @@ Those rules would create noise without reliably measuring entanglement.
 ## Verification
 
 The lint rules are verified with both positive and negative examples in
-`src/lint/simple-made-easy-rules.test.ts`.
+`src/lint/simple-made-easy-rules.test.ts` by invoking Oxlint with the
+repository configuration.
+
+The todo feature itself now also serves as the template exemplar for this
+boundary split:
+
+- `src/features/todos/application.ts` owns orchestration,
+- `src/features/todos/projections.ts` owns pure derivation,
+- `src/features/todos/events.ts` owns the replication boundary,
+- routes and transport adapters delegate to those feature modules.
 
 Those tests prove that the linter accepts the intended shapes and rejects the
 counterexamples we care about.

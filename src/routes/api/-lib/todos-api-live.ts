@@ -4,43 +4,40 @@ import type {
   TodoId,
   UpdateTodoInput,
 } from "@/api/todo-schema"
-import * as Effect from "effect/Effect"
+import {
+  createTodo,
+  getTodoById,
+  getTodoDashboardSnapshot,
+  getTodoGroups,
+  getTodoStats,
+  listTodos,
+  removeTodo,
+  TodosApplicationLive,
+  updateTodo,
+} from "@/features/todos/application"
 import * as Layer from "effect/Layer"
 import * as HttpApiBuilder from "effect/unstable/httpapi/HttpApiBuilder"
-import { TodosService } from "./todos-service"
 
 /**
  * HTTP API handler implementations.
  * These are exported separately for testing.
  */
-export const listHandler = Effect.gen(function*() {
-  const todos = yield* TodosService
-  return yield* todos.list
-})
+export const listHandler = listTodos
 
-export const getByIdHandler = (id: TodoId) =>
-  Effect.gen(function*() {
-    const todos = yield* TodosService
-    return yield* todos.getById(id)
-  })
+export const statsHandler = getTodoStats
 
-export const createHandler = (payload: CreateTodoInput) =>
-  Effect.gen(function*() {
-    const todos = yield* TodosService
-    return yield* todos.create(payload)
-  })
+export const groupsHandler = getTodoGroups
+
+export const snapshotHandler = getTodoDashboardSnapshot
+
+export const getByIdHandler = (id: TodoId) => getTodoById(id)
+
+export const createHandler = (payload: CreateTodoInput) => createTodo(payload)
 
 export const updateHandler = (id: TodoId, payload: UpdateTodoInput) =>
-  Effect.gen(function*() {
-    const todos = yield* TodosService
-    return yield* todos.update(id, payload)
-  })
+  updateTodo(id, payload)
 
-export const removeHandler = (id: TodoId) =>
-  Effect.gen(function*() {
-    const todos = yield* TodosService
-    return yield* todos.remove(id)
-  })
+export const removeHandler = (id: TodoId) => removeTodo(id)
 
 export const TodosApiLive = HttpApiBuilder
   .group(
@@ -49,6 +46,9 @@ export const TodosApiLive = HttpApiBuilder
     (handlers) =>
       handlers
         .handle("list", () => listHandler)
+        .handle("stats", () => statsHandler)
+        .handle("groups", () => groupsHandler)
+        .handle("snapshot", () => snapshotHandler)
         .handle("getById", ({ params }) => getByIdHandler(params.id))
         .handle("create", ({ payload }) => createHandler(payload))
         .handle(
@@ -57,4 +57,4 @@ export const TodosApiLive = HttpApiBuilder
         )
         .handle("remove", ({ params }) => removeHandler(params.id)),
   )
-  .pipe(Layer.provide(TodosService.layer))
+  .pipe(Layer.provide(TodosApplicationLive))

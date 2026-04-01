@@ -1,131 +1,84 @@
 // @vitest-environment node
 
-import type { TodoId } from "@/api/todo-schema"
-import { makeTodosServiceTestLayer } from "@/db/todos-test-support"
+import { TodoDate, TodoId } from "@/api/todo-schema"
+import { makeTodosApplicationTestLayer } from "@/db/todos-test-support"
 import { expect, it } from "@effect/vitest"
 import * as Effect from "effect/Effect"
 import * as Exit from "effect/Exit"
 import * as Option from "effect/Option"
+import * as Schema from "effect/Schema"
 import {
   createHandler,
   getByIdHandler,
+  groupsHandler,
   listHandler,
   removeHandler,
+  statsHandler,
   TodosApiLive,
   updateHandler,
 } from "./todos-api-live"
-import { TodosService } from "./todos-service"
+const testToday = Schema.decodeSync(TodoDate)("1970-01-01")
 
-/**
- * Tests for TodosApiLive - the HTTP API layer for todo operations.
- *
- * We test the HTTP handlers by calling them directly with the required context.
- */
-
-it.effect("listHandler - returns empty initially", () =>
+it.effect("list, stats, and groups handlers expose dashboard reads", () =>
   Effect
     .gen(function*() {
-      const todos = yield* listHandler
-      expect(todos).toEqual([])
-    })
-    .pipe(Effect.provide(makeTodosServiceTestLayer("empty"))))
-
-it.effect("listHandler - returns seeded rows", () =>
-  Effect
-    .gen(function*() {
-      const todos = yield* listHandler
-
-      expect(todos.map((todo) => todo.title)).toEqual([
-        "Alpha todo",
-        "Bravo done",
-        "Charlie todo",
-      ])
-      expect(todos[1]?.completed).toBe(true)
-    })
-    .pipe(Effect.provide(makeTodosServiceTestLayer("mixedState"))))
-
-it.effect("listHandler - returns created todos", () =>
-  Effect
-    .gen(function*() {
-      const service = yield* TodosService
-      yield* service.create({ title: "Todo 1" })
-      yield* service.create({ title: "Todo 2" })
+      yield* createHandler({ title: "HTTP Todo", dueDate: testToday })
 
       const todos = yield* listHandler
-      expect(todos).toHaveLength(2)
-    })
-    .pipe(Effect.provide(makeTodosServiceTestLayer())))
+      const stats = yield* statsHandler
+      const groups = yield* groupsHandler
 
-it.effect("createHandler - creates a todo", () =>
+      expect(todos).toHaveLength(1)
+      expect(stats.dueToday).toBe(1)
+      expect(groups.find((group) => group.key === "today")?.count).toBe(1)
+    })
+    .pipe(Effect.provide(makeTodosApplicationTestLayer())))
+
+it.effect("create, update, and remove handlers return dashboard snapshots", () =>
   Effect
     .gen(function*() {
-      const created = yield* createHandler({ title: "HTTP Todo" })
+      const created = yield* createHandler({
+        title: "HTTP Snapshot",
+        dueDate: null,
+      })
+      const createdTodo = created.todos[0]
 
-      expect(created.title).toBe("HTTP Todo")
-      expect(created.completed).toBe(false)
-      expect(created.id).toBeDefined()
-    })
-    .pipe(Effect.provide(makeTodosServiceTestLayer())))
+      if (createdTodo === undefined) {
+        return yield* Effect.die(new Error("Expected created todo"))
+      }
 
-it.effect("getByIdHandler - finds a todo", () =>
-  Effect
-    .gen(function*() {
-      const created = yield* createHandler({ title: "Find via HTTP" })
-
-      const found = yield* getByIdHandler(created.id)
-      expect(found.id).toBe(created.id)
-      expect(found.title).toBe("Find via HTTP")
-    })
-    .pipe(Effect.provide(makeTodosServiceTestLayer())))
-
-it.effect("getByIdHandler - returns error for missing", () =>
-  Effect
-    .gen(function*() {
-      const fakeId = "non-existent-http-id" as TodoId
-
-      const result = yield* Effect.exit(getByIdHandler(fakeId))
-      expect(Exit.isFailure(result)).toBe(true)
-    })
-    .pipe(Effect.provide(makeTodosServiceTestLayer())))
-
-it.effect("updateHandler - updates a todo", () =>
-  Effect
-    .gen(function*() {
-      const created = yield* createHandler({ title: "Original HTTP" })
-
-      const updated = yield* updateHandler(created.id, {
+      const updated = yield* updateHandler(createdTodo.id, {
         title: Option.some("Updated HTTP"),
         completed: Option.some(true),
+        dueDate: Option.some(testToday),
       })
 
-      expect(updated.title).toBe("Updated HTTP")
-      expect(updated.completed).toBe(true)
-    })
-    .pipe(Effect.provide(makeTodosServiceTestLayer())))
+      expect(updated.todos[0]).toMatchObject({
+        title: "Updated HTTP",
+        completed: true,
+      })
+      expect(updated.stats.completed).toBe(1)
 
-it.effect("removeHandler - removes a todo", () =>
+      const removed = yield* removeHandler(createdTodo.id)
+      expect(removed.todos).toEqual([])
+      expect(removed.stats.total).toBe(0)
+    })
+    .pipe(Effect.provide(makeTodosApplicationTestLayer())))
+
+it.effect("getByIdHandler and removeHandler return errors for missing ids", () =>
   Effect
     .gen(function*() {
-      const created = yield* createHandler({ title: "Delete via HTTP" })
+      const fakeId = Schema.decodeSync(TodoId)("non-existent-http-id")
 
-      yield* removeHandler(created.id)
+      const getResult = yield* Effect.exit(getByIdHandler(fakeId))
+      const removeResult = yield* Effect.exit(removeHandler(fakeId))
 
-      const todos = yield* listHandler
-      expect(todos).toHaveLength(0)
+      expect(Exit.isFailure(getResult)).toBe(true)
+      expect(Exit.isFailure(removeResult)).toBe(true)
     })
-    .pipe(Effect.provide(makeTodosServiceTestLayer())))
+    .pipe(Effect.provide(makeTodosApplicationTestLayer())))
 
-it.effect("removeHandler - returns error for missing", () =>
-  Effect
-    .gen(function*() {
-      const fakeId = "non-existent-http-delete" as TodoId
-
-      const result = yield* Effect.exit(removeHandler(fakeId))
-      expect(Exit.isFailure(result)).toBe(true)
-    })
-    .pipe(Effect.provide(makeTodosServiceTestLayer())))
-
-it.effect("TodosApiLive - layer builds successfully", () =>
+it.effect("TodosApiLive layer builds successfully", () =>
   Effect.sync(() => {
     expect(TodosApiLive).toBeDefined()
   }))

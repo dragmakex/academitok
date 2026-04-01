@@ -59,6 +59,7 @@ Open the smallest useful set:
 - Documentation standards: `docs/app/README.md`
 - System guarantees and invariants: `docs/architecture/GUARANTEES.md`
 - Architecture overview when needed: `docs/architecture/overview.md`
+- **UI work is special**: before changing any UI, read `docs/design-system/rules.md` (especially the decision framework) and inspect `src/design-system/registry.ts`. Compose from existing primitives. Do not add new design-system components without passing the decision framework.
 
 If you are implementing or especially reviewing code for simplicity, coupling,
 boundaries, or architectural fit, you must also read
@@ -101,10 +102,17 @@ Before implementing substantial Effect code, inspect the relevant Effect guidanc
 - adding dependencies without clear justification
 - duplicating logic when a shared abstraction is warranted
 - writing documentation that merely repeats code
+- creating design-system wrapper components that are just a div with a className
+- adding to `src/design-system/` without registering in `registry.ts` and justifying via the decision framework
 
 ## Definition Of Done
 
 The change is only done when the implementation, tests, documentation, and version control history all satisfy the referenced guides.
+
+## Take notes
+
+Please make note of mistakes you make in MISTAKES.md. If you find you wish you had more context or tools, write that down in DESIRES.md. If you learn anything about your env write that down in LEARNINGS.md.
+Make sure to consult these files yourself too. do not add duplicates.
 
 ## 📖 Remember
 

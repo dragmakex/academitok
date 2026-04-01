@@ -1,4 +1,5 @@
 import type { TodoSeed } from "@/db/todos-repository"
+import { layerFromTodoSeed } from "@/features/todos/application"
 import { TodosService } from "@/routes/api/-lib/todos-service"
 
 export const todoSeeds = {
@@ -30,3 +31,7 @@ export type TodoSeedName = keyof typeof todoSeeds
 export const makeTodosServiceTestLayer = (
   seedName: TodoSeedName = "empty",
 ) => TodosService.layerFromSeed(todoSeeds[seedName])
+
+export const makeTodosApplicationTestLayer = (
+  seedName: TodoSeedName = "empty",
+) => layerFromTodoSeed(todoSeeds[seedName])

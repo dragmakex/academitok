@@ -94,8 +94,11 @@ jobs:
       - name: Run type check
         run: bun run typecheck
 
-      - name: Run ESLint
+      - name: Run Oxlint
         run: bun run lint
+
+      - name: Run type-aware Oxlint
+        run: bun run lint:type-aware
 
       - name: Check formatting
         run: bun run format:check

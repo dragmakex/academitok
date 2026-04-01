@@ -1,5 +1,6 @@
 import { DomainApi } from "@/api/domain-api"
 import { DomainRpc } from "@/api/domain-rpc"
+import { TodosApplicationLive } from "@/features/todos/application"
 import { ObservabilityLive } from "@/lib/observability"
 import {
   initPyroscopeServer,
@@ -22,7 +23,6 @@ import * as RpcSerialization from "effect/unstable/rpc/RpcSerialization"
 import * as RpcServer from "effect/unstable/rpc/RpcServer"
 import { TodosApiLive } from "./-lib/todos-api-live"
 import { TodosRpcLive } from "./-lib/todos-rpc-live"
-import { TodosService } from "./-lib/todos-service"
 
 /**
  * RPC logging middleware - logs errors for failed RPC requests.
@@ -144,7 +144,7 @@ const DevConsoleLive = process.env.NODE_ENV === "development"
 
 const ObservabilityRuntimeLive = Layer.orDie(ObservabilityLive)
 
-export const ServerRuntimeLive = TodosService.layer.pipe(
+export const ServerRuntimeLive = TodosApplicationLive.pipe(
   Layer.provideMerge(ObservabilityRuntimeLive),
   Layer.provideMerge(DevConsoleLive),
 )

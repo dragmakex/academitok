@@ -1,63 +1,73 @@
 import type {
   CreateTodoInput,
-  Todo,
   TodoId,
-  TodoNotFound,
   UpdateTodoInput,
 } from "@/api/todo-schema"
 import { type TodoSeed, TodosRepository } from "@/db/todos-repository"
+import {
+  createTodo,
+  getTodoById,
+  getTodoDashboardSnapshot,
+  getTodoGroups,
+  getTodoStats,
+  layerFromTodoSeed,
+  listTodos,
+  removeTodo,
+  TodosApplicationLive,
+  updateTodo,
+} from "@/features/todos/application"
+import { TodoEventSink } from "@/features/todos/events"
+import { todoDateFromDateTime } from "@/features/todos/projections"
+import * as DateTime from "effect/DateTime"
 import * as Effect from "effect/Effect"
 import * as Layer from "effect/Layer"
 import * as ServiceMap from "effect/ServiceMap"
+
+/**
+ * Produces the current UTC day in the todo date format.
+ *
+ * @returns The current UTC date string.
+ */
+export function todayDate() {
+  return todoDateFromDateTime(DateTime.fromDateUnsafe(new Date()))
+}
 
 export class TodosService extends ServiceMap.Service<TodosService>()(
   "TodosService",
   {
     make: Effect.gen(function*() {
       const repository = yield* TodosRepository
+      const eventSink = yield* TodoEventSink
+
+      const provideRepository = <A, E, R>(effect: Effect.Effect<A, E, R>) =>
+        effect.pipe(Effect.provideService(TodosRepository, repository))
+
+      const provideApplication = <A, E, R>(effect: Effect.Effect<A, E, R>) =>
+        effect.pipe(
+          Effect.provideService(TodoEventSink, eventSink),
+          Effect.provideService(TodosRepository, repository),
+        )
 
       return {
-        list: repository.list.pipe(
-          Effect.withSpan("TodosService.list"),
-        ),
-        getById: (id: TodoId): Effect.Effect<Todo, TodoNotFound> =>
-          repository.getById(id).pipe(
-            Effect.withSpan("TodosService.getById", {
-              attributes: { "todo.id": id },
-            }),
-          ),
-        create: (input: CreateTodoInput): Effect.Effect<Todo> =>
-          repository.create(input).pipe(
-            Effect.withSpan("TodosService.create", {
-              attributes: { "todo.title": input.title },
-            }),
-          ),
-        update: (
-          id: TodoId,
-          input: UpdateTodoInput,
-        ): Effect.Effect<Todo, TodoNotFound> =>
-          repository.update(id, input).pipe(
-            Effect.withSpan("TodosService.update", {
-              attributes: { "todo.id": id },
-            }),
-          ),
-        remove: (id: TodoId): Effect.Effect<void, TodoNotFound> =>
-          repository.remove(id).pipe(
-            Effect.withSpan("TodosService.remove", {
-              attributes: { "todo.id": id },
-            }),
-          ),
+        list: provideRepository(listTodos),
+        stats: provideRepository(getTodoStats),
+        groups: provideRepository(getTodoGroups),
+        snapshot: provideRepository(getTodoDashboardSnapshot),
+        getById: (id: TodoId) => provideRepository(getTodoById(id)),
+        create: (input: CreateTodoInput) =>
+          provideApplication(createTodo(input)),
+        update: (id: TodoId, input: UpdateTodoInput) =>
+          provideApplication(updateTodo(id, input)),
+        remove: (id: TodoId) => provideApplication(removeTodo(id)),
       } as const
     }),
   },
 ) {
   static readonly layer = Layer.effect(this, this.make).pipe(
-    Layer.provide(TodosRepository.layer),
+    Layer.provide(TodosApplicationLive),
   )
 
-  static readonly testLayer = Layer.effect(this, this.make).pipe(
-    Layer.provide(TodosRepository.testLayer),
-  )
+  static readonly testLayer = this.layerFromSeed([])
 
   /**
    * Creates a service layer backed by an in-memory seeded PGlite repository.
@@ -67,7 +77,7 @@ export class TodosService extends ServiceMap.Service<TodosService>()(
    */
   static layerFromSeed(seed: TodoSeed): Layer.Layer<TodosService> {
     return Layer.effect(this, this.make).pipe(
-      Layer.provide(TodosRepository.layerFromSeed(seed)),
+      Layer.provide(layerFromTodoSeed(seed)),
     )
   }
 }

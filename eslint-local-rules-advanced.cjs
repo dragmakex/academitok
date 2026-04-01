@@ -1,3 +1,53 @@
+const getFilename = (context) =>
+  typeof context.getFilename === "function"
+    ? context.getFilename()
+    : (context.filename ?? "")
+
+const normalizeFilename = (filename) => filename.replaceAll("\\", "/")
+
+const isScopedLibraryFile = (filename) =>
+  normalizeFilename(filename).includes("/src/lib/")
+
+const isScopedDatabaseFile = (filename) =>
+  normalizeFilename(filename).includes("/src/db/")
+
+const isTopLevelRouteEntryFile = (filename) => {
+  const normalized = normalizeFilename(filename)
+
+  return (
+    /\/src\/routes\/[^/]+\.(ts|tsx)$/.test(normalized)
+    || normalized.endsWith("/src/routes/api/$.ts")
+  )
+}
+
+const isFeatureProjectionFile = (filename) =>
+  /\/src\/features\/[^/]+\/(projections(\/.*)?|[^/]+-projection)\.(ts|tsx)$/
+    .test(
+      normalizeFilename(filename),
+    )
+  || /\/src\/features\/[^/]+\/projections\//.test(normalizeFilename(filename))
+
+const isFeatureApplicationFile = (filename) =>
+  /\/src\/features\/[^/]+\/application(\/.*)?\.(ts|tsx)$/.test(
+    normalizeFilename(filename),
+  )
+  || /\/src\/features\/[^/]+\/application\//.test(normalizeFilename(filename))
+
+const isUiModule = (filename) => {
+  const normalized = normalizeFilename(filename)
+
+  return (
+    /\/src\/component\//.test(normalized)
+    || (
+      /\/src\/routes\//.test(normalized)
+      && !/\/src\/routes\/api\//.test(normalized)
+    )
+  )
+}
+
+const matchesAnySpecifier = (value, prefixes) =>
+  prefixes.some((prefix) => value.startsWith(prefix))
+
 module.exports = {
   "no-try-catch-in-effect-gen": {
     meta: {
@@ -282,6 +332,10 @@ module.exports = {
       },
     },
     create(context) {
+      if (!isScopedLibraryFile(getFilename(context))) {
+        return {}
+      }
+
       function isAmbientDateNow(node) {
         return (
           node.callee.type === "MemberExpression"
@@ -337,6 +391,10 @@ module.exports = {
       },
     },
     create(context) {
+      if (!isScopedDatabaseFile(getFilename(context))) {
+        return {}
+      }
+
       function isMathRandom(node) {
         return (
           node.callee.type === "MemberExpression"
@@ -466,6 +524,10 @@ module.exports = {
       },
     },
     create(context) {
+      if (!isTopLevelRouteEntryFile(getFilename(context))) {
+        return {}
+      }
+
       function checkCallExpression(node) {
         if (
           node.callee.type === "MemberExpression"
@@ -483,6 +545,109 @@ module.exports = {
 
       return {
         CallExpression: checkCallExpression,
+      }
+    },
+  },
+
+  "no-feature-layer-imports": {
+    meta: {
+      type: "problem",
+      docs: {
+        description:
+          "enforce feature-layer import boundaries for projections and application modules",
+        category: "Design Simplicity",
+        recommended: false,
+      },
+      schema: [],
+      messages: {
+        noFeatureLayerImports:
+          "This feature-layer module imports '{{ source }}', which crosses the allowed architecture boundary.",
+      },
+    },
+    create(context) {
+      const filename = getFilename(context)
+      const isProjection = isFeatureProjectionFile(filename)
+      const isApplication = isFeatureApplicationFile(filename)
+
+      if (!isProjection && !isApplication) {
+        return {}
+      }
+
+      const projectionBlockedPrefixes = [
+        "@/db/",
+        "@/routes/",
+        "@/component/",
+        "@tanstack/",
+        "react",
+        "drizzle-orm",
+        "effect/unstable/http",
+        "effect/unstable/httpapi",
+        "effect/unstable/rpc",
+      ]
+      const applicationBlockedPrefixes = [
+        "@/routes/",
+        "@/component/",
+        "@tanstack/",
+        "react",
+      ]
+
+      function checkImport(node) {
+        const source = node.source.value
+        if (typeof source !== "string") {
+          return
+        }
+
+        const blockedPrefixes = isProjection
+          ? projectionBlockedPrefixes
+          : applicationBlockedPrefixes
+
+        if (matchesAnySpecifier(source, blockedPrefixes)) {
+          context.report({
+            node,
+            messageId: "noFeatureLayerImports",
+            data: { source },
+          })
+        }
+      }
+
+      return {
+        ImportDeclaration: checkImport,
+      }
+    },
+  },
+
+  "no-db-imports-in-ui": {
+    meta: {
+      type: "problem",
+      docs: {
+        description: "disallow direct database imports in UI modules",
+        category: "Design Simplicity",
+        recommended: false,
+      },
+      schema: [],
+      messages: {
+        noDbImportsInUi:
+          "UI modules must not import database modules directly. Read through application or API boundaries instead.",
+      },
+    },
+    create(context) {
+      if (!isUiModule(getFilename(context))) {
+        return {}
+      }
+
+      function checkImport(node) {
+        if (
+          node.source.value === "@/db/" || node.source.value.startsWith("@/db/")
+        ) {
+          context.report({
+            node,
+            messageId: "noDbImportsInUi",
+          })
+        }
+      }
+
+      return {
+        ImportDeclaration: checkImport,
       }
     },
   },

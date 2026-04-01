@@ -30,6 +30,11 @@ In this repository, simplicity means:
 
 We do not treat these as aesthetic preferences. They are reliability tools.
 
+This document describes the broader architectural interpretation. The lint rules
+only codify a narrow subset of that interpretation. They are selected because
+those checks have high signal in this repository and can be enforced with low
+ambiguity.
+
 ## The five design questions
 
 Every new module should answer these questions explicitly:
@@ -58,25 +63,30 @@ These rules are intentionally narrow. They do not attempt to solve all design
 quality mechanically. They exist to catch common ways in which otherwise small
 modules become entangled.
 
+The route rule is specifically a heuristic. It does not claim that
+`Effect.gen(...)` is always wrong. It protects a boundary shape: route entry
+files should decode, delegate, and render instead of becoming orchestration
+sinks.
+
+The randomness rule also does not claim that randomness must disappear. It
+claims that randomness should be sampled at an explicit boundary, such as
+`TodoIdGeneratorLive`, rather than deep inside persistence modules.
+
 ## Boundary model
 
 ```mermaid
 flowchart LR
-    Policy[Domain policy and transformations] --> Services[Effect services and orchestration]
+    Routes[Route entry modules] --> Services[Effect services and orchestration]
     Services --> Adapters[Persistence and HTTP adapters]
-    Adapters --> Routes[Route entry modules]
     Routes --> UI[React UI]
+    Shared[Shared helpers] --> Routes
 
-    Time[Time]
-    Randomness[Identity / randomness]
-    Input[External input]
+    Time[Time] --> Routes
+    Randomness[Identity / randomness] --> Services
+    Input[External input] --> Routes
 
-    Time --> Services
-    Randomness --> Services
-    Input --> Routes
-
-    style Policy fill:#c7f9cc
-    style Services fill:#dbeafe
+    style Shared fill:#dbeafe
+    style Services fill:#c7f9cc
     style Adapters fill:#fde68a
     style Routes fill:#fecaca
 ```
@@ -84,10 +94,17 @@ flowchart LR
 ### Consequences
 
 - **Routes** decode, delegate, and render.
-- **Services** orchestrate effects and dependencies.
+- **Application modules** orchestrate effects and dependencies.
+- **Projections** derive read models from plain data.
 - **Adapters** translate to databases and external APIs.
 - **Shared utilities** should accept time and identity as arguments instead of
   sampling them implicitly.
+
+The todo feature now models this explicitly through:
+
+- `src/features/todos/application.ts`
+- `src/features/todos/projections.ts`
+- `src/features/todos/events.ts`
 
 ## Review checklist
 
@@ -101,6 +118,20 @@ When reviewing a change, ask:
 
 If the answer suggests a ripple across unrelated concerns, the change likely
 increased complexity even if it felt easy to write.
+
+## What this template does not fully codify
+
+The template does not fully encode every recommendation from Hickey's talk.
+In particular, it does not try to mechanize all of the following:
+
+- "data as data" as a universal rule across all modules,
+- replacing every loop with declarative set operations,
+- queue-based decoupling of when/where concerns,
+- a global ban on familiar but entangling constructs.
+
+Those remain architectural review concerns rather than lint rules. That is a
+conscious trade-off: the template enforces a small baseline and relies on code
+review and design docs for the broader philosophy.
 
 ## Related repository documents
 

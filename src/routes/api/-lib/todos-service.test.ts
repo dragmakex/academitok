@@ -1,6 +1,6 @@
 // @vitest-environment node
 
-import { TodoId, TodoNotFound } from "@/api/todo-schema"
+import { TodoId } from "@/api/todo-schema"
 import { makeTodosServiceTestLayer } from "@/db/todos-test-support"
 import { expect, it } from "@effect/vitest"
 import * as Cause from "effect/Cause"
@@ -8,13 +8,13 @@ import * as Effect from "effect/Effect"
 import * as Exit from "effect/Exit"
 import * as Option from "effect/Option"
 import * as Schema from "effect/Schema"
-import { TodosService } from "./todos-service"
+import { todayDate, TodosService } from "./todos-service"
 
-/**
- * Tests for TodosService - the core business logic for todo management.
- *
- * These tests verify all CRUD operations and error handling.
- */
+const addUtcDays = (date: string, days: number): string => {
+  const value = new Date(`${date}T00:00:00.000Z`)
+  value.setUTCDate(value.getUTCDate() + days)
+  return value.toISOString().slice(0, 10)
+}
 
 it.effect("list returns empty array initially", () =>
   Effect
@@ -33,48 +33,149 @@ it.effect("list preserves deterministic seeded order", () =>
 
       expect(todos.map((todo) => todo.title)).toEqual([
         "Alpha todo",
-        "Bravo done",
         "Charlie todo",
+        "Bravo done",
       ])
     })
     .pipe(Effect.provide(makeTodosServiceTestLayer("mixedState"))))
 
-it.effect("seeded completed todos remain completed", () =>
+it.effect("create returns a snapshot with unscheduled work when no due date is set", () =>
   Effect
     .gen(function*() {
       const service = yield* TodosService
-      const [todo] = yield* service.list
+      const snapshot = yield* service.create({
+        title: "Restore dashboard",
+        dueDate: null,
+      })
 
-      expect(todo?.title).toBe("Seeded completed todo")
-      expect(todo?.completed).toBe(true)
-    })
-    .pipe(Effect.provide(makeTodosServiceTestLayer("singleCompleted"))))
-
-it.effect("create adds a new todo", () =>
-  Effect
-    .gen(function*() {
-      const service = yield* TodosService
-      const created = yield* service.create({ title: "Test todo" })
-
-      expect(created.title).toBe("Test todo")
-      expect(created.completed).toBe(false)
-      expect(created.id).toBeDefined()
-      expect(created.createdAt).toBeDefined()
-
-      const todos = yield* service.list
-      expect(todos).toHaveLength(1)
-      expect(todos[0]).toEqual(created)
+      expect(snapshot.todos).toHaveLength(1)
+      expect(snapshot.todos[0]?.title).toBe("Restore dashboard")
+      expect(snapshot.stats).toMatchObject({
+        total: 1,
+        active: 1,
+        completed: 0,
+        overdue: 0,
+        dueToday: 0,
+        upcoming: 0,
+        unscheduled: 1,
+      })
+      expect(snapshot.groups.map((group) => [group.key, group.count])).toEqual([
+        ["overdue", 0],
+        ["today", 0],
+        ["upcoming", 0],
+        ["unscheduled", 1],
+        ["completed", 0],
+      ])
     })
     .pipe(Effect.provide(makeTodosServiceTestLayer())))
 
-it.effect("getById returns the correct todo", () =>
+it.effect("snapshot classification keeps stats and groups aligned", () =>
   Effect
     .gen(function*() {
       const service = yield* TodosService
-      const created = yield* service.create({ title: "Find me" })
+      const today = todayDate()
 
-      const found = yield* service.getById(created.id)
-      expect(found).toEqual(created)
+      yield* service.create({
+        title: "Overdue task",
+        dueDate: addUtcDays(today, -1),
+      })
+      yield* service.create({
+        title: "Today task",
+        dueDate: today,
+      })
+      yield* service.create({
+        title: "Upcoming task",
+        dueDate: addUtcDays(today, 2),
+      })
+      yield* service.create({
+        title: "Unscheduled task",
+        dueDate: null,
+      })
+      const completedSnapshot = yield* service.create({
+        title: "Completed task",
+        dueDate: addUtcDays(today, 4),
+      })
+      const completedTodo = completedSnapshot.todos.find((todo) =>
+        todo.title === "Completed task"
+      )
+
+      if (completedTodo === undefined) {
+        return yield* Effect.die(new Error("Expected completed todo to exist"))
+      }
+
+      yield* service.update(completedTodo.id, {
+        title: Option.none(),
+        completed: Option.some(true),
+        dueDate: Option.none(),
+      })
+
+      const snapshot = yield* service.snapshot
+      const counts = Object.fromEntries(
+        snapshot.groups.map((group) => [group.key, group.count]),
+      )
+
+      expect(snapshot.stats.total).toBe(5)
+      expect(snapshot.stats.active).toBe(4)
+      expect(snapshot.stats.completed).toBe(counts.completed)
+      expect(snapshot.stats.overdue).toBe(counts.overdue)
+      expect(snapshot.stats.dueToday).toBe(counts.today)
+      expect(snapshot.stats.upcoming).toBe(counts.upcoming)
+      expect(snapshot.stats.unscheduled).toBe(counts.unscheduled)
+      expect(snapshot.groups.flatMap((group) => group.todos)).toHaveLength(5)
+    })
+    .pipe(Effect.provide(makeTodosServiceTestLayer())))
+
+it.effect("update modifies title, due date, and completion inside the returned snapshot", () =>
+  Effect
+    .gen(function*() {
+      const service = yield* TodosService
+      const created = yield* service.create({
+        title: "Original",
+        dueDate: null,
+      })
+      const todo = created.todos[0]
+
+      if (todo === undefined) {
+        return yield* Effect.die(new Error("Expected created todo"))
+      }
+
+      const updated = yield* service.update(todo.id, {
+        title: Option.some("Updated"),
+        completed: Option.some(true),
+        dueDate: Option.some(todayDate()),
+      })
+      const updatedTodo = updated.todos.find((item) => item.id === todo.id)
+
+      expect(updatedTodo).toMatchObject({
+        title: "Updated",
+        completed: true,
+        dueDate: todayDate(),
+      })
+      expect(updated.stats).toMatchObject({
+        completed: 1,
+        active: 0,
+      })
+    })
+    .pipe(Effect.provide(makeTodosServiceTestLayer())))
+
+it.effect("remove returns the remaining snapshot", () =>
+  Effect
+    .gen(function*() {
+      const service = yield* TodosService
+      const first = yield* service.create({ title: "First", dueDate: null })
+      const second = yield* service.create({ title: "Second", dueDate: null })
+      const firstTodo = first.todos[0]
+      const secondTodo = second.todos.find((todo) => todo.title === "Second")
+
+      if (firstTodo === undefined || secondTodo === undefined) {
+        return yield* Effect.die(new Error("Expected created todos"))
+      }
+
+      const snapshot = yield* service.remove(firstTodo.id)
+
+      expect(snapshot.todos).toHaveLength(1)
+      expect(snapshot.todos[0]?.id).toBe(secondTodo.id)
+      expect(snapshot.stats.total).toBe(1)
     })
     .pipe(Effect.provide(makeTodosServiceTestLayer())))
 
@@ -89,171 +190,10 @@ it.effect("getById fails with TodoNotFound for non-existent id", () =>
 
       if (Exit.isFailure(result)) {
         const failReason = result.cause.reasons.find(Cause.isFailReason)
-        expect(failReason?.error).toBeInstanceOf(TodoNotFound)
-        if (failReason?.error instanceof TodoNotFound) {
-          expect(failReason.error.id).toBe(fakeId)
-        }
+        expect(failReason?.error).toMatchObject({
+          _tag: "TodoNotFound",
+          id: fakeId,
+        })
       }
-    })
-    .pipe(Effect.provide(makeTodosServiceTestLayer())))
-
-it.effect("update modifies todo title", () =>
-  Effect
-    .gen(function*() {
-      const service = yield* TodosService
-      const created = yield* service.create({ title: "Original" })
-
-      const updated = yield* service.update(created.id, {
-        title: Option.some("Updated"),
-        completed: Option.none(),
-      })
-
-      expect(updated.id).toBe(created.id)
-      expect(updated.title).toBe("Updated")
-      expect(updated.completed).toBe(false)
-    })
-    .pipe(Effect.provide(makeTodosServiceTestLayer())))
-
-it.effect("update modifies todo completed status", () =>
-  Effect
-    .gen(function*() {
-      const service = yield* TodosService
-      const created = yield* service.create({ title: "Task" })
-
-      const updated = yield* service.update(created.id, {
-        title: Option.none(),
-        completed: Option.some(true),
-      })
-
-      expect(updated.title).toBe("Task")
-      expect(updated.completed).toBe(true)
-    })
-    .pipe(Effect.provide(makeTodosServiceTestLayer())))
-
-it.effect("update modifies both title and completed", () =>
-  Effect
-    .gen(function*() {
-      const service = yield* TodosService
-      const created = yield* service.create({ title: "Original" })
-
-      const updated = yield* service.update(created.id, {
-        title: Option.some("New Title"),
-        completed: Option.some(true),
-      })
-
-      expect(updated.title).toBe("New Title")
-      expect(updated.completed).toBe(true)
-    })
-    .pipe(Effect.provide(makeTodosServiceTestLayer())))
-
-it.effect("update with no fields is identity for seeded rows", () =>
-  Effect
-    .gen(function*() {
-      const service = yield* TodosService
-      const [seededTodo] = yield* service.list
-
-      if (seededTodo === undefined) {
-        return yield* Effect.die(new Error("Expected a seeded todo"))
-      }
-
-      const updated = yield* service.update(seededTodo.id, {
-        title: Option.none(),
-        completed: Option.none(),
-      })
-
-      expect(updated).toEqual(seededTodo)
-    })
-    .pipe(Effect.provide(makeTodosServiceTestLayer("mixedState"))))
-
-it.effect("update fails with TodoNotFound for non-existent id", () =>
-  Effect
-    .gen(function*() {
-      const service = yield* TodosService
-      const fakeId = Schema.decodeSync(TodoId)("non-existent")
-
-      const result = yield* Effect.exit(
-        service.update(fakeId, {
-          title: Option.some("Test"),
-          completed: Option.none(),
-        }),
-      )
-
-      expect(Exit.isFailure(result)).toBe(true)
-    })
-    .pipe(Effect.provide(makeTodosServiceTestLayer())))
-
-it.effect("remove deletes a todo", () =>
-  Effect
-    .gen(function*() {
-      const service = yield* TodosService
-      const created = yield* service.create({ title: "Delete me" })
-
-      yield* service.remove(created.id)
-
-      const todos = yield* service.list
-      expect(todos).toHaveLength(0)
-    })
-    .pipe(Effect.provide(makeTodosServiceTestLayer())))
-
-it.effect("remove deletes exactly one seeded row", () =>
-  Effect
-    .gen(function*() {
-      const service = yield* TodosService
-      const [firstTodo] = yield* service.list
-
-      if (firstTodo === undefined) {
-        return yield* Effect.die(new Error("Expected a seeded todo"))
-      }
-
-      yield* service.remove(firstTodo.id)
-
-      const todos = yield* service.list
-      expect(todos.map((todo) => todo.title)).toEqual([
-        "Bravo done",
-        "Charlie todo",
-      ])
-    })
-    .pipe(Effect.provide(makeTodosServiceTestLayer("mixedState"))))
-
-it.effect("remove fails with TodoNotFound for non-existent id", () =>
-  Effect
-    .gen(function*() {
-      const service = yield* TodosService
-      const fakeId = Schema.decodeSync(TodoId)("non-existent")
-
-      const result = yield* Effect.exit(service.remove(fakeId))
-      expect(Exit.isFailure(result)).toBe(true)
-    })
-    .pipe(Effect.provide(makeTodosServiceTestLayer())))
-
-it.effect("multiple todos are stored correctly", () =>
-  Effect
-    .gen(function*() {
-      const service = yield* TodosService
-
-      const todo1 = yield* service.create({ title: "First" })
-      const todo2 = yield* service.create({ title: "Second" })
-      const todo3 = yield* service.create({ title: "Third" })
-
-      const todos = yield* service.list
-      expect(todos).toHaveLength(3)
-
-      // Verify all todos are present
-      const ids = todos.map((todo) => todo.id)
-      expect(ids).toContain(todo1.id)
-      expect(ids).toContain(todo2.id)
-      expect(ids).toContain(todo3.id)
-    })
-    .pipe(Effect.provide(makeTodosServiceTestLayer())))
-
-it.effect("each todo gets a unique id", () =>
-  Effect
-    .gen(function*() {
-      const service = yield* TodosService
-
-      const todo1 = yield* service.create({ title: "First" })
-      const todo2 = yield* service.create({ title: "Second" })
-
-      expect(todo1.id).not.toBe(todo2.id)
     })
     .pipe(Effect.provide(makeTodosServiceTestLayer())))

@@ -48,6 +48,8 @@ boundaries directly:
 - shared helpers receive time as data,
 - repositories receive identity generation explicitly,
 - route entry modules delegate instead of orchestrating,
+- feature `application` and `projections` modules keep clean import boundaries,
+- UI modules do not import database code directly,
 - module exports remain immutable.
 
 The verification examples live in `src/lint/simple-made-easy-rules.test.ts`.
@@ -113,27 +115,26 @@ state the invariant under test directly:
 ```typescript
 // @vitest-environment node
 
-import { makeTodosServiceTestLayer } from "@/db/todos-test-support"
-import { TodosService } from "@/routes/api/-lib/todos-service"
+import { makeTodosApplicationTestLayer } from "@/db/todos-test-support"
+import { listTodos } from "@/features/todos/application"
 import { expect, it } from "@effect/vitest"
 import * as Effect from "effect/Effect"
 
 it.effect("seeded list order is stable", () =>
   Effect
     .gen(function*() {
-      const service = yield* TodosService
-      const todos = yield* service.list
+      const todos = yield* listTodos
 
       expect(todos.map((todo) => todo.title)).toEqual([
         "Alpha todo",
-        "Bravo done",
         "Charlie todo",
+        "Bravo done",
       ])
     })
-    .pipe(Effect.provide(makeTodosServiceTestLayer("mixedState"))))
+    .pipe(Effect.provide(makeTodosApplicationTestLayer("mixedState"))))
 ```
 
-Use this pattern when you need to prove repository and service invariants
+Use this pattern when you need to prove repository and application invariants
 against realistic persisted state. Keep these tests in node mode because the
 browser runner is not the right environment for server-side PGlite modules.
 

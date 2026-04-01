@@ -4,35 +4,43 @@ import type {
   TodoId,
   UpdateTodoInput,
 } from "@/api/todo-schema"
+import {
+  createTodo,
+  getTodoById,
+  getTodoDashboardSnapshot,
+  getTodoGroups,
+  getTodoStats,
+  listTodos,
+  removeTodo,
+  TodosApplicationLive,
+  updateTodo,
+} from "@/features/todos/application"
 import * as Effect from "effect/Effect"
 import * as Layer from "effect/Layer"
-import { TodosService } from "./todos-service"
 
 /**
  * RPC handler implementations.
  * These are exported separately for testing.
  */
-export const createRpcHandlers = Effect.gen(function*() {
-  const todos = yield* TodosService
+export const createRpcHandlers = Effect.succeed({
+  todos_list: () => listTodos,
 
-  // RPC method names must match the schema definition in domain-rpc.ts
-  /* eslint-disable camelcase */
-  return {
-    todos_list: () => todos.list,
+  todos_stats: () => getTodoStats,
 
-    todos_getById: ({ id }: { id: TodoId }) => todos.getById(id),
+  todos_groups: () => getTodoGroups,
 
-    todos_create: ({ input }: { input: CreateTodoInput }) =>
-      todos.create(input),
+  todos_snapshot: () => getTodoDashboardSnapshot,
 
-    todos_update: ({ id, input }: { id: TodoId; input: UpdateTodoInput }) =>
-      todos.update(id, input),
+  todos_getById: ({ id }: { id: TodoId }) => getTodoById(id),
 
-    todos_remove: ({ id }: { id: TodoId }) => todos.remove(id),
-  }
-  /* eslint-enable camelcase */
+  todos_create: ({ input }: { input: CreateTodoInput }) => createTodo(input),
+
+  todos_update: ({ id, input }: { id: TodoId; input: UpdateTodoInput }) =>
+    updateTodo(id, input),
+
+  todos_remove: ({ id }: { id: TodoId }) => removeTodo(id),
 })
 
 export const TodosRpcLive = DomainRpc
   .toLayer(createRpcHandlers)
-  .pipe(Layer.provide(TodosService.layer))
+  .pipe(Layer.provide(TodosApplicationLive))

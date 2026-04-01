@@ -1,4 +1,5 @@
 import { initClient, SentryErrorBoundary } from "@/lib/client-init"
+import { loadReactGrab } from "@/lib/react-grab-loader"
 import { RegistryProvider } from "@effect/atom-react"
 import { TanStackDevtools } from "@tanstack/react-devtools"
 import { createRootRoute, HeadContent, Scripts } from "@tanstack/react-router"
@@ -6,10 +7,6 @@ import { TanStackRouterDevtoolsPanel } from "@tanstack/react-router-devtools"
 import { useEffect } from "react"
 import * as React from "react"
 import appCss from "../styles.css?url"
-
-if (typeof window !== "undefined") {
-  initClient()
-}
 
 export const Route = createRootRoute({
   head: () => ({
@@ -45,9 +42,8 @@ export const Route = createRootRoute({
  */
 function RootDocument({ children }: { children: React.ReactNode }) {
   useEffect(() => {
-    if (import.meta.env.DEV) {
-      void import("react-grab")
-    }
+    void initClient()
+    void loadReactGrab()
   }, [])
 
   const [isClient, setIsClient] = React.useState(false)

@@ -45,7 +45,7 @@ bun run typecheck
 
 ---
 
-### 2. Code Linting (ESLint + TSDoc) ✓
+### 2. Code Linting (Oxlint + TSDoc) ✓
 
 ```bash
 bun run lint
@@ -53,7 +53,7 @@ bun run lint
 
 **Requirements:**
 
-- ✅ Zero ESLint errors
+- ✅ Zero Oxlint errors
 - ✅ All warnings addressed
 - ✅ TSDoc completeness (all exported functions)
 - ✅ Import organization
@@ -262,7 +262,7 @@ bun run validate
 **Runs all checks in sequence:**
 
 1. TypeScript type checking
-2. ESLint + TSDoc linting
+2. Oxlint + TSDoc linting
 3. Code formatting check
 4. Documentation quality
 5. Test coverage (100%)
@@ -437,7 +437,7 @@ All PRs run these checks:
 
 **Job 2: Lint** (10 min timeout)
 
-- ESLint validation
+- Oxlint validation
 - TSDoc completeness
 - Code formatting check
 
@@ -547,7 +547,7 @@ gh pr create
 
 6. **Ignoring linting errors**
    - "I'll fix it later" ← Wrong
-   - ESLint errors block CI
+   - Oxlint errors block CI
 
 7. **Patching symptoms**
    - "This fixes my immediate problem" ← Wrong
