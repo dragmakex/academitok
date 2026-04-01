@@ -1,23 +1,23 @@
+import { getTodoDashboardSnapshot } from "@/features/todos/application"
 import { HydrationBoundary } from "@/lib/atom-hydration"
 import { dehydrate } from "@/lib/atom-utils"
 import { createFileRoute } from "@tanstack/react-router"
 import { createServerFn } from "@tanstack/react-start"
-import * as Effect from "effect/Effect"
 import * as AsyncResult from "effect/unstable/reactivity/AsyncResult"
 import { App } from "./-index/app"
-import { todoGroupsAtom, todosAtom, todoStatsAtom } from "./-index/atoms"
+import { dashboardSnapshotAtom } from "./-index/atoms"
 import { serverRuntime } from "./api/$"
-import { TodosService } from "./api/-lib/todos-service"
 
 const getTodoDashboard = createServerFn({ method: "GET" }).handler(async () => {
-  const snapshot = await serverRuntime.runPromise(
-    Effect.flatMap(TodosService.asEffect(), (service) => service.snapshot),
-  )
+  const snapshot = await serverRuntime.runPromise(getTodoDashboardSnapshot)
+  const dehydratedAt = Date.now()
 
   return [
-    dehydrate(todosAtom.remote, AsyncResult.success(snapshot.todos)),
-    dehydrate(todoStatsAtom.remote, AsyncResult.success(snapshot.stats)),
-    dehydrate(todoGroupsAtom.remote, AsyncResult.success(snapshot.groups)),
+    dehydrate(
+      dashboardSnapshotAtom.remote,
+      AsyncResult.success(snapshot),
+      dehydratedAt,
+    ),
   ]
 })
 

@@ -212,6 +212,12 @@ export default defineConfig({
     "local-advanced/require-return-yield-for-errors": "error",
     "local-advanced/no-effect-runsync-in-gen": "error",
     "local-advanced/prefer-effect-constructors": "error",
+    "local-advanced/no-ambient-time": "error",
+    "local-advanced/no-ambient-randomness": "error",
+    "local-advanced/no-exported-mutable-bindings": "error",
+    "local-advanced/no-effect-gen-in-routes": "error",
+    "local-advanced/no-feature-layer-imports": "error",
+    "local-advanced/no-db-imports-in-ui": "error",
     "typescript/unbound-method": "off",
   },
 })

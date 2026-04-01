@@ -36,6 +36,26 @@ graph TB
 2. **Moderate Component Tests** - User interaction testing in real browsers
 3. **Few Visual Tests** - Critical UI components across browsers
 
+### Lint Rules As Architectural Tests
+
+Some simplicity guarantees are cheap enough to prove statically.
+When a rule is mainly structural, encode it in lint and then verify it with
+positive and negative examples.
+
+This repository now uses lint-backed examples to protect a few design
+boundaries directly:
+
+- shared helpers receive time as data,
+- repositories receive identity generation explicitly,
+- route entry modules delegate instead of orchestrating,
+- feature `application` and `projections` modules keep clean import boundaries,
+- UI modules do not import database code directly,
+- module exports remain immutable.
+
+The verification examples live in `src/lint/simple-made-easy-rules.test.ts`.
+Treat them as architectural tests: they prove not only that code passes lint,
+but that the lint policy matches the design intent.
+
 ---
 
 ## Test Types
@@ -95,27 +115,26 @@ state the invariant under test directly:
 ```typescript
 // @vitest-environment node
 
-import { makeTodosServiceTestLayer } from "@/db/todos-test-support"
-import { TodosService } from "@/routes/api/-lib/todos-service"
+import { makeTodosApplicationTestLayer } from "@/db/todos-test-support"
+import { listTodos } from "@/features/todos/application"
 import { expect, it } from "@effect/vitest"
 import * as Effect from "effect/Effect"
 
 it.effect("seeded list order is stable", () =>
   Effect
     .gen(function*() {
-      const service = yield* TodosService
-      const todos = yield* service.list
+      const todos = yield* listTodos
 
       expect(todos.map((todo) => todo.title)).toEqual([
         "Alpha todo",
-        "Bravo done",
         "Charlie todo",
+        "Bravo done",
       ])
     })
-    .pipe(Effect.provide(makeTodosServiceTestLayer("mixedState"))))
+    .pipe(Effect.provide(makeTodosApplicationTestLayer("mixedState"))))
 ```
 
-Use this pattern when you need to prove repository and service invariants
+Use this pattern when you need to prove repository and application invariants
 against realistic persisted state. Keep these tests in node mode because the
 browser runner is not the right environment for server-side PGlite modules.
 

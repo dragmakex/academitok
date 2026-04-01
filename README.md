@@ -311,6 +311,7 @@ const fetchUser = (userId: string) =>
 
 - 🚀 [Getting Started](./docs/guides/getting-started.md) - Setup and installation
 - 🏗️ [Architecture Overview](./docs/architecture/overview.md) - System design
+- 🧵 [Simple Made Easy](./docs/architecture/simple-made-easy.md) - Simplicity as explicit design policy
 - 🧪 [Testing Guide](./docs/guides/testing.md) - Writing and running tests
 - 📊 [Telemetry Guide](./docs/guides/telemetry.md) - Monitoring and observability
 - 📈 [PostHog Guide](./docs/guides/posthog.md) - Analytics and feature flags

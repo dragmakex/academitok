@@ -519,6 +519,23 @@ For each critical invariant, work through this checklist:
 
 ---
 
+## Simplicity Guarantees
+
+These guarantees complement the safety hierarchy above. They target
+entanglement rather than only correctness.
+
+- Domain and helper logic should operate on **values supplied as data**, not on
+  hidden reads of time or randomness.
+- Route entry modules should **decode, delegate, and render** instead of
+  becoming orchestration layers.
+- Persistence modules should receive identity creation through an **explicit
+  service boundary**.
+- Module exports should be **immutable by default** so that time-dependent state
+  is not leaked accidentally through the module system.
+
+Lint protects these guarantees where syntax is a reliable signal.
+Tests then verify the lint policy with concrete positive and negative examples.
+
 ## TypeScript Limitations (Honest Assessment)
 
 Effect-TS cannot provide:

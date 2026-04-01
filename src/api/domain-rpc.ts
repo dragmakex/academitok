@@ -23,6 +23,9 @@ export class TodosRpc extends RpcGroup
     Rpc.make("groups", {
       success: Schema.Array(TodoGroup),
     }),
+    Rpc.make("snapshot", {
+      success: TodoDashboardSnapshot,
+    }),
     Rpc.make("getById", {
       success: Todo,
       error: TodoNotFound,

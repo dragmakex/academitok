@@ -1,19 +1,11 @@
 import { useAtomRefresh } from "@effect/atom-react"
-import { todoGroupsAtom, todosAtom, todoStatsAtom } from "./atoms"
+import { dashboardSnapshotAtom } from "./atoms"
 
 /**
- * Returns a stable callback that refreshes all dashboard read models.
+ * Returns a stable callback that refreshes the shared dashboard snapshot.
  *
- * @returns A callback that refreshes todos, stats, and groups.
+ * @returns A callback that refreshes all derived dashboard views at once.
  */
 export function useRefreshDashboard() {
-  const refreshTodos = useAtomRefresh(todosAtom)
-  const refreshStats = useAtomRefresh(todoStatsAtom)
-  const refreshGroups = useAtomRefresh(todoGroupsAtom)
-
-  return () => {
-    refreshTodos()
-    refreshStats()
-    refreshGroups()
-  }
+  return useAtomRefresh(dashboardSnapshotAtom)
 }

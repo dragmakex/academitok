@@ -171,6 +171,27 @@ migration:
 These rules protect project invariants that are not covered well by generic
 lint presets.
 
+### Simplicity rules
+
+The repository also enforces the focused "simple made easy" rules through the
+same Oxlint JS plugin path:
+
+- `local-advanced/no-ambient-time` for shared library modules in `src/lib/**`
+- `local-advanced/no-ambient-randomness` for persistence modules in `src/db/**`
+- `local-advanced/no-exported-mutable-bindings` for module stability
+- `local-advanced/no-effect-gen-in-routes` for top-level route entry modules
+- `local-advanced/no-feature-layer-imports` for feature `application` and `projections` boundaries
+- `local-advanced/no-db-imports-in-ui` for UI modules under `src/routes/**` and `src/component/**`
+
+These rules are intentionally narrow. They target the places where hidden time,
+hidden randomness, mutable exports, route orchestration, or layer-crossing
+imports create entanglement.
+
+They are still only a subset of the broader architectural model. Use
+`docs/architecture/template-simple-crud.md` and
+`docs/architecture/effect-simple-made-easy-mapping.md` for the full template
+boundary guidance.
+
 ## Ignore Policy
 
 Oxlint ignores generated or non-source files such as:

@@ -60,6 +60,9 @@ browser-snapshots
 __browser_snapshots__
 src/visual/__screenshots__/**/*-[0-9]*.png
 
+# Pi browser artifacts
+.pi/browser/
+
 # Temporary files
 *.tmp
 *.temp

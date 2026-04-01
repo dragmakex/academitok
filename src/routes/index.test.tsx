@@ -2,12 +2,12 @@ import { describe, expect, it, vi } from "vitest"
 
 vi.mock("@/routeTree.gen", () => ({}))
 
-vi.mock("effect/Effect", () => ({
-  flatMap: vi.fn((service, fn) => ({ _tag: "Effect", service, fn })),
-}))
-
 vi.mock("@/lib/atom-utils", () => ({
-  dehydrate: vi.fn((remote, result) => ({ remote, result })),
+  dehydrate: vi.fn((remote, result, dehydratedAt) => ({
+    remote,
+    result,
+    dehydratedAt,
+  })),
 }))
 
 vi.mock("effect/unstable/reactivity/AsyncResult", () => ({
@@ -35,14 +35,8 @@ vi.mock("@tanstack/react-start", () => ({
 }))
 
 vi.mock("./-index/atoms", () => ({
-  todosAtom: {
-    remote: { _tag: "TodosRemoteAtom" },
-  },
-  todoStatsAtom: {
-    remote: { _tag: "TodoStatsRemoteAtom" },
-  },
-  todoGroupsAtom: {
-    remote: { _tag: "TodoGroupsRemoteAtom" },
+  dashboardSnapshotAtom: {
+    remote: { _tag: "DashboardSnapshotRemoteAtom" },
   },
 }))
 
@@ -68,11 +62,8 @@ vi.mock("./api/$", () => ({
   },
 }))
 
-vi.mock("./api/-lib/todos-service", () => ({
-  TodosService: {
-    _tag: "TodosService",
-    asEffect: () => ({ _tag: "TodosServiceEffect" }),
-  },
+vi.mock("@/features/todos/application", () => ({
+  getTodoDashboardSnapshot: { _tag: "TodoDashboardSnapshotEffect" },
 }))
 
 describe("index route", () => {

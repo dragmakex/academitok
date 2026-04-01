@@ -263,11 +263,11 @@ Without spans, traces are empty. Add `Effect.withSpan` to every public service m
 // Service layer — wrap each method
 return {
   list: repository.list.pipe(
-    Effect.withSpan("TodosService.list"),
+    Effect.withSpan("TodosApp.list"),
   ),
   create: (input: CreateTodoInput): Effect.Effect<Todo> =>
     repository.create(input).pipe(
-      Effect.withSpan("TodosService.create", {
+      Effect.withSpan("TodosApp.create", {
         attributes: { "todo.title": input.title },
       }),
     ),
@@ -299,7 +299,7 @@ This produces a trace waterfall like:
 
 ```
 RPC todos_create (50ms)
-└── TodosService.create (48ms)
+└── TodosApp.create (48ms)
     └── TodosRepository.create (45ms)
 ```
 

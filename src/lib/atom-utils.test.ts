@@ -49,13 +49,12 @@ it.effect("dehydrate - creates a DehydratedAtom with correct structure", () =>
       (value) => value, // Identity decoder
     )
 
-    const dehydrated = dehydrate(mockAtom, { count: 42 })
+    const dehydrated = dehydrate(mockAtom, { count: 42 }, 4242)
 
     expect(dehydrated["~@effect-atom/atom/DehydratedAtom"]).toBe(true)
     expect(dehydrated.key).toBe("test-key")
     expect(dehydrated.value).toEqual({ count: 42 })
-    expect(typeof dehydrated.dehydratedAt).toBe("number")
-    expect(dehydrated.dehydratedAt).toBeGreaterThan(0)
+    expect(dehydrated.dehydratedAt).toBe(4242)
   }))
 
 it.effect("dehydrate - uses the encoder to transform values", () =>
@@ -67,7 +66,7 @@ it.effect("dehydrate - uses the encoder to transform values", () =>
     )
 
     const testDate = new Date(1234567890000)
-    const dehydrated = dehydrate(mockAtom, testDate)
+    const dehydrated = dehydrate(mockAtom, testDate, 1234)
 
     expect(dehydrated.key).toBe("date-key")
     expect(dehydrated.value).toBe(1234567890000) // Encoded as number
@@ -81,7 +80,7 @@ it.effect("dehydrate - preserves the dehydrated marker", () =>
       (s) => s.toLowerCase(),
     )
 
-    const dehydrated = dehydrate(mockAtom, "hello")
+    const dehydrated = dehydrate(mockAtom, "hello", 99)
 
     // The marker must be exactly true for hydration to work
     expect(dehydrated["~@effect-atom/atom/DehydratedAtom"]).toBe(true)

@@ -6,7 +6,7 @@ The home route restores the richer todo sample instead of a flat CRUD list.
 It exists to demonstrate three things at once:
 
 1. **server-derived dashboard read models**
-2. **SSR hydration of multiple atoms from one snapshot**
+2. **SSR hydration from one canonical dashboard snapshot atom**
 3. **single-flight mutation coherence across list, stats, and grouped views**
 
 The dashboard now supports:
@@ -28,7 +28,7 @@ This dashboard is the smallest sample in the repository that still proves:
 - repository persistence and migration behavior
 - domain classification rules
 - RPC and HTTP parity
-- hydration of multiple atoms on first render
+- hydration from one canonical dashboard snapshot on first render
 - client-side synchronization without duplicating server derivation logic
 
 ## Core design decisions
@@ -36,7 +36,8 @@ This dashboard is the smallest sample in the repository that still proves:
 ### Snapshot mutations instead of local client recomputation
 
 `create`, `update`, and `remove` return a `TodoDashboardSnapshot`.
-The client writes that snapshot into all dashboard atoms.
+The client writes that snapshot into one canonical dashboard snapshot atom, and
+all dashboard views derive from that shared source.
 
 Why:
 
@@ -65,14 +66,16 @@ This keeps stats and grouping logically aligned.
 
 ```mermaid
 flowchart TD
-    UI[Dashboard UI] --> Atoms[Todos / Stats / Groups atoms]
-    Atoms --> RPC[RPC client]
-    RPC --> Service[TodosService]
-    Service --> Repo[TodosRepository]
+    UI[Dashboard UI] --> SnapshotAtom[Dashboard snapshot atom]
+    SnapshotAtom --> RPC[RPC client]
+    RPC --> App[Todo application use-cases]
+    App --> Repo[TodosRepository]
+    App --> Projections[Pure projections]
+    App --> Events[Todo event sink]
     Repo --> DB[(PGlite / Postgres)]
 
-    Service --> Snapshot[TodoDashboardSnapshot]
-    Snapshot --> Atoms
+    App --> Snapshot[TodoDashboardSnapshot]
+    Snapshot --> SnapshotAtom
 ```
 
 ## Initial page load
@@ -81,16 +84,16 @@ flowchart TD
 sequenceDiagram
     participant Browser
     participant RouteLoader as route loader
-    participant Service as TodosService
+    participant App as todo application
     participant Hydration as HydrationBoundary
-    participant Atoms as dashboard atoms
+    participant SnapshotAtom as dashboard snapshot atom
 
     Browser->>RouteLoader: GET /
-    RouteLoader->>Service: snapshot
-    Service-->>RouteLoader: { todos, stats, groups }
-    RouteLoader-->>Hydration: dehydrated atom payloads
-    Hydration-->>Atoms: hydrate todosAtom, todoStatsAtom, todoGroupsAtom
-    Atoms-->>Browser: first render without dashboard drift
+    RouteLoader->>App: getTodoDashboardSnapshot
+    App-->>RouteLoader: { todos, stats, groups }
+    RouteLoader-->>Hydration: dehydrated dashboard snapshot payload
+    Hydration-->>SnapshotAtom: hydrate dashboardSnapshotAtom
+    SnapshotAtom-->>Browser: first render without dashboard drift
 ```
 
 ## Mutation flow
@@ -101,17 +104,17 @@ sequenceDiagram
     participant UI
     participant AtomFn as create/update/delete atom fn
     participant RPC
-    participant Service
-    participant UIAtoms as dashboard atoms
+    participant App as todo application
+    participant SnapshotAtom as dashboard snapshot atom
 
     User->>UI: submit / toggle / delete
     UI->>AtomFn: mutation payload
     AtomFn->>RPC: todos_create / todos_update / todos_remove
-    RPC->>Service: execute mutation
-    Service-->>RPC: TodoDashboardSnapshot
+    RPC->>App: execute mutation
+    App-->>RPC: TodoDashboardSnapshot
     RPC-->>AtomFn: snapshot
-    AtomFn->>UIAtoms: replace todos + stats + groups
-    UIAtoms-->>UI: coherent rerender
+    AtomFn->>SnapshotAtom: replace canonical snapshot
+    SnapshotAtom-->>UI: coherent rerender across all derived views
 ```
 
 ## Key files
@@ -122,12 +125,16 @@ sequenceDiagram
   - `due_date` and `updated_at` persistence columns
 - `src/db/todos-repository.ts`
   - CRUD persistence and compatibility migrations
-- `src/routes/api/-lib/todos-service.ts`
-  - canonical ordering, classification, stats, groups, snapshot derivation
+- `src/features/todos/application.ts`
+  - canonical use-cases, event publication, and snapshot orchestration
+- `src/features/todos/projections.ts`
+  - pure ordering, classification, stats, groups, and snapshot derivation
+- `src/features/todos/events.ts`
+  - replication boundary for future outbox / queue growth
 - `src/routes/-index/atoms.tsx`
-  - dashboard atoms and snapshot mutation writes
+  - canonical dashboard snapshot atom plus derived view atoms
 - `src/routes/index.tsx`
-  - SSR hydration of all dashboard read models
+  - SSR hydration of the dashboard snapshot source of truth
 - `src/routes/-index/*.tsx`
   - dashboard surfaces composed from the current design system
 
@@ -143,4 +150,6 @@ For every snapshot:
 - `stats.unscheduled === unscheduled group count`
 - every todo appears in exactly one group
 
-Those invariants are verified in `src/routes/api/-lib/todos-service.test.ts`.
+Those invariants are verified in `src/features/todos/application.test.ts`,
+`src/features/todos/projections.test.ts`, and the transport parity tests under
+`src/routes/api/-lib/`.

@@ -73,41 +73,99 @@ function checkFeatureDocStructure(
   featurePath: string,
   featureName: string,
 ): void {
-  const requiredFiles = ["README.md"]
-  const recommendedFiles = [
-    "architecture.md",
-    "implementation.md",
-    "diagrams",
-  ]
+  const readmePath = join(featurePath, "README.md")
 
-  // Check required files
-  for (const file of requiredFiles) {
-    const filePath = join(featurePath, file)
-    if (!existsSync(filePath)) {
-      issues.push({
-        type: "error",
-        file: `docs/app/${featureName}/${file}`,
-        message: `Missing required file: ${file}`,
-      })
-    } else {
-      // Check README.md content quality
-      if (file === "README.md") {
-        checkReadmeQuality(filePath, featureName)
-      }
-    }
+  if (!existsSync(readmePath)) {
+    issues.push({
+      type: "error",
+      file: `docs/app/${featureName}/README.md`,
+      message: "Missing required file: README.md",
+    })
+    return
   }
 
-  // Check recommended files
-  for (const file of recommendedFiles) {
+  checkReadmeQuality(readmePath, featureName)
+
+  const entries = readdirSync(featurePath)
+  const markdownFiles = entries.filter((entry) => entry.endsWith(".md"))
+  const extraMarkdownFiles = markdownFiles.filter((entry) =>
+    entry !== "README.md"
+  )
+  const diagramsPath = join(featurePath, "diagrams")
+  const hasDiagramsDirectory = existsSync(diagramsPath)
+
+  if (hasDiagramsDirectory) {
+    checkDiagramsDirectory(diagramsPath, featureName)
+  }
+
+  if (extraMarkdownFiles.length > 0) {
+    checkExpandedFeatureDocStructure(
+      featurePath,
+      featureName,
+      extraMarkdownFiles,
+    )
+  }
+
+  const readmeContent = readFileSync(readmePath, "utf-8")
+  const hasMermaidInReadme = readmeContent.includes("```mermaid")
+
+  if (!hasDiagramsDirectory && !hasMermaidInReadme) {
+    warnings.push({
+      type: "warning",
+      file: `docs/app/${featureName}/README.md`,
+      message:
+        "No Mermaid diagram found in README.md and no diagrams/ directory present. Add visual documentation when it improves clarity.",
+    })
+  }
+}
+
+/**
+ * Check expanded multi-file feature documentation when extra markdown files exist.
+ * @param featurePath - Path to the feature documentation directory
+ * @param featureName - Name of the feature being checked
+ * @param extraMarkdownFiles - Additional markdown files besides README.md
+ */
+function checkExpandedFeatureDocStructure(
+  featurePath: string,
+  featureName: string,
+  extraMarkdownFiles: ReadonlyArray<string>,
+): void {
+  const architecturePath = join(featurePath, "architecture.md")
+  const implementationPath = join(featurePath, "implementation.md")
+  const hasArchitecture = existsSync(architecturePath)
+  const hasImplementation = existsSync(implementationPath)
+
+  if (hasArchitecture !== hasImplementation) {
+    const missingFile = hasArchitecture
+      ? "implementation.md"
+      : "architecture.md"
+    warnings.push({
+      type: "warning",
+      file: `docs/app/${featureName}/${missingFile}`,
+      message:
+        "Expanded feature docs should keep architecture.md and implementation.md together, or stay with a single README.md.",
+    })
+  }
+
+  for (const file of extraMarkdownFiles) {
     const filePath = join(featurePath, file)
-    if (!existsSync(filePath)) {
+    const content = readFileSync(filePath, "utf-8")
+
+    if (content.length < 100) {
       warnings.push({
         type: "warning",
         file: `docs/app/${featureName}/${file}`,
-        message: `Missing recommended: ${file}`,
+        message:
+          `${file} is very short. Consider folding it back into README.md.`,
       })
-    } else if (file === "diagrams") {
-      checkDiagramsDirectory(filePath, featureName)
+    }
+
+    if (!/^#\s+.+/m.test(content)) {
+      warnings.push({
+        type: "warning",
+        file: `docs/app/${featureName}/${file}`,
+        message: `${file} is missing a title heading.`,
+      })
     }
   }
 }
@@ -265,11 +323,14 @@ function printSummary(): void {
   console.log(`\n${"=".repeat(60)}`)
   console.log("📋 Documentation Standards:")
   console.log("=".repeat(60))
-  console.log("\nFor new features, create docs/app/[feature-name]/:")
-  console.log("  ✅ README.md - Overview, purpose, usage")
-  console.log("  ✅ architecture.md - Design decisions, trade-offs")
-  console.log("  ✅ implementation.md - Technical details")
-  console.log("  ✅ diagrams/ - Mermaid diagrams for flows")
+  console.log("\nPreferred compact form:")
+  console.log("  ✅ docs/app/[feature]/README.md")
+  console.log("  ✅ Mermaid in README.md or optional diagrams/")
+  console.log("\nExpanded form for larger topics:")
+  console.log("  ✅ README.md")
+  console.log("  ✅ architecture.md")
+  console.log("  ✅ implementation.md")
+  console.log("  ✅ optional diagrams/")
   console.log(
     "\nSee docs/app/README.md for detailed standards.",
   )

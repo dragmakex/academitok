@@ -1,10 +1,11 @@
 import { ApiClient } from "@/api/api-client"
 import type {
   CreateTodoInput,
+  TodoDashboardSnapshot,
   TodoId,
   UpdateTodoInput,
 } from "@/api/todo-schema"
-import { Todo, TodoGroup, TodoStats } from "@/api/todo-schema"
+import { TodoDashboardSnapshot as TodoDashboardSnapshotSchema } from "@/api/todo-schema"
 import { serializable } from "@/lib/atom-utils"
 import * as Effect from "effect/Effect"
 import * as Layer from "effect/Layer"
@@ -14,18 +15,8 @@ import * as AsyncResult from "effect/unstable/reactivity/AsyncResult"
 import * as Atom from "effect/unstable/reactivity/Atom"
 import * as RpcClientError from "effect/unstable/rpc/RpcClientError"
 
-const TodoListAsyncResultSchema = AsyncResult.Schema({
-  success: Schema.Array(Todo),
-  error: RpcClientError.RpcClientError,
-})
-
-const TodoStatsAsyncResultSchema = AsyncResult.Schema({
-  success: TodoStats,
-  error: RpcClientError.RpcClientError,
-})
-
-const TodoGroupsAsyncResultSchema = AsyncResult.Schema({
-  success: Schema.Array(TodoGroup),
+const TodoDashboardAsyncResultSchema = AsyncResult.Schema({
+  success: TodoDashboardSnapshotSchema,
   error: RpcClientError.RpcClientError,
 })
 
@@ -34,9 +25,7 @@ class Api extends ServiceMap.Service<Api>()("@app/index/Api", {
     const { rpc } = yield* ApiClient
 
     return {
-      list: () => rpc.todos_list(),
-      stats: () => rpc.todos_stats(),
-      groups: () => rpc.todos_groups(),
+      snapshot: () => rpc.todos_snapshot(),
       create: (input: CreateTodoInput) => rpc.todos_create({ input }),
       update: (id: TodoId, input: UpdateTodoInput) =>
         rpc.todos_update({ id, input }),
@@ -78,73 +67,71 @@ function makeWritableAsyncAtom<A>(
   )
 }
 
-const todosRemoteAtom = runtime
+const dashboardSnapshotRemoteAtom = runtime
   .atom(
     Effect.gen(function*() {
       const api = yield* Api
-      return yield* api.list()
+      return yield* api.snapshot()
     }),
   )
   .pipe(
     serializable({
-      key: "@app/index/todos",
-      schema: Schema.toCodecJson(TodoListAsyncResultSchema),
+      key: "@app/index/todo-dashboard",
+      schema: Schema.toCodecJson(TodoDashboardAsyncResultSchema),
     }),
   )
 
-const todoStatsRemoteAtom = runtime
-  .atom(
-    Effect.gen(function*() {
-      const api = yield* Api
-      return yield* api.stats()
-    }),
-  )
-  .pipe(
-    serializable({
-      key: "@app/index/todo-stats",
-      schema: Schema.toCodecJson(TodoStatsAsyncResultSchema),
-    }),
-  )
-
-const todoGroupsRemoteAtom = runtime
-  .atom(
-    Effect.gen(function*() {
-      const api = yield* Api
-      return yield* api.groups()
-    }),
-  )
-  .pipe(
-    serializable({
-      key: "@app/index/todo-groups",
-      schema: Schema.toCodecJson(TodoGroupsAsyncResultSchema),
-    }),
-  )
-
-export const todosAtom = Object.assign(makeWritableAsyncAtom(todosRemoteAtom), {
-  remote: todosRemoteAtom,
-})
-
-export const todoStatsAtom = Object.assign(
-  makeWritableAsyncAtom(todoStatsRemoteAtom),
+export const dashboardSnapshotAtom = Object.assign(
+  makeWritableAsyncAtom(dashboardSnapshotRemoteAtom),
   {
-    remote: todoStatsRemoteAtom,
+    remote: dashboardSnapshotRemoteAtom,
   },
 )
 
-export const todoGroupsAtom = Object.assign(
-  makeWritableAsyncAtom(todoGroupsRemoteAtom),
-  {
-    remote: todoGroupsRemoteAtom,
+/**
+ * Derives a read-only async atom from the shared dashboard snapshot atom.
+ *
+ * @param selector - Projection applied to successful dashboard snapshots.
+ * @returns A derived async atom with a matching remote projection.
+ */
+function mapSnapshotAtom<A>(
+  selector: (snapshot: TodoDashboardSnapshot) => A,
+) {
+  const remote = dashboardSnapshotRemoteAtom.pipe(
+    Atom.map((result) => AsyncResult.map(result, selector)),
+  )
+
+  return Object.assign(
+    dashboardSnapshotAtom.pipe(
+      Atom.map((result) => AsyncResult.map(result, selector)),
+    ),
+    { remote },
+  )
+}
+
+export const todosAtom = mapSnapshotAtom((snapshot) => snapshot.todos)
+
+export const todoStatsAtom = mapSnapshotAtom((snapshot) => snapshot.stats)
+
+export const todoGroupsAtom = mapSnapshotAtom((snapshot) => snapshot.groups)
+
+const replaceDashboardSnapshot = (
+  get: {
+    readonly set: (
+      atom: typeof dashboardSnapshotAtom,
+      update: ReplaceValue<TodoDashboardSnapshot>,
+    ) => void
   },
-)
+  snapshot: TodoDashboardSnapshot,
+) => {
+  get.set(dashboardSnapshotAtom, { _tag: "Replace", value: snapshot })
+}
 
 export const createTodoAtom = runtime.fn<CreateTodoInput>()(
   Effect.fnUntraced(function*(input, get) {
     const api = yield* Api
     const snapshot = yield* api.create(input)
-    get.set(todosAtom, { _tag: "Replace", value: snapshot.todos })
-    get.set(todoStatsAtom, { _tag: "Replace", value: snapshot.stats })
-    get.set(todoGroupsAtom, { _tag: "Replace", value: snapshot.groups })
+    replaceDashboardSnapshot(get, snapshot)
     return snapshot
   }),
 )
@@ -156,9 +143,7 @@ export const updateTodoAtom = runtime.fn<{
   Effect.fnUntraced(function*({ id, input }, get) {
     const api = yield* Api
     const snapshot = yield* api.update(id, input)
-    get.set(todosAtom, { _tag: "Replace", value: snapshot.todos })
-    get.set(todoStatsAtom, { _tag: "Replace", value: snapshot.stats })
-    get.set(todoGroupsAtom, { _tag: "Replace", value: snapshot.groups })
+    replaceDashboardSnapshot(get, snapshot)
     return snapshot
   }),
 )
@@ -167,9 +152,7 @@ export const deleteTodoAtom = runtime.fn<TodoId>()(
   Effect.fnUntraced(function*(id, get) {
     const api = yield* Api
     const snapshot = yield* api.remove(id)
-    get.set(todosAtom, { _tag: "Replace", value: snapshot.todos })
-    get.set(todoStatsAtom, { _tag: "Replace", value: snapshot.stats })
-    get.set(todoGroupsAtom, { _tag: "Replace", value: snapshot.groups })
+    replaceDashboardSnapshot(get, snapshot)
     return snapshot
   }),
 )

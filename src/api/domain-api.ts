@@ -31,6 +31,11 @@ export class TodosApiGroup extends HttpApiGroup
     }),
   )
   .add(
+    HttpApiEndpoint.get("snapshot", "/todos/snapshot", {
+      success: TodoDashboardSnapshot,
+    }),
+  )
+  .add(
     HttpApiEndpoint.get("getById", "/todos/:id", {
       params: { id: TodoId },
       success: Todo,

@@ -32,12 +32,21 @@ export interface DehydratedAtom {
   readonly dehydratedAt: number
 }
 
+/**
+ * Encodes a serializable atom value into a stable hydration payload.
+ *
+ * @param atom - The serializable atom definition that owns the value.
+ * @param value - The current atom value to encode.
+ * @param dehydratedAt - The timestamp supplied by the caller at the boundary.
+ * @returns A DehydratedAtom payload suitable for server-to-client hydration.
+ */
 export const dehydrate = <A, I>(
   atom: Atom.Atom<A> & TypedSerializable<A, I>,
   value: A,
+  dehydratedAt: number,
 ): DehydratedAtom => ({
   "~@effect-atom/atom/DehydratedAtom": true,
   key: atom[Atom.SerializableTypeId].key,
   value: atom[Atom.SerializableTypeId].encode(value) as object,
-  dehydratedAt: Date.now(),
+  dehydratedAt,
 })

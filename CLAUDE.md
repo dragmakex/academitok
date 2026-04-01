@@ -61,6 +61,11 @@ Open the smallest useful set:
 - Architecture overview when needed: `docs/architecture/overview.md`
 - **UI work is special**: before changing any UI, read `docs/design-system/rules.md` (especially the decision framework) and inspect `src/design-system/registry.ts`. Compose from existing primitives. Do not add new design-system components without passing the decision framework.
 
+If you are implementing or especially reviewing code for simplicity, coupling,
+boundaries, or architectural fit, you must also read
+`docs/architecture/simple-made-easy.md` and the relevant feature note under
+`docs/app/simple-made-easy/README.md` before judging or changing the code.
+
 If a `specs/README.md` entrypoint exists for the task, consult it first and follow only the references needed for that task.
 
 ## Mandatory Workflow
