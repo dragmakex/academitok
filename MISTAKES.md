@@ -1,1 +1,0 @@
-- 2026-04-10: While creating the PR via `gh pr create`, I used backticks in the `--body` string without shell-safe quoting, which triggered command substitution and produced a malformed PR body. Fix: use plain text (no backticks) or single-quoted/heredoc-safe content when passing CLI body text.
