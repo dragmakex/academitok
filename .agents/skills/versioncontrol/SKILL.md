@@ -1,4 +1,11 @@
-# Version Control
+---
+name: versioncontrol
+description: "Enforces disciplined version control workflow across git/jj: isolate work, make step-wise commits, verify before publish, and move branches/bookmarks deliberately. Use when implementing, reviewing, or automating repository history and release publication."
+---
+
+# Version Control Skill
+
+Use this skill whenever a task involves repository state changes, branching/bookmarks, commit construction, publication, or release tagging.
 
 ## Intent
 
