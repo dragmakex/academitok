@@ -1,8 +1,6 @@
 "use client"
 
 import { RegistryContext } from "@effect/atom-react"
-import * as Arr from "effect/Array"
-import * as Atom from "effect/unstable/reactivity/Atom"
 import * as React from "react"
 import type { DehydratedAtom } from "./atom-utils"
 
@@ -29,32 +27,8 @@ export const HydrationBoundary = (
       return
     }
 
-    const incoming = Arr.fromIterable(state)
-    const nodes = registry.getNodes()
-
-    for (const dehydratedAtom of incoming) {
+    for (const dehydratedAtom of state) {
       registry.setSerializable(dehydratedAtom.key, dehydratedAtom.value)
-
-      const existingNode = nodes.get(dehydratedAtom.key)
-      if (!existingNode) {
-        continue
-      }
-
-      const atom = existingNode.atom
-      if (!(Atom.SerializableTypeId in atom)) {
-        continue
-      }
-
-      const serializable = atom[Atom.SerializableTypeId] as {
-        readonly decode: (value: unknown) => unknown
-      }
-      const decoded = serializable.decode(dehydratedAtom.value)
-      const nodeWithSetter = existingNode as {
-        readonly setValue?: (value: unknown) => void
-      }
-      if (typeof nodeWithSetter.setValue === "function") {
-        nodeWithSetter.setValue(decoded)
-      }
     }
   }, [registry, state])
 
