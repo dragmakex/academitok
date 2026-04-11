@@ -16,12 +16,12 @@ import { asc, eq, sql } from "drizzle-orm"
 import { drizzle as drizzlePglite } from "drizzle-orm/pglite"
 import { drizzle as drizzlePostgres } from "drizzle-orm/postgres-js"
 import * as Config from "effect/Config"
+import * as Context from "effect/Context"
 import * as DateTime from "effect/DateTime"
 import * as Effect from "effect/Effect"
 import * as Layer from "effect/Layer"
 import * as Option from "effect/Option"
 import * as Schema from "effect/Schema"
-import * as ServiceMap from "effect/ServiceMap"
 import { Buffer } from "node:buffer"
 import { mkdir } from "node:fs/promises"
 import postgres from "postgres"
@@ -296,7 +296,7 @@ function makeCrudRepository(
   }
 }
 
-export class TodosRepository extends ServiceMap.Service<TodosRepository>()(
+export class TodosRepository extends Context.Service<TodosRepository>()(
   "TodosRepository",
   {
     make: makeLiveRepository,

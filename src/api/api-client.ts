@@ -1,7 +1,7 @@
+import * as Context from "effect/Context"
 import * as Effect from "effect/Effect"
 import * as Layer from "effect/Layer"
 import * as Schedule from "effect/Schedule"
-import * as ServiceMap from "effect/ServiceMap"
 import * as Stream from "effect/Stream"
 import * as FetchHttpClient from "effect/unstable/http/FetchHttpClient"
 import * as HttpClient from "effect/unstable/http/HttpClient"
@@ -74,7 +74,7 @@ const RpcConfigLive = RpcClient
   })
   .pipe(Layer.provide([FetchHttpClient.layer, RpcSerialization.layerNdjson]))
 
-export class ApiClient extends ServiceMap.Service<ApiClient>()(
+export class ApiClient extends Context.Service<ApiClient>()(
   "ApiClient",
   {
     make: Effect.gen(function*() {

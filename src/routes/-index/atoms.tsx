@@ -7,10 +7,10 @@ import type {
 } from "@/api/todo-schema"
 import { TodoDashboardSnapshot as TodoDashboardSnapshotSchema } from "@/api/todo-schema"
 import { serializable } from "@/lib/atom-utils"
+import * as Context from "effect/Context"
 import * as Effect from "effect/Effect"
 import * as Layer from "effect/Layer"
 import * as Schema from "effect/Schema"
-import * as ServiceMap from "effect/ServiceMap"
 import * as AsyncResult from "effect/unstable/reactivity/AsyncResult"
 import * as Atom from "effect/unstable/reactivity/Atom"
 import * as RpcClientError from "effect/unstable/rpc/RpcClientError"
@@ -20,7 +20,7 @@ const TodoDashboardAsyncResultSchema = AsyncResult.Schema({
   error: RpcClientError.RpcClientError,
 })
 
-class Api extends ServiceMap.Service<Api>()("@app/index/Api", {
+class Api extends Context.Service<Api>()("@app/index/Api", {
   make: Effect.gen(function*() {
     const { rpc } = yield* ApiClient
 

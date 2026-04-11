@@ -1,9 +1,9 @@
 import * as Config from "effect/Config"
 import * as ConfigProvider from "effect/ConfigProvider"
+import * as Context from "effect/Context"
 import * as Effect from "effect/Effect"
 import * as Layer from "effect/Layer"
 import * as Option from "effect/Option"
-import * as ServiceMap from "effect/ServiceMap"
 
 type PyroscopeApi = {
   init: (options: {
@@ -15,7 +15,7 @@ type PyroscopeApi = {
   stop?: () => void | Promise<void>
 }
 
-class PyroscopeServerConfig extends ServiceMap.Service<
+class PyroscopeServerConfig extends Context.Service<
   PyroscopeServerConfig,
   {
     readonly serverAddress: Option.Option<string>

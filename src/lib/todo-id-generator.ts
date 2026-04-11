@@ -1,8 +1,8 @@
 import { type TodoId, TodoId as TodoIdSchema } from "@/api/todo-schema"
+import * as Context from "effect/Context"
 import * as Effect from "effect/Effect"
 import * as Layer from "effect/Layer"
 import * as Schema from "effect/Schema"
-import * as ServiceMap from "effect/ServiceMap"
 
 const decodeTodoId = Schema.decodeUnknownSync(TodoIdSchema)
 
@@ -10,10 +10,10 @@ export interface TodoIdGenerator {
   readonly next: Effect.Effect<TodoId>
 }
 
-export const TodoIdGenerator: ServiceMap.Service<
+export const TodoIdGenerator: Context.Service<
   TodoIdGenerator,
   TodoIdGenerator
-> = ServiceMap.Service<TodoIdGenerator>("TodoIdGenerator")
+> = Context.Service<TodoIdGenerator>("TodoIdGenerator")
 
 export const TodoIdGeneratorLive = Layer.succeed(TodoIdGenerator, {
   next: Effect.sync(() => decodeTodoId(crypto.randomUUID())),

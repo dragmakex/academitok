@@ -1,0 +1,3 @@
+- 2026-04-11: Effect v4 beta.47 removes `effect/ServiceMap` in favor of `effect/Context`; `Context.Service` is the replacement API.
+- 2026-04-11: In this beta line, `DateTime.Utc` uses `epochMilliseconds` (not `epochMillis`).
+- 2026-04-11: `RpcMiddleware.Any` options expose `client: Rpc.ServerClient` and logs should use `opts.client.id` instead of `opts.clientId`.

@@ -45,8 +45,8 @@ export const compareTodos = (left: Todo, right: Todo): number => {
     return dueDateOrder
   }
 
-  if (left.updatedAt.epochMillis !== right.updatedAt.epochMillis) {
-    return left.updatedAt.epochMillis - right.updatedAt.epochMillis
+  if (left.updatedAt.epochMilliseconds !== right.updatedAt.epochMilliseconds) {
+    return left.updatedAt.epochMilliseconds - right.updatedAt.epochMilliseconds
   }
 
   return left.id.localeCompare(right.id)

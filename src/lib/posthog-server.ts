@@ -4,9 +4,9 @@
  * This file configures PostHog for server-side event tracking and feature flags.
  */
 
+import * as Context from "effect/Context"
 import * as Effect from "effect/Effect"
 import * as Layer from "effect/Layer"
-import * as ServiceMap from "effect/ServiceMap"
 import { PostHog } from "posthog-node"
 
 /**
@@ -21,7 +21,7 @@ export interface PostHogServerConfig {
 /**
  * PostHog service tag
  */
-export class PostHogService extends ServiceMap.Service<PostHogService, {
+export class PostHogService extends Context.Service<PostHogService, {
   readonly client: PostHog
 }>()("PostHogService") {}
 
