@@ -1,2 +1,1 @@
-- 2026-04-11: After migrating RpcMiddleware usage from `opts.clientId` to `opts.client.id`, I initially forgot to update `src/routes/api/$.test.ts` and had to fix type errors.
-- 2026-04-11: I ran `validate` before `dprint fmt` and hit `format:check` failures that required a rerun.
+- 2026-04-11: I attempted large multi-edit tool calls with malformed JSON payload tails. Fix: keep edit calls minimal and validate payload shape before submitting.

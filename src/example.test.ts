@@ -60,8 +60,9 @@ it.live("runs with live environment", () =>
 it.effect("manages resources with scope", () =>
   Effect.gen(function*() {
     yield* Effect.scope
+    const acquire = Effect.succeed("resource acquired")
     const resource = Effect.acquireRelease(
-      Effect.succeed("resource acquired"),
+      acquire,
       () => Console.log("resource released"),
     )
 

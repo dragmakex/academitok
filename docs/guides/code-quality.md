@@ -96,8 +96,10 @@ bun run validate
 - `oxlint.config.js`
 - `oxlint-local-plugin.cjs`
 - `oxlint-local-advanced-plugin.cjs`
+- `oxlint-linteffect-plugin.cjs`
 - `eslint-local-rules.cjs`
 - `eslint-local-rules-advanced.cjs`
+- `eslint-linteffect-rules.cjs`
 
 `oxlint.config.js` is the source of truth for lint behavior in this repository.
 It inlines the native Oxlint baseline and adds repository-specific JS plugins,
@@ -170,6 +172,10 @@ migration:
 
 These rules protect project invariants that are not covered well by generic
 lint presets.
+
+The repository also includes a manual Oxlint-compatible port of selected rules
+from `@catenarycloud/linteffect` (v0.0.4-0, MIT). The port lives in
+`eslint-linteffect-rules.cjs` and is loaded by `oxlint-linteffect-plugin.cjs`.
 
 ### Simplicity rules
 

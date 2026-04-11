@@ -52,22 +52,22 @@ export const createRpcLoggerHandler = <A, E>(
     rpc: { readonly _tag: string }
     client: { readonly id: string }
   },
-): Effect.Effect<Exit.Exit<A, E>, never, never> =>
-  Effect.flatMap(Effect.exit(opts.effect), (exit) =>
+): Effect.Effect<Exit.Exit<A, E>, never, never> => {
+  const exited = Effect.exit(opts.effect)
+
+  return Effect.flatMap(exited, (exit) =>
     Exit.match(exit, {
       onSuccess: () => Effect.succeed(exit),
       onFailure: (cause: Cause<E>) =>
-        Effect.andThen(
-          Effect.annotateLogs(
-            Effect.logError(`RPC request failed: ${opts.rpc._tag}`, cause),
-            {
-              "rpc.method": opts.rpc._tag,
-              "rpc.clientId": opts.client.id,
-            },
-          ),
-          Effect.succeed(exit),
+        Effect.logError(`RPC request failed: ${opts.rpc._tag}`, cause).pipe(
+          Effect.annotateLogs({
+            "rpc.method": opts.rpc._tag,
+            "rpc.clientId": opts.client.id,
+          }),
+          Effect.map(() => exit),
         ),
     }))
+}
 
 /**
  * RPC logger middleware handler that wraps the next effect with logging.
@@ -84,22 +84,22 @@ export const createRpcLoggerHandler = <A, E>(
 const rpcLoggerMiddleware = <A, E>(
   effect: Effect.Effect<A, E>,
   opts: RpcMiddlewareOptions,
-): Effect.Effect<A, E, never> =>
-  Effect.flatMap(Effect.exit(effect), (exit) =>
+): Effect.Effect<A, E, never> => {
+  const exited = Effect.exit(effect)
+
+  return Effect.flatMap(exited, (exit) =>
     Exit.match(exit, {
       onSuccess: (value) => Effect.succeed(value),
       onFailure: (cause: Cause<E>) =>
-        Effect.andThen(
-          Effect.annotateLogs(
-            Effect.logError(`RPC request failed: ${opts.rpc._tag}`, cause),
-            {
-              "rpc.method": opts.rpc._tag,
-              "rpc.clientId": opts.client.id,
-            },
-          ),
-          Effect.failCause(cause),
+        Effect.logError(`RPC request failed: ${opts.rpc._tag}`, cause).pipe(
+          Effect.annotateLogs({
+            "rpc.method": opts.rpc._tag,
+            "rpc.clientId": opts.client.id,
+          }),
+          Effect.flatMap(() => Effect.failCause(cause)),
         ),
     }))
+}
 
 export const RpcLoggerLive = Layer.succeed(
   RpcLogger,
