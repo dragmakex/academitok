@@ -4,10 +4,10 @@ import type {
   TodoId,
   UpdateTodoInput,
 } from "@/api/todo-schema"
+import * as Context from "effect/Context"
 import * as DateTime from "effect/DateTime"
 import * as Effect from "effect/Effect"
 import * as Layer from "effect/Layer"
-import * as ServiceMap from "effect/ServiceMap"
 
 export type TodoEvent =
   | {
@@ -32,8 +32,8 @@ export interface TodoEventSink {
   readonly publish: (event: TodoEvent) => Effect.Effect<void>
 }
 
-export const TodoEventSink: ServiceMap.Service<TodoEventSink, TodoEventSink> =
-  ServiceMap.Service<TodoEventSink>("TodoEventSink")
+export const TodoEventSink: Context.Service<TodoEventSink, TodoEventSink> =
+  Context.Service<TodoEventSink>("TodoEventSink")
 
 export const TodoEventSinkNoop = Layer.succeed(TodoEventSink, {
   publish: () => Effect.void,

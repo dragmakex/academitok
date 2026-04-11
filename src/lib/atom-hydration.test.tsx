@@ -30,7 +30,10 @@ test("HydrationBoundary hydrates new and existing atoms", async () => {
     string | Atom.Atom<unknown>,
     AtomRegistry.Node<unknown>
   >
-  nodes.set("existing-key", existingNode as AtomRegistry.Node<unknown>)
+  nodes.set(
+    "existing-key",
+    existingNode as unknown as AtomRegistry.Node<unknown>,
+  )
 
   const state: Array<DehydratedAtom> = [
     {
@@ -97,7 +100,7 @@ test("HydrationBoundary skips existing nodes without serializable atoms", async 
     string | Atom.Atom<unknown>,
     AtomRegistry.Node<unknown>
   >
-  nodes.set("plain-key", existingNode as AtomRegistry.Node<unknown>)
+  nodes.set("plain-key", existingNode as unknown as AtomRegistry.Node<unknown>)
 
   const state: Array<DehydratedAtom> = [
     {

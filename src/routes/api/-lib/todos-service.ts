@@ -18,10 +18,10 @@ import {
 } from "@/features/todos/application"
 import { TodoEventSink } from "@/features/todos/events"
 import { todoDateFromDateTime } from "@/features/todos/projections"
+import * as Context from "effect/Context"
 import * as DateTime from "effect/DateTime"
 import * as Effect from "effect/Effect"
 import * as Layer from "effect/Layer"
-import * as ServiceMap from "effect/ServiceMap"
 
 /**
  * Produces the current UTC day in the todo date format.
@@ -32,7 +32,7 @@ export function todayDate() {
   return todoDateFromDateTime(DateTime.fromDateUnsafe(new Date()))
 }
 
-export class TodosService extends ServiceMap.Service<TodosService>()(
+export class TodosService extends Context.Service<TodosService>()(
   "TodosService",
   {
     make: Effect.gen(function*() {

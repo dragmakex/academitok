@@ -6,8 +6,8 @@
       "name": "effect-tanstack-start",
       "dependencies": {
         "@datadog/pprof": "github:SamuelLHuber/pprof-nodejs#pyroscope-ts-bun-compat-2026-02-10",
-        "@effect/atom-react": "4.0.0-beta.0",
-        "@effect/platform-browser": "4.0.0-beta.0",
+        "@effect/atom-react": "4.0.0-beta.47",
+        "@effect/platform-browser": "4.0.0-beta.47",
         "@electric-sql/pglite": "^0.3.7",
         "@opentelemetry/exporter-logs-otlp-http": "0.208.0",
         "@pyroscope/nodejs": "^0.4.9",
@@ -17,7 +17,7 @@
         "@tanstack/react-start": "^1.132.0",
         "@tanstack/router-plugin": "^1.132.0",
         "drizzle-orm": "^0.45.1",
-        "effect": "4.0.0-beta.0",
+        "effect": "4.0.0-beta.47",
         "lucide-react": "^0.544.0",
         "nitro": "latest",
         "postgres": "^3.4.7",
@@ -32,8 +32,8 @@
         "@antithesishq/bombadil": "^0.3.2",
         "@effect/eslint-plugin": "^0.3.2",
         "@effect/language-service": "^0.62.2",
-        "@effect/opentelemetry": "4.0.0-beta.0",
-        "@effect/vitest": "4.0.0-beta.0",
+        "@effect/opentelemetry": "4.0.0-beta.47",
+        "@effect/vitest": "4.0.0-beta.47",
         "@opentelemetry/exporter-trace-otlp-http": "^0.208.0",
         "@opentelemetry/sdk-metrics": "^2.2.0",
         "@opentelemetry/sdk-trace-base": "^2.2.0",
@@ -197,17 +197,17 @@
 
     "@dprint/win32-x64": ["@dprint/win32-x64@0.47.6", "", { "os": "win32", "cpu": "x64" }, "sha512-i9xwXR8V8Jk/wU1gsYKx15eb0ypBRbRZFkHsnHfC0ZBimcfEOibGnGcfv+UCUcumXtnV46TnBqaJW7H70J1J+A=="],
 
-    "@effect/atom-react": ["@effect/atom-react@4.0.0-beta.0", "", { "peerDependencies": { "effect": "^4.0.0-beta.0", "react": "^19.2.4", "scheduler": "*" } }, "sha512-4xdCYVv3i1p26MHJVBgOXCwhpUB1DN/TEDcwhJfOI6TqeLyvl09A4bYMgf0lAO0N6uBmoq6hV97zCPiwhTzcZQ=="],
+    "@effect/atom-react": ["@effect/atom-react@4.0.0-beta.47", "", { "peerDependencies": { "effect": "^4.0.0-beta.47", "react": "^19.2.4", "scheduler": "*" } }, "sha512-jCMf5/TvgVHsd+pzfb5UCvtlxZLN/hokLj5x9yzGe6YAztR7zteDEki/Qm6f4Gn6E5PKsmaoi0WlwzZG4rsD7A=="],
 
     "@effect/eslint-plugin": ["@effect/eslint-plugin@0.3.2", "", { "dependencies": { "@dprint/formatter": "^0.4.1", "@dprint/typescript": "^0.91.3", "prettier-linter-helpers": "^1.0.0" } }, "sha512-c4Vs9t3r54A4Zpl+wo8+PGzZz3JWYsip41H+UrebRLjQ2Hk/ap63IeCgN/HWcYtxtyhRopjp7gW9nOQ2Snbl+g=="],
 
     "@effect/language-service": ["@effect/language-service@0.62.2", "", { "bin": { "effect-language-service": "cli.js" } }, "sha512-vIuk+GAm+4sP7oRCCdwjJrw1JgijJpjGY0gvIO/wzSY1lGBfNSJwm53jaHGSPdU90RAwWLNaLgGPZ6OZcNLkEg=="],
 
-    "@effect/opentelemetry": ["@effect/opentelemetry@4.0.0-beta.0", "", { "peerDependencies": { "@opentelemetry/api": "^1.9", "@opentelemetry/resources": "^2.0.0", "@opentelemetry/sdk-logs": ">=0.203.0 <0.300.0", "@opentelemetry/sdk-metrics": "^2.0.0", "@opentelemetry/sdk-trace-base": "^2.0.0", "@opentelemetry/sdk-trace-node": "^2.0.0", "@opentelemetry/sdk-trace-web": "^2.0.0", "@opentelemetry/semantic-conventions": "^1.33.0", "effect": "^4.0.0-beta.0" }, "optionalPeers": ["@opentelemetry/api", "@opentelemetry/resources", "@opentelemetry/sdk-logs", "@opentelemetry/sdk-metrics", "@opentelemetry/sdk-trace-base", "@opentelemetry/sdk-trace-node", "@opentelemetry/sdk-trace-web"] }, "sha512-6tt6X5mwaAM9d+9JbL1d0d0m0Sqhci77AgzuHeZJ7n5PE7q8QpcEmB4TGYpWiZYPFpFQGngjKNSKUEK1qTncFQ=="],
+    "@effect/opentelemetry": ["@effect/opentelemetry@4.0.0-beta.47", "", { "peerDependencies": { "@opentelemetry/api": "^1.9", "@opentelemetry/resources": "^2.0.0", "@opentelemetry/sdk-logs": ">=0.203.0 <0.300.0", "@opentelemetry/sdk-metrics": "^2.0.0", "@opentelemetry/sdk-trace-base": "^2.0.0", "@opentelemetry/sdk-trace-node": "^2.0.0", "@opentelemetry/sdk-trace-web": "^2.0.0", "@opentelemetry/semantic-conventions": "^1.33.0", "effect": "^4.0.0-beta.47" }, "optionalPeers": ["@opentelemetry/api", "@opentelemetry/resources", "@opentelemetry/sdk-logs", "@opentelemetry/sdk-metrics", "@opentelemetry/sdk-trace-base", "@opentelemetry/sdk-trace-node", "@opentelemetry/sdk-trace-web"] }, "sha512-kuleUnR8GgBMeTB+feYW8XcAWM97njkibpJl7Ew+2utApJC1vHAfnZODprN4atyncFwlMnSqExw8eWkpBE+8Rg=="],
 
-    "@effect/platform-browser": ["@effect/platform-browser@4.0.0-beta.0", "", { "dependencies": { "multipasta": "^0.2.7" }, "peerDependencies": { "effect": "^4.0.0-beta.0" } }, "sha512-xYNThGZl7XufCl7VPuoc26c1lrbtdk7hN/d5ZUJmRU1pdZu7Zy868O/4eQfzXX4lTMSydiiIkVSRjVmo25tNCg=="],
+    "@effect/platform-browser": ["@effect/platform-browser@4.0.0-beta.47", "", { "dependencies": { "multipasta": "^0.2.7" }, "peerDependencies": { "effect": "^4.0.0-beta.47" } }, "sha512-1SG/4QwP1ritpBQ+Q7wh8eQDaRF710tKcujIKQyaxwGkFe0idtbGgRMOspb7c1WDpOeSBKFrK9rxXMDAJPrA0g=="],
 
-    "@effect/vitest": ["@effect/vitest@4.0.0-beta.0", "", { "peerDependencies": { "effect": "^4.0.0-beta.0", "vitest": "^3.0.0" } }, "sha512-7AdZVL0gjzrp9iQL+0syjJY/HyBm+hxyAfDV9dLk9ryOZ67Muj3eV3NWYaqmLmiutUsTFBdEZ/7f8V9RWAkH4w=="],
+    "@effect/vitest": ["@effect/vitest@4.0.0-beta.47", "", { "peerDependencies": { "effect": "^4.0.0-beta.47", "vitest": "^3.0.0 || ^4.0.0" } }, "sha512-1KdMUseTTLP+OeEmWwN3PzyMrhHBy47tHol2lotl+GkrmGameXhtD8xFfiO4BIj92jKMY3RBTkIemVBWaG8UyA=="],
 
     "@electric-sql/pglite": ["@electric-sql/pglite@0.3.16", "", {}, "sha512-mZkZfOd9OqTMHsK+1cje8OSzfAQcpD7JmILXTl5ahdempjUDdmg4euf1biDex5/LfQIDJ3gvCu6qDgdnDxfJmA=="],
 
@@ -977,7 +977,7 @@
 
     "drizzle-zod": ["drizzle-zod@0.8.3", "", { "peerDependencies": { "drizzle-orm": ">=0.36.0", "zod": "^3.25.0 || ^4.0.0" } }, "sha512-66yVOuvGhKJnTdiqj1/Xaaz9/qzOdRJADpDa68enqS6g3t0kpNkwNYjUuaeXgZfO/UWuIM9HIhSlJ6C5ZraMww=="],
 
-    "effect": ["effect@4.0.0-beta.0", "", { "dependencies": { "@standard-schema/spec": "^1.1.0", "fast-check": "^4.5.3", "find-my-way-ts": "^0.1.6", "ini": "^6.0.0", "kubernetes-types": "^1.30.0", "msgpackr": "^1.11.8", "multipasta": "^0.2.7", "toml": "^3.0.0", "uuid": "^13.0.0", "yaml": "^2.8.2" } }, "sha512-3LpZEqYeJEYZs/vXnbqb7LHdR4/3iUOS7Hv1s/KFHV1gRTcgmlVM8CGhx09SIUIJc8/TPl6SrRaGGkuN7GYuYg=="],
+    "effect": ["effect@4.0.0-beta.47", "", { "dependencies": { "@standard-schema/spec": "^1.1.0", "fast-check": "^4.5.3", "find-my-way-ts": "^0.1.6", "ini": "^6.0.0", "kubernetes-types": "^1.30.0", "msgpackr": "^1.11.8", "multipasta": "^0.2.7", "toml": "^3.0.0", "uuid": "^13.0.0", "yaml": "^2.8.2" } }, "sha512-MRrAO6Oof5TTgEo0Tb37d5G+vSRHopBhEImYiGjMDEpuBzHr4nKg5BeAwQGV1kdjZ9/DhxKVuFZKsF4Uw+KJog=="],
 
     "electron-to-chromium": ["electron-to-chromium@1.5.267", "", {}, "sha512-0Drusm6MVRXSOJpGbaSVgcQsuB4hEkMpHXaVstcPmhu5LIedxs1xNK/nIxmQIU/RPC0+1/o0AVZfBTkTNJOdUw=="],
 

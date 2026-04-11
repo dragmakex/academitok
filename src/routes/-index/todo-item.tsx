@@ -43,7 +43,7 @@ const dueLabel = (todo: Todo): string => {
 }
 
 const updatedLabel = (todo: Todo): string =>
-  `Updated ${new Date(todo.updatedAt.epochMillis).toLocaleString()}`
+  `Updated ${new Date(todo.updatedAt.epochMilliseconds).toLocaleString()}`
 
 /**
  * Renders a single todo item, allowing for toggling completion, editing, and deletion.

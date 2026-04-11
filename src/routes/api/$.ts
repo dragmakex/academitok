@@ -42,14 +42,15 @@ type RpcMiddlewareOptions = Parameters<RpcMiddleware.Any>[1]
  * @param opts.effect - The effect to execute.
  * @param opts.rpc - The RPC request metadata.
  * @param opts.rpc._tag - The RPC method tag.
- * @param opts.clientId - The client identifier.
+ * @param opts.client - The client metadata.
+ * @param opts.client.id - The client identifier.
  * @returns An Effect that yields the Exit result after logging any errors.
  */
 export const createRpcLoggerHandler = <A, E>(
   opts: {
     effect: Effect.Effect<A, E>
     rpc: { readonly _tag: string }
-    clientId: string
+    client: { readonly id: string }
   },
 ): Effect.Effect<Exit.Exit<A, E>, never, never> =>
   Effect.flatMap(Effect.exit(opts.effect), (exit) =>
@@ -61,7 +62,7 @@ export const createRpcLoggerHandler = <A, E>(
             Effect.logError(`RPC request failed: ${opts.rpc._tag}`, cause),
             {
               "rpc.method": opts.rpc._tag,
-              "rpc.clientId": opts.clientId,
+              "rpc.clientId": opts.client.id,
             },
           ),
           Effect.succeed(exit),
@@ -76,7 +77,8 @@ export const createRpcLoggerHandler = <A, E>(
  * @param opts - The options for the RPC logger middleware.
  * @param opts.rpc - The RPC request metadata.
  * @param opts.rpc._tag - The RPC method tag.
- * @param opts.clientId - The client identifier.
+ * @param opts.client - The client metadata.
+ * @param opts.client.id - The client identifier.
  * @returns An Effect that yields the result or fails with the original error.
  */
 const rpcLoggerMiddleware = <A, E>(
@@ -92,7 +94,7 @@ const rpcLoggerMiddleware = <A, E>(
             Effect.logError(`RPC request failed: ${opts.rpc._tag}`, cause),
             {
               "rpc.method": opts.rpc._tag,
-              "rpc.clientId": String(opts.clientId),
+              "rpc.clientId": opts.client.id,
             },
           ),
           Effect.failCause(cause),
