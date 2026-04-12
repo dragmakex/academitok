@@ -23,6 +23,16 @@ import {
 } from "./codefabrik-prompts"
 
 const repoRoot = process.cwd()
+const codexLbBaseUrl = (process.env.CODEX_LB_BASE_URL?.trim()
+  || "http://codex-lb.codex-lb.svc.cluster.local:2455")
+  .replace(/\/$/, "")
+const codexModel = process.env.CODEX_MODEL?.trim() || "gpt-5.3-codex"
+
+if (!process.env.CODEX_LB_API_KEY?.trim()) {
+  throw new Error(
+    "Missing CODEX_LB_API_KEY. Provide codex-lb key via --env-file or project env.",
+  )
+}
 
 type ShellResult = {
   stdout: string
@@ -220,8 +230,21 @@ const { outputs, smithers } = createSmithers(
 
 const codex = new CodexAgent({
   cd: repoRoot,
+  env: {
+    CODEX_LB_API_KEY: process.env.CODEX_LB_API_KEY,
+  },
   sandbox: "workspace-write",
-  config: ["mcp_servers.playwright.env.NPM_CONFIG_CACHE=/tmp/npm-cache"],
+  config: [
+    `model=${codexModel}`,
+    "model_provider=codex-lb",
+    "model_providers.codex-lb.name=OpenAI",
+    `model_providers.codex-lb.base_url=${codexLbBaseUrl}/backend-api/codex`,
+    "model_providers.codex-lb.wire_api=responses",
+    "model_providers.codex-lb.env_key=CODEX_LB_API_KEY",
+    "model_providers.codex-lb.supports_websockets=true",
+    "model_providers.codex-lb.requires_openai_auth=true",
+    "mcp_servers.playwright.env.NPM_CONFIG_CACHE=/tmp/npm-cache",
+  ],
 })
 type WorkflowContext =
   & Parameters<Parameters<typeof smithers>[0]>[0]
