@@ -234,6 +234,9 @@ const codex = new CodexAgent({
     CODEX_LB_API_KEY: process.env.CODEX_LB_API_KEY,
   },
   sandbox: "workspace-write",
+  // Timeouts: hard limit 4 hours, idle limit 5 minutes (catches hung API calls)
+  timeoutMs: 14_400_000,
+  idleTimeoutMs: 300_000,
   config: [
     `model=${codexModel}`,
     "model_provider=codex-lb",

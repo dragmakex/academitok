@@ -69,6 +69,37 @@ instead of the fresh empty `@`. The commit step also abandons orphaned empty
 undescribed transitions before describing the finished slice so interrupted runs
 do not leave push-blocking ancestry behind.
 
+## Agent Timeouts
+
+The workflow configures agent timeouts to catch hung API calls:
+
+| Timeout         | Default   | Purpose                                          |
+| --------------- | --------- | ------------------------------------------------ |
+| `timeoutMs`     | 4 hours   | Hard limit for long tasks                        |
+| `idleTimeoutMs` | 5 minutes | Resets on stdout/stderr; catches stuck API calls |
+
+The idle timeout is recommended for all agent configurations—it allows active work (compiling, testing) to run for the full hour, but kills the task if no output appears for 5 minutes (typical symptom of a hung API connection).
+
+## Workflow Structure
+
+Workflows must be **synchronous** at the top level. The `smithers()` wrapper expects a synchronous function that returns JSX immediately:
+
+```typescript
+// ✅ Correct: synchronous workflow function
+export default smithers((ctx) => {
+  return renderWorkflow(ctx, ...)
+})
+
+function renderWorkflow(ctx, ...) {
+  // Synchronous logic only
+  return (
+    <Workflow>...</Workflow>
+  )
+}
+```
+
+**Do not make `renderWorkflow` async**—this causes the workflow to finish immediately without running tasks. Move async operations (shell commands, file checks) into Task functions, not the workflow render function.
+
 ## Debugging Stuck Tests
 
 If workflow validation runs `bun run test:coverage` for more than roughly 5
