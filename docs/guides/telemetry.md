@@ -87,3 +87,5 @@ const LoggerLive = createLokiLoggerLayer({
 - **Sentry**: http://localhost:9000
 
 See [Telemetry Example](../../src/telemetry-example.ts) for complete examples.
+
+> **Metrics Cardinality Warning**: This app uses traces and logs, which are safe from cardinality limits. If you add **OTel metrics** (Counters, Histograms) in the future, never use high-cardinality attributes like `userId`, `requestId`, or `todoId`—these cause "cardinality explosion" and trigger `otel.overflow`, making your metrics lie.
