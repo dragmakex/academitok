@@ -23,14 +23,27 @@ type DiscoverOutput = {
   ticket: string
   context: string
   remainingCount: number
+  remainingAreas: Array<
+    "frontend" | "contracts" | "backend" | "tests" | "docs" | "env"
+  >
+  completionEvidence: Array<string>
+  specFilesMissing: Array<string>
+  journeyImpactMap: {
+    ui: string
+    contracts: string
+    backend: string
+    tests: string
+  }
 }
 
 type ImplementOutput = {
   summary: string
   changes: Array<string>
+  tests: Array<string>
 }
 
 type ReviewOutput = {
+  approved: boolean
   issues: Array<string>
 }
 
@@ -152,7 +165,9 @@ export function formatPreviousDiscovery(ctx: PromptContext): string {
     return "First discovery."
   }
 
-  return `Last ticket: "${previousDiscovery.ticket}" (remaining: ${previousDiscovery.remainingCount})`
+  return `Last ticket: "${previousDiscovery.ticket}" (remaining: ${previousDiscovery.remainingCount}; areas: ${
+    previousDiscovery.remainingAreas.join(", ") || "none"
+  }; missing spec files: ${previousDiscovery.specFilesMissing.length})`
 }
 
 /**
@@ -173,11 +188,34 @@ export function buildDiscoverPrompt(
 
 ${buildSpecSection(spec, specsPath, todoPath)}
 
+## Context protocol
+
+Spec comprehension (strict):
+- Fully read all spec files reachable from ${specsPath} (and ${todoPath} when used as planning source).
+- If a spec file is too large for one read, continue reading chunk-by-chunk (offset pagination) until EOF.
+- Never emit tickets or done=true while any required spec file is only partially read.
+
+Codebase context (targeted):
+- For non-spec files, targeted snippets are allowed.
+- You must still cover end-to-end user journey + task impact across:
+  1) UI/user flow
+  2) contracts/API boundaries
+  3) backend/domain behavior
+  4) tests/verification
+
 ## Your job
-Read the workflow inputs and the current codebase. Identify what remains to be done.
-Return the NEXT SINGLE ticket to implement: the smallest meaningful vertical slice.
+Identify what remains to be done and return the NEXT SINGLE ticket as a vertical slice.
+A vertical slice must connect UI/user flow -> contract/API boundary -> backend/domain behavior -> tests.
 
 If everything in the spec is already implemented, tested, and passing, set done=true.
+Only set done=true when:
+- remainingCount=0
+- remainingAreas=[]
+- specFilesMissing=[]
+- completionEvidence includes concrete file-level proof for frontend, contracts, backend, and tests
+- journeyImpactMap has non-empty entries for ui/contracts/backend/tests
+
+If anything is missing in one of those areas, set done=false.
 
 ## Previous work this run
 ${formatPreviousWork(ctx)}
@@ -185,7 +223,18 @@ ${formatPreviousWork(ctx)}
 ## Previous discovery
 ${formatPreviousDiscovery(ctx)}
 
-Return done=false with a clear ticket description, or done=true if the spec is fully implemented.`
+Return strict JSON fields:
+- done
+- ticket
+- context
+- remainingCount
+- remainingAreas
+- completionEvidence
+- specFilesMissing
+- journeyImpactMap
+
+When done=false: ticket must be the next smallest end-to-end slice.
+When done=true: ticket should be "COMPLETE" and context should summarize why all slices are done.`
 }
 
 /**
@@ -203,8 +252,19 @@ ${ctx.latest("discover", "discover")?.ticket ?? "No ticket available."}
 ## Context
 ${ctx.latest("discover", "discover")?.context ?? ""}
 
-Implement this ticket. Write tests alongside code. Keep changes minimal and focused.
-If already implemented, report a no-op.`
+## Previous review issues (must be addressed)
+${ctx.latest("review", "review")?.issues?.join("\n") ?? "None"}
+
+Implement this ticket as a complete vertical slice:
+1) frontend/user-facing flow
+2) contract/API boundary
+3) backend/domain logic
+4) tests that prove the whole flow
+
+Do not stop after backend-only work.
+Do not defer contracts or frontend wiring when the ticket requires them.
+Keep changes minimal and focused, but complete the slice end-to-end.
+If already implemented, report a no-op with evidence.`
 }
 
 /**
@@ -224,8 +284,17 @@ ${ctx.latest("implement", "implement")?.summary ?? "No implementation summary."}
 ## Changes
 ${ctx.latest("implement", "implement")?.changes?.join("\n") ?? "None"}
 
-Return approved=true only if code is consistent, explicit, type-safe.
-If issues found, list them - the next iteration's implement step will see them.`
+## Tests
+${ctx.latest("implement", "implement")?.tests?.join("\n") ?? "None"}
+
+Reject partial slices.
+Return approved=true only if the ticket is complete end-to-end:
+- frontend/user flow addressed
+- contract/API boundary updated or confirmed
+- backend/domain behavior implemented
+- tests cover the integrated flow
+
+If issues found, list concrete missing parts.`
 }
 
 /**
@@ -235,8 +304,9 @@ If issues found, list them - the next iteration's implement step will see them.`
  */
 export function buildFixPrompt(ctx: PromptContext): string {
   const validation = ctx.latest("validate", "validate") ?? emptyValidationResult
-  return `Validation failed after implementing this ticket. Fix the errors.
+  return `Validation and/or review failed after implementing this ticket. Fix the errors.
 Do NOT disable lint rules, skip tests, or use \`any\`. Fix root causes.
+Do not leave the ticket partially done: keep the vertical slice end-to-end (frontend + contracts + backend + tests).
 
 ## Ticket that was implemented
 ${ctx.latest("discover", "discover")?.ticket ?? ""}

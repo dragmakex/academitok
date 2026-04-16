@@ -171,12 +171,84 @@ const branchSchema = z.object({
   createdAt: z.string(),
 })
 
-const discoverSchema = z.object({
-  done: z.boolean(),
-  ticket: z.string(),
-  context: z.string(),
-  remainingCount: z.number(),
-})
+const discoverSchema = z
+  .object({
+    done: z.boolean(),
+    ticket: z.string(),
+    context: z.string(),
+    remainingCount: z.number().int().nonnegative(),
+    remainingAreas: z.array(
+      z.enum(["frontend", "contracts", "backend", "tests", "docs", "env"]),
+    ),
+    completionEvidence: z.array(z.string()),
+    specFilesMissing: z.array(z.string()),
+    journeyImpactMap: z.object({
+      ui: z.string(),
+      contracts: z.string(),
+      backend: z.string(),
+      tests: z.string(),
+    }),
+  })
+  .superRefine((value, issue) => {
+    if (value.done) {
+      if (value.remainingCount !== 0) {
+        issue.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "done=true requires remainingCount=0",
+          path: ["remainingCount"],
+        })
+      }
+      if (value.remainingAreas.length > 0) {
+        issue.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "done=true requires remainingAreas=[]",
+          path: ["remainingAreas"],
+        })
+      }
+      if (value.completionEvidence.length === 0) {
+        issue.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "done=true requires non-empty completionEvidence",
+          path: ["completionEvidence"],
+        })
+      }
+      if (value.specFilesMissing.length > 0) {
+        issue.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "done=true requires specFilesMissing=[]",
+          path: ["specFilesMissing"],
+        })
+      }
+      if (!value.journeyImpactMap.ui.trim().length) {
+        issue.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "done=true requires non-empty journeyImpactMap.ui",
+          path: ["journeyImpactMap", "ui"],
+        })
+      }
+      if (!value.journeyImpactMap.contracts.trim().length) {
+        issue.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "done=true requires non-empty journeyImpactMap.contracts",
+          path: ["journeyImpactMap", "contracts"],
+        })
+      }
+      if (!value.journeyImpactMap.backend.trim().length) {
+        issue.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "done=true requires non-empty journeyImpactMap.backend",
+          path: ["journeyImpactMap", "backend"],
+        })
+      }
+      if (!value.journeyImpactMap.tests.trim().length) {
+        issue.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "done=true requires non-empty journeyImpactMap.tests",
+          path: ["journeyImpactMap", "tests"],
+        })
+      }
+    }
+  })
 
 const implementSchema = z.object({
   summary: z.string(),
@@ -347,9 +419,21 @@ function renderWorkflow(
   specsPath: string,
   todoPath: string,
 ) {
-  const done = ctx.latest("discover", "discover")?.done === true
+  const discover = ctx.latest("discover", "discover")
   const validationSucceeded =
     ctx.latest("validate", "validate")?.success === true
+  const reviewApproved = ctx.latest("review", "review")?.approved === true
+  const done = discover?.done === true
+    && discover.remainingCount === 0
+    && discover.remainingAreas.length === 0
+    && discover.completionEvidence.length > 0
+    && discover.specFilesMissing.length === 0
+    && discover.journeyImpactMap.ui.trim().length > 0
+    && discover.journeyImpactMap.contracts.trim().length > 0
+    && discover.journeyImpactMap.backend.trim().length > 0
+    && discover.journeyImpactMap.tests.trim().length > 0
+    && validationSucceeded
+    && reviewApproved
 
   return (
     <Workflow name="codefabrik">
@@ -400,14 +484,14 @@ function renderWorkflow(
             <Task
               id="commit"
               output={outputs.commit}
-              skipIf={done}
+              skipIf={done || !validationSucceeded || !reviewApproved}
             >
               {async () => createCommit(ctx)}
             </Task>
             <Task
               id="push"
               output={outputs.push}
-              skipIf={done}
+              skipIf={done || !validationSucceeded || !reviewApproved}
             >
               {async () => pushBookmark(ctx)}
             </Task>

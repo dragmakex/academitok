@@ -12,6 +12,9 @@ export function buildDefaultSpecPrompt(
 Read ${specsPath}.
 Read ${todoPath}.
 Choose the next best vertical slice.
+Implement slices end-to-end in this order: frontend/user flow -> contracts/API -> backend/domain -> integrated tests.
+Do not close discovery early while any area is missing.
+If you introduce or require new runtime configuration, update .env.example in the same slice.
 Execute TDD end to end.
 Commit on the workflow bookmark selected for the run.`
 }
