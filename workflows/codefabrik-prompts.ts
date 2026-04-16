@@ -304,7 +304,7 @@ If issues found, list concrete missing parts.`
  */
 export function buildFixPrompt(ctx: PromptContext): string {
   const validation = ctx.latest("validate", "validate") ?? emptyValidationResult
-  return `Validation and/or review failed after implementing this ticket. Fix the errors.
+  return `Validation failed and/or review found issues after implementing this ticket. Fix the errors and address any review issues.
 Do NOT disable lint rules, skip tests, or use \`any\`. Fix root causes.
 Do not leave the ticket partially done: keep the vertical slice end-to-end (frontend + contracts + backend + tests).
 

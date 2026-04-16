@@ -403,6 +403,28 @@ async function pushBookmark(ctx: WorkflowContext) {
   return { branch, remote }
 }
 
+type DiscoverResult = z.infer<typeof discoverSchema>
+
+/**
+ * Determine whether discovery has provided complete completion evidence.
+ * @param discover Latest discover output.
+ * @returns Whether discovery satisfies all completion preconditions.
+ */
+function isDiscoverComplete(discover: DiscoverResult | undefined): boolean {
+  if (!discover || !discover.done) {
+    return false
+  }
+
+  return discover.remainingCount === 0
+    && discover.remainingAreas.length === 0
+    && discover.completionEvidence.length > 0
+    && discover.specFilesMissing.length === 0
+    && discover.journeyImpactMap.ui.trim().length > 0
+    && discover.journeyImpactMap.contracts.trim().length > 0
+    && discover.journeyImpactMap.backend.trim().length > 0
+    && discover.journeyImpactMap.tests.trim().length > 0
+}
+
 /**
  * Render the Smithers workflow.
  * @param ctx Workflow context.
@@ -420,20 +442,11 @@ function renderWorkflow(
   todoPath: string,
 ) {
   const discover = ctx.latest("discover", "discover")
+  const discoverComplete = isDiscoverComplete(discover)
   const validationSucceeded =
     ctx.latest("validate", "validate")?.success === true
   const reviewApproved = ctx.latest("review", "review")?.approved === true
-  const done = discover?.done === true
-    && discover.remainingCount === 0
-    && discover.remainingAreas.length === 0
-    && discover.completionEvidence.length > 0
-    && discover.specFilesMissing.length === 0
-    && discover.journeyImpactMap.ui.trim().length > 0
-    && discover.journeyImpactMap.contracts.trim().length > 0
-    && discover.journeyImpactMap.backend.trim().length > 0
-    && discover.journeyImpactMap.tests.trim().length > 0
-    && validationSucceeded
-    && reviewApproved
+  const done = discoverComplete && validationSucceeded && reviewApproved
 
   return (
     <Workflow name="codefabrik">
@@ -477,7 +490,7 @@ function renderWorkflow(
               id="fix"
               output={outputs.fix}
               agent={codex}
-              skipIf={done || validationSucceeded}
+              skipIf={done || (validationSucceeded && reviewApproved)}
             >
               {buildFixPrompt(ctx)}
             </Task>
