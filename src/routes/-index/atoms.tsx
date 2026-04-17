@@ -1,3 +1,10 @@
+/**
+ * Pattern: Atom React State + Serializable Atoms
+ * Purpose: Reactive state management with @effect/atom-react, SSR hydration support,
+ * and optimistic updates via writable async atoms
+ * See: docs/architecture/effect-simple-made-easy-mapping.md
+ */
+
 import { ApiClient } from "@/api/api-client"
 import type {
   CreateTodoInput,

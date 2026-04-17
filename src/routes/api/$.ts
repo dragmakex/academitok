@@ -1,3 +1,10 @@
+/**
+ * Pattern: Layer Composition + ManagedRuntime + Middleware
+ * Purpose: Effect runtime integration for TanStack Start with HMR-safe disposal,
+ * Layer memoization, signal handling, and RPC middleware
+ * See: docs/architecture/effect-simple-made-easy-mapping.md
+ */
+
 import { DomainApi } from "@/api/domain-api"
 import { DomainRpc } from "@/api/domain-rpc"
 import { TodosApplicationLive } from "@/features/todos/application"

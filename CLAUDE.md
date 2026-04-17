@@ -51,7 +51,18 @@ Follow the referenced documents instead of duplicating their rules here.
 Read only the documents relevant to the current task before changing code.
 Do not preload every referenced guide or expand tool calls just to gather context you do not need.
 
-Open the smallest useful set:
+### Pattern Headers in Source
+
+Canonical pattern implementations have `Pattern:` headers in their TSDoc:
+
+- Effect primitives (Context.Service, Effect.gen, Pure Projection, Event Sink)
+- API construction (RpcGroup, HttpApi, handler bindings)
+- UI state (Atom React, SSR hydration)
+- Server wiring (Layer Composition, ManagedRuntime, Middleware)
+
+These headers travel with the code. When you need a reference implementation, search for the relevant pattern header in the codebase.
+
+### Open the smallest useful set:
 
 - Version control: `docs/guides/versioncontrol.md`
 - Code quality and implementation standards: `docs/guides/code-quality.md`

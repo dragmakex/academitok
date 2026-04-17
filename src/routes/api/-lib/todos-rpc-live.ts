@@ -1,3 +1,9 @@
+/**
+ * Pattern: RpcServer Handler Binding
+ * Purpose: Bind RPC handlers to application workflows via DomainRpc.toLayer
+ * See: src/api/domain-rpc.ts for API definition
+ */
+
 import { DomainRpc } from "@/api/domain-rpc"
 import type {
   CreateTodoInput,

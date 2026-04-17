@@ -1,3 +1,9 @@
+/**
+ * Pattern: HttpApi Definition
+ * Purpose: Type-safe HTTP contract using effect/unstable/httpapi
+ * See: docs/architecture/effect-simple-made-easy-mapping.md
+ */
+
 import * as Schema from "effect/Schema"
 import * as HttpApi from "effect/unstable/httpapi/HttpApi"
 import * as HttpApiEndpoint from "effect/unstable/httpapi/HttpApiEndpoint"

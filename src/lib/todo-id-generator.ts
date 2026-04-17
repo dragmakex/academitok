@@ -1,3 +1,9 @@
+/**
+ * Pattern: Context.Service (Simple)
+ * Purpose: Injectable dependency with minimal lifecycle (id generation)
+ * See: docs/architecture/effect-simple-made-easy-mapping.md
+ */
+
 import { type TodoId, TodoId as TodoIdSchema } from "@/api/todo-schema"
 import * as Context from "effect/Context"
 import * as Effect from "effect/Effect"

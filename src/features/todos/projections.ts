@@ -1,3 +1,9 @@
+/**
+ * Pattern: Pure Projection Functions
+ * Purpose: Derive read-models from plain data without effects, I/O, or frameworks
+ * See: docs/architecture/template-simple-crud.md
+ */
+
 import type {
   Todo,
   TodoDashboardSnapshot,

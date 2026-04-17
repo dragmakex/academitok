@@ -1,3 +1,10 @@
+/**
+ * Pattern: Context.Service + Repository.Adapter (Complex)
+ * Purpose: Injectable persistence with dual-adapter support (Postgres/PGlite),
+ * scoped resources, config-driven initialization, and migrations
+ * See: docs/architecture/effect-simple-made-easy-mapping.md
+ */
+
 import type {
   CreateTodoInput,
   Todo,

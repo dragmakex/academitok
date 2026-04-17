@@ -1,3 +1,9 @@
+/**
+ * Pattern: Effect.gen Workflow
+ * Purpose: Use-case orchestration with explicit dependencies (Clock, Repository, EventSink)
+ * See: docs/architecture/template-simple-crud.md
+ */
+
 import type {
   CreateTodoInput,
   TodoId,

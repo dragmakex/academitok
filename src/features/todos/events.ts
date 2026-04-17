@@ -1,3 +1,9 @@
+/**
+ * Pattern: Event Sink Boundary
+ * Purpose: Domain events for replication/async growth (outbox, queues, projectors)
+ * See: docs/architecture/template-simple-crud.md
+ */
+
 import type {
   CreateTodoInput,
   Todo,

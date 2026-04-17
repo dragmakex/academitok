@@ -1,3 +1,9 @@
+/**
+ * Pattern: SSR Atom Hydration
+ * Purpose: Hydrate serializable atoms from server payload into React registry
+ * See: docs/architecture/overview.md (Data Flow section)
+ */
+
 "use client"
 
 import { RegistryContext } from "@effect/atom-react"

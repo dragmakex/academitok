@@ -1,3 +1,9 @@
+/**
+ * Pattern: HttpApiBuilder Handler Binding
+ * Purpose: Bind HTTP handlers to application workflows via HttpApiBuilder.group
+ * See: src/api/domain-api.ts for API definition
+ */
+
 import { DomainApi } from "@/api/domain-api"
 import type {
   CreateTodoInput,
