@@ -42,8 +42,16 @@ const dueLabel = (todo: Todo): string => {
   return `Due ${formatTodoDate(todo.dueDate)}`
 }
 
-const updatedLabel = (todo: Todo): string =>
-  `Updated ${new Date(todo.updatedAt.epochMilliseconds).toLocaleString()}`
+const updatedLabel = (todo: Todo): string => {
+  const date = new Date(todo.updatedAt.epochMilliseconds)
+  const yyyy = String(date.getFullYear())
+  const mm = String(date.getMonth() + 1).padStart(2, "0")
+  const dd = String(date.getDate()).padStart(2, "0")
+  const hh = String(date.getHours()).padStart(2, "0")
+  const min = String(date.getMinutes()).padStart(2, "0")
+  const ss = String(date.getSeconds()).padStart(2, "0")
+  return `Updated ${yyyy}-${mm}-${dd}, ${hh}:${min}:${ss}`
+}
 
 /**
  * Renders a single todo item, allowing for toggling completion, editing, and deletion.
@@ -79,12 +87,13 @@ export function TodoItem({ todo }: { readonly todo: Todo }) {
     if (!editTitle.trim()) {
       return
     }
+    const dueDateValue = parseTodoDateInput(editDueDate)
     update({
       id: todo.id,
       input: {
         title: Option.some(editTitle.trim()),
         completed: Option.none(),
-        dueDate: Option.some(parseTodoDateInput(editDueDate)),
+        dueDate: Option.some(dueDateValue),
       },
     })
     setIsEditing(false)

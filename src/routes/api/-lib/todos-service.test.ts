@@ -1,6 +1,6 @@
 // @vitest-environment node
 
-import { TodoId } from "@/api/todo-schema"
+import { TodoDate, TodoId } from "@/api/todo-schema"
 import { makeTodosServiceTestLayer } from "@/db/todos-test-support"
 import { expect, it } from "@effect/vitest"
 import * as Cause from "effect/Cause"
@@ -195,5 +195,120 @@ it.effect("getById fails with TodoNotFound for non-existent id", () =>
           id: fakeId,
         })
       }
+    })
+    .pipe(Effect.provide(makeTodosServiceTestLayer())))
+
+it.effect("due date persistence handles leap year dates correctly", () =>
+  Effect
+    .gen(function*() {
+      const service = yield* TodosService
+      const leapYearDate = "2024-02-29"
+
+      const created = yield* service.create({
+        title: "Leap year task",
+        dueDate: leapYearDate,
+      })
+
+      expect(created.todos[0]?.dueDate).toBe(leapYearDate)
+
+      // Verify it persists correctly across reloads
+      const loaded = yield* service.getById(created.todos[0]!.id)
+      expect(loaded.dueDate).toBe(leapYearDate)
+    })
+    .pipe(Effect.provide(makeTodosServiceTestLayer())))
+
+it.effect("due date transitions between scheduled and unscheduled correctly", () =>
+  Effect
+    .gen(function*() {
+      const service = yield* TodosService
+      // Use a fixed test date to avoid race conditions with system clock
+      const today = Schema.decodeSync(TodoDate)("2026-04-01")
+
+      // Create unscheduled
+      const created = yield* service.create({
+        title: "Date transition test",
+        dueDate: null,
+      })
+      const todo = created.todos[0]!
+      expect(created.stats.unscheduled).toBe(1)
+
+      // Move to scheduled (today)
+      let updated = yield* service.update(todo.id, {
+        title: Option.none(),
+        completed: Option.none(),
+        dueDate: Option.some(today),
+      })
+      // Due today classification depends on the service's internal today calculation
+      // Just verify the dueDate was saved correctly
+      expect(updated.todos[0]?.dueDate).toBe(today)
+      expect(updated.stats.unscheduled).toBe(0)
+
+      // Move to upcoming
+      const upcomingDate = Schema.decodeSync(TodoDate)("2026-04-08")
+      updated = yield* service.update(todo.id, {
+        title: Option.none(),
+        completed: Option.none(),
+        dueDate: Option.some(upcomingDate),
+      })
+      expect(updated.todos[0]?.dueDate).toBe(upcomingDate)
+
+      // Move back to unscheduled
+      updated = yield* service.update(todo.id, {
+        title: Option.none(),
+        completed: Option.none(),
+        dueDate: Option.some(null),
+      })
+      expect(updated.stats.unscheduled).toBe(1)
+      expect(updated.todos[0]?.dueDate).toBeNull()
+    })
+    .pipe(Effect.provide(makeTodosServiceTestLayer())))
+
+it.effect("year-boundary dates are classified correctly", () =>
+  Effect
+    .gen(function*() {
+      const service = yield* TodosService
+
+      // Test with a date at year end
+      const yearEndDate = "2026-12-31"
+
+      const created = yield* service.create({
+        title: "Year end task",
+        dueDate: yearEndDate,
+      })
+
+      expect(created.todos[0]?.dueDate).toBe(yearEndDate)
+      // Should be in upcoming group (assuming today is not Dec 31)
+      const today = todayDate()
+      if (today !== yearEndDate) {
+        const group = created.groups.find((g) =>
+          g.todos.some((t) => t.title === "Year end task")
+        )
+        expect(group?.key).toBe(today > yearEndDate ? "overdue" : "upcoming")
+      }
+    })
+    .pipe(Effect.provide(makeTodosServiceTestLayer())))
+
+it.effect("partial updates preserve existing due date", () =>
+  Effect
+    .gen(function*() {
+      const service = yield* TodosService
+      const today = todayDate()
+
+      const created = yield* service.create({
+        title: "Partial update test",
+        dueDate: today,
+      })
+      const todo = created.todos[0]!
+
+      // Update only title, keep due date
+      const updated = yield* service.update(todo.id, {
+        title: Option.some("Updated title only"),
+        completed: Option.none(),
+        dueDate: Option.none(),
+      })
+
+      const updatedTodo = updated.todos.find((t) => t.id === todo.id)
+      expect(updatedTodo?.title).toBe("Updated title only")
+      expect(updatedTodo?.dueDate).toBe(today)
     })
     .pipe(Effect.provide(makeTodosServiceTestLayer())))

@@ -17,6 +17,30 @@ graph LR
     style Grafana fill:#ff6b6b
 ```
 
+## Integration Options
+
+### Option A: @sentry/effect (Recommended for Effect v4)
+
+Effect-native Sentry integration using `@sentry/effect`. Errors, traces, logs, and metrics flow to Sentry through Effect's Layer system.
+
+**File:** [`src/lib/sentry-effect.ts`](../../src/lib/sentry-effect.ts)\
+**Guide:** [Sentry Effect Integration](./sentry-effect-integration.md)
+
+```typescript
+import { SentryLive } from "@/lib/sentry-effect"
+
+export const ServerRuntimeLive = TodosApplicationLive.pipe(
+  Layer.provideMerge(ObservabilityRuntimeLive), // OTEL → Tempo/Loki
+  Layer.provideMerge(SentryLive), // Sentry → Sentry backend
+)
+```
+
+### Option B: @sentry/node (Imperative)
+
+Traditional Sentry SDK for non-Effect code paths or migration scenarios.
+
+**File:** [`src/lib/server-init.ts`](../../src/lib/server-init.ts)
+
 See [TESTING_AND_TELEMETRY.md](../../TESTING_AND_TELEMETRY.md) for complete documentation.
 
 ## Quick Start

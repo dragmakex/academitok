@@ -13,6 +13,8 @@ import {
   initPyroscopeServer,
   shutdownPyroscopeServer,
 } from "@/lib/pyroscope-server"
+import { SentryLive } from "@/lib/sentry-effect"
+import { handleSentryTestPost } from "@/lib/sentry-service"
 import { initServer } from "@/lib/server-init"
 import { createFileRoute } from "@tanstack/react-router"
 import type { Cause } from "effect/Cause"
@@ -143,6 +145,32 @@ export const HealthRoute = HttpRouter.add(
 )
 
 /**
+ * Sentry integration test routes.
+ *
+ * GET /api/sentry-test — Status check
+ * POST /api/sentry-test — Trigger test error (captured by Sentry)
+ *
+ * Verification: Check http://localhost:9000 after POST for captured error.
+ */
+const SentryTestGet = HttpRouter.add(
+  "GET",
+  "/api/sentry-test",
+  HttpServerResponse.json({
+    status: "Sentry test endpoint ready",
+    instructions: "POST to this endpoint to trigger a test error",
+    sentry_url: "http://localhost:9000",
+    verification:
+      "After POST, check Sentry at http://localhost:9000 for captured errors",
+  }),
+)
+
+const SentryTestPost = HttpRouter.add(
+  "POST",
+  "/api/sentry-test",
+  handleSentryTestPost,
+)
+
+/**
  * Development console logger — provides pretty console output alongside OTLP.
  * In production, only OTLP logs are emitted (ObservabilityLive replaces the
  * default logger).
@@ -153,13 +181,31 @@ const DevConsoleLive = process.env.NODE_ENV === "development"
 
 const ObservabilityRuntimeLive = Layer.orDie(ObservabilityLive)
 
+/**
+ * Server runtime composition — Sentry + OTEL + Console.
+ *
+ * **Sentry** (@sentry/effect): Errors and distributed traces to Sentry backend.
+ * **OTEL** (ObservabilityLive): Traces to Tempo, Logs to Loki (Grafana stack).
+ *
+ * These are complementary — Sentry captures errors with rich context for
+ * debugging, while OTEL provides full observability in Grafana dashboards.
+ *
+ * Pattern: Layer.provideMerge — merges multiple service layers into runtime.
+ */
 export const ServerRuntimeLive = TodosApplicationLive.pipe(
   Layer.provideMerge(ObservabilityRuntimeLive),
+  Layer.provideMerge(SentryLive),
   Layer.provideMerge(DevConsoleLive),
 )
 
 export const AllRoutes = Layer
-  .mergeAll(RpcRouter, HttpApiRouter, HealthRoute)
+  .mergeAll(
+    RpcRouter,
+    HttpApiRouter,
+    HealthRoute,
+    SentryTestGet,
+    SentryTestPost,
+  )
   .pipe(Layer.provideMerge(ServerRuntimeLive))
 
 const memoMap = Layer.makeMemoMapUnsafe()

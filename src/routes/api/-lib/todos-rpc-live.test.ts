@@ -95,6 +95,69 @@ it.effect("todos_getById and todos_remove fail for missing ids", () =>
     })
     .pipe(Effect.provide(makeTodosApplicationTestLayer())))
 
+it.effect("setting due date moves todo from unscheduled to correct group", () =>
+  Effect
+    .gen(function*() {
+      const handlers = yield* createRpcHandlers
+
+      const created = yield* handlers.todos_create({
+        input: { title: "Unscheduled Task", dueDate: null },
+      })
+      const todo = created.todos[0]
+      expect(todo?.dueDate).toBeNull()
+      expect(created.groups.find((g) => g.key === "unscheduled")?.count).toBe(1)
+
+      if (todo === undefined) {
+        return yield* Effect.die(new Error("Expected created todo"))
+      }
+
+      const updated = yield* handlers.todos_update({
+        id: todo.id,
+        input: {
+          title: Option.none(),
+          completed: Option.none(),
+          dueDate: Option.some(testToday),
+        },
+      })
+
+      const updatedTodo = updated.todos.find((t) => t.id === todo.id)
+      expect(updatedTodo?.dueDate).toBe(testToday)
+      expect(updated.groups.find((g) => g.key === "today")?.count).toBe(1)
+      expect(updated.groups.find((g) => g.key === "unscheduled")?.count).toBe(0)
+    })
+    .pipe(Effect.provide(makeTodosApplicationTestLayer())))
+
+it.effect("clearing due date moves todo back to unscheduled", () =>
+  Effect
+    .gen(function*() {
+      const handlers = yield* createRpcHandlers
+
+      const created = yield* handlers.todos_create({
+        input: { title: "Scheduled Task", dueDate: testToday },
+      })
+      const todo = created.todos[0]
+      expect(todo?.dueDate).toBe(testToday)
+
+      if (todo === undefined) {
+        return yield* Effect.die(new Error("Expected created todo"))
+      }
+
+      const updated = yield* handlers.todos_update({
+        id: todo.id,
+        input: {
+          title: Option.none(),
+          completed: Option.none(),
+          dueDate: Option.some(null),
+        },
+      })
+
+      const updatedTodo = updated.todos.find((t) => t.id === todo.id)
+      expect(updatedTodo?.dueDate).toBeNull()
+      expect(updated.groups.find((g) => g.key === "unscheduled")?.count).toBe(1)
+      expect(updated.groups.find((g) => g.key === "today")?.count).toBe(0)
+    })
+    .pipe(Effect.provide(makeTodosApplicationTestLayer())))
+
 it.effect("TodosRpcLive layer builds successfully", () =>
   Effect.sync(() => {
     expect(TodosRpcLive).toBeDefined()
