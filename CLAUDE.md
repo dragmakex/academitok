@@ -115,6 +115,7 @@ Before implementing substantial Effect code, inspect the relevant Effect guidanc
 - writing documentation that merely repeats code
 - creating design-system wrapper components that are just a div with a className
 - adding to `src/design-system/` without registering in `registry.ts` and justifying via the decision framework
+- NEVER vendor into this repo. when doing observability always follow the guide docs/guides/observability-setup.md when using OTEL, Sentry, Errors and others.
 
 ## Definition Of Done
 
