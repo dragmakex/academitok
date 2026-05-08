@@ -200,6 +200,21 @@ both environments through the exact same low-level driver.
 - avoid a separate SQLite path
 - prefer seeded persistence tests over mocked repositories
 
+## Vendored Source
+
+Drizzle ORM source is vendored at `.repos/drizzle/` for reference when
+implementing database patterns. This provides:
+
+- Direct source code inspection for debugging and understanding
+- Guaranteed access to the exact version (v1.0.0-rc.2) used in this project
+- Offline reference without external network dependencies
+
+To update the vendored copy:
+
+```bash
+git subtree pull --prefix=.repos/drizzle https://github.com/drizzle-team/drizzle-orm.git v1.0.0-rc.2 --squash
+```
+
 ## Related
 
 - [PostgreSQL Guide](./database-postgresql.md)

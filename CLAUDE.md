@@ -210,6 +210,20 @@ ffgrep "Pattern:" .repos/effect/packages/effect/src/
 
 Extract best practices from their implementation patterns.
 
+### Drizzle Work
+
+The Drizzle ORM source is vendored at `.repos/drizzle/` (v1.0.0-rc.2) for reference:
+
+```bash
+# Find Drizzle implementation patterns
+.repos/drizzle/drizzle-orm/src/
+.repos/drizzle/drizzle-orm/src/pg-core/        # PostgreSQL core
+.repos/drizzle/drizzle-orm/src/pglite/          # PGlite driver
+.repos/drizzle/drizzle-kit/src/                  # Migrations
+```
+
+Use this when implementing database schema, queries, or understanding Drizzle internals.
+
 ## What To Avoid
 
 - ❌ working directly on `master` or `main`
