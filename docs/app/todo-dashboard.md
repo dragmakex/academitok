@@ -131,12 +131,47 @@ sequenceDiagram
   - pure ordering, classification, stats, groups, and snapshot derivation
 - `src/features/todos/events.ts`
   - replication boundary for future outbox / queue growth
-- `src/routes/-index/atoms.tsx`
-  - canonical dashboard snapshot atom plus derived view atoms
+- `docs/reference/todo/atoms.tsx` (symlinked to `src/routes/-index/`)
+  - **canonical dashboard snapshot atom plus derived view atoms**
+  - **Reference implementation for the Effect-native Atoms pattern**
+  - See: `docs/architecture/effect-native-atoms.md`
 - `src/routes/index.tsx`
   - SSR hydration of the dashboard snapshot source of truth
-- `src/routes/-index/*.tsx`
+- `docs/reference/todo/*.tsx` (symlinked to `src/routes/-index/`)
   - dashboard surfaces composed from the current design system
+  - **Study these for architectural patterns, not visual design**
+
+## Reference Implementation
+
+The todo dashboard serves as the **canonical reference implementation** for the Effect-native Atoms pattern.
+
+### Location
+
+- Real files: `docs/reference/todo/`
+- Runnable via: `src/routes/-index/` (symlink)
+
+### Purpose
+
+This is a **reference for architectural patterns**, not a template to copy visually.
+
+**✅ Copy these patterns:**
+
+- Atom wiring with `runtime.atom()` and `runtime.fn()`
+- SSR hydration with `serializable()`
+- Derived view atoms with `mapSnapshotAtom()`
+- Hook patterns with `useAtomValue` and `useAtomSet`
+- Component structure and composition
+
+**❌ Don't copy these:**
+
+- Visual styling, colors, spacing
+- Specific UI layouts
+- "Prussian" branding elements
+- Card designs and visual treatments
+
+Build YOUR visual design using `src/design-system/` primitives.
+
+See: `docs/guides/adding-new-features.md` for the copy-paste pattern guide.
 
 ## Classification invariants
 
