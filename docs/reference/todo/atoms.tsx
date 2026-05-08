@@ -1,8 +1,9 @@
 /**
- * Pattern: Atom React State + Serializable Atoms
+ * Pattern: Effect-native Atoms (React)
  * Purpose: Reactive state management with @effect/atom-react, SSR hydration support,
  * and optimistic updates via writable async atoms
- * See: docs/architecture/effect-simple-made-easy-mapping.md
+ * See: docs/architecture/effect-native-atoms.md (THE PATTERN DOCUMENTATION)
+ * See: docs/guides/adding-new-features.md (HOW TO COPY THIS PATTERN)
  */
 
 import { ApiClient } from "@/api/api-client"

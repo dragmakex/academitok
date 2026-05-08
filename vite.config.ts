@@ -147,7 +147,11 @@ const config = defineConfig(async ({ mode }) => {
             "src/lib/atom-hydration.test.tsx",
             "src/visual/*.test.tsx",
           ]
-          : []),
+          : [
+            // Exclude symlinked tests from browser runs - they resolve to docs/
+            // which the browser test server cannot serve correctly
+            "src/routes/-index/*.test.tsx",
+          ]),
       ],
       // Browser mode configuration for component and visual regression testing
       browser: {
@@ -238,6 +242,10 @@ const config = defineConfig(async ({ mode }) => {
       },
     },
     server: {
+      fs: {
+        // Allow serving files from docs/ for symlinked reference implementation
+        allow: [".", "./docs"],
+      },
       watch: {
         ignored: [
           ".worktrees/**",

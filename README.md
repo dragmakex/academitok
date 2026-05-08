@@ -102,27 +102,26 @@ echo "VITE_POSTHOG_HOST=http://localhost:8001" >> .env
 ```
 effect-tanstack-start/
 ├── docs/                          # Documentation
-│   ├── architecture/              # Architecture and diagrams
+│   ├── architecture/              # Architecture and patterns
+│   │   ├── effect-native-atoms.md # State management pattern (START HERE)
+│   │   ├── effect-simple-made-easy-mapping.md # Feature patterns
 │   │   └── overview.md            # System architecture
-│   └── guides/                    # How-to guides
-│       ├── getting-started.md     # Setup guide
-│       ├── observability-setup.md # Full observability + LAOS setup
-│       ├── testing.md             # Testing guide
-│       ├── telemetry.md           # Observability guide
-│       ├── posthog.md            # Analytics guide
+│   ├── guides/                    # How-to guides
+│   │   ├── adding-new-features.md # Copy-paste feature guide
+│   │   ├── getting-started.md     # Setup guide
+│   │   ├── observability-setup.md # Full observability + LAOS setup
+│   │   ├── testing.md             # Testing guide
+│   │   └── telemetry.md           # Observability guide
+│   └── reference/                 # Reference implementations
+│       └── todo/                  # Todo app reference (symlinked)
 ├── src/
 │   ├── api/                       # API schemas and clients
+│   ├── features/                  # Domain features (todos/)
 │   ├── lib/                       # Shared utilities
-│   │   ├── logger-loki.ts         # Loki logging
-│   │   ├── posthog-client.ts      # PostHog browser
-│   │   ├── posthog-server.ts      # PostHog server
-│   │   ├── telemetry-client.ts    # Sentry browser
-│   │   └── telemetry-server.ts    # Sentry server
 │   ├── routes/                    # File-based routing
-│   ├── component/                 # Component tests
-│   ├── visual/                    # Visual regression tests
+│   │   └── -index/                → symlink to docs/reference/todo/
 │   └── *.test.ts                  # Unit tests
-├── Dockerfile                     # Container build
+├── AGENTS.md                      # Agent instructions (START HERE)
 ├── CONTRIBUTING.md                # Contribution guidelines
 └── TESTING_AND_TELEMETRY.md       # Testing & observability
 ```
@@ -303,28 +302,42 @@ const fetchUser = (userId: string) =>
 
 ## 📚 Documentation
 
-### For New Contributors
+### For Agents & Contributors
 
-👉 **Start with [CONTRIBUTING.md](./CONTRIBUTING.md)**
+👉 **Start with [AGENTS.md](./AGENTS.md)** - Progressive disclosure guide for the codebase
+
+### Quick Reference
+
+| Task                                | Document                                                                                 |
+| ----------------------------------- | ---------------------------------------------------------------------------------------- |
+| State management (atoms, mutations) | [`docs/architecture/effect-native-atoms.md`](./docs/architecture/effect-native-atoms.md) |
+| Adding new features                 | [`docs/guides/adding-new-features.md`](./docs/guides/adding-new-features.md)             |
+| UI components                       | [`docs/design-system/rules.md`](./docs/design-system/rules.md)                           |
+| Setup & installation                | [`docs/guides/getting-started.md`](./docs/guides/getting-started.md)                     |
 
 ### Guides
 
+- 🏗️ [Adding New Features](./docs/guides/adding-new-features.md) - Copy-paste pattern guide
 - 🚀 [Getting Started](./docs/guides/getting-started.md) - Setup and installation
-- 🏗️ [Architecture Overview](./docs/architecture/overview.md) - System design
-- 🧵 [Simple Made Easy](./docs/architecture/simple-made-easy.md) - Simplicity as explicit design policy
 - 🧪 [Testing Guide](./docs/guides/testing.md) - Writing and running tests
 - 📊 [Telemetry Guide](./docs/guides/telemetry.md) - Monitoring and observability
-- 📈 [PostHog Guide](./docs/guides/posthog.md) - Analytics and feature flags
 - 🧭 [Observability Setup](./docs/guides/observability-setup.md) - LAOS stack setup
 - 🐳 [App Docker Guide](./docs/guides/app-docker.md) - Containerize the app only
 - 🗄️ [PostgreSQL Guide](./docs/guides/database-postgresql.md) - PostgreSQL with Drizzle ORM
 - 💾 [PGlite Guide](./docs/guides/database-pglite.md) - Local embedded Postgres with Drizzle ORM
 - ✨ [Code Quality Guide](./docs/guides/code-quality.md) - Linting and formatting
-- 🤖 [AI Code Review Guide](./docs/guides/ai-code-review.md) - AI-powered code review
 - ⚡ [Performance Monitoring](./docs/guides/performance-monitoring.md) - Bundle size & Web Vitals
+
+### Architecture
+
+- ⚡ [Effect-Native Atoms](./docs/architecture/effect-native-atoms.md) - State management pattern
+- 🏗️ [Architecture Overview](./docs/architecture/overview.md) - System design
+- 🧵 [Simple Made Easy](./docs/architecture/simple-made-easy.md) - Simplicity as explicit design policy
+- 🗺️ [Effect-Simple-Made-Easy Mapping](./docs/architecture/effect-simple-made-easy-mapping.md) - Feature patterns
 
 ### Complete Documentation
 
+- 🤖 [AGENTS.md](./AGENTS.md) - Agent instructions (START HERE)
 - 📖 [CONTRIBUTING.md](./CONTRIBUTING.md) - Contribution guidelines
 - 🧪 [TESTING_AND_TELEMETRY.md](./TESTING_AND_TELEMETRY.md) - Testing & observability
 
