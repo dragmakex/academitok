@@ -4,21 +4,97 @@ import { tanstackStart } from "@tanstack/react-start/plugin/vite"
 import viteReact from "@vitejs/plugin-react"
 import { playwright } from "@vitest/browser-playwright"
 import { nitro } from "nitro/vite"
+import { createServer } from "node:net"
 import path from "node:path"
 import type { PluginOption } from "vite"
 import viteTsConfigPaths from "vite-tsconfig-paths"
 import { defineConfig } from "vitest/config"
 
-const config = defineConfig(({ mode }) => {
+/**
+ * Check if a port is available by attempting to bind to it.
+ * @param port - The port number to check
+ * @returns Promise resolving to true if port is available, false otherwise
+ */
+const isPortAvailable = (port: number): Promise<boolean> => {
+  return new Promise((resolve) => {
+    const server = createServer()
+    server.once("error", () => resolve(false))
+    server.once("listening", () => {
+      server.close()
+      resolve(true)
+    })
+    server.listen(port)
+  })
+}
+
+/**
+ * Find an available port starting from the preferred port.
+ * Respects TANSTACK_DEVTOOLS_PORT environment variable if set.
+ * Falls back to scanning 42069-42079 if default is in use.
+ * Returns null if no ports available (devtools will be disabled).
+ * @returns Promise resolving to the available port number, or null if none found
+ */
+const findDevtoolsPort = async (): Promise<number | null> => {
+  // Respect explicit configuration
+  if (process.env.TANSTACK_DEVTOOLS_PORT) {
+    const explicitPort = Number.parseInt(process.env.TANSTACK_DEVTOOLS_PORT, 10)
+    if (!Number.isNaN(explicitPort) && await isPortAvailable(explicitPort)) {
+      return explicitPort
+    }
+    console.warn(
+      `[@tanstack/devtools] Explicit port ${explicitPort} is in use. `
+        + "Trying fallback range...",
+    )
+  }
+
+  const DEFAULT_START_PORT = 42069
+  const MAX_PORT_SCAN = 10 // Scan 42069-42079
+
+  for (let i = 0; i < MAX_PORT_SCAN; i++) {
+    const port = DEFAULT_START_PORT + i
+    if (await isPortAvailable(port)) {
+      if (i > 0) {
+        console.log(
+          `[@tanstack/devtools] Default port ${DEFAULT_START_PORT} in use, `
+            + `using fallback port ${port}`,
+        )
+      }
+      return port
+    }
+  }
+
+  console.error(
+    `[@tanstack/devtools] No available ports found in range `
+      + `${DEFAULT_START_PORT}-${DEFAULT_START_PORT + MAX_PORT_SCAN - 1}. `
+      + "Devtools will be disabled. Set TANSTACK_DEVTOOLS_PORT explicitly.",
+  )
+  return null
+}
+
+const config = defineConfig(async ({ mode }) => {
   const isVitest = mode === "test" || process.env.VITEST === "true"
   const isBrowserRun = process.argv.some((arg) =>
     arg === "--browser.enabled" || arg === "--browser.enabled=true"
   )
   const isCoverageRun = process.argv.includes("--coverage")
+
+  // Auto-detect available devtools port in development (non-test) mode
+  const devtoolsPort = !isVitest && mode === "development"
+    ? await findDevtoolsPort()
+    : null
+
   const plugins: Array<PluginOption> = [
     // Vitest only needs the client-side transforms and aliases. Starting
     // Nitro/devtools in test mode leaks workers and adds browser runtime noise.
-    !isVitest ? devtools() : null,
+    // Devtools disabled if no port available (production or port conflict).
+    !isVitest && devtoolsPort !== null
+      ? devtools({
+        eventBusConfig: {
+          port: devtoolsPort,
+          enabled: true,
+        },
+      })
+      : null,
     !isVitest ? nitro({ preset: "bun" }) : null,
     // this is the plugin that enables path aliases
     viteTsConfigPaths({
