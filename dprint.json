@@ -26,6 +26,7 @@
     "**/package.json",
     "vscode/*.json",
     "**/.worktrees",
+    "**/.repos",
     "**/*.gen.ts"
   ],
   "plugins": [

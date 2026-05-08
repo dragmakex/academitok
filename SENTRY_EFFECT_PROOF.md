@@ -1,12 +1,12 @@
 # @sentry/effect Integration - End-to-End Test Proof
 
-**Date:** 2026-05-05  
-**Branch:** feature/sentry-effect-integration  
+**Date:** 2026-05-05\
+**Branch:** feature/sentry-effect-integration\
 **Commit:** WIP: feat(sentry): integrate @sentry/effect with Effect v4 and LAOS testing
 
 ## Summary
 
-✅ **OTEL Integration VERIFIED** - Traces flowing to Grafana/Tempo  
+✅ **OTEL Integration VERIFIED** - Traces flowing to Grafana/Tempo\
 ⚠️ **Sentry Integration CONFIGURED** - Code integration complete, requires running Sentry instance
 
 ---
@@ -14,6 +14,7 @@
 ## 1. Application Build & Startup
 
 ### Build Status
+
 ```bash
 $ bun run build
 ...
@@ -25,6 +26,7 @@ $ bun run build
 **Result:** ✅ Build successful
 
 ### Server Startup
+
 ```
 ╭───────── [Build Info] ───────────╮
 │  - Build Directory: .output      │
@@ -53,11 +55,14 @@ $ bun run build
 ## 2. API Endpoints Test
 
 ### 2.1 Health Check
+
 ```bash
 $ curl http://localhost:3000/api/health
 OK
 ```
+
 **Log Output:**
+
 ```json
 {
   "http.method": "GET",
@@ -69,10 +74,13 @@ OK
 **Result:** ✅ HTTP 200
 
 ### 2.2 Sentry Test GET
+
 ```bash
 $ curl http://localhost:3000/api/sentry-test
 ```
+
 **Response:**
+
 ```json
 {
   "status": "Sentry test endpoint ready",
@@ -85,11 +93,13 @@ $ curl http://localhost:3000/api/sentry-test
 **Result:** ✅ HTTP 200
 
 ### 2.3 Sentry Test POST (Error Trigger)
+
 ```bash
 $ curl -X POST http://localhost:3000/api/sentry-test
 ```
 
 **Log Output (Error Captured):**
+
 ```
 [18:07:50.031] INFO (#47) http.span.3=0ms: Triggering Sentry test error
 [18:07:50.033] INFO (#47) http.span.3=2ms: Error: Sentry Effect Integration Test Error
@@ -108,10 +118,13 @@ $ curl -X POST http://localhost:3000/api/sentry-test
 ## 3. Observability Stack Verification
 
 ### 3.1 Grafana Status
+
 ```bash
 $ curl http://localhost:3001/api/health
 ```
+
 **Response:**
+
 ```json
 {
   "database": "ok",
@@ -119,14 +132,17 @@ $ curl http://localhost:3001/api/health
   "commit": "f7a938db9ad71c1558e93d8e29e69f42c8a5f50b"
 }
 ```
+
 **Result:** ✅ Grafana running at http://localhost:3001 (admin/admin)
 
 ### 3.2 Tempo Traces Query
+
 ```bash
 $ curl "http://localhost:3200/api/search?tags=service.name=effect-tanstack-start-sentry-test&limit=10"
 ```
 
 **Response:**
+
 ```json
 {
   "traces": [
@@ -177,16 +193,19 @@ $ curl "http://localhost:3200/api/search?tags=service.name=effect-tanstack-start
 ```
 
 **Trace Names Found:**
+
 - `http.server POST` - The Sentry test error endpoint
-- `http.server GET` - Health and status endpoints  
+- `http.server GET` - Health and status endpoints
 - `TodosApp.snapshot` - Application business logic spans
 
 **Result:** ✅ **TRACES CONFIRMED IN TEMPO**
 
 ### 3.3 OTEL Collector
+
 ```bash
 $ curl -X POST http://localhost:4318/v1/traces -H "Content-Type: application/json" -d '{"resourceSpans":[]}'
 ```
+
 **Response:** `{"partialSuccess":{}}`
 
 **Result:** ✅ OTEL collector accepting traces
@@ -196,15 +215,17 @@ $ curl -X POST http://localhost:4318/v1/traces -H "Content-Type: application/jso
 ## 4. Architecture Verification
 
 ### Layer Composition (src/routes/api/$.ts)
+
 ```typescript
 export const ServerRuntimeLive = TodosApplicationLive.pipe(
-  Layer.provideMerge(ObservabilityRuntimeLive),  // ✅ OTEL → Tempo verified
-  Layer.provideMerge(SentryLive),                // ⚠️ Sentry → configured
-  Layer.provideMerge(DevConsoleLive),            // ✅ Console output verified
+  Layer.provideMerge(ObservabilityRuntimeLive), // ✅ OTEL → Tempo verified
+  Layer.provideMerge(SentryLive), // ⚠️ Sentry → configured
+  Layer.provideMerge(DevConsoleLive), // ✅ Console output verified
 )
 ```
 
 ### Sentry Integration Code (src/lib/sentry-effect.ts)
+
 ```typescript
 export const makeSentryLive = (config: SentryConfig): Layer.Layer<never> =>
   Layer.mergeAll(
@@ -222,6 +243,7 @@ export const makeSentryLive = (config: SentryConfig): Layer.Layer<never> =>
 ## 5. Test Results
 
 ### Unit Tests
+
 ```bash
 $ bun run test:unit -- src/lib/sentry-effect.test.ts
 
@@ -237,6 +259,7 @@ $ bun run test:unit -- src/lib/sentry-effect.test.ts
 **Result:** ✅ All 6 Sentry integration tests passing
 
 ### Full Test Suite
+
 ```
 Test Files: 19 passed (19)
 Tests:      131 passed (131)
@@ -249,6 +272,7 @@ Tests:      131 passed (131)
 ## 6. Environment Configuration
 
 ### .env.test
+
 ```bash
 # Sentry Configuration (DSN for local testing)
 SENTRY_DSN=http://test@localhost:9000/1
@@ -265,18 +289,18 @@ NODE_ENV=development
 
 ## 7. Proof Summary
 
-| Component | Status | Evidence |
-|-----------|--------|----------|
-| App Build | ✅ PASS | Build successful in 7.60s |
-| App Startup | ✅ PASS | Server listening on :3000 |
-| Health API | ✅ PASS | HTTP 200 OK |
-| Sentry Test GET | ✅ PASS | HTTP 200 with status JSON |
-| Sentry Test POST | ✅ PASS | Error triggered and logged |
-| OTEL Traces | ✅ PASS | 6 traces in Tempo |
-| Grafana | ✅ PASS | Running at :3001 |
-| Tempo | ✅ PASS | Trace search returning results |
-| Unit Tests | ✅ PASS | 6/6 tests passing |
-| Full Suite | ✅ PASS | 131/131 tests passing |
+| Component          | Status                      | Evidence                                         |
+| ------------------ | --------------------------- | ------------------------------------------------ |
+| App Build          | ✅ PASS                     | Build successful in 7.60s                        |
+| App Startup        | ✅ PASS                     | Server listening on :3000                        |
+| Health API         | ✅ PASS                     | HTTP 200 OK                                      |
+| Sentry Test GET    | ✅ PASS                     | HTTP 200 with status JSON                        |
+| Sentry Test POST   | ✅ PASS                     | Error triggered and logged                       |
+| OTEL Traces        | ✅ PASS                     | 6 traces in Tempo                                |
+| Grafana            | ✅ PASS                     | Running at :3001                                 |
+| Tempo              | ✅ PASS                     | Trace search returning results                   |
+| Unit Tests         | ✅ PASS                     | 6/6 tests passing                                |
+| Full Suite         | ✅ PASS                     | 131/131 tests passing                            |
 | **Sentry Capture** | ⚠️ **NEEDS SENTRY INSTANCE** | Code ready, needs `docker compose up sentry-web` |
 
 ---
@@ -311,10 +335,11 @@ open http://localhost:9000
 
 ## 9. Grafana Dashboard Access
 
-**URL:** http://localhost:3001  
+**URL:** http://localhost:3001\
 **Login:** admin / admin
 
 **View Traces:**
+
 1. Navigate to **Explore**
 2. Select **Tempo** datasource
 3. Query: `{service.name="effect-tanstack-start-sentry-test"}`
@@ -327,6 +352,7 @@ open http://localhost:9000
 ## Conclusion
 
 **The @sentry/effect integration is COMPLETE and VERIFIED for:**
+
 - ✅ Effect v4 Layer composition
 - ✅ Coexistence with OTEL stack
 - ✅ Trace collection in Tempo
@@ -334,6 +360,7 @@ open http://localhost:9000
 - ✅ All unit tests passing
 
 **REMAINING for full LAOS stack:**
+
 - ⚠️ Start Sentry services (blocked by Docker daemon I/O error)
 - ⚠️ Verify error appears in Sentry dashboard
 
@@ -341,6 +368,6 @@ The integration code is production-ready. Once the Docker environment is restore
 
 ---
 
-**Tested by:** pi coding agent  
-**jj Commit:** WIP: feat(sentry): integrate @sentry/effect with Effect v4 and LAOS testing  
+**Tested by:** pi coding agent\
+**jj Commit:** WIP: feat(sentry): integrate @sentry/effect with Effect v4 and LAOS testing\
 **Bookmark:** feature/sentry-effect-integration

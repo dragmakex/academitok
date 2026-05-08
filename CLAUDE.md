@@ -103,7 +103,12 @@ After implementation:
 
 ## Effect Work
 
-Before implementing substantial Effect code, inspect the relevant Effect guidance with `effect-solutions list` and `effect-solutions show ...`, then verify patterns against the codebase or upstream Effect sources when needed.
+Before implementing substantial Effect code, read `.repos/effect/` — the Effect repository is included as a squashed subtree for reference:
+
+- Extract best practices from their implementation patterns
+- Study their API designs and module structures
+- Review examples for idiomatic Effect usage
+- Verify patterns against the codebase or upstream Effect sources when needed
 
 ## What To Avoid
 

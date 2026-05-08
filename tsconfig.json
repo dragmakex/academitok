@@ -6,7 +6,7 @@
     "tests/**/*.ts",
     "tests/**/*.tsx"
   ],
-  "exclude": ["./.worktrees", "node_modules"],
+  "exclude": ["./.worktrees", "./.repos", "node_modules"],
   "compilerOptions": {
     "target": "ES2022",
     "jsx": "react-jsx",

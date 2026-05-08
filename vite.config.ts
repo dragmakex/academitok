@@ -63,6 +63,8 @@ const config = defineConfig(({ mode }) => {
         ".worktrees/**",
         "**/.jj-workspaces/**",
         ".jj-workspaces/**",
+        "**/.repos/**",
+        ".repos/**",
         ...(!isBrowserRun
           ? [
             "src/component/*.test.tsx",
@@ -164,6 +166,7 @@ const config = defineConfig(({ mode }) => {
         ignored: [
           ".worktrees/**",
           ".jj-workspaces/**",
+          ".repos/**",
         ],
       },
     },
