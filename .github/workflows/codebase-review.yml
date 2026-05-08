@@ -2,12 +2,25 @@ name: AI Code Review (Template)
 
 # This is a TEMPLATE workflow for AI code review integration
 # Uncomment and configure when ready to enable AI review
-
+#
 # See docs/guides/ai-code-review.md for setup instructions
 
+# DISABLED - Uncomment 'on' section when ready to enable
+# on:
+#   pull_request:
+#     types: [opened, synchronize, reopened]
+
+# Remove this dummy job when enabling the workflow
 on:
-  pull_request:
-    types: [opened, synchronize, reopened]
+  workflow_dispatch:
+
+jobs:
+  placeholder:
+    name: Placeholder (Disabled)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Workflow disabled
+        run: echo "AI Code Review workflow is disabled. Uncomment the configuration in .github/workflows/codebase-review.yml to enable."
 
 # Uncomment when ready to enable
 # jobs:
