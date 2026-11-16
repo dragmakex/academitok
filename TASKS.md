@@ -47,7 +47,7 @@ Task order is dependency order, not priority order. Source of truth for requirem
 
 ## P1 — product surface and identity
 
-- [ ] **8. Feed health metrics.** SPEC §8.4: emit `impression`, `dwell`, `reaction`,
+- [x] **8. Feed health metrics.** Satisfied by `e35a341`. SPEC §8.4: emit `impression`, `dwell`, `reaction`,
       `feed.next` events to PostHog with hashed reader id. Accept: events visible locally,
       `docs/guides/posthog.md` updated with the feed event table.
 - [ ] **9. Repo identity.** Replace the template `README.md` and `package.json` name with
