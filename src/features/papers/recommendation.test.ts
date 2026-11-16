@@ -84,6 +84,47 @@ describe("paper recommendation", () => {
     },
   )
 
+  it("uses onboarding keeps for topic and content affinity", () => {
+    const papers = [
+      paperFixture("kept", "neural networks learn image representations"),
+      paperFixture("similar", "neural networks learn visual representations"),
+      paperFixture("unrelated", "ocean currents alter coastal sediment", {
+        topics: ["Climate"],
+      }),
+      paperFixture("rejected", "neural networks classify images"),
+    ]
+    const items = buildFeedItems(
+      {
+        profile: {
+          name: "Guest Reader",
+          institution: "Guest",
+          interests: [],
+        },
+        reactions: [
+          {
+            paperId: "kept",
+            kind: "onboard-keep",
+            active: true,
+            timestamp: Date.now(),
+          },
+          {
+            paperId: "rejected",
+            kind: "onboard-reject",
+            active: true,
+            timestamp: Date.now(),
+          },
+        ],
+      },
+      papers,
+      "All",
+      "recommended",
+    )
+    const rank = (id: string) => items.findIndex((item) => item.paper.id === id)
+
+    expect(rank("similar")).toBeLessThan(rank("unrelated"))
+    expect(rank("rejected")).toBe(-1)
+  })
+
   it("ranks later papers by a repeatedly liked author above unrelated work", () => {
     const papers = [
       paperFixture("source-left", "shared neutral abstract", {

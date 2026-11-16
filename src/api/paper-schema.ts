@@ -52,6 +52,8 @@ export const ReactionKind = Schema.Literals([
   "bookmark",
   "hide",
   "open-site",
+  "onboard-keep",
+  "onboard-reject",
 ])
 export type ReactionKind = typeof ReactionKind.Type
 
@@ -182,11 +184,43 @@ export type TrackPaperViewInput = typeof TrackPaperViewInput.Type
 export const TrackPaperViewsInput = Schema.Array(TrackPaperViewInput)
 export type TrackPaperViewsInput = typeof TrackPaperViewsInput.Type
 
+const OnboardingPaperIds = Schema.Array(Schema.String).check(
+  Schema.isMaxLength(15),
+  Schema.isUnique(),
+)
+
+const OnboardingSelection = Schema
+  .Struct({
+    keptPaperIds: OnboardingPaperIds.check(Schema.isMinLength(5)),
+    rejectedPaperIds: OnboardingPaperIds,
+    skipped: Schema.Literal(false),
+  })
+  .check(
+    Schema.makeFilter<{
+      readonly keptPaperIds: ReadonlyArray<string>
+      readonly rejectedPaperIds: ReadonlyArray<string>
+    }>((input) => {
+      const selected = [...input.keptPaperIds, ...input.rejectedPaperIds]
+      return selected.length === 15 && new Set(selected).size === 15
+    }, { expected: "15 distinct onboarding decisions" }),
+  )
+
+export const OnboardProfileInput = Schema.Union([
+  OnboardingSelection,
+  Schema.Struct({
+    keptPaperIds: Schema.Tuple([]),
+    rejectedPaperIds: Schema.Tuple([]),
+    skipped: Schema.Literal(true),
+  }),
+])
+export type OnboardProfileInput = typeof OnboardProfileInput.Type
+
+export const OnboardingResult = Schema.Struct({
+  seeded: Schema.Literal(true),
+})
+export type OnboardingResult = typeof OnboardingResult.Type
+
 export const defaultReaderState: ReaderState = {
-  profile: {
-    name: "Guest Reader",
-    institution: "Guest",
-    interests: ["AI", "Education", "Health"],
-  },
+  profile: null,
   reactions: [],
 }

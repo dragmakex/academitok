@@ -1,5 +1,6 @@
 import {
   FeedPage,
+  OnboardProfileInput,
   Paper,
   TrackPaperViewInput,
   TrackPaperViewsInput,
@@ -12,9 +13,11 @@ const decodePaper = Schema.decodeUnknownSync(Paper)
 const decodeFeedPage = Schema.decodeUnknownSync(FeedPage)
 const decodeImpression = Schema.decodeUnknownSync(TrackPaperViewInput)
 const decodeImpressions = Schema.decodeUnknownSync(TrackPaperViewsInput)
+const decodeOnboarding = Schema.decodeUnknownSync(OnboardProfileInput)
 
 describe("paper feed contracts", () => {
-  it("round-trips paper metadata", () => {
+  it("round-trips the fifteen offline onboarding candidates", () => {
+    expect(curatedPapers).toHaveLength(15)
     const paper = curatedPapers[0]
     expect(paper).toBeDefined()
     expect(decodePaper(paper)).toEqual(paper)
@@ -37,6 +40,46 @@ describe("paper feed contracts", () => {
     }
     expect(decodeImpression(impression).dwellMs).toBe(4_200)
     expect(decodeImpressions([impression])).toHaveLength(1)
+  })
+
+  it("requires five onboarding keeps unless onboarding is skipped", () => {
+    expect(
+      decodeOnboarding({
+        keptPaperIds: ["1", "2", "3", "4", "5"],
+        rejectedPaperIds: [
+          "6",
+          "7",
+          "8",
+          "9",
+          "10",
+          "11",
+          "12",
+          "13",
+          "14",
+          "15",
+        ],
+        skipped: false,
+      })
+        .skipped,
+    )
+      .toBe(false)
+    expect(
+      decodeOnboarding({
+        keptPaperIds: [],
+        rejectedPaperIds: [],
+        skipped: true,
+      })
+        .skipped,
+    )
+      .toBe(true)
+    expect(() =>
+      decodeOnboarding({
+        keptPaperIds: ["1", "2", "3", "4"],
+        rejectedPaperIds: [],
+        skipped: false,
+      })
+    )
+      .toThrow()
   })
 
   it("rejects invalid impression kinds", () => {

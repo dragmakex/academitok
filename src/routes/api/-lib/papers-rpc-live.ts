@@ -1,11 +1,13 @@
 import type {
   FeedRequest,
+  OnboardProfileInput,
   ReactToPaperInput,
   SaveProfileInput,
   TrackPaperViewsInput,
 } from "@/api/paper-schema"
 import {
   getPaperFeedSnapshot,
+  onboardReader,
   reactToPaper,
   saveReaderProfile,
   trackPaperViews,
@@ -22,4 +24,6 @@ export const createPaperRpcHandlers = Effect.succeed({
     reactToPaper(input),
   papers_trackViews: ({ inputs }: { inputs: TrackPaperViewsInput }) =>
     trackPaperViews(inputs),
+  profile_onboard: ({ input }: { input: OnboardProfileInput }) =>
+    onboardReader(input),
 })

@@ -1,5 +1,6 @@
 import {
   defaultReaderState,
+  type OnboardProfileInput,
   type ReactToPaperInput,
   type ReaderProfile,
   ReaderState,
@@ -13,7 +14,7 @@ import {
   readerStateTable,
 } from "@/db/schema"
 import { PGlite } from "@electric-sql/pglite"
-import { and, desc, eq, isNull } from "drizzle-orm"
+import { and, desc, eq, inArray, isNull } from "drizzle-orm"
 import { drizzle as drizzlePglite } from "drizzle-orm/pglite"
 import { drizzle as drizzlePostgres } from "drizzle-orm/postgres-js"
 import * as Config from "effect/Config"
@@ -40,6 +41,7 @@ type RepositoryDatabaseConfig =
 type ReaderStateRepositoryShape = {
   readonly load: Effect.Effect<typeof ReaderState.Type>
   readonly saveProfile: (profile: SaveProfileInput) => Effect.Effect<void>
+  readonly onboard: (input: OnboardProfileInput) => Effect.Effect<void>
   readonly react: (input: ReactToPaperInput) => Effect.Effect<boolean>
   readonly track: (input: TrackPaperViewInput) => Effect.Effect<void>
 }
@@ -55,6 +57,10 @@ type StateStorage = {
   readonly load: () => Promise<StoredState>
   readonly migrate: (state: typeof ReaderState.Type) => Promise<void>
   readonly saveProfile: (profile: ReaderProfile) => Promise<void>
+  readonly onboard: (
+    input: OnboardProfileInput,
+    createdAt: Date,
+  ) => Promise<void>
   readonly react: (
     input: ReactToPaperInput,
     createdAt: Date,
@@ -280,6 +286,36 @@ function storedStateToReaderState(stored: StoredState) {
 }
 
 /**
+ * Converts onboarding picks into persisted affinity signals.
+ * @param input - Validated onboarding decision.
+ * @param createdAt - Shared signal timestamp.
+ * @returns Reaction rows for kept and rejected papers.
+ */
+function onboardingRows(input: OnboardProfileInput, createdAt: Date) {
+  if (input.skipped) {
+    return []
+  }
+  return [
+    ...input.keptPaperIds.map((paperId) => ({
+      id: randomUUID(),
+      readerId: singletonId,
+      paperId,
+      kind: "onboard-keep",
+      active: true,
+      createdAt,
+    })),
+    ...input.rejectedPaperIds.map((paperId) => ({
+      id: randomUUID(),
+      readerId: singletonId,
+      paperId,
+      kind: "onboard-reject",
+      active: true,
+      createdAt,
+    })),
+  ]
+}
+
+/**
  * Builds the repository service over adapter-specific storage.
  * @param storage - Database adapter operations.
  * @returns Reader-state repository service.
@@ -313,6 +349,11 @@ function makeRepositoryService(storage: StateStorage) {
         Effect.promise(async () => {
           await ensureMigrated()
           await storage.saveProfile(normalizeProfileInput(input))
+        }),
+      onboard: (input) =>
+        Effect.promise(async () => {
+          await ensureMigrated()
+          await storage.onboard(input, new Date())
         }),
       react: (input) =>
         Effect.promise(async () => {
@@ -359,7 +400,35 @@ function makePostgresRepository(databaseUrl: string) {
       })
       yield* Effect.addFinalizer(() => Effect.promise(() => client.end()))
 
-      const storage: StateStorage = {
+      const postgresStorage: StateStorage = {
+        onboard: async (input, createdAt) => {
+          await db.transaction(async (tx) => {
+            await tx
+              .insert(readerProfilesTable)
+              .values({
+                id: singletonId,
+                name: "Guest Reader",
+                institution: "Guest",
+                beats: [],
+                onboardedAt: createdAt,
+              })
+              .onConflictDoUpdate({
+                target: readerProfilesTable.id,
+                set: { onboardedAt: createdAt },
+              })
+            await tx.delete(reactionsTable).where(and(
+              eq(reactionsTable.readerId, singletonId),
+              inArray(reactionsTable.kind, [
+                "onboard-keep",
+                "onboard-reject",
+              ]),
+            ))
+            const rows = onboardingRows(input, createdAt)
+            if (rows.length > 0) {
+              await tx.insert(reactionsTable).values(rows)
+            }
+          })
+        },
         load: async () => {
           const source = await db
             .select()
@@ -509,7 +578,7 @@ function makePostgresRepository(databaseUrl: string) {
         },
       }
 
-      return makeRepositoryService(storage)
+      return makeRepositoryService(postgresStorage)
     })
     .pipe(Effect.orDie)
 }
@@ -545,6 +614,34 @@ function makePgliteRepository(dataDir: string | undefined) {
       yield* Effect.addFinalizer(() => Effect.promise(() => client.close()))
 
       const storage: StateStorage = {
+        onboard: async (input, createdAt) => {
+          await db.transaction(async (tx) => {
+            await tx
+              .insert(readerProfilesTable)
+              .values({
+                id: singletonId,
+                name: "Guest Reader",
+                institution: "Guest",
+                beats: [],
+                onboardedAt: createdAt,
+              })
+              .onConflictDoUpdate({
+                target: readerProfilesTable.id,
+                set: { onboardedAt: createdAt },
+              })
+            await tx.delete(reactionsTable).where(and(
+              eq(reactionsTable.readerId, singletonId),
+              inArray(reactionsTable.kind, [
+                "onboard-keep",
+                "onboard-reject",
+              ]),
+            ))
+            const rows = onboardingRows(input, createdAt)
+            if (rows.length > 0) {
+              await tx.insert(reactionsTable).values(rows)
+            }
+          })
+        },
         load: async () => {
           const source = await db
             .select()

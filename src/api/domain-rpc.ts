@@ -10,6 +10,8 @@ import * as RpcGroup from "effect/unstable/rpc/RpcGroup"
 import {
   FeedRequest,
   FeedSnapshot,
+  OnboardingResult,
+  OnboardProfileInput,
   ReactionResult,
   ReactToPaperInput,
   SaveProfileInput,
@@ -85,4 +87,14 @@ export class PapersRpc extends RpcGroup
   .prefix("papers_")
 {}
 
-export class DomainRpc extends TodosRpc.merge(PapersRpc) {}
+export class ProfileRpc extends RpcGroup
+  .make(
+    Rpc.make("onboard", {
+      success: OnboardingResult,
+      payload: { input: OnboardProfileInput },
+    }),
+  )
+  .prefix("profile_")
+{}
+
+export class DomainRpc extends TodosRpc.merge(PapersRpc).merge(ProfileRpc) {}

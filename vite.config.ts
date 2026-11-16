@@ -145,13 +145,10 @@ const config = defineConfig(async ({ mode }) => {
           ? [
             "src/component/*.test.tsx",
             "src/lib/atom-hydration.test.tsx",
+            "src/routes/-index/*.test.tsx",
             "src/visual/*.test.tsx",
           ]
-          : [
-            // Exclude symlinked tests from browser runs - they resolve to docs/
-            // which the browser test server cannot serve correctly
-            "src/routes/-index/*.test.tsx",
-          ]),
+          : []),
       ],
       // Browser mode configuration for component and visual regression testing
       browser: {

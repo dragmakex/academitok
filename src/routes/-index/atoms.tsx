@@ -3,6 +3,7 @@ import {
   type FeedQuery,
   type FeedRequest,
   FeedSnapshot,
+  type OnboardProfileInput,
   type ReactToPaperInput,
   type SaveProfileInput,
   type TrackPaperViewInput,
@@ -30,6 +31,7 @@ class Api extends Context.Service<Api>()("@app/index/Api", {
       snapshot: (request: FeedRequest) => rpc.papers_snapshot({ request }),
       saveProfile: (input: SaveProfileInput, request: FeedRequest) =>
         rpc.papers_saveProfile({ input, request }),
+      onboard: (input: OnboardProfileInput) => rpc.profile_onboard({ input }),
       react: (input: ReactToPaperInput) => rpc.papers_react({ input }),
       trackViews: (inputs: ReadonlyArray<TrackPaperViewInput>) =>
         rpc.papers_trackViews({ inputs }),
@@ -139,6 +141,16 @@ export const saveReaderProfileAtom = runtime.fn<{
     const snapshot = yield* api.saveProfile(input, { query, cursor: null })
     replaceDashboardSnapshot(get, snapshot)
     return snapshot
+  }),
+)
+
+export const onboardReaderAtom = runtime.fn<OnboardProfileInput>()(
+  Effect.fnUntraced(function*(input, get) {
+    const api = yield* Api
+    const result = yield* api.onboard(input)
+    const snapshot = yield* api.snapshot({ query: defaultQuery, cursor: null })
+    replaceDashboardSnapshot(get, snapshot)
+    return result
   }),
 )
 

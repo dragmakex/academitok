@@ -16,6 +16,8 @@ const reactionWeights = {
   bookmark: 3.8,
   hide: -5,
   "open-site": 3.4,
+  "onboard-keep": 4.5,
+  "onboard-reject": -5,
 } as const
 
 /**
@@ -212,6 +214,7 @@ function activeState(state: ReaderState) {
   const liked = new Set<string>()
   const bookmarked = new Set<string>()
   const hidden = new Set<string>()
+  const onboardingKept = new Set<string>()
   const resolved = new Set<string>()
 
   for (const reaction of state.reactions) {
@@ -219,8 +222,10 @@ function activeState(state: ReaderState) {
       ? liked
       : reaction.kind === "bookmark"
       ? bookmarked
-      : reaction.kind === "hide"
+      : reaction.kind === "hide" || reaction.kind === "onboard-reject"
       ? hidden
+      : reaction.kind === "onboard-keep"
+      ? onboardingKept
       : undefined
     const key = `${reaction.kind}:${reaction.paperId}`
 
@@ -232,7 +237,7 @@ function activeState(state: ReaderState) {
     }
   }
 
-  return { bookmarked, hidden, liked }
+  return { bookmarked, hidden, liked, onboardingKept }
 }
 
 /**
@@ -421,7 +426,11 @@ export function buildFeedItems(
   const idf = inverseDocumentFrequencies(papers)
   const contentCentroid = buildContentCentroid(
     papers,
-    new Set([...active.liked, ...active.bookmarked]),
+    new Set([
+      ...active.liked,
+      ...active.bookmarked,
+      ...active.onboardingKept,
+    ]),
   )
 
   const items = papers

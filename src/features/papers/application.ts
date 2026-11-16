@@ -1,5 +1,6 @@
 import {
   type FeedRequest,
+  type OnboardProfileInput,
   type ReactToPaperInput,
   type SaveProfileInput,
   type TopicFilter,
@@ -53,7 +54,23 @@ export const getPaperFeedSnapshot = (request: FeedRequest) =>
         request.query.topic,
         request.query.sort,
       )
-      const page = buildFeedPage(ranked, request.cursor)
+      const onboarding = state.profile === null
+      const onboardingSignals = state.reactions.filter((reaction) =>
+        reaction.kind === "onboard-keep"
+        || reaction.kind === "onboard-reject"
+      )
+      const viewCount = state
+        .reactions
+        .filter((reaction) => reaction.kind === "view")
+        .length
+      const skipped = state.profile?.interests.length === 0
+        && onboardingSignals.length === 0
+      const candidates = skipped && viewCount < 20
+        ? ranked.map((item) => ({ ...item, exploration: true }))
+        : ranked
+      const page = onboarding
+        ? { items: candidates.slice(0, 15), nextCursor: null }
+        : buildFeedPage(candidates, request.cursor)
 
       return {
         profile: state.profile,
@@ -78,6 +95,15 @@ export const saveReaderProfile = (
       return yield* getPaperFeedSnapshot(request)
     })
     .pipe(Effect.withSpan("PapersApp.saveProfile"))
+
+export const onboardReader = (input: OnboardProfileInput) =>
+  Effect
+    .gen(function*() {
+      const repository = yield* ReaderStateRepository
+      yield* repository.onboard(input)
+      return { seeded: true as const }
+    })
+    .pipe(Effect.withSpan("profile.onboard"))
 
 export const reactToPaper = (input: ReactToPaperInput) =>
   Effect

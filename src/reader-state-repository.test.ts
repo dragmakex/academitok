@@ -38,6 +38,58 @@ afterEach(async () => {
 })
 
 describe("ReaderStateRepository", () => {
+  it("persists onboarding picks and accepts an explicit skip", async () => {
+    const picksDir = await mkdtemp(join(tmpdir(), "academitok-onboarding-"))
+    const skipDir = await mkdtemp(join(tmpdir(), "academitok-onboarding-skip-"))
+    directories.push(picksDir, skipDir)
+
+    const fresh = await runWithDatabase(
+      picksDir,
+      Effect.gen(function*() {
+        const repository = yield* ReaderStateRepository
+        const state = yield* repository.load
+        yield* repository.onboard({
+          keptPaperIds: ["1", "2", "3", "4", "5"],
+          rejectedPaperIds: ["6", "7"],
+          skipped: false,
+        })
+        return state
+      }),
+    )
+    expect(fresh.profile).toBeNull()
+
+    const onboarded = await runWithDatabase(
+      picksDir,
+      Effect.gen(function*() {
+        const repository = yield* ReaderStateRepository
+        return yield* repository.load
+      }),
+    )
+    expect(onboarded.profile).toMatchObject({
+      name: "Guest Reader",
+      interests: [],
+    })
+    expect(onboarded.reactions).toEqual(expect.arrayContaining([
+      expect.objectContaining({ paperId: "1", kind: "onboard-keep" }),
+      expect.objectContaining({ paperId: "6", kind: "onboard-reject" }),
+    ]))
+
+    const skipped = await runWithDatabase(
+      skipDir,
+      Effect.gen(function*() {
+        const repository = yield* ReaderStateRepository
+        yield* repository.onboard({
+          keptPaperIds: [],
+          rejectedPaperIds: [],
+          skipped: true,
+        })
+        return yield* repository.load
+      }),
+    )
+    expect(skipped.profile).not.toBeNull()
+    expect(skipped.reactions).toEqual([])
+  })
+
   it("migrates the JSON source once and preserves normalized events across restarts", async () => {
     const dataDir = await mkdtemp(join(tmpdir(), "academitok-reader-state-"))
     directories.push(dataDir)

@@ -18,6 +18,7 @@ import { Tabs } from "@/design-system/components/Tabs"
 import { Text } from "@/design-system/components/Text"
 import { TextField } from "@/design-system/components/TextField"
 import { Grid } from "@/design-system/primitives/Grid"
+import { Inline } from "@/design-system/primitives/Inline"
 import { Stack } from "@/design-system/primitives/Stack"
 import { useAtomSet, useAtomValue } from "@effect/atom-react"
 import { useCallback, useEffect, useRef, useState } from "react"
@@ -25,6 +26,7 @@ import {
   dashboardSnapshotAtom,
   loadNextPaperPageAtom,
   loadPaperFeedAtom,
+  onboardReaderAtom,
   reactToPaperAtom,
   saveReaderProfileAtom,
   trackPaperViewAtom,
@@ -220,6 +222,147 @@ function VisiblePaperSlide({
   )
 }
 
+type OnboardingPicksProps = {
+  readonly candidates: ReadonlyArray<FeedItem>
+  readonly onSubmit: (
+    input:
+      | {
+        readonly keptPaperIds: ReadonlyArray<string>
+        readonly rejectedPaperIds: ReadonlyArray<string>
+        readonly skipped: false
+      }
+      | {
+        readonly keptPaperIds: readonly []
+        readonly rejectedPaperIds: readonly []
+        readonly skipped: true
+      },
+  ) => void
+}
+
+/**
+ * Collects cold-start paper picks in three groups of five.
+ * @param root0 - Onboarding props.
+ * @param root0.candidates - Candidate papers.
+ * @param root0.onSubmit - Completed selection callback.
+ * @returns Onboarding selection surface.
+ */
+export function OnboardingPicks(
+  { candidates, onSubmit }: OnboardingPicksProps,
+) {
+  const [page, setPage] = useState(0)
+  const [decisions, setDecisions] = useState<
+    Readonly<Record<string, "keep" | "discard">>
+  >({})
+  const visible = candidates.slice(page * 5, page * 5 + 5)
+  const pageComplete = visible.length === 5
+    && visible.every((item) => decisions[item.paper.id] !== undefined)
+  const keptPaperIds = candidates
+    .filter((item) => decisions[item.paper.id] === "keep")
+    .map((item) => item.paper.id)
+  const rejectedPaperIds = candidates
+    .filter((item) => decisions[item.paper.id] === "discard")
+    .map((item) => item.paper.id)
+
+  return (
+    <FeedDeck>
+      <FeedStateSlide>
+        <Card>
+          <Stack gap="m">
+            <Stack gap="xs">
+              <Text tone="label" as="span">
+                Set your front page · {page + 1} of 3
+              </Text>
+              <Text>
+                Keep at least five papers. Your choices tune topics and writing
+                similarity before the first edition.
+              </Text>
+            </Stack>
+            <Grid layout="stats">
+              {visible.map((item) => (
+                <Card key={item.paper.id} tone="subtle">
+                  <Stack gap="s">
+                    <Text tone="label" as="span">
+                      {item.paper.topics[0] ?? "Research"}
+                    </Text>
+                    <Text>
+                      {item.paper.title}
+                    </Text>
+                    <Inline gap="s">
+                      <Button
+                        variant={decisions[item.paper.id] === "keep"
+                          ? "primary"
+                          : "secondary"}
+                        aria-label={`Keep ${item.paper.title}`}
+                        aria-pressed={decisions[item.paper.id] === "keep"}
+                        onClick={() =>
+                          setDecisions((current) => ({
+                            ...current,
+                            [item.paper.id]: "keep",
+                          }))}
+                      >
+                        Keep scrolling
+                      </Button>
+                      <Button
+                        variant={decisions[item.paper.id] === "discard"
+                          ? "danger"
+                          : "ghost"}
+                        aria-label={`Discard ${item.paper.title}`}
+                        aria-pressed={decisions[item.paper.id] === "discard"}
+                        onClick={() =>
+                          setDecisions((current) => ({
+                            ...current,
+                            [item.paper.id]: "discard",
+                          }))}
+                      >
+                        Discard
+                      </Button>
+                    </Inline>
+                  </Stack>
+                </Card>
+              ))}
+            </Grid>
+            <Inline gap="s" align="between">
+              <Button
+                variant="ghost"
+                onClick={() =>
+                  onSubmit({
+                    keptPaperIds: [],
+                    rejectedPaperIds: [],
+                    skipped: true,
+                  })}
+              >
+                Just show me the front page
+              </Button>
+              {page < 2
+                ? (
+                  <Button
+                    disabled={!pageComplete}
+                    onClick={() => setPage((current) => current + 1)}
+                  >
+                    Next five
+                  </Button>
+                )
+                : (
+                  <Button
+                    disabled={!pageComplete || keptPaperIds.length < 5}
+                    onClick={() =>
+                      onSubmit({
+                        keptPaperIds,
+                        rejectedPaperIds,
+                        skipped: false,
+                      })}
+                  >
+                    Print my edition
+                  </Button>
+                )}
+            </Inline>
+          </Stack>
+        </Card>
+      </FeedStateSlide>
+    </FeedDeck>
+  )
+}
+
 /**
  * Renders the AcademiTok feed and reading desk.
  * @returns Full-screen feed application.
@@ -228,6 +371,7 @@ export function App() {
   const snapshotAsync = useAtomValue(dashboardSnapshotAtom)
   const loadPaperFeed = useAtomSet(loadPaperFeedAtom)
   const loadNextPage = useAtomSet(loadNextPaperPageAtom)
+  const onboardReader = useAtomSet(onboardReaderAtom)
   const saveProfile = useAtomSet(saveReaderProfileAtom)
   const trackView = useAtomSet(trackPaperViewAtom)
   const snapshot = snapshotAsync._tag === "Success"
@@ -504,6 +648,13 @@ export function App() {
               />
             </FeedStateSlide>
           </FeedDeck>
+        )
+        : snapshot?.profile === null && snapshot.items.length === 15
+        ? (
+          <OnboardingPicks
+            candidates={snapshot.items}
+            onSubmit={onboardReader}
+          />
         )
         : loading && snapshot === undefined
         ? (
