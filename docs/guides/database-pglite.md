@@ -142,6 +142,14 @@ constructing clients ad hoc.
 
 Keep migrations derived from the Drizzle schema.
 
+AcademiTok's reader data lives in `papers`, `impressions`, `reactions`,
+`reader_profiles`, and `feed_sessions`. On the first repository access after an
+upgrade, `ReaderStateRepository` reads the legacy singleton `reader_state` JSON
+row, writes its profile and events to the normalized tables in one transaction,
+and deletes the source row only after those writes succeed. New code never
+writes the JSON blob. A restart therefore reads only normalized rows while a
+failed migration leaves the source available for retry.
+
 Example `drizzle.config.ts`:
 
 ```ts

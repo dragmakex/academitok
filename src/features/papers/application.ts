@@ -7,7 +7,6 @@ import {
 } from "@/api/paper-schema"
 import { curatedPapers } from "@/data/papers"
 import { ReaderStateRepository } from "@/db/reader-state-repository"
-import { recordReaderReaction } from "@/features/papers/reactions"
 import {
   buildFeedItems,
   buildFeedPage,
@@ -75,17 +74,7 @@ export const saveReaderProfile = (
   Effect
     .gen(function*() {
       const repository = yield* ReaderStateRepository
-      const state = yield* repository.load
-
-      yield* repository.save({
-        ...state,
-        profile: {
-          name: input.name.trim(),
-          institution: input.institution,
-          interests: [...new Set(input.interests)],
-        },
-      })
-
+      yield* repository.saveProfile(input)
       return yield* getPaperFeedSnapshot(request)
     })
     .pipe(Effect.withSpan("PapersApp.saveProfile"))
@@ -94,15 +83,12 @@ export const reactToPaper = (input: ReactToPaperInput) =>
   Effect
     .gen(function*() {
       const repository = yield* ReaderStateRepository
-      const state = yield* repository.load
-      const reactions = recordReaderReaction(state.reactions, input)
-
-      yield* repository.save({ ...state, reactions })
+      const active = yield* repository.react(input)
 
       return {
         paperId: input.paperId,
         kind: input.kind,
-        active: reactions[0]?.active ?? true,
+        active,
       }
     })
     .pipe(Effect.withSpan("PapersApp.react"))
@@ -111,12 +97,7 @@ export const trackPaperView = (input: TrackPaperViewInput) =>
   Effect
     .gen(function*() {
       const repository = yield* ReaderStateRepository
-      const state = yield* repository.load
-
-      yield* repository.save({
-        ...state,
-        reactions: recordReaderReaction(state.reactions, input),
-      })
+      yield* repository.track(input)
     })
     .pipe(Effect.withSpan("feed.impression"))
 
