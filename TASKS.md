@@ -13,11 +13,12 @@ write the conflict at the bottom instead of guessing.
 
 ## P1 leftover
 
-- [ ] **1. Persisted feed session state.** SPEC §16 remaining work: the cursor carries the
+- [x] **1. Persisted feed session state.** SPEC §16 remaining work: the cursor carries the
       session's seen ids, so a client can desynchronise from the server's idea of the session.
       Move it to a `feed_sessions` row (id, reader_id, seen paper ids, cursor, updated_at) with
       a TTL sweep. Accept: two `feed.next` calls with the same session id never repeat a paper
       even if the client passes a stale cursor; a fresh session id starts clean.
+      — `41d1119`
 
 ## P2 — breadth
 
