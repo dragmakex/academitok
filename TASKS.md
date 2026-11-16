@@ -50,9 +50,9 @@ Task order is dependency order, not priority order. Source of truth for requirem
 - [x] **8. Feed health metrics.** Satisfied by `e35a341`. SPEC §8.4: emit `impression`, `dwell`, `reaction`,
       `feed.next` events to PostHog with hashed reader id. Accept: events visible locally,
       `docs/guides/posthog.md` updated with the feed event table.
-- [ ] **9. Repo identity.** Replace the template `README.md` and `package.json` name with
-      AcademiTok (link `PROMPT.md`, `SPEC.md`, `AGENTS.md`). Accept: no "Effect TanStack Start"
-      marketing copy left, no stale todo screenshots.
+- [x] **9. Repo identity.** Satisfied by `bad9086` (README) and `9b11548` (package name). Replace
+      the template `README.md` and `package.json` name with AcademiTok (link `PROMPT.md`, `SPEC.md`,
+      `AGENTS.md`). Accept: no "Effect TanStack Start" marketing copy left, no stale todo screenshots.
 - [ ] **10. Retire the todo template.** Delete `src/features/todos/`, todo routes, todo
       docs and their tests in **one** commit after everything above is green. Accept:
       `bun run validate` green with the feature gone, no dangling imports.
