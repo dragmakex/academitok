@@ -127,17 +127,18 @@ AcademiTok emits these stable client-side events. Every event includes
 `reader_id_hash`, a SHA-256 digest of PostHog's pseudonymous browser identifier;
 the unhashed value is never added to event properties.
 
-| Event        | When emitted                                                 | Properties                                                                                    |
-| ------------ | ------------------------------------------------------------ | --------------------------------------------------------------------------------------------- |
-| `impression` | A clipping is at least 60% visible for 400 ms                | `paper_id`, zero-based `position`, `exploration`, `topics`                                    |
-| `dwell`      | An impressed clipping leaves view or the page becomes hidden | `paper_id`, `dwell_ms`, zero-based `position`, `exploration`, `topics`                        |
-| `reaction`   | A like, bookmark, hide, or source-open is persisted          | `paper_id`, `kind`, `active`                                                                  |
-| `feed.next`  | The initial edition or another ranked page is returned       | `cursor`, `item_count`, `duplicate_count`, `exploration_count`, `topic`, `sort`, `cold_start` |
+| Event        | When emitted                                                 | Properties                                                                                           |
+| ------------ | ------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------- |
+| `impression` | A clipping is at least 60% visible for 400 ms                | `paper_id`, zero-based `position`, `exploration`, `topics`                                           |
+| `dwell`      | An impressed clipping leaves view or the page becomes hidden | `paper_id`, `dwell_ms`, `read_minutes`, `completion`, zero-based `position`, `exploration`, `topics` |
+| `reaction`   | A like, bookmark, hide, or source-open is persisted          | `paper_id`, `kind`, `active`                                                                         |
+| `feed.next`  | The initial edition or another ranked page is returned       | `cursor`, `item_count`, `duplicate_count`, `exploration_count`, `topic`, `sort`, `cold_start`        |
 
 Use these events for the SPEC §8.4 insights: saves and hides per 100
-`impression` events, median `dwell_ms`, source-open reactions per impression,
-topic entropy over impression windows, `duplicate_count` per page, and empty
-cold-start `feed.next` responses. Local events appear in PostHog when
+`impression` events, median `dwell_ms`, median `completion` (dwell over the
+clipping's estimated read time, clamped to 1), source-open reactions per
+impression, topic entropy over impression windows, `duplicate_count` per page,
+and empty cold-start `feed.next` responses. Local events appear in PostHog when
 `VITE_POSTHOG_KEY` and `VITE_POSTHOG_HOST` point at the local instance.
 
 ## Dashboard

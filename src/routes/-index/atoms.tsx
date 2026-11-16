@@ -247,13 +247,18 @@ const impressionQueueAtom = Atom.make<ReadonlyArray<TrackPaperViewInput>>([])
 type TrackPaperViewCommand = {
   readonly event?: TrackPaperViewInput
   readonly topics?: ReadonlyArray<Topic>
+  readonly readMinutes?: number | null
   readonly flush?: boolean
 }
 
 export const trackPaperViewAtom = runtime.fn<TrackPaperViewCommand>()(
   Effect.fnUntraced(function*(command, get) {
     if (command.event !== undefined) {
-      trackPaperViewEvent(command.event, command.topics ?? [])
+      trackPaperViewEvent(
+        command.event,
+        command.topics ?? [],
+        command.readMinutes,
+      )
     }
     const { batch, queued } = bufferImpression(
       get(impressionQueueAtom),

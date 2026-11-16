@@ -4,7 +4,9 @@ import { afterEach, describe, expect, it, vi } from "vitest"
 import {
   hashReaderId,
   medianYear,
+  readingCompletion,
   trackFeedHealthEvent,
+  trackPaperViewEvent,
 } from "./feed-analytics"
 
 const { capture } = vi.hoisted(() => ({ capture: vi.fn() }))
@@ -42,6 +44,47 @@ describe("feed analytics", () => {
       reader_id_hash:
         "b350a39385fccf30e4534d91b026b5317a3b9cc4e48f855c0a15aed315517c66",
     })
+  })
+})
+
+describe("readingCompletion", () => {
+  it("reports the share of a two-minute clipping read for a minute", () => {
+    expect(readingCompletion(60_000, 2)).toBe(0.5)
+  })
+
+  it("clamps over-reading to a full completion", () => {
+    expect(readingCompletion(900_000, 2)).toBe(1)
+  })
+
+  it("reports nothing without a usable estimate", () => {
+    expect(readingCompletion(60_000, null)).toBeNull()
+    expect(readingCompletion(60_000, undefined)).toBeNull()
+    expect(readingCompletion(60_000, 0)).toBeNull()
+  })
+
+  it("sends read time and completion on the dwell event only", async () => {
+    vi.stubEnv("VITE_POSTHOG_KEY", "test-key")
+    vi.stubGlobal("window", {})
+    const view = {
+      paperId: "paper-1",
+      position: 0,
+      exploration: false,
+    }
+
+    trackPaperViewEvent({ ...view, kind: "dwell", dwellMs: 60_000 }, [], 2)
+    trackPaperViewEvent({ ...view, kind: "view", dwellMs: 0 }, [], 2)
+    await vi.waitFor(() => expect(capture).toHaveBeenCalledTimes(2))
+
+    expect(capture).toHaveBeenCalledWith(
+      "dwell",
+      expect.objectContaining({
+        dwell_ms: 60_000,
+        read_minutes: 2,
+        completion: 0.5,
+      }),
+    )
+    expect(capture.mock.calls[1]?.[0]).toBe("impression")
+    expect(capture.mock.calls[1]?.[1]).not.toHaveProperty("read_minutes")
   })
 })
 

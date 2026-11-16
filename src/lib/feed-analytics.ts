@@ -59,13 +59,31 @@ export async function trackFeedHealthEvent(
 }
 
 /**
+ * Share of a clipping's estimated reading time that was actually spent.
+ * @param dwellMs - Measured dwell in milliseconds.
+ * @param readMinutes - Estimated reading time in minutes, when known.
+ * @returns Ratio clamped to 1, or null when there is no usable estimate.
+ */
+export function readingCompletion(
+  dwellMs: number,
+  readMinutes: number | null | undefined,
+): number | null {
+  if (readMinutes === null || readMinutes === undefined || readMinutes <= 0) {
+    return null
+  }
+  return Math.min(1, Math.max(0, dwellMs) / (readMinutes * 60_000))
+}
+
+/**
  * Tracks an impression or dwell event.
  * @param input - Persisted view event.
  * @param topics - Paper topics used for entropy metrics.
+ * @param readMinutes - Estimated reading time shown on the clipping, when known.
  */
 export function trackPaperViewEvent(
   input: TrackPaperViewInput,
   topics: ReadonlyArray<Topic>,
+  readMinutes?: number | null,
 ): void {
   void trackFeedHealthEvent(
     input.kind === "view" ? "impression" : "dwell",
@@ -74,7 +92,13 @@ export function trackPaperViewEvent(
       position: input.position,
       exploration: input.exploration,
       topics,
-      ...(input.kind === "dwell" ? { dwell_ms: input.dwellMs } : {}),
+      ...(input.kind === "dwell"
+        ? {
+          dwell_ms: input.dwellMs,
+          read_minutes: readMinutes ?? null,
+          completion: readingCompletion(input.dwellMs, readMinutes),
+        }
+        : {}),
     },
   )
 }

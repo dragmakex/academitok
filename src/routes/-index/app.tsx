@@ -128,7 +128,11 @@ function VisiblePaperSlide({
     const sendDwell = () => {
       const event = takeDwell()
       if (event !== undefined) {
-        trackView({ event, topics: item.paper.topics })
+        trackView({
+          event,
+          topics: item.paper.topics,
+          readMinutes: item.paper.readMinutes,
+        })
       }
     }
     const onVisibilityChange = () => {
@@ -164,6 +168,7 @@ function VisiblePaperSlide({
               exploration: item.exploration,
             },
             topics: item.paper.topics,
+            readMinutes: item.paper.readMinutes,
           })
         }, 400)
       },
@@ -177,7 +182,14 @@ function VisiblePaperSlide({
       document.removeEventListener("visibilitychange", onVisibilityChange, true)
       observer.disconnect()
     }
-  }, [index, item.exploration, item.paper.id, onVisible, trackView])
+  }, [
+    index,
+    item.exploration,
+    item.paper.id,
+    item.paper.readMinutes,
+    onVisible,
+    trackView,
+  ])
 
   const react = (kind: "like" | "bookmark" | "hide" | "open-site") => {
     reactToPaper({ kind, paperId: item.paper.id })
