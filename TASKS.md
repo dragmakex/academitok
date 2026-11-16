@@ -25,8 +25,8 @@ Task order is dependency order, not priority order. Source of truth for requirem
 
 ## P1 — the algo finishes learning
 
-- [ ] **3. Content affinity (tf-idf cosine).** SPEC §8.1 term `0.9·contentAffinity`:
-      build the centroid from liked and saved abstracts, cosine against candidate abstracts.
+- [x] **3. Content affinity (tf-idf cosine).** Satisfied by `a539c3d`. SPEC §8.1 term
+      `0.9·contentAffinity`: build the centroid from liked and saved abstracts, cosine against candidate abstracts.
       No new dependency — tokenise and weight by hand. Accept: unit tests for the centroid,
       known-similar abstracts outrank unrelated ones, `bun run test:coverage` green.
 - [ ] **4. MMR diversity.** SPEC §8.1 step 4: replace the greedy topic/author caps with
