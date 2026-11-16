@@ -66,6 +66,18 @@ write the conflict at the bottom instead of guessing.
       without a fetch, and a single success resets the streak; an upstream failure still falls back
       to the frozen seed edition; the guard is unit-tested with injected clock and fake request.
       — `aca77a9`
+- [ ] **12. Map source concepts onto the beats.** SPEC §17.2 keeps the fixed nine beats only on the
+      condition that source concepts are mapped onto them, but `detectTopics` reads title and
+      abstract keywords alone and files every miss under `Education`, while OpenAlex already ships
+      concept metadata the mapper throws away — so a quantum-mechanics paper with no beat keyword
+      spends an education slot, earns education affinity and counts as education in the §8.4 topic
+      mix. Add a pure `conceptTopics` helper in `src/lib/topic-beats.ts` mapping OpenAlex concept
+      names onto the nine beats, and let `detectTopics` fall back to it before the `Education`
+      fallback. Keyword matches keep precedence, `matchedTopics` stays as is, and no source,
+      dependency, RPC contract or PostHog payload changes. Accept: text with no beat keyword but
+      concepts naming "Quantum mechanics" files under `Physics`; a keyword beat plus a conflicting
+      concept keeps the keyword beat; text and concepts matching nothing still reports `Education`;
+      the helper and the fallback order are unit-tested.
 
 ---
 
