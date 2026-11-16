@@ -5,7 +5,7 @@ import { Stack } from "@/design-system/primitives/Stack"
 
 type StatCardProps = {
   readonly label: string
-  readonly value: number
+  readonly value: number | string
   readonly helper?: string | undefined
   readonly tone?: "default" | "accent" | "danger" | undefined
 }

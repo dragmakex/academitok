@@ -15,13 +15,14 @@ import { FeedStateSlide } from "@/design-system/components/FeedStateSlide"
 import { Page } from "@/design-system/components/Page"
 import { PaperSlide } from "@/design-system/components/PaperSlide"
 import { ShortcutSheet } from "@/design-system/components/ShortcutSheet"
+import { StatCard } from "@/design-system/components/StatCard"
 import { Tabs } from "@/design-system/components/Tabs"
 import { Text } from "@/design-system/components/Text"
 import { TextField } from "@/design-system/components/TextField"
 import { Grid } from "@/design-system/primitives/Grid"
 import { Inline } from "@/design-system/primitives/Inline"
 import { Stack } from "@/design-system/primitives/Stack"
-import { trackFeedPageEvent } from "@/lib/feed-analytics"
+import { archivalDrift, trackFeedPageEvent } from "@/lib/feed-analytics"
 import { deckAction, shortcutRows } from "@/lib/shortcuts"
 import { useAtomSet, useAtomValue } from "@effect/atom-react"
 import { useCallback, useEffect, useRef, useState } from "react"
@@ -536,6 +537,9 @@ export function App() {
     : `${activeItem.paper.title}, ${activeItem.paper.venue} ${activeItem.paper.year}, ${
       activeIndex + 1
     } of ${snapshot?.items.length ?? 0}`
+  const drift = archivalDrift(
+    (snapshot?.items ?? []).map((item) => item.paper.year),
+  )
 
   return (
     <Page fullBleed>
@@ -550,6 +554,26 @@ export function App() {
         }
       >
         <Stack gap="l">
+          <Stack gap="m">
+            <Text tone="label" as="span">
+              Archival drift
+            </Text>
+            <Grid layout="stats">
+              <StatCard
+                label="Median year"
+                value={drift.medianYear ?? "—"}
+                helper={`of ${drift.total} loaded clippings`}
+              />
+              <StatCard
+                label="A decade behind"
+                value={drift.olderThanDecade}
+                helper={drift.newestYear === null
+                  ? "no publication years on the page"
+                  : `older than ${drift.newestYear}, the newest`}
+              />
+            </Grid>
+          </Stack>
+
           <Card tone="subtle">
             <Stack gap="m">
               <Text tone="label" as="span">
