@@ -37,6 +37,13 @@ write the conflict at the bottom instead of guessing.
       Accept: a 3-paper fixture yields 3 parseable entries with stable keys across runs; no
       network calls.
       — `608bb76`
+- [ ] **5. Archival-drift metric on `feed.next`.** SPEC §17.3 keeps citation count as a quality
+      signal on the condition that we measure whether the feed feels archival — there is no number
+      for that today. Report the median publication year of each returned page as a property of the
+      existing `feed.next` feed-health event, computed by a pure helper so it can be tested without
+      PostHog. Measurement only: ranking output must not change. Accept: years 2019/2022/2024 report
+      2022, even-sized pages average the two middle years, and the ranked page for a fixed seed is
+      identical before and after.
 
 ---
 
