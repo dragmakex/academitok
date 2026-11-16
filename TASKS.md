@@ -37,9 +37,9 @@ Task order is dependency order, not priority order. Source of truth for requirem
 - [x] **5. Author and venue affinity.** Satisfied by `0931243`. SPEC §8.1 term
       `0.5·authorVenueAffinity`, decayed like topic affinity. Accept: liking two papers by the
       same author raises that author's later papers; test asserts ordering.
-- [ ] **6. Onboarding picks.** SPEC §8.2: 15 candidates in 3 pages of 5, keep/discard,
-      ≥5 keeps required or explicitly skipped; seeds topic affinity and the content centroid.
-      `profile.onboard` RPC. Accept: fresh DB + onboarding produces a non-uniform feed;
+- [x] **6. Onboarding picks.** Satisfied by `89b254a`. SPEC §8.2: 15 candidates in 3 pages of 5,
+      keep/discard, ≥5 keeps required or explicitly skipped; seeds topic affinity and the content
+      centroid. `profile.onboard` RPC. Accept: fresh DB + onboarding produces a non-uniform feed;
       skipping still yields a valid page.
 - [ ] **7. `WHY THIS` from real scoring terms.** SPEC §8.3: rationale must cite only terms
       that actually fired, max 2, no filler. Accept: test that a cold-start item shows only
