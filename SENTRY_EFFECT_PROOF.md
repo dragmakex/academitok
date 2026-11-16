@@ -167,7 +167,7 @@ $ curl "http://localhost:3200/api/search?tags=service.name=effect-tanstack-start
     {
       "traceID": "9badf7eb2ef163f3323b6a740cab3c24",
       "rootServiceName": "effect-tanstack-start-sentry-test",
-      "rootTraceName": "TodosApp.snapshot",
+      "rootTraceName": "PapersApp.snapshot",
       "durationMs": 5
     },
     {
@@ -179,7 +179,7 @@ $ curl "http://localhost:3200/api/search?tags=service.name=effect-tanstack-start
     {
       "traceID": "29c138c6adb570415a12508849cca9ce",
       "rootServiceName": "effect-tanstack-start-sentry-test",
-      "rootTraceName": "TodosApp.snapshot",
+      "rootTraceName": "PapersApp.snapshot",
       "durationMs": 3
     }
   ],
@@ -196,7 +196,7 @@ $ curl "http://localhost:3200/api/search?tags=service.name=effect-tanstack-start
 
 - `http.server POST` - The Sentry test error endpoint
 - `http.server GET` - Health and status endpoints
-- `TodosApp.snapshot` - Application business logic spans
+- `PapersApp.snapshot` - Application business logic spans
 
 **Result:** ✅ **TRACES CONFIRMED IN TEMPO**
 
@@ -217,7 +217,7 @@ $ curl -X POST http://localhost:4318/v1/traces -H "Content-Type: application/jso
 ### Layer Composition (src/routes/api/$.ts)
 
 ```typescript
-export const ServerRuntimeLive = TodosApplicationLive.pipe(
+export const ServerRuntimeLive = PapersApplicationLive.pipe(
   Layer.provideMerge(ObservabilityRuntimeLive), // ✅ OTEL → Tempo verified
   Layer.provideMerge(SentryLive), // ⚠️ Sentry → configured
   Layer.provideMerge(DevConsoleLive), // ✅ Console output verified

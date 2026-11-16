@@ -140,7 +140,7 @@ describe("simple made easy lint rules", () => {
         " * NEGATIVE EXAMPLE FOR LINT VERIFICATION ONLY.",
         " * Do not copy this shape into production code.",
         " */",
-        "export const createTodo = () => ({ id: crypto.randomUUID() })",
+        "export const createPaper = () => ({ id: crypto.randomUUID() })",
       ]
         .join("\n"),
     )
@@ -156,7 +156,7 @@ describe("simple made easy lint rules", () => {
         " * Positive reference example.",
         " * This is the intended production shape.",
         " */",
-        "export const createTodo = (nextId: () => string) => ({ id: nextId() })",
+        "export const createPaper = (nextId: () => string) => ({ id: nextId() })",
       ]
         .join("\n"),
     )
@@ -226,7 +226,7 @@ describe("simple made easy lint rules", () => {
         " * Positive reference example.",
         " * This is the intended production shape.",
         " */",
-        "export const loader = loadTodosFromService",
+        "export const loader = loadPapersFromService",
       ]
         .join("\n"),
     )
@@ -240,8 +240,8 @@ describe("simple made easy lint rules", () => {
     const codes = await lintText(
       "src/features/example/projections.ts",
       [
-        "import { todosTable } from '@/db/schema'",
-        "export const project = () => todosTable",
+        "import { papersTable } from '@/db/schema'",
+        "export const project = () => papersTable",
       ]
         .join("\n"),
     )
@@ -255,8 +255,8 @@ describe("simple made easy lint rules", () => {
     const codes = await lintText(
       "src/features/example/projections.ts",
       [
-        "import type { Todo } from '@/api/todo-schema'",
-        "export const project = (todos: ReadonlyArray<Todo>) => todos.length",
+        "import type { Paper } from '@/api/paper-schema'",
+        "export const project = (papers: ReadonlyArray<Paper>) => papers.length",
       ]
         .join("\n"),
     )
@@ -270,8 +270,8 @@ describe("simple made easy lint rules", () => {
     const codes = await lintText(
       "src/routes/example.tsx",
       [
-        "import { todosTable } from '@/db/schema'",
-        "export const RouteView = () => todosTable",
+        "import { papersTable } from '@/db/schema'",
+        "export const RouteView = () => papersTable",
       ]
         .join("\n"),
     )

@@ -9,16 +9,16 @@ stopping there.
 
 ## Mapping table
 
-| Architectural concern            | Preferred Effect primitive              | Template use                                 |
-| -------------------------------- | --------------------------------------- | -------------------------------------------- |
-| current time at runtime          | `Clock`                                 | choose time in application modules           |
-| already-chosen timestamp         | plain data argument                     | pass into helpers and projections            |
-| randomness / identity            | small service such as `TodoIdGenerator` | isolate ambient randomness                   |
-| effectful use-case orchestration | `Effect.gen` in application modules     | compose repositories, clocks, events         |
-| runtime wiring                   | `Layer`                                 | choose live, test, or seeded implementations |
-| infrastructure capability        | `ServiceMap.Service` or tagged service  | repositories, event sinks, clients           |
-| pure derivation                  | plain function                          | projections and domain rules                 |
-| async replication growth path    | event sink service                      | outbox, queues, projectors later             |
+| Architectural concern            | Preferred Effect primitive             | Template use                                 |
+| -------------------------------- | -------------------------------------- | -------------------------------------------- |
+| current time at runtime          | `Clock`                                | choose time in application modules           |
+| already-chosen timestamp         | plain data argument                    | pass into helpers and projections            |
+| randomness / identity            | small identity service                 | isolate ambient randomness                   |
+| effectful use-case orchestration | `Effect.gen` in application modules    | compose repositories, clocks, events         |
+| runtime wiring                   | `Layer`                                | choose live, test, or seeded implementations |
+| infrastructure capability        | `ServiceMap.Service` or tagged service | repositories, event sinks, clients           |
+| pure derivation                  | plain function                         | projections and domain rules                 |
+| async replication growth path    | event sink service                     | outbox, queues, projectors later             |
 
 ## What to use where
 
@@ -89,8 +89,8 @@ Avoid:
 
 ## Larger applications
 
-This mapping is not todo-specific.
-It generalizes to any bigger CRUD system built from this template.
+This mapping is not paper-specific.
+It generalizes to other systems built from this template.
 
 ### Example
 

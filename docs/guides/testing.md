@@ -103,40 +103,14 @@ it.effect("simulates time passage", () =>
   }))
 ```
 
-#### Seeded PGlite Invariants
+#### PGlite invariants
 
-For server-side persistence tests, prefer node-mode `it.effect(...)` cases that
-provide a seeded PGlite layer instead of mocking the repository or constructing
-state indirectly through multiple setup calls.
+For server-side persistence tests, use node-mode cases with an isolated temporary
+PGlite directory. Exercise the real repository rather than mocking SQL behavior,
+and reopen the repository when persistence across restarts is the invariant.
 
-This project exposes named seeds in `src/db/todos-test-support.ts`. Use them to
-state the invariant under test directly:
-
-```typescript
-// @vitest-environment node
-
-import { makeTodosApplicationTestLayer } from "@/db/todos-test-support"
-import { listTodos } from "@/features/todos/application"
-import { expect, it } from "@effect/vitest"
-import * as Effect from "effect/Effect"
-
-it.effect("seeded list order is stable", () =>
-  Effect
-    .gen(function*() {
-      const todos = yield* listTodos
-
-      expect(todos.map((todo) => todo.title)).toEqual([
-        "Alpha todo",
-        "Charlie todo",
-        "Bravo done",
-      ])
-    })
-    .pipe(Effect.provide(makeTodosApplicationTestLayer("mixedState"))))
-```
-
-Use this pattern when you need to prove repository and application invariants
-against realistic persisted state. Keep these tests in node mode because the
-browser runner is not the right environment for server-side PGlite modules.
+Keep these tests beside `src/db/reader-state-repository.ts`. Browser tests are
+not the right environment for server-side PGlite modules.
 
 ### 2. Component Tests
 
@@ -484,19 +458,16 @@ const button = page.getByRole("button", { name: /submit/i })
 
 ```typescript
 // ✅ Good - Complete user flow
-test("user can create and edit todo", async () => {
-  render(<TodoApp />)
+test("reader can react and advance", async () => {
+  render(<App />)
 
-  // Create
-  await page.getByPlaceholder(/new todo/i).fill("Buy milk")
-  await page.getByRole("button", { name: /add/i }).click()
-  await expect.element(page.getByText("Buy milk")).toBeVisible()
+  await page.getByRole("button", { name: /like paper/i }).click()
+  await expect
+    .element(page.getByRole("button", { name: /unlike paper/i }))
+    .toBeVisible()
 
-  // Edit
-  await page.getByRole("button", { name: /edit/i }).click()
-  await page.getByPlaceholder(/edit todo/i).fill("Buy almond milk")
-  await page.getByRole("button", { name: /save/i }).click()
-  await expect.element(page.getByText("Buy almond milk")).toBeVisible()
+  await page.getByRole("button", { name: /next paper/i }).click()
+  await expect.element(page.getByText(/paper 2 of/i)).toBeVisible()
 })
 ```
 

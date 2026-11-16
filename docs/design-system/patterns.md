@@ -103,7 +103,7 @@ Use `Stack` with the appropriate gap:
 
 ```tsx
 <Stack gap="s">
-  {items.map(item => <TodoItem key={item.id} todo={item} />)}
+  {items.map(item => <PaperItem key={item.id} paper={item} />)}
 </Stack>
 ```
 
@@ -131,8 +131,8 @@ If you provide `hint`, it is linked automatically for assistive technology.
 Use a shared `id` / `tabsId` when pairing `Tabs` with `TabPanel` so ARIA linkage stays explicit and predictable:
 
 ```tsx
-<Tabs id="todos" activeTab={tab} items={items} onChange={setTab} />
-<TabPanel tabsId="todos" tab="all" activeTab={tab}>
+<Tabs id="papers" activeTab={tab} items={items} onChange={setTab} />
+<TabPanel tabsId="papers" tab="all" activeTab={tab}>
   …
 </TabPanel>
 ```

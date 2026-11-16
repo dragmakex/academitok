@@ -5,10 +5,8 @@
  * See: docs/architecture/effect-simple-made-easy-mapping.md
  */
 
-import { DomainApi } from "@/api/domain-api"
 import { DomainRpc } from "@/api/domain-rpc"
 import { PapersApplicationLive } from "@/features/papers/application"
-import { TodosApplicationLive } from "@/features/todos/application"
 import { ObservabilityLive } from "@/lib/observability"
 import {
   initPyroscopeServer,
@@ -25,15 +23,11 @@ import * as Layer from "effect/Layer"
 import * as Logger from "effect/Logger"
 import * as ManagedRuntime from "effect/ManagedRuntime"
 import * as HttpRouter from "effect/unstable/http/HttpRouter"
-import * as HttpServer from "effect/unstable/http/HttpServer"
 import * as HttpServerResponse from "effect/unstable/http/HttpServerResponse"
-import * as HttpApiBuilder from "effect/unstable/httpapi/HttpApiBuilder"
 import * as RpcMiddleware from "effect/unstable/rpc/RpcMiddleware"
 import * as RpcSerialization from "effect/unstable/rpc/RpcSerialization"
 import * as RpcServer from "effect/unstable/rpc/RpcServer"
 import { createPaperRpcHandlers } from "./-lib/papers-rpc-live"
-import { TodosApiLive } from "./-lib/todos-api-live"
-import { createRpcHandlers } from "./-lib/todos-rpc-live"
 
 /**
  * RPC logging middleware - logs errors for failed RPC requests.
@@ -120,17 +114,9 @@ export const RpcLoggerLive = Layer.succeed(
 /**
  * Router layers - exported for testing.
  */
-const DomainRpcLive = DomainRpc
-  .toLayer(
-    Effect.zipWith(
-      createRpcHandlers,
-      createPaperRpcHandlers,
-      (todos, papers) => ({ ...todos, ...papers }),
-    ),
-  )
-  .pipe(
-    Layer.provide(Layer.mergeAll(TodosApplicationLive, PapersApplicationLive)),
-  )
+const DomainRpcLive = DomainRpc.toLayer(createPaperRpcHandlers).pipe(
+  Layer.provide(PapersApplicationLive),
+)
 
 export const RpcRouter = RpcServer
   .layer(DomainRpc.middleware(RpcLogger), {
@@ -146,11 +132,6 @@ export const RpcRouter = RpcServer
       ),
     ),
   )
-
-export const HttpApiRouter = HttpApiBuilder.layer(DomainApi).pipe(
-  Layer.provide(TodosApiLive),
-  Layer.provide(HttpServer.layerServices),
-)
 
 export const HealthRoute = HttpRouter.add(
   "GET",
@@ -206,11 +187,7 @@ const ObservabilityRuntimeLive = Layer.orDie(ObservabilityLive)
  *
  * Pattern: Layer.provideMerge — merges multiple service layers into runtime.
  */
-export const ServerRuntimeLive = Layer
-  .mergeAll(
-    TodosApplicationLive,
-    PapersApplicationLive,
-  )
+export const ServerRuntimeLive = PapersApplicationLive
   .pipe(Layer.provideMerge(ObservabilityRuntimeLive))
   .pipe(Layer.provideMerge(SentryLive))
   .pipe(Layer.provideMerge(DevConsoleLive))
@@ -218,7 +195,6 @@ export const ServerRuntimeLive = Layer
 export const AllRoutes = Layer
   .mergeAll(
     RpcRouter,
-    HttpApiRouter,
     HealthRoute,
     SentryTestGet,
     SentryTestPost,

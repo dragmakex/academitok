@@ -100,9 +100,8 @@ effect-tanstack-start/
 ├── src/
 │   ├── api/                       # API schemas and clients
 │   │   ├── api-client.ts          # HTTP API client
-│   │   ├── domain-api.ts          # REST API definitions
 │   │   ├── domain-rpc.ts          # RPC definitions (effect/unstable/rpc)
-│   │   └── todo-schema.ts         # Shared schemas
+│   │   └── paper-schema.ts        # Shared schemas
 │   ├── lib/                       # Shared utilities
 │   │   ├── atom-utils.ts          # Atom helpers
 │   │   ├── logger-loki.ts         # Loki logger

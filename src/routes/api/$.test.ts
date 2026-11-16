@@ -5,7 +5,6 @@ import {
   AllRoutes,
   createRpcLoggerHandler,
   HealthRoute,
-  HttpApiRouter,
   Route,
   RpcLogger,
   RpcLoggerLive,
@@ -61,11 +60,6 @@ it.effect("RpcLoggerLive - layer is defined", () =>
 it.effect("RpcRouter - layer is defined", () =>
   Effect.sync(() => {
     expect(RpcRouter).toBeDefined()
-  }))
-
-it.effect("HttpApiRouter - layer is defined", () =>
-  Effect.sync(() => {
-    expect(HttpApiRouter).toBeDefined()
   }))
 
 it.effect("HealthRoute - layer is defined", () =>

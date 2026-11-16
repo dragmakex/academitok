@@ -17,54 +17,6 @@ import {
   SaveProfileInput,
   TrackPaperViewsInput,
 } from "./paper-schema"
-import {
-  CreateTodoInput,
-  Todo,
-  TodoDashboardSnapshot,
-  TodoGroup,
-  TodoId,
-  TodoNotFound,
-  TodoStats,
-  UpdateTodoInput,
-} from "./todo-schema"
-
-export class TodosRpc extends RpcGroup
-  .make(
-    Rpc.make("list", {
-      success: Schema.Array(Todo),
-    }),
-    Rpc.make("stats", {
-      success: TodoStats,
-    }),
-    Rpc.make("groups", {
-      success: Schema.Array(TodoGroup),
-    }),
-    Rpc.make("snapshot", {
-      success: TodoDashboardSnapshot,
-    }),
-    Rpc.make("getById", {
-      success: Todo,
-      error: TodoNotFound,
-      payload: { id: TodoId },
-    }),
-    Rpc.make("create", {
-      success: TodoDashboardSnapshot,
-      payload: { input: CreateTodoInput },
-    }),
-    Rpc.make("update", {
-      success: TodoDashboardSnapshot,
-      error: TodoNotFound,
-      payload: { id: TodoId, input: UpdateTodoInput },
-    }),
-    Rpc.make("remove", {
-      success: TodoDashboardSnapshot,
-      error: TodoNotFound,
-      payload: { id: TodoId },
-    }),
-  )
-  .prefix("todos_")
-{}
-
 export class PapersRpc extends RpcGroup
   .make(
     Rpc.make("snapshot", {
@@ -97,4 +49,4 @@ export class ProfileRpc extends RpcGroup
   .prefix("profile_")
 {}
 
-export class DomainRpc extends TodosRpc.merge(PapersRpc).merge(ProfileRpc) {}
+export class DomainRpc extends PapersRpc.merge(ProfileRpc) {}

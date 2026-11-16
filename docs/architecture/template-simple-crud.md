@@ -2,7 +2,7 @@
 
 ## Intent
 
-This template is meant to scale from a small sample like the todo dashboard to
+This template is meant to scale from a focused product surface to
 much larger CRUD applications without forcing every feature into a knot of route
 logic, transport handlers, service objects, repository policy, and UI-local
 recomputation.
@@ -145,8 +145,8 @@ That is manageable for one toy route and painful for fifty business workflows.
 
 ## Replication growth path
 
-The todo app now includes an explicit event sink boundary even though it still
-uses a no-op live implementation by default.
+A feature can include an explicit event sink boundary even when its live
+implementation is initially a no-op.
 
 That means larger applications can add:
 
@@ -172,4 +172,4 @@ without rewriting the feature boundary itself.
 - `docs/architecture/simple-made-easy.md`
 - `docs/architecture/effect-simple-made-easy-mapping.md`
 - `docs/guides/code-quality.md`
-- `docs/app/todo-dashboard.md`
+- `docs/guides/adding-new-features.md`

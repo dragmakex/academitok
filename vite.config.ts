@@ -212,18 +212,13 @@ const config = defineConfig(async ({ mode }) => {
         },
         include: [
           "src/router.tsx",
-          "src/api/todo-schema.ts",
           "src/db/schema.ts",
-          "src/db/todos-test-support.ts",
           "src/lib/atom-utils.ts",
           "src/lib/codefabrik-workflow-state.ts",
           "src/lib/posthog-server.ts",
           "src/lib/pyroscope-server.ts",
           "src/lib/telemetry-client.ts",
           "src/lib/telemetry-server.ts",
-          "src/lib/todo-id-generator.ts",
-          "src/routes/api/-lib/todos-rpc-live.ts",
-          "src/routes/api/-lib/todos-service.ts",
         ],
         exclude: [
           "src/**/*.test.{ts,tsx}",
@@ -239,10 +234,6 @@ const config = defineConfig(async ({ mode }) => {
       },
     },
     server: {
-      fs: {
-        // Allow serving files from docs/ for symlinked reference implementation
-        allow: [".", "./docs"],
-      },
       watch: {
         ignored: [
           ".worktrees/**",

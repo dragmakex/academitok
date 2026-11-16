@@ -58,7 +58,7 @@ Application code does not touch it.
 
 ### Composition, not wrappers
 
-Common layouts like sidebar stacks, group headers, action rows, and todo lists
+Common layouts like sidebar stacks, group headers, action rows, and paper lists
 are expressed by composing primitives (`Stack`, `Inline`, `Expand`).
 See `docs/design-system/patterns.md` for examples.
 

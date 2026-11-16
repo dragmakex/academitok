@@ -171,7 +171,6 @@ const DYNAMIC_IMPORT_ALLOWLIST = new Set([
   "/src/lib/client-init.ts",
   "/src/lib/react-grab-loader.dev.ts",
   "/src/lib/pyroscope-server.ts",
-  "/src/db/todos-repository.ts",
 ])
 
 const isDynamicImportAllowlisted = (filename) =>

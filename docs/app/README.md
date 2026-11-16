@@ -136,10 +136,6 @@ sequenceDiagram
 - Self-explanatory code additions
 - Changes already covered in existing docs
 
-## Current Feature Documents
-
-- `docs/app/todo-dashboard.md` — richer todo sample, snapshot data flow, and dashboard invariants
-
 ## Related Documentation
 
 - **System Architecture**: `docs/architecture/overview.md`

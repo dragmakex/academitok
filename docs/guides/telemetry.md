@@ -29,7 +29,7 @@ Effect-native Sentry integration using `@sentry/effect`. Errors, traces, logs, a
 ```typescript
 import { SentryLive } from "@/lib/sentry-effect"
 
-export const ServerRuntimeLive = TodosApplicationLive.pipe(
+export const ServerRuntimeLive = PapersApplicationLive.pipe(
   Layer.provideMerge(ObservabilityRuntimeLive), // OTEL → Tempo/Loki
   Layer.provideMerge(SentryLive), // Sentry → Sentry backend
 )
@@ -112,4 +112,4 @@ const LoggerLive = createLokiLoggerLayer({
 
 See [Telemetry Example](../../src/telemetry-example.ts) for complete examples.
 
-> **Metrics Cardinality Warning**: This app uses traces and logs, which are safe from cardinality limits. If you add **OTel metrics** (Counters, Histograms) in the future, never use high-cardinality attributes like `userId`, `requestId`, or `todoId`—these cause "cardinality explosion" and trigger `otel.overflow`, making your metrics lie.
+> **Metrics Cardinality Warning**: This app uses traces and logs, which are safe from cardinality limits. If you add **OTel metrics** (Counters, Histograms) in the future, never use high-cardinality attributes like `userId`, `requestId`, or `paperId`—these cause "cardinality explosion" and trigger `otel.overflow`, making your metrics lie.

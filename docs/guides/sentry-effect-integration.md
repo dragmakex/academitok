@@ -142,7 +142,7 @@ export const SentryLive: Layer.Layer<never, Config.ConfigError> = Effect
 import { SentryLive } from "@/lib/sentry-effect"
 
 // Composition: Sentry + OTEL + Console
-export const ServerRuntimeLive = TodosApplicationLive.pipe(
+export const ServerRuntimeLive = PapersApplicationLive.pipe(
   Layer.provideMerge(ObservabilityRuntimeLive), // OTEL → Tempo/Loki
   Layer.provideMerge(SentryLive), // Sentry → Sentry backend
   Layer.provideMerge(DevConsoleLive), // Console for dev

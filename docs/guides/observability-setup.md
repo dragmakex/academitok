@@ -263,12 +263,12 @@ Without spans, traces are empty. Add `Effect.withSpan` to every public service m
 // Service layer — wrap each method
 return {
   list: repository.list.pipe(
-    Effect.withSpan("TodosApp.list"),
+    Effect.withSpan("PapersApp.list"),
   ),
-  create: (input: CreateTodoInput): Effect.Effect<Todo> =>
+  create: (input: CreatePaperInput): Effect.Effect<Paper> =>
     repository.create(input).pipe(
-      Effect.withSpan("TodosApp.create", {
-        attributes: { "todo.title": input.title },
+      Effect.withSpan("PapersApp.create", {
+        attributes: { "paper.title": input.title },
       }),
     ),
   // ... same pattern for getById, update, remove
@@ -279,16 +279,16 @@ return {
 // Repository layer — wrap each CRUD operation
 return {
   list: Effect
-    .promise(() => queries.listRows().then((rows) => rows.map(toTodo)))
-    .pipe(Effect.withSpan("TodosRepository.list")),
-  create: (input: CreateTodoInput) =>
+    .promise(() => queries.listRows().then((rows) => rows.map(toPaper)))
+    .pipe(Effect.withSpan("PapersRepository.list")),
+  create: (input: CreatePaperInput) =>
     Effect
       .gen(function*() {
         // ... insert logic
       })
       .pipe(
-        Effect.withSpan("TodosRepository.create", {
-          attributes: { "todo.title": input.title },
+        Effect.withSpan("PapersRepository.create", {
+          attributes: { "paper.title": input.title },
         }),
       ),
   // ... same pattern for getById, update, remove
@@ -298,9 +298,9 @@ return {
 This produces a trace waterfall like:
 
 ```
-RPC todos_create (50ms)
-└── TodosApp.create (48ms)
-    └── TodosRepository.create (45ms)
+RPC papers_snapshot (50ms)
+└── PapersApp.snapshot (48ms)
+    └── PapersRepository.list (45ms)
 ```
 
 - [ ] Done
@@ -308,7 +308,7 @@ RPC todos_create (50ms)
 ### 2.5 Verify Server Observability
 
 1. Start app: `bun run dev`
-2. Make requests: `curl http://localhost:3000/api/todos`
+2. Load the feed to generate RPC requests and spans.
 3. Check Grafana (http://localhost:3010):
    - **Tempo:** Search for service `effect-tanstack-start` → traces with nested spans
    - **Loki:** Query `{service_name="effect-tanstack-start"}` → logs with `trace_id` and `span_id`

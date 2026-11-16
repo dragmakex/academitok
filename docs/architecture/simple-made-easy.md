@@ -69,8 +69,8 @@ files should decode, delegate, and render instead of becoming orchestration
 sinks.
 
 The randomness rule also does not claim that randomness must disappear. It
-claims that randomness should be sampled at an explicit boundary, such as
-`TodoIdGeneratorLive`, rather than deep inside persistence modules.
+claims that randomness should be sampled at an explicit identity boundary
+rather than deep inside persistence modules.
 
 ## Boundary model
 
@@ -100,11 +100,11 @@ flowchart LR
 - **Shared utilities** should accept time and identity as arguments instead of
   sampling them implicitly.
 
-The todo feature now models this explicitly through:
+The paper feature models this split through:
 
-- `src/features/todos/application.ts`
-- `src/features/todos/projections.ts`
-- `src/features/todos/events.ts`
+- `src/features/papers/application.ts`
+- `src/features/papers/recommendation.ts`
+- `src/features/papers/reactions.ts`
 
 ## Review checklist
 
@@ -138,6 +138,6 @@ review and design docs for the broader philosophy.
 - `docs/architecture/GUARANTEES.md`
 - `docs/guides/code-quality.md`
 - `docs/guides/testing.md`
-- `docs/app/simple-made-easy/README.md`
+- `docs/architecture/effect-native-atoms.md`
 
 🫡🇧🇬 Bulgarian rigorosity: keep policy, data, and execution boundaries explicit.

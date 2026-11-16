@@ -71,13 +71,13 @@ than sharing one persistent database.
 Define the schema with `drizzle-orm/pg-core`, not SQLite schema types:
 
 ```ts
-import { boolean, pgTable, text, timestamp } from "drizzle-orm/pg-core"
+import { pgTable, text, timestamp } from "drizzle-orm/pg-core"
 
-export const todosTable = pgTable("todos", {
+export const papersTable = pgTable("papers", {
   id: text("id").primaryKey(),
   title: text("title").notNull(),
-  completed: boolean("completed").notNull().default(false),
-  createdAt: timestamp("created_at", {
+  abstract: text("abstract").notNull(),
+  fetchedAt: timestamp("fetched_at", {
     mode: "date",
     withTimezone: true,
   })
