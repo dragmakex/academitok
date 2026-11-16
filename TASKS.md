@@ -58,7 +58,7 @@ write the conflict at the bottom instead of guessing.
 
 ## P3 — optional
 
-- [ ] **7. Reading-time completion in the dwell event.** SPEC §16 P3 lists reading-time analytics;
+- [x] **7. Reading-time completion in the dwell event.** SPEC §16 P3 lists reading-time analytics;
       dwell is measured and `readMinutes` is shown, but the analytics event carries no estimate, so
       nobody can tell a 90-second abstract read from a 2-second bounce. Add a pure ratio helper
       (measured dwell over estimated read time, clamped to 1) and send `read_minutes` plus
@@ -66,6 +66,7 @@ write the conflict at the bottom instead of guessing.
       persistence or contract change beyond threading `readMinutes` to the analytics call. Accept: a
       2-minute clipping dwelled 60 s reports 0.5, an over-read reports 1, a missing or zero estimate
       reports null, and PostHog staying unconfigured changes nothing.
+      — `6f3beaf`
 
 ---
 
