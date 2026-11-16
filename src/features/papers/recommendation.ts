@@ -314,6 +314,51 @@ function topicWeights(
 }
 
 /**
+ * Computes time-decayed author and venue affinity from active likes and saves.
+ * @param state - Reader state.
+ * @param papers - Candidate papers.
+ * @returns Author and venue weights.
+ */
+function authorVenueWeights(
+  state: ReaderState,
+  papers: ReadonlyArray<Paper>,
+) {
+  const authors = new Map<string, number>()
+  const venues = new Map<string, number>()
+  const byId = new Map(papers.map((paper) => [paper.id, paper] as const))
+  const resolved = new Set<string>()
+  const now = Date.now()
+
+  for (const reaction of state.reactions) {
+    if (reaction.kind !== "like" && reaction.kind !== "bookmark") {
+      continue
+    }
+    const key = `${reaction.kind}:${reaction.paperId}`
+    if (resolved.has(key)) {
+      continue
+    }
+    resolved.add(key)
+    if (!reaction.active) {
+      continue
+    }
+
+    const paper = byId.get(reaction.paperId)
+    if (paper === undefined) {
+      continue
+    }
+    const ageDays = Math.max(1, (now - reaction.timestamp) / 86_400_000)
+    const weight = reactionWeights[reaction.kind]
+      / Math.min(12, ageDays)
+    for (const author of paper.authors) {
+      authors.set(author, (authors.get(author) ?? 0) + weight)
+    }
+    venues.set(paper.venue, (venues.get(paper.venue) ?? 0) + weight)
+  }
+
+  return { authors, venues }
+}
+
+/**
  * Explains the strongest real signals.
  * @param paper - Candidate paper.
  * @param profile - Reader profile.
@@ -370,6 +415,7 @@ export function buildFeedItems(
   const institution = profile?.institution ?? "Guest"
   const interests = new Set(profile?.interests ?? [])
   const weights = topicWeights(state, papers)
+  const authorVenue = authorVenueWeights(state, papers)
   const active = activeState(state)
   const signals = paperSignals(state)
   const idf = inverseDocumentFrequencies(papers)
@@ -396,9 +442,17 @@ export function buildFeedItems(
         contentCentroid,
         abstractVector(paper.abstract, idf),
       )
+      const authorAffinity = paper.authors.reduce(
+        (sum, author) => sum + (authorVenue.authors.get(author) ?? 0),
+        0,
+      ) / Math.max(1, paper.authors.length)
+      const authorVenueAffinity = (
+        authorAffinity + (authorVenue.venues.get(paper.venue) ?? 0)
+      ) / 2
       const score = matchedTopics.length * 2.6
         + learnedBoost
         + 0.9 * contentAffinity
+        + 0.5 * authorVenueAffinity
         + (paper.access === "open" ? 0.8 : accessible ? 0.3 : -0.6)
         + (active.hidden.has(paper.id) ? -20 : 0)
         + (active.liked.has(paper.id) ? 4 : 0)

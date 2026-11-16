@@ -84,6 +84,45 @@ describe("paper recommendation", () => {
     },
   )
 
+  it("ranks later papers by a repeatedly liked author above unrelated work", () => {
+    const papers = [
+      paperFixture("source-left", "shared neutral abstract", {
+        authors: ["Shared Author"],
+        venue: "Journal One",
+      }),
+      paperFixture("source-right", "shared neutral abstract", {
+        authors: ["Shared Author"],
+        venue: "Journal Two",
+      }),
+      paperFixture("unrelated", "shared neutral abstract", {
+        authors: ["Other Author"],
+        venue: "Journal Three",
+      }),
+      paperFixture("later", "shared neutral abstract", {
+        authors: ["Shared Author"],
+        venue: "Journal Four",
+      }),
+    ]
+    const timestamp = Date.now()
+    const items = buildFeedItems(
+      {
+        profile: null,
+        reactions: ["source-left", "source-right"].map((paperId) => ({
+          paperId,
+          kind: "like" as const,
+          active: true,
+          timestamp,
+        })),
+      },
+      papers,
+      "All",
+      "recommended",
+    )
+    const rank = (id: string) => items.findIndex((item) => item.paper.id === id)
+
+    expect(rank("later")).toBeLessThan(rank("unrelated"))
+  })
+
   it("boosts papers that match interests", () => {
     const items = buildFeedItems(baseState, curatedPapers, "All", "recommended")
     expect(items[0]?.paper.topics.includes("AI")).toBe(true)
