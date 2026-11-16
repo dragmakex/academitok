@@ -4,6 +4,7 @@ import type { FeedRequest } from "@/api/paper-schema"
 import { curatedPapers } from "@/data/papers"
 import { ReaderStateRepository } from "@/db/reader-state-repository"
 import {
+  getPaperById,
   getPaperFeedSnapshot,
   getSavedPapers,
 } from "@/features/papers/application"
@@ -116,6 +117,34 @@ describe("papers application", () => {
     expect(afterSave.items[0]?.bookmarked).toBe(true)
     expect(afterUnsave.items).toHaveLength(0)
     expect(empty.items).toHaveLength(0)
+  })
+
+  it("resolves a permalink from the pool, the curated catalog, or nothing", async () => {
+    const dataDir = await mkdtemp(join(tmpdir(), "academitok-permalink-"))
+    directories.push(dataDir)
+    vi.stubGlobal("fetch", () => Promise.reject(new Error("offline")))
+    const curated = curatedPapers[0]
+    if (curated === undefined) {
+      throw new Error("missing curated paper fixture")
+    }
+    const pooled = { ...curated, id: "pooled-only", title: "Pooled Only" }
+
+    const [known, fromPool, missing] = await runFeed(
+      dataDir,
+      Effect.gen(function*() {
+        const repository = yield* ReaderStateRepository
+        yield* repository.savePapers([pooled])
+        return [
+          yield* getPaperById(curated.id),
+          yield* getPaperById(pooled.id),
+          yield* getPaperById("missing-paper"),
+        ] as const
+      }),
+    )
+
+    expect(known?.title).toBe(curated.title)
+    expect(fromPool?.title).toBe("Pooled Only")
+    expect(missing).toBeNull()
   })
 
   it("toggles desk reactions but keeps open-site as an append-only signal", () => {

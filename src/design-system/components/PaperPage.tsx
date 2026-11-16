@@ -1,0 +1,165 @@
+import { useState } from "react"
+
+type PaperPageProps = {
+  readonly abstract: string
+  readonly accessLabel: string
+  readonly authors: ReadonlyArray<string>
+  readonly citation: string
+  readonly citations: number
+  readonly externalUrl: string | undefined
+  readonly readMinutes: number
+  readonly siteLabel: string
+  readonly title: string
+  readonly topics: ReadonlyArray<string>
+  readonly venue: string
+  readonly year: number
+}
+
+const factLabelClass =
+  "m-0 font-label text-[0.62rem] uppercase tracking-[0.16em] text-ink-muted"
+
+/**
+ * Renders the canonical broadsheet clipping for one paper.
+ * @param props - Paper metadata and the prepared citation.
+ * @param props.citation - Plain-text citation copied to the clipboard.
+ * @returns Full clipping with metadata and citation.
+ */
+export function PaperPage(props: PaperPageProps) {
+  const [copied, setCopied] = useState(false)
+
+  const copyCitation = () => {
+    navigator.clipboard.writeText(props.citation).then(
+      () => setCopied(true),
+      () => setCopied(false),
+    )
+  }
+
+  return (
+    <article className="mx-auto w-full max-w-[58rem] bg-paper text-ink">
+      <header className="flex flex-wrap items-center justify-between gap-s border-b border-ink pb-xs font-label text-[0.68rem] uppercase tracking-[0.16em] text-ink-muted">
+        <a
+          className="text-ink no-underline hover:text-stamp focus-visible:outline-2 focus-visible:outline-focus-ring"
+          href="/"
+        >
+          AcademiTok
+        </a>
+        <span>
+          Canonical clipping · Metadata only
+        </span>
+      </header>
+
+      <div className="mt-l grid gap-l md:grid-cols-[minmax(0,1fr)_15rem]">
+        <div className="min-w-0">
+          <p className="m-0 font-label text-[0.72rem] uppercase tracking-[0.18em] text-stamp">
+            {props.topics.join(" / ") || "Research"}
+          </p>
+          <h1 className="mt-s m-0 font-display text-[clamp(2rem,5vw,3.4rem)] leading-[1.02] font-bold tracking-[-0.035em]">
+            {props.title}
+          </h1>
+          <p className="mt-m m-0 font-body text-[0.9rem] font-semibold">
+            {props.authors.join(", ")}
+          </p>
+          <p className="mt-2xs m-0 font-label text-[0.68rem] uppercase tracking-[0.08em] text-ink-muted">
+            {props.venue} · {props.year}
+          </p>
+          <p className="mt-l max-w-[62ch] font-body text-[1.05rem] leading-[1.5] first-letter:float-left first-letter:mr-xs first-letter:font-display first-letter:text-[3.2rem] first-letter:leading-[0.8] first-letter:text-stamp">
+            {props.abstract}
+          </p>
+        </div>
+
+        <aside className="border-t border-rule pt-m md:border-t-0 md:border-l md:pl-m">
+          <dl className="m-0 grid grid-cols-2 gap-s">
+            <div>
+              <dt className={factLabelClass}>
+                Filed under
+              </dt>
+              <dd className="m-0 font-body text-[0.85rem] leading-tight">
+                {props.topics.join(", ") || "Research"}
+              </dd>
+            </div>
+            <div>
+              <dt className={factLabelClass}>
+                Access
+              </dt>
+              <dd className="m-0 font-body text-[0.85rem] leading-tight">
+                {props.accessLabel}
+              </dd>
+            </div>
+            <div>
+              <dt className={factLabelClass}>
+                Source
+              </dt>
+              <dd className="m-0 font-body text-[0.85rem] leading-tight">
+                {props.siteLabel}
+              </dd>
+            </div>
+            <div>
+              <dt className={factLabelClass}>
+                Citations
+              </dt>
+              <dd className="m-0 font-body text-[0.85rem] leading-tight">
+                {props.citations}
+              </dd>
+            </div>
+            <div>
+              <dt className={factLabelClass}>
+                Reading time
+              </dt>
+              <dd className="m-0 font-body text-[0.85rem] leading-tight">
+                {props.readMinutes} min
+              </dd>
+            </div>
+            <div>
+              <dt className={factLabelClass}>
+                Year
+              </dt>
+              <dd className="m-0 font-body text-[0.85rem] leading-tight">
+                {props.year}
+              </dd>
+            </div>
+          </dl>
+
+          <div className="mt-l border border-rule px-s py-m">
+            <p className={factLabelClass}>
+              Cite this
+            </p>
+            <p className="mt-xs m-0 break-words font-body text-[0.82rem] leading-[1.45]">
+              {props.citation}
+            </p>
+            <button
+              className="mt-s min-h-11 w-full border border-stamp bg-transparent px-s py-xs font-label text-[0.62rem] uppercase tracking-[0.14em] text-stamp cursor-pointer hover:bg-stamp hover:text-paper focus-visible:outline-2 focus-visible:outline-focus-ring"
+              type="button"
+              onClick={copyCitation}
+            >
+              {copied ? "Copied" : "Copy citation"}
+            </button>
+            <span className="sr-only" role="status" aria-live="polite">
+              {copied ? "Citation copied to the clipboard" : ""}
+            </span>
+          </div>
+
+          <div className="mt-l flex flex-col gap-xs">
+            {props.externalUrl === undefined
+              ? null
+              : (
+                <a
+                  className="font-label text-[0.62rem] uppercase tracking-[0.14em] text-ink underline-offset-4 hover:text-stamp focus-visible:outline-2 focus-visible:outline-focus-ring"
+                  href={props.externalUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  Open source in a new tab
+                </a>
+              )}
+            <a
+              className="font-label text-[0.62rem] uppercase tracking-[0.14em] text-ink-muted no-underline hover:text-stamp focus-visible:outline-2 focus-visible:outline-focus-ring"
+              href="/"
+            >
+              Back to the edition
+            </a>
+          </div>
+        </aside>
+      </div>
+    </article>
+  )
+}

@@ -66,6 +66,8 @@ export const registry = {
       "Fullscreen feed state wrapper — centers loading, empty, and error states inside the snap feed",
     "components/PaperSlide.tsx":
       "Complex feed surface — short-form paper card with action rail and metadata",
+    "components/PaperPage.tsx":
+      "Canonical permalink surface — full broadsheet clipping with citation copy",
   },
 } as const
 

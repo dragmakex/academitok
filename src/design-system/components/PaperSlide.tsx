@@ -5,6 +5,7 @@ import {
   ExternalLink,
   EyeOff,
   Heart,
+  Link2,
 } from "lucide-react"
 import { forwardRef } from "react"
 
@@ -137,6 +138,7 @@ export const PaperSlide = forwardRef<HTMLElement, PaperSlideProps>(
       bookmarked,
       citations,
       externalUrl,
+      id,
       liked,
       position,
       rationale,
@@ -283,6 +285,13 @@ export const PaperSlide = forwardRef<HTMLElement, PaperSlideProps>(
                 >
                   <EyeOff size={18} aria-hidden="true" /> Hide
                 </button>
+                <a
+                  className={railButtonClass}
+                  href={`/paper/${encodeURIComponent(id)}`}
+                  aria-label="Open the permalink page for this paper"
+                >
+                  <Link2 size={18} aria-hidden="true" /> Link
+                </a>
                 {externalUrl === undefined
                   ? null
                   : (

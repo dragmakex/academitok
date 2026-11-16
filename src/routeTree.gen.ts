@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as SavedRouteImport } from './routes/saved'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as PaperIdRouteImport } from './routes/paper/$id'
 import { Route as ApiSplatRouteImport } from './routes/api/$'
 
 const SavedRoute = SavedRouteImport.update({
@@ -23,6 +24,11 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const PaperIdRoute = PaperIdRouteImport.update({
+  id: '/paper/$id',
+  path: '/paper/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiSplatRoute = ApiSplatRouteImport.update({
   id: '/api/$',
   path: '/api/$',
@@ -33,30 +39,34 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/saved': typeof SavedRoute
   '/api/$': typeof ApiSplatRoute
+  '/paper/$id': typeof PaperIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/saved': typeof SavedRoute
   '/api/$': typeof ApiSplatRoute
+  '/paper/$id': typeof PaperIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/saved': typeof SavedRoute
   '/api/$': typeof ApiSplatRoute
+  '/paper/$id': typeof PaperIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/saved' | '/api/$'
+  fullPaths: '/' | '/saved' | '/api/$' | '/paper/$id'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/saved' | '/api/$'
-  id: '__root__' | '/' | '/saved' | '/api/$'
+  to: '/' | '/saved' | '/api/$' | '/paper/$id'
+  id: '__root__' | '/' | '/saved' | '/api/$' | '/paper/$id'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   SavedRoute: typeof SavedRoute
   ApiSplatRoute: typeof ApiSplatRoute
+  PaperIdRoute: typeof PaperIdRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -75,6 +85,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/paper/$id': {
+      id: '/paper/$id'
+      path: '/paper/$id'
+      fullPath: '/paper/$id'
+      preLoaderRoute: typeof PaperIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/$': {
       id: '/api/$'
       path: '/api/$'
@@ -89,6 +106,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   SavedRoute: SavedRoute,
   ApiSplatRoute: ApiSplatRoute,
+  PaperIdRoute: PaperIdRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

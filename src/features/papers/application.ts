@@ -132,6 +132,19 @@ export const getSavedPapers = Effect
   })
   .pipe(Effect.withSpan("saved.list"))
 
+export const getPaperById = (id: string) =>
+  Effect
+    .gen(function*() {
+      const repository = yield* ReaderStateRepository
+      const [pooled] = yield* repository.papersByIds([id])
+      if (pooled !== undefined) {
+        return pooled
+      }
+
+      return curatedPapers.find((paper) => paper.id === id) ?? null
+    })
+    .pipe(Effect.withSpan("paper.byId"))
+
 export const saveReaderProfile = (
   input: SaveProfileInput,
   request: FeedRequest,

@@ -95,4 +95,9 @@ test("PaperSlide renders metadata and exposes accessible actions", async () => {
       name: "Open paper source in a new tab",
     }))
     .toHaveAttribute("rel", "noopener noreferrer")
+  await expect
+    .element(page.getByRole("link", {
+      name: "Open the permalink page for this paper",
+    }))
+    .toHaveAttribute("href", "/paper/paper-1")
 })
