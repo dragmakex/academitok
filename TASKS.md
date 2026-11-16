@@ -22,10 +22,11 @@ write the conflict at the bottom instead of guessing.
 
 ## P2 — breadth
 
-- [ ] **2. `/saved` route.** SPEC §5: saved clippings as a static, filterable list, not a
+- [x] **2. `/saved` route.** SPEC §5: saved clippings as a static, filterable list, not a
       deck. Reuse the clipping component in a compact variant; no new design language. Accept:
       a saved paper appears there after a save and disappears after unsave; empty state reads
       as a broadsheet notice, not a spinner.
+      — `70caa4a`
 - [ ] **3. `/paper/$id` permalink.** SPEC §5: canonical page per paper with the clipping
       anatomy, full metadata and a copyable citation (authors, year, title, venue, DOI or URL).
       Accept: URL renders server-side for a known id, unknown id returns the not-found notice,
