@@ -1,7 +1,7 @@
 import { expect, test } from "vitest"
 import { render } from "vitest-browser-react"
 import { page } from "vitest/browser"
-import { CreateTodoForm } from "../routes/-index/create-todo-form"
+import { CreateTodoForm } from "../../docs/reference/todo/create-todo-form"
 
 /**
  * Visual Regression Tests for CreateTodoForm

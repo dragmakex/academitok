@@ -47,23 +47,25 @@ vi.mock("./-index/app", () => ({
 vi.mock("./api/$", () => ({
   serverRuntime: {
     runPromise: vi.fn().mockResolvedValue({
-      todos: [],
+      profile: null,
+      selectedTopic: "All",
+      selectedSort: "recommended",
       stats: {
         total: 0,
-        active: 0,
-        completed: 0,
-        overdue: 0,
-        dueToday: 0,
-        upcoming: 0,
-        unscheduled: 0,
+        openAccess: 0,
+        institutionAccess: 0,
+        liked: 0,
+        bookmarked: 0,
       },
-      groups: [],
+      items: [],
+      nextCursor: null,
+      exploration: 0,
     }),
   },
 }))
 
-vi.mock("@/features/todos/application", () => ({
-  getTodoDashboardSnapshot: { _tag: "TodoDashboardSnapshotEffect" },
+vi.mock("@/features/papers/application", () => ({
+  getPaperFeedSnapshot: vi.fn(() => ({ _tag: "PaperFeedSnapshotEffect" })),
 }))
 
 describe("index route", () => {
