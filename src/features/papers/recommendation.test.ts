@@ -1,6 +1,7 @@
-import type { ReaderState } from "@/api/paper-schema"
+import type { Paper, ReaderState } from "@/api/paper-schema"
 import { curatedPapers } from "@/data/papers"
 import {
+  buildContentCentroid,
   buildFeedItems,
   buildFeedPage,
   buildFeedStats,
@@ -16,7 +17,73 @@ const baseState: ReaderState = {
   reactions: [],
 }
 
+const paperFixture = (
+  id: string,
+  abstract: string,
+  overrides: Partial<Paper> = {},
+): Paper => ({
+  id,
+  title: `Paper ${id}`,
+  authors: [`Author ${id}`],
+  abstract,
+  summary: abstract,
+  year: 2024,
+  venue: "Test Journal",
+  topics: ["AI"],
+  access: "open",
+  citations: 0,
+  readMinutes: 5,
+  site: "OpenAlex",
+  source: "curated",
+  ...overrides,
+})
+
 describe("paper recommendation", () => {
+  it("builds a centroid from active source abstracts", () => {
+    const papers = [
+      paperFixture("left", "alpha alpha beta"),
+      paperFixture("right", "alpha beta beta"),
+      paperFixture("ignored", "gamma delta"),
+    ]
+
+    const centroid = buildContentCentroid(
+      papers,
+      new Set(["left", "right"]),
+    )
+
+    expect(centroid.get("alpha")).toBeCloseTo(centroid.get("beta") ?? 0)
+    expect(centroid.has("gamma")).toBe(false)
+  })
+
+  it.each(["like", "bookmark"] as const)(
+    "ranks abstracts similar to %sd content above unrelated abstracts",
+    (kind) => {
+      const papers = [
+        paperFixture("source", "neural networks learn image representations"),
+        paperFixture("similar", "neural networks learn visual representations"),
+        paperFixture("unrelated", "ocean currents alter coastal sediment"),
+      ]
+      const items = buildFeedItems(
+        {
+          profile: null,
+          reactions: [{
+            paperId: "source",
+            kind,
+            active: true,
+            timestamp: Date.now(),
+          }],
+        },
+        papers,
+        "All",
+        "recommended",
+      )
+      const rank = (id: string) =>
+        items.findIndex((item) => item.paper.id === id)
+
+      expect(rank("similar")).toBeLessThan(rank("unrelated"))
+    },
+  )
+
   it("boosts papers that match interests", () => {
     const items = buildFeedItems(baseState, curatedPapers, "All", "recommended")
     expect(items[0]?.paper.topics.includes("AI")).toBe(true)

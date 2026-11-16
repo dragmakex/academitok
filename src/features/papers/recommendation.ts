@@ -83,6 +83,127 @@ function institutionCanAccess(
 }
 
 /**
+ * Tokenizes an abstract into normalized terms.
+ * @param abstract - Paper abstract.
+ * @returns Lowercase word tokens.
+ */
+function abstractTerms(abstract: string): ReadonlyArray<string> {
+  return abstract.toLowerCase().match(/[\p{L}\p{N}]+/gu) ?? []
+}
+
+/**
+ * Computes smoothed inverse document frequencies for a paper corpus.
+ * @param papers - Corpus papers.
+ * @returns IDF by term.
+ */
+function inverseDocumentFrequencies(
+  papers: ReadonlyArray<Paper>,
+): ReadonlyMap<string, number> {
+  const documentFrequency = new Map<string, number>()
+  for (const paper of papers) {
+    for (const term of new Set(abstractTerms(paper.abstract))) {
+      documentFrequency.set(term, (documentFrequency.get(term) ?? 0) + 1)
+    }
+  }
+
+  return new Map(
+    [...documentFrequency].map(([term, frequency]) => [
+      term,
+      Math.log((papers.length + 1) / (frequency + 1)) + 1,
+    ]),
+  )
+}
+
+/**
+ * Builds a unit-length TF-IDF vector.
+ * @param abstract - Paper abstract.
+ * @param idf - Corpus inverse document frequencies.
+ * @returns Sparse normalized vector.
+ */
+function abstractVector(
+  abstract: string,
+  idf: ReadonlyMap<string, number>,
+): ReadonlyMap<string, number> {
+  const terms = abstractTerms(abstract)
+  const counts = new Map<string, number>()
+  for (const term of terms) {
+    counts.set(term, (counts.get(term) ?? 0) + 1)
+  }
+  const weighted = new Map(
+    [...counts].map(([term, count]) => [
+      term,
+      count / Math.max(1, terms.length) * (idf.get(term) ?? 0),
+    ]),
+  )
+  const magnitude = vectorMagnitude(weighted)
+  return magnitude === 0
+    ? weighted
+    : new Map([...weighted].map(([term, weight]) => [term, weight / magnitude]))
+}
+
+/**
+ * Computes a sparse vector's magnitude without an argument-size limit.
+ * @param vector - Sparse vector.
+ * @returns Euclidean magnitude.
+ */
+function vectorMagnitude(vector: ReadonlyMap<string, number>): number {
+  let squaredSum = 0
+  for (const weight of vector.values()) {
+    squaredSum += weight * weight
+  }
+  return Math.sqrt(squaredSum)
+}
+
+/**
+ * Builds the average TF-IDF vector of liked and saved papers.
+ * @param papers - Corpus papers.
+ * @param paperIds - Active liked and saved paper IDs.
+ * @returns Sparse content centroid.
+ */
+export function buildContentCentroid(
+  papers: ReadonlyArray<Paper>,
+  paperIds: ReadonlySet<string>,
+): ReadonlyMap<string, number> {
+  const sourcePapers = papers.filter((paper) => paperIds.has(paper.id))
+  if (sourcePapers.length === 0) {
+    return new Map()
+  }
+
+  const idf = inverseDocumentFrequencies(papers)
+  const centroid = new Map<string, number>()
+  for (const paper of sourcePapers) {
+    for (const [term, weight] of abstractVector(paper.abstract, idf)) {
+      centroid.set(
+        term,
+        (centroid.get(term) ?? 0) + weight / sourcePapers.length,
+      )
+    }
+  }
+  return centroid
+}
+
+/**
+ * Computes cosine similarity between sparse vectors.
+ * @param left - First vector.
+ * @param right - Second vector.
+ * @returns Similarity from zero to one.
+ */
+function cosineSimilarity(
+  left: ReadonlyMap<string, number>,
+  right: ReadonlyMap<string, number>,
+): number {
+  let dotProduct = 0
+  for (const [term, weight] of left) {
+    dotProduct += weight * (right.get(term) ?? 0)
+  }
+  const leftMagnitude = vectorMagnitude(left)
+  const rightMagnitude = vectorMagnitude(right)
+  return leftMagnitude === 0 || rightMagnitude === 0
+    ? 0
+    : dotProduct / (leftMagnitude * rightMagnitude)
+}
+
+/**
  * Reduces toggle events.
  * @param state - Reader state.
  * @returns Current reaction sets.
@@ -251,6 +372,11 @@ export function buildFeedItems(
   const weights = topicWeights(state, papers)
   const active = activeState(state)
   const signals = paperSignals(state)
+  const idf = inverseDocumentFrequencies(papers)
+  const contentCentroid = buildContentCentroid(
+    papers,
+    new Set([...active.liked, ...active.bookmarked]),
+  )
 
   const items = papers
     .filter((paper) =>
@@ -266,8 +392,13 @@ export function buildFeedItems(
         (sum, topic) => sum + (weights.get(topic) ?? 0),
         0,
       )
+      const contentAffinity = cosineSimilarity(
+        contentCentroid,
+        abstractVector(paper.abstract, idf),
+      )
       const score = matchedTopics.length * 2.6
         + learnedBoost
+        + 0.9 * contentAffinity
         + (paper.access === "open" ? 0.8 : accessible ? 0.3 : -0.6)
         + (active.hidden.has(paper.id) ? -20 : 0)
         + (active.liked.has(paper.id) ? 4 : 0)
