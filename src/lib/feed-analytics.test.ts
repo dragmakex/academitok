@@ -8,6 +8,7 @@ import {
   readingCompletion,
   trackFeedHealthEvent,
   trackPaperViewEvent,
+  unmatchedBeatCount,
 } from "./feed-analytics"
 
 const { capture } = vi.hoisted(() => ({ capture: vi.fn() }))
@@ -100,6 +101,35 @@ describe("medianYear", () => {
 
   it("reports no median for an empty page", () => {
     expect(medianYear([])).toBeNull()
+  })
+})
+
+const clipping = (title: string, abstract: string) => ({ title, abstract })
+
+describe("unmatchedBeatCount", () => {
+  it("counts the clippings that matched no beat", () => {
+    expect(
+      unmatchedBeatCount([
+        clipping("Potsherd stratigraphy", "Field notes from a dig."),
+        clipping("Quantum sensors", "A material study."),
+        clipping("Parish registers", "A list of names."),
+      ]),
+    )
+      .toBe(2)
+  })
+
+  it("reports none when every clipping matched a beat", () => {
+    expect(
+      unmatchedBeatCount([
+        clipping("Quantum sensors", "A material study."),
+        clipping("Clinical medicine", "A patient study."),
+      ]),
+    )
+      .toBe(0)
+  })
+
+  it("reports none for an empty page", () => {
+    expect(unmatchedBeatCount([])).toBe(0)
   })
 })
 

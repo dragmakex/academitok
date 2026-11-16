@@ -7,6 +7,7 @@ import type {
 } from "@/api/paper-schema"
 import { curatedPapers } from "@/data/papers"
 import { createSourceGuard } from "@/lib/source-guard"
+import { matchedTopics } from "@/lib/topic-beats"
 
 const baseUrl = "https://api.openalex.org/works"
 const cacheTtlMs = 24 * 60 * 60 * 1_000
@@ -36,18 +37,6 @@ const topicSearchTerms: Record<TopicFilter, string> = {
   Physics: "physics quantum materials",
   Psychology: "psychology cognition behavior",
   Robotics: "robotics autonomous systems",
-}
-
-const topicKeywords: Record<Topic, ReadonlyArray<string>> = {
-  AI: ["artificial intelligence", "machine learning", "neural", "llm"],
-  Biology: ["biology", "protein", "genome", "cell"],
-  Climate: ["climate", "carbon", "energy", "emissions"],
-  Education: ["education", "learning", "pedagogy", "student"],
-  Economics: ["economics", "market", "policy", "finance"],
-  Health: ["health", "clinical", "medicine", "patient"],
-  Physics: ["physics", "quantum", "material", "sensor"],
-  Psychology: ["psychology", "behavior", "cognitive", "mental"],
-  Robotics: ["robot", "robotics", "autonomous", "control"],
 }
 
 type OpenAlexAuthor = {
@@ -105,22 +94,17 @@ export function indexToText(
 }
 
 /**
- * Maps text onto fixed beats.
+ * Maps text onto fixed beats, filing anything unmatched under Education (SPEC §17.2).
  * @param title - Paper title.
  * @param abstract - Paper abstract.
- * @returns Matching beats.
+ * @returns Matching beats, or the Education fallback.
  */
-function detectTopics(title: string, abstract: string): ReadonlyArray<Topic> {
-  const haystack = `${title} ${abstract}`.toLowerCase()
-  const matches = (Object.entries(topicKeywords) as ReadonlyArray<
-    readonly [Topic, ReadonlyArray<string>]
-  >)
-    .filter(([, keywords]) =>
-      keywords.some((keyword) => haystack.includes(keyword))
-    )
-    .map(([topic]) => topic)
-
-  return matches.length > 0 ? matches.slice(0, 3) : ["Education"]
+export function detectTopics(
+  title: string,
+  abstract: string,
+): ReadonlyArray<Topic> {
+  const matches = matchedTopics(title, abstract)
+  return matches.length > 0 ? matches : ["Education"]
 }
 
 /**

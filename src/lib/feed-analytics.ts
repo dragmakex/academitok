@@ -1,10 +1,12 @@
 import type {
   FeedSnapshot,
+  Paper,
   ReactToPaperInput,
   Topic,
   TrackPaperViewInput,
 } from "@/api/paper-schema"
 import { getPostHogClient } from "@/lib/client-init"
+import { matchedTopics } from "@/lib/topic-beats"
 
 export type FeedHealthEvent =
   | "impression"
@@ -160,6 +162,20 @@ export function archivalDrift(years: ReadonlyArray<number>): ArchivalDrift {
 }
 
 /**
+ * Clippings whose text matched no beat, so `detectTopics` filed them under its
+ * Education fallback (SPEC §17.2).
+ * @param papers - Page clippings.
+ * @returns Count of fallback clippings; 0 for an empty page.
+ */
+export function unmatchedBeatCount(
+  papers: ReadonlyArray<Pick<Paper, "title" | "abstract">>,
+): number {
+  return papers
+    .filter((paper) => matchedTopics(paper.title, paper.abstract).length === 0)
+    .length
+}
+
+/**
  * Tracks one ranked page returned to the reader.
  * @param snapshot - Ranked page response.
  * @param cursor - Requested cursor, or null for the first page.
@@ -175,6 +191,9 @@ export function trackFeedPageEvent(
     duplicate_count: ids.length - new Set(ids).size,
     exploration_count: snapshot.exploration,
     median_year: medianYear(snapshot.items.map((item) => item.paper.year)),
+    unmatched_beat_count: unmatchedBeatCount(
+      snapshot.items.map((item) => item.paper),
+    ),
     topic: snapshot.selectedTopic,
     sort: snapshot.selectedSort,
     cold_start: snapshot.profile === null,
