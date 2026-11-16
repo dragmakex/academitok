@@ -1,0 +1,473 @@
+import type {
+  FeedCursor,
+  FeedItem,
+  FeedSort,
+  Institution,
+  Paper,
+  ReaderProfile,
+  ReaderState,
+  Topic,
+  TopicFilter,
+} from "@/api/paper-schema"
+
+const reactionWeights = {
+  view: 1.2,
+  like: 4.5,
+  bookmark: 3.8,
+  hide: -5,
+  "open-site": 3.4,
+} as const
+
+/**
+ * Buckets dwell so brief skips reduce affinity and long reads cannot dominate it.
+ * @param dwellMs - Measured visible time.
+ * @returns Bounded dwell signal weight.
+ */
+function dwellWeight(dwellMs: number): number {
+  if (dwellMs < 1_500) {
+    return -0.6
+  }
+  if (dwellMs < 4_000) {
+    return 1.2
+  }
+  if (dwellMs < 10_000) {
+    return 3.2
+  }
+  if (dwellMs < 30_000) {
+    return 5
+  }
+  return 6
+}
+
+/**
+ * Identifies toggle reactions.
+ * @param kind - Reaction kind.
+ * @returns Whether the reaction toggles.
+ */
+function isToggleReactionKind(
+  kind: ReaderState["reactions"][number]["kind"],
+): kind is "like" | "bookmark" | "hide" {
+  return kind === "like" || kind === "bookmark" || kind === "hide"
+}
+
+/**
+ * Scores publication recency.
+ * @param year - Publication year.
+ * @returns Recency score.
+ */
+function recencyBoost(year: number): number {
+  return Math.max(0, year - 2021) * 0.7
+}
+
+/**
+ * Dampens citation counts.
+ * @param citations - Citation count.
+ * @returns Citation score.
+ */
+function citationBoost(citations: number): number {
+  return Math.log10(citations + 1) * 2.4
+}
+
+/**
+ * Resolves source entitlement.
+ * @param institution - Reader institution.
+ * @param paper - Candidate paper.
+ * @returns Whether access is available.
+ */
+function institutionCanAccess(
+  institution: Institution,
+  paper: Paper,
+): boolean {
+  return paper.access === "open"
+    || paper.allowedInstitutions?.includes(institution) === true
+}
+
+/**
+ * Reduces toggle events.
+ * @param state - Reader state.
+ * @returns Current reaction sets.
+ */
+function activeState(state: ReaderState) {
+  const liked = new Set<string>()
+  const bookmarked = new Set<string>()
+  const hidden = new Set<string>()
+  const resolved = new Set<string>()
+
+  for (const reaction of state.reactions) {
+    const target = reaction.kind === "like"
+      ? liked
+      : reaction.kind === "bookmark"
+      ? bookmarked
+      : reaction.kind === "hide"
+      ? hidden
+      : undefined
+    const key = `${reaction.kind}:${reaction.paperId}`
+
+    if (target !== undefined && !resolved.has(key)) {
+      resolved.add(key)
+      if (reaction.active) {
+        target.add(reaction.paperId)
+      }
+    }
+  }
+
+  return { bookmarked, hidden, liked }
+}
+
+/**
+ * Counts engagement signals.
+ * @param state - Reader state.
+ * @returns Signal counts by paper.
+ */
+function paperSignals(state: ReaderState) {
+  const views = new Map<string, number>()
+  const dwells = new Map<string, number>()
+  const opens = new Map<string, number>()
+
+  for (const reaction of state.reactions) {
+    if (!reaction.active) {
+      continue
+    }
+
+    const target = reaction.kind === "view"
+      ? views
+      : reaction.kind === "dwell"
+      ? dwells
+      : reaction.kind === "open-site"
+      ? opens
+      : undefined
+
+    if (target !== undefined) {
+      target.set(reaction.paperId, (target.get(reaction.paperId) ?? 0) + 1)
+    }
+  }
+
+  return { dwells, opens, views }
+}
+
+/**
+ * Computes time-decayed topic affinity.
+ * @param state - Reader state.
+ * @param papers - Candidate papers.
+ * @returns Topic weights.
+ */
+function topicWeights(
+  state: ReaderState,
+  papers: ReadonlyArray<Paper>,
+): Map<Topic, number> {
+  const weights = new Map<Topic, number>()
+  const byId = new Map(papers.map((paper) => [paper.id, paper] as const))
+  const resolvedToggles = new Set<string>()
+  const now = Date.now()
+
+  for (const reaction of state.reactions) {
+    if (isToggleReactionKind(reaction.kind)) {
+      const key = `${reaction.kind}:${reaction.paperId}`
+      if (resolvedToggles.has(key)) {
+        continue
+      }
+      resolvedToggles.add(key)
+      if (!reaction.active) {
+        continue
+      }
+    }
+
+    const paper = byId.get(reaction.paperId)
+    if (paper === undefined) {
+      continue
+    }
+
+    const ageDays = Math.max(1, (now - reaction.timestamp) / 86_400_000)
+    const decay = 1 / Math.min(12, ageDays)
+    const signalWeight = reaction.kind === "dwell"
+      ? dwellWeight(reaction.dwellMs ?? 0)
+      : reactionWeights[reaction.kind]
+    const weight = signalWeight * decay / Math.max(1, paper.topics.length)
+
+    for (const topic of paper.topics) {
+      weights.set(topic, (weights.get(topic) ?? 0) + weight)
+    }
+  }
+
+  return weights
+}
+
+/**
+ * Explains the strongest real signals.
+ * @param paper - Candidate paper.
+ * @param profile - Reader profile.
+ * @param accessible - Whether the source is accessible.
+ * @param matchedTopics - Explicitly matched beats.
+ * @param signals - Prior engagement counts.
+ * @param signals.dwellCount - Prior dwell count.
+ * @param signals.openCount - Prior source-open count.
+ * @returns At most two rationale lines.
+ */
+function rationaleForPaper(
+  paper: Paper,
+  profile: ReaderProfile | null,
+  accessible: boolean,
+  matchedTopics: ReadonlyArray<Topic>,
+  signals: {
+    readonly dwellCount: number
+    readonly openCount: number
+  },
+): ReadonlyArray<string> {
+  const reasons = [
+    ...(matchedTopics.length > 0
+      ? [`Matches ${matchedTopics.join(", ")}`]
+      : []),
+    ...(signals.dwellCount > 0 ? ["Held your attention"] : []),
+    ...(signals.openCount > 0 ? ["You opened the source"] : []),
+    ...(paper.access === "open" ? [`Free via ${paper.site}`] : []),
+    ...(paper.access === "institution" && accessible
+      ? [`Available through ${profile?.institution ?? "your institution"}`]
+      : []),
+    ...(paper.year >= 2024 ? ["Recent publication"] : []),
+    ...(paper.citations >= 100 ? ["Highly cited"] : []),
+  ]
+
+  return (reasons.length > 0 ? reasons : [paper.topics[0] ?? paper.venue])
+    .slice(0, 2)
+}
+
+/**
+ * Scores the candidate pool.
+ * @param state - Reader state.
+ * @param papers - Candidate papers.
+ * @param selectedTopic - Requested beat.
+ * @param sort - Requested ordering.
+ * @returns Ranked items.
+ */
+export function buildFeedItems(
+  state: ReaderState,
+  papers: ReadonlyArray<Paper>,
+  selectedTopic: TopicFilter,
+  sort: FeedSort,
+): ReadonlyArray<FeedItem> {
+  const profile = state.profile
+  const institution = profile?.institution ?? "Guest"
+  const interests = new Set(profile?.interests ?? [])
+  const weights = topicWeights(state, papers)
+  const active = activeState(state)
+  const signals = paperSignals(state)
+
+  const items = papers
+    .filter((paper) =>
+      selectedTopic === "All" || paper.topics.includes(selectedTopic)
+    )
+    .map((paper) => {
+      const accessible = institutionCanAccess(institution, paper)
+      const matchedTopics = paper.topics.filter((topic) => interests.has(topic))
+      const viewCount = signals.views.get(paper.id) ?? 0
+      const dwellCount = signals.dwells.get(paper.id) ?? 0
+      const openCount = signals.opens.get(paper.id) ?? 0
+      const learnedBoost = paper.topics.reduce(
+        (sum, topic) => sum + (weights.get(topic) ?? 0),
+        0,
+      )
+      const score = matchedTopics.length * 2.6
+        + learnedBoost
+        + (paper.access === "open" ? 0.8 : accessible ? 0.3 : -0.6)
+        + (active.hidden.has(paper.id) ? -20 : 0)
+        + (active.liked.has(paper.id) ? 4 : 0)
+        + (active.bookmarked.has(paper.id) ? 3.5 : 0)
+        + Math.min(viewCount, 3) * 0.4
+        + Math.min(dwellCount, 3) * 1.4
+        + Math.min(openCount, 2) * 1.8
+        + recencyBoost(paper.year)
+        + citationBoost(paper.citations)
+
+      return {
+        paper,
+        score,
+        rationale: rationaleForPaper(
+          paper,
+          profile,
+          accessible,
+          matchedTopics,
+          {
+            dwellCount,
+            openCount,
+          },
+        ),
+        accessible,
+        liked: active.liked.has(paper.id),
+        bookmarked: active.bookmarked.has(paper.id),
+        hidden: active.hidden.has(paper.id),
+        exploration: false,
+      } satisfies FeedItem
+    })
+    .filter((item) => !item.hidden)
+
+  if (sort === "latest") {
+    return [...items].sort(
+      (left, right) =>
+        right.paper.year - left.paper.year
+        || right.paper.citations - left.paper.citations,
+    )
+  }
+
+  if (sort === "citations") {
+    return [...items].sort(
+      (left, right) =>
+        right.paper.citations - left.paper.citations
+        || right.paper.year - left.paper.year,
+    )
+  }
+
+  return [...items].sort((left, right) => right.score - left.score)
+}
+
+/**
+ * Normalizes title tokens.
+ * @param title - Paper title.
+ * @returns Unique normalized words.
+ */
+function titleWords(title: string): ReadonlySet<string> {
+  return new Set(title.toLowerCase().match(/[a-z0-9]+/g) ?? [])
+}
+
+/**
+ * Computes title Jaccard similarity.
+ * @param left - First title.
+ * @param right - Second title.
+ * @returns Similarity from zero to one.
+ */
+function titleSimilarity(left: string, right: string): number {
+  const leftWords = titleWords(left)
+  const rightWords = titleWords(right)
+  const union = new Set([...leftWords, ...rightWords])
+  if (union.size === 0) {
+    return 1
+  }
+  let intersection = 0
+  for (const word of leftWords) {
+    if (rightWords.has(word)) {
+      intersection++
+    }
+  }
+  return intersection / union.size
+}
+
+/**
+ * Decodes the opaque cursor.
+ * @param cursor - Encoded cursor.
+ * @returns Previously emitted paper IDs.
+ */
+function decodeCursor(cursor: FeedCursor | null): ReadonlyArray<string> {
+  if (cursor === null) {
+    return []
+  }
+  try {
+    const value: unknown = JSON.parse(decodeURIComponent(cursor))
+    return Array.isArray(value) && value.every((id) => typeof id === "string")
+      ? value
+      : []
+  } catch {
+    return []
+  }
+}
+
+/**
+ * Checks page diversity constraints.
+ * @param item - Candidate item.
+ * @param selected - Current page.
+ * @param topicCounts - Primary-topic counts.
+ * @returns Whether the candidate can be added.
+ */
+function canAdd(
+  item: FeedItem,
+  selected: ReadonlyArray<FeedItem>,
+  topicCounts: ReadonlyMap<Topic, number>,
+): boolean {
+  const primaryTopic = item.paper.topics[0]
+  if (primaryTopic !== undefined && (topicCounts.get(primaryTopic) ?? 0) >= 2) {
+    return false
+  }
+  const authors = new Set(selected.flatMap((entry) => entry.paper.authors))
+  return !item.paper.authors.some((author) => authors.has(author))
+    && !selected.some((entry) =>
+      titleSimilarity(entry.paper.title, item.paper.title) > 0.9
+    )
+}
+
+/**
+ * Selects one diverse page.
+ * @param items - Ranked candidates.
+ * @param cursor - Session cursor.
+ * @param limit - Maximum page size.
+ * @returns Page items and next cursor.
+ */
+export function buildFeedPage(
+  items: ReadonlyArray<FeedItem>,
+  cursor: FeedCursor | null,
+  limit = 10,
+): {
+  readonly items: ReadonlyArray<FeedItem>
+  readonly nextCursor: FeedCursor | null
+} {
+  const priorIds = decodeCursor(cursor)
+  const seen = new Set(priorIds)
+  const candidates = items.filter((item) => !seen.has(item.paper.id))
+  const selected: Array<FeedItem> = []
+  const topicCounts = new Map<Topic, number>()
+  const explorationStart = Math.ceil(candidates.length * 0.4)
+  const explorationCandidate = candidates.slice(explorationStart).find((item) =>
+    canAdd(item, selected, topicCounts)
+  )
+
+  for (const candidate of candidates) {
+    if (
+      selected.length >= limit - (explorationCandidate === undefined ? 0 : 1)
+    ) {
+      break
+    }
+    if (
+      candidate === explorationCandidate
+      || !canAdd(candidate, selected, topicCounts)
+    ) {
+      continue
+    }
+    selected.push(candidate)
+    const topic = candidate.paper.topics[0]
+    if (topic !== undefined) {
+      topicCounts.set(topic, (topicCounts.get(topic) ?? 0) + 1)
+    }
+  }
+
+  if (
+    explorationCandidate !== undefined
+    && selected.length < limit
+    && canAdd(explorationCandidate, selected, topicCounts)
+  ) {
+    selected.push({ ...explorationCandidate, exploration: true })
+  }
+
+  const selectedIds = selected.map((item) => item.paper.id)
+  const allSeen = [...priorIds, ...selectedIds]
+  const hasMore = candidates.some((item) =>
+    !selectedIds.includes(item.paper.id)
+  )
+  return {
+    items: selected,
+    nextCursor: hasMore && selected.length > 0
+      ? encodeURIComponent(JSON.stringify(allSeen))
+      : null,
+  }
+}
+
+/**
+ * Summarizes ranked candidates.
+ * @param items - Ranked items.
+ * @returns Desk statistics.
+ */
+export function buildFeedStats(items: ReadonlyArray<FeedItem>) {
+  return {
+    total: items.length,
+    openAccess: items.filter((item) => item.paper.access === "open").length,
+    institutionAccess: items.filter((item) => item.accessible).length,
+    liked: items.filter((item) => item.liked).length,
+    bookmarked: items.filter((item) => item.bookmarked).length,
+  }
+}

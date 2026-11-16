@@ -7,6 +7,7 @@
 
 import { DomainApi } from "@/api/domain-api"
 import { DomainRpc } from "@/api/domain-rpc"
+import { PapersApplicationLive } from "@/features/papers/application"
 import { TodosApplicationLive } from "@/features/todos/application"
 import { ObservabilityLive } from "@/lib/observability"
 import {
@@ -30,8 +31,9 @@ import * as HttpApiBuilder from "effect/unstable/httpapi/HttpApiBuilder"
 import * as RpcMiddleware from "effect/unstable/rpc/RpcMiddleware"
 import * as RpcSerialization from "effect/unstable/rpc/RpcSerialization"
 import * as RpcServer from "effect/unstable/rpc/RpcServer"
+import { createPaperRpcHandlers } from "./-lib/papers-rpc-live"
 import { TodosApiLive } from "./-lib/todos-api-live"
-import { TodosRpcLive } from "./-lib/todos-rpc-live"
+import { createRpcHandlers } from "./-lib/todos-rpc-live"
 
 /**
  * RPC logging middleware - logs errors for failed RPC requests.
@@ -118,13 +120,25 @@ export const RpcLoggerLive = Layer.succeed(
 /**
  * Router layers - exported for testing.
  */
+const DomainRpcLive = DomainRpc
+  .toLayer(
+    Effect.zipWith(
+      createRpcHandlers,
+      createPaperRpcHandlers,
+      (todos, papers) => ({ ...todos, ...papers }),
+    ),
+  )
+  .pipe(
+    Layer.provide(Layer.mergeAll(TodosApplicationLive, PapersApplicationLive)),
+  )
+
 export const RpcRouter = RpcServer
   .layer(DomainRpc.middleware(RpcLogger), {
     spanPrefix: "rpc",
     disableFatalDefects: true,
   })
   .pipe(
-    Layer.provide(TodosRpcLive),
+    Layer.provide(DomainRpcLive),
     Layer.provide(RpcLoggerLive),
     Layer.provide(
       RpcServer.layerProtocolHttp({ path: "/api/rpc" }).pipe(
@@ -192,11 +206,14 @@ const ObservabilityRuntimeLive = Layer.orDie(ObservabilityLive)
  *
  * Pattern: Layer.provideMerge — merges multiple service layers into runtime.
  */
-export const ServerRuntimeLive = TodosApplicationLive.pipe(
-  Layer.provideMerge(ObservabilityRuntimeLive),
-  Layer.provideMerge(SentryLive),
-  Layer.provideMerge(DevConsoleLive),
-)
+export const ServerRuntimeLive = Layer
+  .mergeAll(
+    TodosApplicationLive,
+    PapersApplicationLive,
+  )
+  .pipe(Layer.provideMerge(ObservabilityRuntimeLive))
+  .pipe(Layer.provideMerge(SentryLive))
+  .pipe(Layer.provideMerge(DevConsoleLive))
 
 export const AllRoutes = Layer
   .mergeAll(

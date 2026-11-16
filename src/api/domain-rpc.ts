@@ -8,6 +8,14 @@ import * as Schema from "effect/Schema"
 import * as Rpc from "effect/unstable/rpc/Rpc"
 import * as RpcGroup from "effect/unstable/rpc/RpcGroup"
 import {
+  FeedRequest,
+  FeedSnapshot,
+  ReactionResult,
+  ReactToPaperInput,
+  SaveProfileInput,
+  TrackPaperViewInput,
+} from "./paper-schema"
+import {
   CreateTodoInput,
   Todo,
   TodoDashboardSnapshot,
@@ -55,4 +63,26 @@ export class TodosRpc extends RpcGroup
   .prefix("todos_")
 {}
 
-export class DomainRpc extends TodosRpc {}
+export class PapersRpc extends RpcGroup
+  .make(
+    Rpc.make("snapshot", {
+      success: FeedSnapshot,
+      payload: { request: FeedRequest },
+    }),
+    Rpc.make("saveProfile", {
+      success: FeedSnapshot,
+      payload: { input: SaveProfileInput, request: FeedRequest },
+    }),
+    Rpc.make("react", {
+      success: ReactionResult,
+      payload: { input: ReactToPaperInput },
+    }),
+    Rpc.make("trackView", {
+      success: Schema.Void,
+      payload: { input: TrackPaperViewInput },
+    }),
+  )
+  .prefix("papers_")
+{}
+
+export class DomainRpc extends TodosRpc.merge(PapersRpc) {}

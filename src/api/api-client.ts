@@ -1,14 +1,10 @@
 import * as Context from "effect/Context"
 import * as Effect from "effect/Effect"
 import * as Layer from "effect/Layer"
-import * as Schedule from "effect/Schedule"
 import * as Stream from "effect/Stream"
 import * as FetchHttpClient from "effect/unstable/http/FetchHttpClient"
-import * as HttpClient from "effect/unstable/http/HttpClient"
-import * as HttpApiClient from "effect/unstable/httpapi/HttpApiClient"
 import * as RpcClient from "effect/unstable/rpc/RpcClient"
 import * as RpcSerialization from "effect/unstable/rpc/RpcSerialization"
-import { DomainApi } from "./domain-api"
 import { DomainRpc } from "./domain-rpc"
 
 export const addRpcErrorLogging = <Client>(client: Client): Client => {
@@ -80,21 +76,8 @@ export class ApiClient extends Context.Service<ApiClient>()(
     make: Effect.gen(function*() {
       const rpcClient = yield* RpcClient.make(DomainRpc)
 
-      const httpClient = yield* HttpApiClient.make(DomainApi, {
-        baseUrl: `${getBaseUrl()}/api`,
-        transformClient: (client) =>
-          client.pipe(
-            HttpClient.filterStatusOk,
-            HttpClient.retryTransient({
-              times: 3,
-              schedule: Schedule.exponential("1 second"),
-            }),
-          ),
-      })
-
       return {
         rpc: addRpcErrorLogging(rpcClient),
-        http: httpClient,
       }
     }),
   },

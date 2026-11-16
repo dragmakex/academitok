@@ -4,7 +4,6 @@
  * See: src/api/domain-rpc.ts for API definition
  */
 
-import { DomainRpc } from "@/api/domain-rpc"
 import type {
   CreateTodoInput,
   TodoId,
@@ -18,11 +17,9 @@ import {
   getTodoStats,
   listTodos,
   removeTodo,
-  TodosApplicationLive,
   updateTodo,
 } from "@/features/todos/application"
 import * as Effect from "effect/Effect"
-import * as Layer from "effect/Layer"
 
 /**
  * RPC handler implementations.
@@ -46,7 +43,3 @@ export const createRpcHandlers = Effect.succeed({
 
   todos_remove: ({ id }: { id: TodoId }) => removeTodo(id),
 })
-
-export const TodosRpcLive = DomainRpc
-  .toLayer(createRpcHandlers)
-  .pipe(Layer.provide(TodosApplicationLive))

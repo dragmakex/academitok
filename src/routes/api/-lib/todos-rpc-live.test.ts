@@ -7,7 +7,7 @@ import * as Effect from "effect/Effect"
 import * as Exit from "effect/Exit"
 import * as Option from "effect/Option"
 import * as Schema from "effect/Schema"
-import { createRpcHandlers, TodosRpcLive } from "./todos-rpc-live"
+import { createRpcHandlers } from "./todos-rpc-live"
 const testToday = Schema.decodeSync(TodoDate)("1970-01-01")
 
 it.effect("createRpcHandlers exposes dashboard and mutation handlers", () =>
@@ -157,8 +157,3 @@ it.effect("clearing due date moves todo back to unscheduled", () =>
       expect(updated.groups.find((g) => g.key === "today")?.count).toBe(0)
     })
     .pipe(Effect.provide(makeTodosApplicationTestLayer())))
-
-it.effect("TodosRpcLive layer builds successfully", () =>
-  Effect.sync(() => {
-    expect(TodosRpcLive).toBeDefined()
-  }))

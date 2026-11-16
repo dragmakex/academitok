@@ -16,3 +16,13 @@ export const todosTable = pgTable("todos", {
   })
     .notNull(),
 })
+
+export const readerStateTable = pgTable("reader_state", {
+  id: text("id").primaryKey(),
+  stateJson: text("state_json").notNull(),
+  updatedAt: timestamp("updated_at", {
+    mode: "date",
+    withTimezone: true,
+  })
+    .notNull(),
+})
