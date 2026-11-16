@@ -45,13 +45,14 @@ write the conflict at the bottom instead of guessing.
       2022, even-sized pages average the two middle years, and the ranked page for a fixed seed is
       identical before and after.
       — `0cf58b2`
-- [ ] **6. `?` shortcut sheet.** SPEC §5.2 lists `?` as the last unbuilt row of the keyboard
+- [x] **6. `?` shortcut sheet.** SPEC §5.2 lists `?` as the last unbuilt row of the keyboard
       table: a sheet that names every binding so the deck is learnable without reading the spec.
       Open it on `?`, close on `?`/`Esc`, list the bindings from one shared table the key handler
       also reads so the sheet cannot drift from behaviour, and trap focus like the desk drawer.
       Accept: `?` opens and `Esc` closes the sheet; it lists every binding the handler implements
       and nothing it does not; each row's key text comes from the same source as the handler; the
       sheet is reachable and dismissable by keyboard alone with focus returning to where it left.
+      — `46418df`
 
 ---
 
