@@ -482,6 +482,31 @@ function titleSimilarity(left: string, right: string): number {
 }
 
 /**
+ * Computes topic-set Jaccard similarity.
+ * @param left - First paper's topics.
+ * @param right - Second paper's topics.
+ * @returns Similarity from zero to one.
+ */
+function topicSimilarity(
+  left: ReadonlyArray<Topic>,
+  right: ReadonlyArray<Topic>,
+): number {
+  const leftTopics = new Set(left)
+  const rightTopics = new Set(right)
+  const union = new Set([...leftTopics, ...rightTopics])
+  if (union.size === 0) {
+    return 1
+  }
+  let intersection = 0
+  for (const topic of leftTopics) {
+    if (rightTopics.has(topic)) {
+      intersection++
+    }
+  }
+  return intersection / union.size
+}
+
+/**
  * Decodes the opaque cursor.
  * @param cursor - Encoded cursor.
  * @returns Previously emitted paper IDs.
@@ -547,21 +572,52 @@ export function buildFeedPage(
   const explorationCandidate = candidates.slice(explorationStart).find((item) =>
     canAdd(item, selected, topicCounts)
   )
+  const exploitationLimit = limit - (explorationCandidate === undefined ? 0 : 1)
+  const idf = inverseDocumentFrequencies(
+    candidates.map((candidate) => candidate.paper),
+  )
+  const vectors = new Map(
+    candidates.map((candidate) => [
+      candidate.paper.id,
+      abstractVector(candidate.paper.abstract, idf),
+    ]),
+  )
 
-  for (const candidate of candidates) {
-    if (
-      selected.length >= limit - (explorationCandidate === undefined ? 0 : 1)
-    ) {
+  while (selected.length < exploitationLimit) {
+    let best: FeedItem | undefined
+    let bestMmr = Number.NEGATIVE_INFINITY
+
+    for (const candidate of candidates) {
+      if (
+        candidate === explorationCandidate
+        || selected.includes(candidate)
+        || !canAdd(candidate, selected, topicCounts)
+      ) {
+        continue
+      }
+      let maxSimilarity = 0
+      for (const chosen of selected) {
+        const similarity = 0.5 * cosineSimilarity(
+              vectors.get(candidate.paper.id) ?? new Map(),
+              vectors.get(chosen.paper.id) ?? new Map(),
+            ) + 0.5 * topicSimilarity(
+              candidate.paper.topics,
+              chosen.paper.topics,
+            )
+        maxSimilarity = Math.max(maxSimilarity, similarity)
+      }
+      const mmr = 0.7 * candidate.score - 0.3 * maxSimilarity
+      if (mmr > bestMmr) {
+        best = candidate
+        bestMmr = mmr
+      }
+    }
+
+    if (best === undefined) {
       break
     }
-    if (
-      candidate === explorationCandidate
-      || !canAdd(candidate, selected, topicCounts)
-    ) {
-      continue
-    }
-    selected.push(candidate)
-    const topic = candidate.paper.topics[0]
+    selected.push(best)
+    const topic = best.paper.topics[0]
     if (topic !== undefined) {
       topicCounts.set(topic, (topicCounts.get(topic) ?? 0) + 1)
     }

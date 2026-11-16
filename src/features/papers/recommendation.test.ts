@@ -1,4 +1,4 @@
-import type { Paper, ReaderState } from "@/api/paper-schema"
+import type { FeedItem, Paper, ReaderState } from "@/api/paper-schema"
 import { curatedPapers } from "@/data/papers"
 import {
   buildContentCentroid,
@@ -221,7 +221,42 @@ describe("paper recommendation", () => {
     expect(scoreAfter(12_000)).toBeGreaterThan(scoreAfter(800))
   })
 
-  it("pages without duplicate papers or topic monopolies", () => {
+  it("demotes a near-duplicate that raw score ranks ahead", () => {
+    const candidates: ReadonlyArray<
+      readonly [string, string, Paper["topics"][number], number]
+    > = [
+      ["leader", "neural networks classify medical images", "AI", 10],
+      ["near", "neural networks classify medical images", "AI", 9.9],
+      ["diverse", "ocean currents reshape coastal sediment", "Health", 9.8],
+      ["explore", "forest fungi exchange soil nutrients", "Climate", 2],
+      ["filler-left", "protein folding under pressure", "Biology", 1],
+      ["filler-right", "quantum states in new materials", "Physics", 0.5],
+    ]
+    const ranked: ReadonlyArray<FeedItem> = candidates.map(
+      ([id, abstract, topic, score]) => ({
+        paper: paperFixture(id, abstract, { topics: [topic] }),
+        score,
+        rationale: [],
+        accessible: true,
+        liked: false,
+        bookmarked: false,
+        hidden: false,
+        exploration: false,
+      }),
+    )
+
+    expect(ranked.findIndex((item) => item.paper.id === "near")).toBeLessThan(
+      ranked.findIndex((item) => item.paper.id === "diverse"),
+    )
+
+    const page = buildFeedPage(ranked, null, 4)
+    expect(page.items.findIndex((item) => item.paper.id === "diverse"))
+      .toBeLessThan(
+        page.items.findIndex((item) => item.paper.id === "near"),
+      )
+  })
+
+  it("pages without duplicate papers, topic monopolies, or repeated authors", () => {
     const ranked = buildFeedItems(
       baseState,
       curatedPapers,
@@ -240,9 +275,12 @@ describe("paper recommendation", () => {
     }, new Map<string, number>())
 
     expect(new Set(ids).size).toBe(ids.length)
+    const authors = first.items.flatMap((item) => item.paper.authors)
+
     expect([...primaryTopicCounts.values()].every((count) => count <= 2)).toBe(
       true,
     )
+    expect(new Set(authors).size).toBe(authors.length)
     expect(first.items.filter((item) => item.exploration)).toHaveLength(1)
   })
 })
