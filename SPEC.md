@@ -356,6 +356,9 @@ Sessions idle for 24 hours are swept on the next feed request.
 arXiv/bioRxiv/Crossref sources, `/saved`, `/paper/$id` permalink with copyable citation, LLM dek
 behind a flag, saved-collection export (BibTeX).
 
+The saved set exports as `.bib` in the server layer: keys come from first author, year and title,
+DOI URLs become the `doi` field, and the generator makes no network calls.
+
 **P3 — optional**
 Multi-reader with collaborative signals, shareable "editions", reading-time analytics, native shell.
 

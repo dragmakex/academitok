@@ -8,6 +8,7 @@ import {
 } from "@/api/paper-schema"
 import { curatedPapers } from "@/data/papers"
 import { ReaderStateRepository } from "@/db/reader-state-repository"
+import { formatBibtex } from "@/features/papers/citation"
 import {
   buildFeedItems,
   buildFeedPage,
@@ -131,6 +132,13 @@ export const getSavedPapers = Effect
     }
   })
   .pipe(Effect.withSpan("saved.list"))
+
+export const getSavedBibtex = Effect
+  .gen(function*() {
+    const page = yield* getSavedPapers
+    return formatBibtex(page.items.map((item) => item.paper))
+  })
+  .pipe(Effect.withSpan("saved.bibtex"))
 
 export const getPaperById = (id: string) =>
   Effect

@@ -6,6 +6,7 @@ import { ReaderStateRepository } from "@/db/reader-state-repository"
 import {
   getPaperById,
   getPaperFeedSnapshot,
+  getSavedBibtex,
   getSavedPapers,
 } from "@/features/papers/application"
 import { recordReaderReaction } from "@/features/papers/reactions"
@@ -117,6 +118,33 @@ describe("papers application", () => {
     expect(afterSave.items[0]?.bookmarked).toBe(true)
     expect(afterUnsave.items).toHaveLength(0)
     expect(empty.items).toHaveLength(0)
+  })
+
+  it("exports the saved set as stable BibTeX", async () => {
+    const dataDir = await mkdtemp(join(tmpdir(), "academitok-bibtex-"))
+    directories.push(dataDir)
+    vi.stubGlobal("fetch", () => Promise.reject(new Error("offline")))
+    const targets = curatedPapers.slice(0, 3)
+
+    const [first, second] = await runFeed(
+      dataDir,
+      Effect.gen(function*() {
+        const repository = yield* ReaderStateRepository
+        yield* repository.onboard({
+          keptPaperIds: [],
+          rejectedPaperIds: [],
+          skipped: true,
+        })
+        yield* getPaperFeedSnapshot(requestFor("bibtex-a"))
+        for (const paper of targets) {
+          yield* repository.react({ paperId: paper.id, kind: "bookmark" })
+        }
+        return [yield* getSavedBibtex, yield* getSavedBibtex] as const
+      }),
+    )
+
+    expect(first.split("\n\n")).toHaveLength(3)
+    expect(second).toBe(first)
   })
 
   it("resolves a permalink from the pool, the curated catalog, or nothing", async () => {
