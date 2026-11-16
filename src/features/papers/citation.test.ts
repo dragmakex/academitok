@@ -1,6 +1,6 @@
 import { curatedPapers } from "@/data/papers"
 import { describe, expect, it } from "vitest"
-import { formatBibtex, formatCitation } from "./citation"
+import { formatBibtex, formatCitation, formatEdition } from "./citation"
 
 describe("formatCitation", () => {
   it("prints authors, year, title, venue and source URL", () => {
@@ -25,6 +25,46 @@ describe("formatCitation", () => {
     expect(formatCitation({ ...paper, externalUrl: undefined })).toContain(
       `. ${paper.id}`,
     )
+  })
+})
+
+describe("formatEdition", () => {
+  const fixture = curatedPapers.slice(0, 3)
+
+  it("renders one masthead line and one line per clipping in page order", () => {
+    const lines = formatEdition(fixture, "Evening Edition").split("\n")
+
+    expect(lines).toHaveLength(4)
+    expect(lines[0]).toBe("AcademiTok · Evening Edition · Folio 001")
+    expect(lines.slice(1).map((line) => line.split(" — ")[1])).toEqual(
+      fixture.map((paper) => paper.title),
+    )
+    for (const [index, paper] of fixture.entries()) {
+      const line = lines[index + 1] ?? ""
+      expect(line.startsWith(paper.topics[0] ?? "Research")).toBe(true)
+      expect(line).toContain((paper.authors[0] ?? "") + ` (${paper.year})`)
+      expect(line.endsWith(paper.externalUrl ?? paper.id)).toBe(true)
+    }
+  })
+
+  it("prints the folio number and falls back to the paper id", () => {
+    const paper = fixture[0]
+    if (paper === undefined) {
+      throw new Error("missing curated paper fixture")
+    }
+    const lines = formatEdition(
+      [{ ...paper, externalUrl: undefined }],
+      "Morning Edition",
+      12,
+    )
+      .split("\n")
+
+    expect(lines[0]).toBe("AcademiTok · Morning Edition · Folio 012")
+    expect(lines[1]?.endsWith(paper.id)).toBe(true)
+  })
+
+  it("renders an empty notice for an empty page", () => {
+    expect(formatEdition([], "Evening Edition")).toBe("")
   })
 })
 

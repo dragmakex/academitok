@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { CopyBlock } from "./CopyBlock"
 
 type PaperPageProps = {
   readonly abstract: string
@@ -25,15 +25,6 @@ const factLabelClass =
  * @returns Full clipping with metadata and citation.
  */
 export function PaperPage(props: PaperPageProps) {
-  const [copied, setCopied] = useState(false)
-
-  const copyCitation = () => {
-    navigator.clipboard.writeText(props.citation).then(
-      () => setCopied(true),
-      () => setCopied(false),
-    )
-  }
-
   return (
     <article className="mx-auto w-full max-w-[58rem] bg-paper text-ink">
       <header className="flex flex-wrap items-center justify-between gap-s border-b border-ink pb-xs font-label text-[0.68rem] uppercase tracking-[0.16em] text-ink-muted">
@@ -119,23 +110,13 @@ export function PaperPage(props: PaperPageProps) {
             </div>
           </dl>
 
-          <div className="mt-l border border-rule px-s py-m">
-            <p className={factLabelClass}>
-              Cite this
-            </p>
-            <p className="mt-xs m-0 break-words font-body text-[0.82rem] leading-[1.45]">
-              {props.citation}
-            </p>
-            <button
-              className="mt-s min-h-11 w-full border border-stamp bg-transparent px-s py-xs font-label text-[0.62rem] uppercase tracking-[0.14em] text-stamp cursor-pointer hover:bg-stamp hover:text-paper focus-visible:outline-2 focus-visible:outline-focus-ring"
-              type="button"
-              onClick={copyCitation}
-            >
-              {copied ? "Copied" : "Copy citation"}
-            </button>
-            <span className="sr-only" role="status" aria-live="polite">
-              {copied ? "Citation copied to the clipboard" : ""}
-            </span>
+          <div className="mt-l">
+            <CopyBlock
+              actionLabel="Copy citation"
+              announcement="Citation copied to the clipboard"
+              label="Cite this"
+              text={props.citation}
+            />
           </div>
 
           <div className="mt-l flex flex-col gap-xs">

@@ -7,6 +7,7 @@ import {
 import { Button } from "@/design-system/components/Button"
 import { Card } from "@/design-system/components/Card"
 import { Checkbox } from "@/design-system/components/Checkbox"
+import { CopyBlock } from "@/design-system/components/CopyBlock"
 import { EdgeDrawer } from "@/design-system/components/EdgeDrawer"
 import { EmptyState } from "@/design-system/components/EmptyState"
 import { ErrorState } from "@/design-system/components/ErrorState"
@@ -22,6 +23,7 @@ import { TextField } from "@/design-system/components/TextField"
 import { Grid } from "@/design-system/primitives/Grid"
 import { Inline } from "@/design-system/primitives/Inline"
 import { Stack } from "@/design-system/primitives/Stack"
+import { formatEdition } from "@/features/papers/citation"
 import { archivalDrift, trackFeedPageEvent } from "@/lib/feed-analytics"
 import { deckAction, shortcutRows } from "@/lib/shortcuts"
 import { useAtomSet, useAtomValue } from "@effect/atom-react"
@@ -540,6 +542,10 @@ export function App() {
   const drift = archivalDrift(
     (snapshot?.items ?? []).map((item) => item.paper.year),
   )
+  const editionNotice = formatEdition(
+    (snapshot?.items ?? []).map((item) => item.paper),
+    "Evening Edition",
+  )
 
   return (
     <Page fullBleed>
@@ -572,6 +578,12 @@ export function App() {
                   : `older than ${drift.newestYear}, the newest`}
               />
             </Grid>
+            <CopyBlock
+              actionLabel="Copy edition"
+              announcement="Edition copied to the clipboard"
+              label="Share this edition"
+              text={editionNotice}
+            />
           </Stack>
 
           <Card tone="subtle">

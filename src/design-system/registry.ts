@@ -70,6 +70,8 @@ export const registry = {
       "Complex feed surface — short-form paper card with action rail and metadata",
     "components/PaperPage.tsx":
       "Canonical permalink surface — full broadsheet clipping with citation copy",
+    "components/CopyBlock.tsx":
+      "Quoted plain-text block with clipboard control and polite status — shared by the citation and edition notices so the copy pattern cannot drift",
     "components/ShortcutSheet.tsx":
       "Keyboard reference sheet — focus-trapped key/action list rendered from the deck binding table",
   },
