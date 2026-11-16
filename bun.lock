@@ -1,9 +1,8 @@
 {
   "lockfileVersion": 1,
-  "configVersion": 0,
   "workspaces": {
     "": {
-      "name": "effect-tanstack-start",
+      "name": "academitok",
       "dependencies": {
         "@datadog/pprof": "github:SamuelLHuber/pprof-nodejs#pyroscope-ts-bun-compat-2026-02-10",
         "@effect/atom-react": "4.0.0-beta.47",
