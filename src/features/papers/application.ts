@@ -55,6 +55,9 @@ export const getPaperFeedSnapshot = (request: FeedRequest) =>
         request.query.sort,
       )
       const onboarding = state.profile === null
+      const sessionSeen: ReadonlyArray<string> = request.sessionId === undefined
+        ? []
+        : yield* repository.loadFeedSession(request.sessionId)
       const onboardingSignals = state.reactions.filter((reaction) =>
         reaction.kind === "onboard-keep"
         || reaction.kind === "onboard-reject"
@@ -70,7 +73,19 @@ export const getPaperFeedSnapshot = (request: FeedRequest) =>
         : ranked
       const page = onboarding
         ? { items: candidates.slice(0, 15), nextCursor: null }
-        : buildFeedPage(candidates, request.cursor)
+        : buildFeedPage(candidates, request.cursor, 10, sessionSeen)
+      if (request.sessionId !== undefined) {
+        yield* repository.saveFeedSession(
+          request.sessionId,
+          [
+            ...new Set([
+              ...sessionSeen,
+              ...page.items.map((item) => item.paper.id),
+            ]),
+          ],
+          page.nextCursor,
+        )
+      }
 
       return {
         profile: state.profile,

@@ -149,6 +149,7 @@ export type FeedQuery = typeof FeedQuery.Type
 export const FeedRequest = Schema.Struct({
   query: FeedQuery,
   cursor: Schema.NullOr(FeedCursor),
+  sessionId: Schema.optional(Schema.NonEmptyString),
 })
 export type FeedRequest = typeof FeedRequest.Type
 

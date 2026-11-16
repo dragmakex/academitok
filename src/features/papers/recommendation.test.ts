@@ -404,4 +404,29 @@ describe("paper recommendation", () => {
     expect(new Set(authors).size).toBe(authors.length)
     expect(first.items.filter((item) => item.exploration)).toHaveLength(1)
   })
+
+  it("skips papers the server session already emitted, even on a stale cursor", () => {
+    const topics = ["AI", "Physics", "Biology"] as const
+    const ids = ["p0", "p1", "p2", "p3", "p4", "p5", "p6", "p7", "p8"]
+    const ranked: ReadonlyArray<FeedItem> = ids.map((id, index) => ({
+      paper: paperFixture(id, `abstract ${id}`, {
+        topics: [topics[index % topics.length] ?? "AI"],
+      }),
+      score: 9 - index,
+      rationale: [],
+      accessible: true,
+      liked: false,
+      bookmarked: false,
+      hidden: false,
+      exploration: false,
+    }))
+
+    const first = buildFeedPage(ranked, null, 3)
+    const seen = first.items.map((item) => item.paper.id)
+    const stale = buildFeedPage(ranked, null, 3, seen)
+
+    expect(seen).toHaveLength(3)
+    expect(stale.items.filter((item) => seen.includes(item.paper.id)))
+      .toHaveLength(0)
+  })
 })

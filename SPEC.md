@@ -342,13 +342,15 @@ primary-topic and author caps, deterministic exploration, keyboard/button/swipe 
 reader-state migration source and affect subsequent ranking. The OpenAlex request runs only for feed
 pages and falls back to the frozen seed edition; reactions no longer refetch the catalog.
 
-Remaining P1 work: batch impression transport, move the catalog and event log into their dedicated
-tables, add content/author affinity and MMR, and replace the cursor-carried session IDs with persisted
-server session state.
+Remaining P1 work: persist the OpenAlex catalog in `papers` instead of refetching per page.
 
 **P1 — the algo actually learns**
 Reaction/impression tables, ε-greedy exploration, MMR + topic cap, tf-idf content affinity,
 onboarding picks, `WHY THIS` from real terms, feed-health metrics wired to PostHog.
+
+A feed page carries a session id that the server owns: `feed_sessions` stores the papers already
+emitted for that session plus the last cursor, so a stale client cursor cannot reintroduce a paper.
+Sessions idle for 24 hours are swept on the next feed request.
 
 **P2 — breadth**
 arXiv/bioRxiv/Crossref sources, `/saved`, `/paper/$id` permalink with copyable citation, LLM dek

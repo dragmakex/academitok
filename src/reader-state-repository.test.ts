@@ -207,4 +207,35 @@ describe("ReaderStateRepository", () => {
       position: 4,
     }])
   })
+
+  it("persists feed session progress and starts a fresh session clean", async () => {
+    const dataDir = await mkdtemp(join(tmpdir(), "academitok-feed-session-"))
+    directories.push(dataDir)
+
+    await runWithDatabase(
+      dataDir,
+      Effect.gen(function*() {
+        const repository = yield* ReaderStateRepository
+        yield* repository.saveFeedSession(
+          "session-a",
+          ["paper-1", "paper-2"],
+          null,
+        )
+      }),
+    )
+
+    const sessions = await runWithDatabase(
+      dataDir,
+      Effect.gen(function*() {
+        const repository = yield* ReaderStateRepository
+        return {
+          saved: yield* repository.loadFeedSession("session-a"),
+          fresh: yield* repository.loadFeedSession("session-b"),
+        }
+      }),
+    )
+
+    expect(sessions.saved).toEqual(["paper-1", "paper-2"])
+    expect(sessions.fresh).toEqual([])
+  })
 })

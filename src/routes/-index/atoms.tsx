@@ -29,14 +29,22 @@ const FeedSnapshotAsyncResultSchema = AsyncResult.Schema({
   error: RpcClientError.RpcClientError,
 })
 
+/** One feed session per page load; the server persists its seen papers. */
+const feedSessionId = globalThis.crypto.randomUUID()
+
 class Api extends Context.Service<Api>()("@app/index/Api", {
   make: Effect.gen(function*() {
     const { rpc } = yield* ApiClient
+    const withSession = (request: FeedRequest): FeedRequest => ({
+      ...request,
+      sessionId: feedSessionId,
+    })
 
     return {
-      snapshot: (request: FeedRequest) => rpc.papers_snapshot({ request }),
+      snapshot: (request: FeedRequest) =>
+        rpc.papers_snapshot({ request: withSession(request) }),
       saveProfile: (input: SaveProfileInput, request: FeedRequest) =>
-        rpc.papers_saveProfile({ input, request }),
+        rpc.papers_saveProfile({ input, request: withSession(request) }),
       onboard: (input: OnboardProfileInput) => rpc.profile_onboard({ input }),
       react: (input: ReactToPaperInput) => rpc.papers_react({ input }),
       trackViews: (inputs: ReadonlyArray<TrackPaperViewInput>) =>

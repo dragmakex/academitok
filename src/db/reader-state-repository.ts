@@ -8,13 +8,14 @@ import {
   type TrackPaperViewInput,
 } from "@/api/paper-schema"
 import {
+  feedSessionsTable,
   impressionsTable,
   reactionsTable,
   readerProfilesTable,
   readerStateTable,
 } from "@/db/schema"
 import { PGlite } from "@electric-sql/pglite"
-import { and, desc, eq, inArray, isNull } from "drizzle-orm"
+import { and, desc, eq, inArray, isNull, lt } from "drizzle-orm"
 import { drizzle as drizzlePglite } from "drizzle-orm/pglite"
 import { drizzle as drizzlePostgres } from "drizzle-orm/postgres-js"
 import * as Config from "effect/Config"
@@ -44,6 +45,14 @@ type ReaderStateRepositoryShape = {
   readonly onboard: (input: OnboardProfileInput) => Effect.Effect<void>
   readonly react: (input: ReactToPaperInput) => Effect.Effect<boolean>
   readonly track: (input: TrackPaperViewInput) => Effect.Effect<void>
+  readonly loadFeedSession: (
+    sessionId: string,
+  ) => Effect.Effect<ReadonlyArray<string>>
+  readonly saveFeedSession: (
+    sessionId: string,
+    seenPaperIds: ReadonlyArray<string>,
+    cursor: string | null,
+  ) => Effect.Effect<void>
 }
 
 type StoredState = {
@@ -69,10 +78,22 @@ type StateStorage = {
     input: TrackPaperViewInput,
     shownAt: Date,
   ) => Promise<void>
+  readonly loadFeedSession: (
+    sessionId: string,
+    now: Date,
+  ) => Promise<ReadonlyArray<string>>
+  readonly saveFeedSession: (
+    sessionId: string,
+    seenPaperIds: ReadonlyArray<string>,
+    cursor: string | null,
+    now: Date,
+  ) => Promise<void>
 }
 
 const decodeReaderState = Schema.decodeUnknownSync(ReaderState)
 const singletonId = "singleton"
+/** Sessions idle for longer than this are swept on the next feed request. */
+const feedSessionTtlMs = 24 * 60 * 60 * 1000
 
 const createReaderStateTablesSql = `
   CREATE TABLE IF NOT EXISTS reader_state (
@@ -121,9 +142,21 @@ const createReaderStateTablesSql = `
   CREATE TABLE IF NOT EXISTS feed_sessions (
     id text PRIMARY KEY,
     reader_id text NOT NULL,
-    cursor text NOT NULL,
-    started_at timestamptz NOT NULL
-  )
+    seen_paper_ids jsonb NOT NULL DEFAULT '[]'::jsonb,
+    cursor text,
+    updated_at timestamptz NOT NULL
+  );
+  ALTER TABLE feed_sessions
+    ADD COLUMN IF NOT EXISTS seen_paper_ids jsonb NOT NULL DEFAULT '[]'::jsonb;
+  ALTER TABLE feed_sessions
+    ADD COLUMN IF NOT EXISTS updated_at timestamptz NOT NULL DEFAULT now();
+  -- The unused first shape required these; relax them so older databases accept new rows.
+  ALTER TABLE feed_sessions ADD COLUMN IF NOT EXISTS cursor text;
+  ALTER TABLE feed_sessions ALTER COLUMN cursor DROP NOT NULL;
+  ALTER TABLE feed_sessions ADD COLUMN IF NOT EXISTS started_at timestamptz;
+  ALTER TABLE feed_sessions ALTER COLUMN started_at DROP NOT NULL;
+  CREATE INDEX IF NOT EXISTS feed_sessions_updated_at_idx
+    ON feed_sessions (updated_at)
 `
 
 const liveDatabaseConfig = Effect.gen(function*() {
@@ -365,6 +398,21 @@ function makeRepositoryService(storage: StateStorage) {
           await ensureMigrated()
           await storage.track(input, new Date())
         }),
+      loadFeedSession: (sessionId) =>
+        Effect.promise(async () => {
+          await ensureMigrated()
+          return storage.loadFeedSession(sessionId, new Date())
+        }),
+      saveFeedSession: (sessionId, seenPaperIds, cursor) =>
+        Effect.promise(async () => {
+          await ensureMigrated()
+          await storage.saveFeedSession(
+            sessionId,
+            seenPaperIds,
+            cursor,
+            new Date(),
+          )
+        }),
     } satisfies ReaderStateRepositoryShape,
   )
 }
@@ -400,7 +448,55 @@ function makePostgresRepository(databaseUrl: string) {
       })
       yield* Effect.addFinalizer(() => Effect.promise(() => client.end()))
 
+      /**
+       * Sweeps expired sessions so the write path owns the TTL.
+       * @param now - Current time.
+       * @returns Sweep completion.
+       */
+      const sweepFeedSessions = (now: Date) =>
+        db
+          .delete(feedSessionsTable)
+          .where(
+            lt(
+              feedSessionsTable.updatedAt,
+              new Date(now.getTime() - feedSessionTtlMs),
+            ),
+          )
+
+      const feedSessionStorage: Pick<
+        StateStorage,
+        "loadFeedSession" | "saveFeedSession"
+      > = {
+        loadFeedSession: async (sessionId, now) => {
+          await sweepFeedSessions(now)
+          const row = await db
+            .select()
+            .from(feedSessionsTable)
+            .where(eq(feedSessionsTable.id, sessionId))
+            .limit(1)
+            .then(([found]) => found)
+          return row?.seenPaperIds ?? []
+        },
+        saveFeedSession: async (sessionId, seenPaperIds, cursor, now) => {
+          await db
+            .insert(feedSessionsTable)
+            .values({
+              id: sessionId,
+              readerId: singletonId,
+              seenPaperIds,
+              cursor,
+              updatedAt: now,
+            })
+            .onConflictDoUpdate({
+              target: feedSessionsTable.id,
+              set: { seenPaperIds, cursor, updatedAt: now },
+            })
+          await sweepFeedSessions(now)
+        },
+      }
+
       const postgresStorage: StateStorage = {
+        ...feedSessionStorage,
         onboard: async (input, createdAt) => {
           await db.transaction(async (tx) => {
             await tx
@@ -613,7 +709,55 @@ function makePgliteRepository(dataDir: string | undefined) {
       })
       yield* Effect.addFinalizer(() => Effect.promise(() => client.close()))
 
+      /**
+       * Sweeps expired sessions so the write path owns the TTL.
+       * @param now - Current time.
+       * @returns Sweep completion.
+       */
+      const sweepFeedSessions = (now: Date) =>
+        db
+          .delete(feedSessionsTable)
+          .where(
+            lt(
+              feedSessionsTable.updatedAt,
+              new Date(now.getTime() - feedSessionTtlMs),
+            ),
+          )
+
+      const feedSessionStorage: Pick<
+        StateStorage,
+        "loadFeedSession" | "saveFeedSession"
+      > = {
+        loadFeedSession: async (sessionId, now) => {
+          await sweepFeedSessions(now)
+          const row = await db
+            .select()
+            .from(feedSessionsTable)
+            .where(eq(feedSessionsTable.id, sessionId))
+            .limit(1)
+            .then(([found]) => found)
+          return row?.seenPaperIds ?? []
+        },
+        saveFeedSession: async (sessionId, seenPaperIds, cursor, now) => {
+          await db
+            .insert(feedSessionsTable)
+            .values({
+              id: sessionId,
+              readerId: singletonId,
+              seenPaperIds,
+              cursor,
+              updatedAt: now,
+            })
+            .onConflictDoUpdate({
+              target: feedSessionsTable.id,
+              set: { seenPaperIds, cursor, updatedAt: now },
+            })
+          await sweepFeedSessions(now)
+        },
+      }
+
       const storage: StateStorage = {
+        ...feedSessionStorage,
         onboard: async (input, createdAt) => {
           await db.transaction(async (tx) => {
             await tx

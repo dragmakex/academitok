@@ -604,17 +604,19 @@ function canAdd(
  * @param items - Ranked candidates.
  * @param cursor - Session cursor.
  * @param limit - Maximum page size.
+ * @param sessionSeen - Paper IDs the server already emitted for this session.
  * @returns Page items and next cursor.
  */
 export function buildFeedPage(
   items: ReadonlyArray<FeedItem>,
   cursor: FeedCursor | null,
   limit = 10,
+  sessionSeen: ReadonlyArray<string> = [],
 ): {
   readonly items: ReadonlyArray<FeedItem>
   readonly nextCursor: FeedCursor | null
 } {
-  const priorIds = decodeCursor(cursor)
+  const priorIds = [...new Set([...sessionSeen, ...decodeCursor(cursor)])]
   const seen = new Set(priorIds)
   const candidates = items.filter((item) => !seen.has(item.paper.id))
   const selected: Array<FeedItem> = []

@@ -68,8 +68,11 @@ export const readerProfilesTable = pgTable("reader_profiles", {
 export const feedSessionsTable = pgTable("feed_sessions", {
   id: text("id").primaryKey(),
   readerId: text("reader_id").notNull(),
-  cursor: text("cursor").notNull(),
-  startedAt: timestamp("started_at", {
+  seenPaperIds: jsonb("seen_paper_ids")
+    .$type<ReadonlyArray<string>>()
+    .notNull(),
+  cursor: text("cursor"),
+  updatedAt: timestamp("updated_at", {
     mode: "date",
     withTimezone: true,
   })
