@@ -2,13 +2,13 @@ import type {
   FeedRequest,
   ReactToPaperInput,
   SaveProfileInput,
-  TrackPaperViewInput,
+  TrackPaperViewsInput,
 } from "@/api/paper-schema"
 import {
   getPaperFeedSnapshot,
   reactToPaper,
   saveReaderProfile,
-  trackPaperView,
+  trackPaperViews,
 } from "@/features/papers/application"
 import * as Effect from "effect/Effect"
 
@@ -20,6 +20,6 @@ export const createPaperRpcHandlers = Effect.succeed({
   ) => saveReaderProfile(input, request),
   papers_react: ({ input }: { input: ReactToPaperInput }) =>
     reactToPaper(input),
-  papers_trackView: ({ input }: { input: TrackPaperViewInput }) =>
-    trackPaperView(input),
+  papers_trackViews: ({ inputs }: { inputs: TrackPaperViewsInput }) =>
+    trackPaperViews(inputs),
 })

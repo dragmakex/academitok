@@ -1,4 +1,9 @@
-import { FeedPage, Paper, TrackPaperViewInput } from "@/api/paper-schema"
+import {
+  FeedPage,
+  Paper,
+  TrackPaperViewInput,
+  TrackPaperViewsInput,
+} from "@/api/paper-schema"
 import { curatedPapers } from "@/data/papers"
 import * as Schema from "effect/Schema"
 import { describe, expect, it } from "vitest"
@@ -6,6 +11,7 @@ import { describe, expect, it } from "vitest"
 const decodePaper = Schema.decodeUnknownSync(Paper)
 const decodeFeedPage = Schema.decodeUnknownSync(FeedPage)
 const decodeImpression = Schema.decodeUnknownSync(TrackPaperViewInput)
+const decodeImpressions = Schema.decodeUnknownSync(TrackPaperViewsInput)
 
 describe("paper feed contracts", () => {
   it("round-trips paper metadata", () => {
@@ -22,17 +28,15 @@ describe("paper feed contracts", () => {
     }))
       .toMatchObject({ items: [], nextCursor: null, exploration: 0 })
 
-    expect(
-      decodeImpression({
-        paperId: "paper-1",
-        kind: "dwell",
-        dwellMs: 4_200,
-        position: 2,
-        exploration: true,
-      })
-        .dwellMs,
-    )
-      .toBe(4_200)
+    const impression = {
+      paperId: "paper-1",
+      kind: "dwell" as const,
+      dwellMs: 4_200,
+      position: 2,
+      exploration: true,
+    }
+    expect(decodeImpression(impression).dwellMs).toBe(4_200)
+    expect(decodeImpressions([impression])).toHaveLength(1)
   })
 
   it("rejects invalid impression kinds", () => {

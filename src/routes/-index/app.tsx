@@ -29,6 +29,7 @@ import {
   saveReaderProfileAtom,
   trackPaperViewAtom,
 } from "./atoms"
+import { flushImpressionsOnHide } from "./impression-buffer"
 
 const topics: ReadonlyArray<TopicFilter> = [
   "All",
@@ -106,19 +107,31 @@ function VisiblePaperSlide({
         armTimer.current = null
       }
     }
-    const sendDwell = () => {
+    const takeDwell = () => {
       if (!armed.current || dwellSent.current || visibleAt.current === null) {
-        return
+        return undefined
       }
       dwellSent.current = true
-      trackView({
+      return {
         paperId: item.paper.id,
-        kind: "dwell",
+        kind: "dwell" as const,
         dwellMs: Math.max(0, performance.now() - visibleAt.current),
         position: index,
         exploration: item.exploration,
-      })
+      }
     }
+    const sendDwell = () => {
+      const event = takeDwell()
+      if (event !== undefined) {
+        trackView({ event })
+      }
+    }
+    const onVisibilityChange = () => {
+      if (document.visibilityState === "hidden") {
+        sendDwell()
+      }
+    }
+    document.addEventListener("visibilitychange", onVisibilityChange, true)
 
     const observer = new IntersectionObserver(
       ([entry]) => {
@@ -138,11 +151,13 @@ function VisiblePaperSlide({
           armed.current = true
           armTimer.current = null
           trackView({
-            paperId: item.paper.id,
-            kind: "view",
-            dwellMs: 0,
-            position: index,
-            exploration: item.exploration,
+            event: {
+              paperId: item.paper.id,
+              kind: "view",
+              dwellMs: 0,
+              position: index,
+              exploration: item.exploration,
+            },
           })
         }, 400)
       },
@@ -153,6 +168,7 @@ function VisiblePaperSlide({
     return () => {
       clearArmTimer()
       sendDwell()
+      document.removeEventListener("visibilitychange", onVisibilityChange, true)
       observer.disconnect()
     }
   }, [index, item.exploration, item.paper.id, onVisible, trackView])
@@ -213,6 +229,7 @@ export function App() {
   const loadPaperFeed = useAtomSet(loadPaperFeedAtom)
   const loadNextPage = useAtomSet(loadNextPaperPageAtom)
   const saveProfile = useAtomSet(saveReaderProfileAtom)
+  const trackView = useAtomSet(trackPaperViewAtom)
   const snapshot = snapshotAsync._tag === "Success"
     ? snapshotAsync.value
     : undefined
@@ -233,6 +250,14 @@ export function App() {
   const deckRef = useRef<HTMLElement | null>(null)
   const slideNodes = useRef(new Map<number, HTMLElement>())
   const requestedCursors = useRef(new Set<string>())
+
+  useEffect(
+    () =>
+      flushImpressionsOnHide(document, () => {
+        trackView({ flush: true })
+      }),
+    [trackView],
+  )
 
   const registerNode = useCallback(
     (index: number, node: HTMLElement | null) => {

@@ -15,6 +15,7 @@ import * as Schema from "effect/Schema"
 import * as AsyncResult from "effect/unstable/reactivity/AsyncResult"
 import * as Atom from "effect/unstable/reactivity/Atom"
 import * as RpcClientError from "effect/unstable/rpc/RpcClientError"
+import { bufferImpression } from "./impression-buffer"
 
 const FeedSnapshotAsyncResultSchema = AsyncResult.Schema({
   success: FeedSnapshot,
@@ -30,8 +31,8 @@ class Api extends Context.Service<Api>()("@app/index/Api", {
       saveProfile: (input: SaveProfileInput, request: FeedRequest) =>
         rpc.papers_saveProfile({ input, request }),
       react: (input: ReactToPaperInput) => rpc.papers_react({ input }),
-      trackView: (input: TrackPaperViewInput) =>
-        rpc.papers_trackView({ input }),
+      trackViews: (inputs: ReadonlyArray<TrackPaperViewInput>) =>
+        rpc.papers_trackViews({ inputs }),
     } as const
   }),
 }) {
@@ -175,9 +176,26 @@ export const reactToPaperAtom = runtime.fn<ReactToPaperInput>()(
   }),
 )
 
-export const trackPaperViewAtom = runtime.fn<TrackPaperViewInput>()(
-  Effect.fnUntraced(function*(input) {
+const impressionQueueAtom = Atom.make<ReadonlyArray<TrackPaperViewInput>>([])
+
+type TrackPaperViewCommand = {
+  readonly event?: TrackPaperViewInput
+  readonly flush?: boolean
+}
+
+export const trackPaperViewAtom = runtime.fn<TrackPaperViewCommand>()(
+  Effect.fnUntraced(function*(command, get) {
+    const { batch, queued } = bufferImpression(
+      get(impressionQueueAtom),
+      command.event,
+      command.flush === true,
+    )
+    get.set(impressionQueueAtom, queued)
+    if (batch.length === 0) {
+      return
+    }
+
     const api = yield* Api
-    return yield* api.trackView(input)
+    yield* api.trackViews(batch)
   }),
 )

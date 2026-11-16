@@ -3,7 +3,7 @@ import {
   type ReactToPaperInput,
   type SaveProfileInput,
   type TopicFilter,
-  type TrackPaperViewInput,
+  type TrackPaperViewsInput,
 } from "@/api/paper-schema"
 import { curatedPapers } from "@/data/papers"
 import { ReaderStateRepository } from "@/db/reader-state-repository"
@@ -93,12 +93,14 @@ export const reactToPaper = (input: ReactToPaperInput) =>
     })
     .pipe(Effect.withSpan("PapersApp.react"))
 
-export const trackPaperView = (input: TrackPaperViewInput) =>
+export const trackPaperViews = (inputs: TrackPaperViewsInput) =>
   Effect
     .gen(function*() {
       const repository = yield* ReaderStateRepository
-      yield* repository.track(input)
+      yield* Effect.forEach(inputs, (input) => repository.track(input), {
+        discard: true,
+      })
     })
-    .pipe(Effect.withSpan("feed.impression"))
+    .pipe(Effect.withSpan("impression.flush"))
 
 export const PapersApplicationLive = Layer.mergeAll(ReaderStateRepository.layer)

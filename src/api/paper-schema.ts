@@ -179,6 +179,9 @@ export const TrackPaperViewInput = Schema.Struct({
 })
 export type TrackPaperViewInput = typeof TrackPaperViewInput.Type
 
+export const TrackPaperViewsInput = Schema.Array(TrackPaperViewInput)
+export type TrackPaperViewsInput = typeof TrackPaperViewsInput.Type
+
 export const defaultReaderState: ReaderState = {
   profile: {
     name: "Guest Reader",

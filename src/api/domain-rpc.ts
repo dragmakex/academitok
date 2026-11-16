@@ -13,7 +13,7 @@ import {
   ReactionResult,
   ReactToPaperInput,
   SaveProfileInput,
-  TrackPaperViewInput,
+  TrackPaperViewsInput,
 } from "./paper-schema"
 import {
   CreateTodoInput,
@@ -77,9 +77,9 @@ export class PapersRpc extends RpcGroup
       success: ReactionResult,
       payload: { input: ReactToPaperInput },
     }),
-    Rpc.make("trackView", {
+    Rpc.make("trackViews", {
       success: Schema.Void,
-      payload: { input: TrackPaperViewInput },
+      payload: { inputs: TrackPaperViewsInput },
     }),
   )
   .prefix("papers_")
