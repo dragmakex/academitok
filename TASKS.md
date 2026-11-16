@@ -68,6 +68,17 @@ write the conflict at the bottom instead of guessing.
       reports null, and PostHog staying unconfigured changes nothing.
       — `6f3beaf`
 
+- [ ] **8. Archival-drift readout on the desk.** SPEC §4 lists `stats` on `/desk` and SPEC §17.3
+      keeps citation count as a quality signal only "if we measure whether the feed feels archival" —
+      `medianYear` is computed for PostHog (task 5) but no reader can see it, so the decision has no
+      visible input. Show the loaded edition's archival drift in the desk drawer: median publication
+      year plus how many papers predate the newest paper on the page by more than ten years. Compute
+      both from one pure `archivalDrift` helper next to `medianYear`, render with the existing
+      `StatCard`/`Grid` primitives. Display only: no ranking, RPC contract or PostHog payload change.
+      Accept: years 2010/2016/2024 report median 2016 and 1 of 3 older than a decade (threshold taken
+      from 2024, the newest on the page); a page with no years renders an em dash, never `NaN`; the
+      helper is unit-tested; the ranked page for a fixed seed is unchanged.
+
 ---
 
 ## Blocked — needs a product decision
