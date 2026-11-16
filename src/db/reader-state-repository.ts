@@ -1,6 +1,7 @@
 import {
   defaultReaderState,
   type OnboardProfileInput,
+  type Paper,
   type ReactToPaperInput,
   type ReaderProfile,
   ReaderState,
@@ -10,6 +11,7 @@ import {
 import {
   feedSessionsTable,
   impressionsTable,
+  papersTable,
   reactionsTable,
   readerProfilesTable,
   readerStateTable,
@@ -53,6 +55,10 @@ type ReaderStateRepositoryShape = {
     seenPaperIds: ReadonlyArray<string>,
     cursor: string | null,
   ) => Effect.Effect<void>
+  readonly savePapers: (papers: ReadonlyArray<Paper>) => Effect.Effect<void>
+  readonly papersByIds: (
+    ids: ReadonlyArray<string>,
+  ) => Effect.Effect<ReadonlyArray<Paper>>
 }
 
 type StoredState = {
@@ -88,6 +94,13 @@ type StateStorage = {
     cursor: string | null,
     now: Date,
   ) => Promise<void>
+  readonly savePapers: (
+    papers: ReadonlyArray<Paper>,
+    fetchedAt: Date,
+  ) => Promise<void>
+  readonly papersByIds: (
+    ids: ReadonlyArray<string>,
+  ) => Promise<ReadonlyArray<Paper>>
 }
 
 const decodeReaderState = Schema.decodeUnknownSync(ReaderState)
@@ -105,16 +118,25 @@ const createReaderStateTablesSql = `
     id text PRIMARY KEY,
     title text NOT NULL,
     abstract text NOT NULL,
+    summary text NOT NULL DEFAULT '',
     year integer NOT NULL,
     venue text NOT NULL,
     authors jsonb NOT NULL,
     topics jsonb NOT NULL,
     citations integer NOT NULL,
+    read_minutes integer NOT NULL DEFAULT 0,
     site text NOT NULL,
+    source text NOT NULL DEFAULT 'openalex',
     external_url text,
     is_open_access boolean NOT NULL,
+    allowed_institutions jsonb,
     fetched_at timestamptz NOT NULL
   );
+  ALTER TABLE papers ADD COLUMN IF NOT EXISTS summary text NOT NULL DEFAULT '';
+  ALTER TABLE papers ADD COLUMN IF NOT EXISTS read_minutes integer NOT NULL DEFAULT 0;
+  ALTER TABLE papers
+    ADD COLUMN IF NOT EXISTS source text NOT NULL DEFAULT 'openalex';
+  ALTER TABLE papers ADD COLUMN IF NOT EXISTS allowed_institutions jsonb;
   CREATE TABLE IF NOT EXISTS impressions (
     id text PRIMARY KEY,
     reader_id text NOT NULL,
@@ -349,6 +371,58 @@ function onboardingRows(input: OnboardProfileInput, createdAt: Date) {
 }
 
 /**
+ * Converts papers from the resolved catalog into pool rows.
+ * @param papers - Resolved papers.
+ * @param fetchedAt - Shared fetch timestamp.
+ * @returns Rows for the local pool.
+ */
+function paperRows(papers: ReadonlyArray<Paper>, fetchedAt: Date) {
+  return papers.map((paper) => ({
+    id: paper.id,
+    title: paper.title,
+    abstract: paper.abstract,
+    summary: paper.summary,
+    year: paper.year,
+    venue: paper.venue,
+    authors: paper.authors,
+    topics: paper.topics,
+    citations: paper.citations,
+    readMinutes: paper.readMinutes,
+    site: paper.site,
+    source: paper.source,
+    externalUrl: paper.externalUrl ?? null,
+    isOpenAccess: paper.access === "open",
+    allowedInstitutions: paper.allowedInstitutions ?? null,
+    fetchedAt,
+  }))
+}
+
+/**
+ * Rebuilds a paper from its pool row.
+ * @param row - Stored pool row.
+ * @returns Paper metadata.
+ */
+function storedPaper(row: typeof papersTable.$inferSelect): Paper {
+  return {
+    id: row.id,
+    title: row.title,
+    authors: row.authors,
+    abstract: row.abstract,
+    summary: row.summary,
+    year: row.year,
+    venue: row.venue,
+    topics: row.topics,
+    access: row.isOpenAccess ? "open" : "institution",
+    allowedInstitutions: row.allowedInstitutions ?? undefined,
+    citations: row.citations,
+    readMinutes: row.readMinutes,
+    site: row.site,
+    source: row.source,
+    externalUrl: row.externalUrl ?? undefined,
+  }
+}
+
+/**
  * Builds the repository service over adapter-specific storage.
  * @param storage - Database adapter operations.
  * @returns Reader-state repository service.
@@ -413,6 +487,16 @@ function makeRepositoryService(storage: StateStorage) {
             new Date(),
           )
         }),
+      savePapers: (papers) =>
+        Effect.promise(async () => {
+          await ensureMigrated()
+          await storage.savePapers(papers, new Date())
+        }),
+      papersByIds: (ids) =>
+        Effect.promise(async () => {
+          await ensureMigrated()
+          return storage.papersByIds(ids)
+        }),
     } satisfies ReaderStateRepositoryShape,
   )
 }
@@ -441,6 +525,7 @@ function makePostgresRepository(databaseUrl: string) {
       const db = drizzlePostgres(client, {
         schema: {
           impressionsTable,
+          papersTable,
           reactionsTable,
           readerProfilesTable,
           readerStateTable,
@@ -497,6 +582,25 @@ function makePostgresRepository(databaseUrl: string) {
 
       const postgresStorage: StateStorage = {
         ...feedSessionStorage,
+        savePapers: async (papers, fetchedAt) => {
+          if (papers.length === 0) {
+            return
+          }
+          await db
+            .insert(papersTable)
+            .values(paperRows(papers, fetchedAt))
+            .onConflictDoNothing()
+        },
+        papersByIds: async (ids) => {
+          if (ids.length === 0) {
+            return []
+          }
+          const rows = await db
+            .select()
+            .from(papersTable)
+            .where(inArray(papersTable.id, ids))
+          return rows.map(storedPaper)
+        },
         onboard: async (input, createdAt) => {
           await db.transaction(async (tx) => {
             await tx
@@ -702,6 +806,7 @@ function makePgliteRepository(dataDir: string | undefined) {
         client,
         schema: {
           impressionsTable,
+          papersTable,
           reactionsTable,
           readerProfilesTable,
           readerStateTable,
@@ -758,6 +863,25 @@ function makePgliteRepository(dataDir: string | undefined) {
 
       const storage: StateStorage = {
         ...feedSessionStorage,
+        savePapers: async (papers, fetchedAt) => {
+          if (papers.length === 0) {
+            return
+          }
+          await db
+            .insert(papersTable)
+            .values(paperRows(papers, fetchedAt))
+            .onConflictDoNothing()
+        },
+        papersByIds: async (ids) => {
+          if (ids.length === 0) {
+            return []
+          }
+          const rows = await db
+            .select()
+            .from(papersTable)
+            .where(inArray(papersTable.id, ids))
+          return rows.map(storedPaper)
+        },
         onboard: async (input, createdAt) => {
           await db.transaction(async (tx) => {
             await tx

@@ -238,4 +238,51 @@ describe("ReaderStateRepository", () => {
     expect(sessions.saved).toEqual(["paper-1", "paper-2"])
     expect(sessions.fresh).toEqual([])
   })
+
+  it("keeps a local paper pool so saved papers resolve by id", async () => {
+    const dataDir = await mkdtemp(join(tmpdir(), "academitok-pool-"))
+    directories.push(dataDir)
+    const paper = {
+      id: "pool-paper-1",
+      title: "A Pooled Paper",
+      authors: ["Ada Lovelace"],
+      abstract: "A pooled abstract.",
+      summary: "A pooled summary.",
+      year: 2025,
+      venue: "Pool Journal",
+      topics: ["AI"],
+      access: "institution",
+      allowedInstitutions: ["MIT"],
+      citations: 7,
+      readMinutes: 4,
+      site: "OpenAlex",
+      source: "openalex",
+      externalUrl: "https://example.com/pool-paper-1",
+    } as const
+
+    await runWithDatabase(
+      dataDir,
+      Effect.gen(function*() {
+        const repository = yield* ReaderStateRepository
+        yield* repository.savePapers([paper])
+        yield* repository.savePapers([paper])
+      }),
+    )
+
+    const pooled = await runWithDatabase(
+      dataDir,
+      Effect.gen(function*() {
+        const repository = yield* ReaderStateRepository
+        return {
+          single: yield* repository.papersByIds(["pool-paper-1"]),
+          missing: yield* repository.papersByIds(["nope"]),
+          none: yield* repository.papersByIds([]),
+        }
+      }),
+    )
+
+    expect(pooled.single).toEqual([paper])
+    expect(pooled.missing).toEqual([])
+    expect(pooled.none).toEqual([])
+  })
 })

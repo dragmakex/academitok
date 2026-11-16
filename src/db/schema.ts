@@ -1,3 +1,9 @@
+import type {
+  Institution,
+  PaperSite,
+  PaperSource,
+  Topic,
+} from "@/api/paper-schema"
 import {
   boolean,
   integer,
@@ -11,14 +17,19 @@ export const papersTable = pgTable("papers", {
   id: text("id").primaryKey(),
   title: text("title").notNull(),
   abstract: text("abstract").notNull(),
+  summary: text("summary").notNull(),
   year: integer("year").notNull(),
   venue: text("venue").notNull(),
   authors: jsonb("authors").$type<ReadonlyArray<string>>().notNull(),
-  topics: jsonb("topics").$type<ReadonlyArray<string>>().notNull(),
+  topics: jsonb("topics").$type<ReadonlyArray<Topic>>().notNull(),
   citations: integer("citations").notNull(),
-  site: text("site").notNull(),
+  readMinutes: integer("read_minutes").notNull(),
+  site: text("site").$type<PaperSite>().notNull(),
+  source: text("source").$type<PaperSource>().notNull(),
   externalUrl: text("external_url"),
   isOpenAccess: boolean("is_open_access").notNull(),
+  allowedInstitutions: jsonb("allowed_institutions")
+    .$type<ReadonlyArray<Institution>>(),
   fetchedAt: timestamp("fetched_at", {
     mode: "date",
     withTimezone: true,
