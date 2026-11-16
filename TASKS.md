@@ -53,6 +53,18 @@ write the conflict at the bottom instead of guessing.
       and nothing it does not; each row's key text comes from the same source as the handler; the
       sheet is reachable and dismissable by keyboard alone with focus returning to where it left.
       — `46418df`
+- [ ] **10. Source politeness guard ahead of the P2 sources.** SPEC §7 requires, for every source,
+      exponential backoff (1s → 8s, 3 tries), a hard 10s timeout and a circuit break of 15 minutes
+      after 3 consecutive errors. `src/lib/openalex.ts` has only the timeout and a serial request
+      queue, so the first arXiv/Crossref client would be written against a client with no backoff
+      and no breaker — the reason §7 lists a second source before those entries unblock. Add one
+      small guard module beside the catalog client holding the attempt schedule and the breaker
+      state machine, with time injected so it is testable, and use it to wrap the OpenAlex request
+      instead of the bare `fetch`. No new source, no dependency, no ranking, RPC contract or
+      PostHog change. Accept: attempt delays double from 1s and are capped at 8s across three
+      attempts; three consecutive failures open the breaker so a call inside 15 minutes fails
+      without a fetch, and a single success resets the streak; an upstream failure still falls back
+      to the frozen seed edition; the guard is unit-tested with injected clock and fake request.
 
 ---
 
