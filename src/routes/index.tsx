@@ -1,4 +1,4 @@
-import { getTodoDashboardSnapshot } from "@/features/todos/application"
+import { getPaperFeedSnapshot } from "@/features/papers/application"
 import { HydrationBoundary } from "@/lib/atom-hydration"
 import { dehydrate } from "@/lib/atom-utils"
 import { createFileRoute } from "@tanstack/react-router"
@@ -8,8 +8,11 @@ import { App } from "./-index/app"
 import { dashboardSnapshotAtom } from "./-index/atoms"
 import { serverRuntime } from "./api/$"
 
-const getTodoDashboard = createServerFn({ method: "GET" }).handler(async () => {
-  const snapshot = await serverRuntime.runPromise(getTodoDashboardSnapshot)
+const getPaperFeed = createServerFn({ method: "GET" }).handler(async () => {
+  const snapshot = await serverRuntime.runPromise(getPaperFeedSnapshot({
+    query: { topic: "All", sort: "recommended" },
+    cursor: null,
+  }))
   const dehydratedAt = Date.now()
 
   return [
@@ -22,7 +25,7 @@ const getTodoDashboard = createServerFn({ method: "GET" }).handler(async () => {
 })
 
 export const Route = createFileRoute("/")({
-  loader: () => getTodoDashboard(),
+  loader: () => getPaperFeed(),
   component: AppWrapper,
 })
 

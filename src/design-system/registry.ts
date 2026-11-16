@@ -38,6 +38,8 @@ export const registry = {
       "Padded surface — used everywhere for content sections",
     "components/Button.tsx":
       "Interactive control — replaces all native buttons in app code",
+    "components/LinkButton.tsx":
+      "Interactive anchor control — replaces styled links in app code",
     "components/Heading.tsx":
       "Semantic typography — three heading roles (page/section/card)",
     "components/Text.tsx":
@@ -56,6 +58,14 @@ export const registry = {
       "State pattern — required for every data surface",
     "components/ErrorState.tsx":
       "State pattern — required for every data surface",
+    "components/EdgeDrawer.tsx":
+      "Off-canvas control surface — reusable swipe-in drawer for dense filter controls",
+    "components/FeedDeck.tsx":
+      "Scrollable snap container — reusable short-form feed viewport pattern",
+    "components/FeedStateSlide.tsx":
+      "Fullscreen feed state wrapper — centers loading, empty, and error states inside the snap feed",
+    "components/PaperSlide.tsx":
+      "Complex feed surface — short-form paper card with action rail and metadata",
   },
 } as const
 
