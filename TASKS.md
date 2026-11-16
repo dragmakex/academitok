@@ -29,8 +29,9 @@ Task order is dependency order, not priority order. Source of truth for requirem
       `0.9·contentAffinity`: build the centroid from liked and saved abstracts, cosine against candidate abstracts.
       No new dependency — tokenise and weight by hand. Accept: unit tests for the centroid,
       known-similar abstracts outrank unrelated ones, `bun run test:coverage` green.
-- [ ] **4. MMR diversity.** SPEC §8.1 step 4: replace the greedy topic/author caps with
-      `argmax(λ·score − (1−λ)·maxSim)`, λ = 0.7, using `0.5·cosine + 0.5·topicJaccard`. Keep
+- [x] **4. MMR diversity.** Satisfied by `8d0722c`. SPEC §8.1 step 4: replace the greedy
+      topic/author caps with `argmax(λ·score − (1−λ)·maxSim)`, λ = 0.7, using
+      `0.5·cosine + 0.5·topicJaccard`. Keep
       the hard caps as a guard rail. Accept: a page of 10 still respects ≤2 per topic and
       ≤1 per author; a test shows MMR demoting a near-duplicate that raw score would have kept.
 - [ ] **5. Author and venue affinity.** SPEC §8.1 term `0.5·authorVenueAffinity`, decayed
