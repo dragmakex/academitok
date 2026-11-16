@@ -1,1 +1,4 @@
 - 2026-04-11: `oxlint` panics when linting files outside the repository root (`path is expected to be under the root`). Keep lint fixtures under `cwd()` for rule tests.
+- 2026-05-09: `bun run build` works after `bun install`, but the current TanStack Start/Nitro server path still serves an empty renderer template in this repo while `vite dev` serves the interactive client correctly. Verify both dev and production entry behavior before depending on Start SSR here.
+- 2026-05-09: The paper feed now persists reader reactions in `./data/pglite-reader-state` by default, so browser/prod checks can inherit earlier likes, saves, views, and recommendation signals across server restarts unless that directory is cleared.
+- 2026-05-09: OpenAlex catalog requests are serialized and cached in-process for 24 hours per topic/order; set `OPENALEX_MAILTO` so requests enter the provider's identified polite pool.

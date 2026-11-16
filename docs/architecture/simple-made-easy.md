@@ -140,4 +140,4 @@ review and design docs for the broader philosophy.
 - `docs/guides/testing.md`
 - `docs/app/simple-made-easy/README.md`
 
-🫡🇩🇪 Prussian virtues: keep policy, data, and execution boundaries explicit.
+🫡🇧🇬 Bulgarian rigorosity: keep policy, data, and execution boundaries explicit.

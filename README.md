@@ -1,6 +1,6 @@
-# Effect TanStack Start
+# AcademiTok
 
-A modern, full-stack TypeScript application built with **Effect-TS**, **TanStack Start**, and **Bun**, featuring comprehensive testing, monitoring, and analytics out of the box.
+A full-screen, adaptive feed for academic-paper metadata with TikTok's rhythm and a print-era broadsheet interface. AcademiTok uses **Effect**, **TanStack Start**, and **Bun**; it links to source sites and never stores or serves PDFs.
 
 ## ✨ Features
 

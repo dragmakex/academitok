@@ -1,0 +1,1 @@
+- 2026-05-09: I want a short project-local note explaining the intended TanStack Start renderer-template and client-entry contract for this repo. It would reduce time lost debugging blank pages versus app/runtime issues.
