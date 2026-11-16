@@ -96,6 +96,22 @@ export function trackPaperReactionEvent(
 }
 
 /**
+ * Median publication year of a page, the archival-drift signal (SPEC §17.3).
+ * @param years - Page publication years.
+ * @returns Median year, averaging the middle pair on even-sized pages, or null when empty.
+ */
+export function medianYear(years: ReadonlyArray<number>): number | null {
+  if (years.length === 0) {
+    return null
+  }
+  const sorted = [...years].sort((left, right) => left - right)
+  const middle = Math.floor(sorted.length / 2)
+  return sorted.length % 2 === 0
+    ? (sorted[middle - 1] + sorted[middle]) / 2
+    : sorted[middle]
+}
+
+/**
  * Tracks one ranked page returned to the reader.
  * @param snapshot - Ranked page response.
  * @param cursor - Requested cursor, or null for the first page.
@@ -110,6 +126,7 @@ export function trackFeedPageEvent(
     item_count: ids.length,
     duplicate_count: ids.length - new Set(ids).size,
     exploration_count: snapshot.exploration,
+    median_year: medianYear(snapshot.items.map((item) => item.paper.year)),
     topic: snapshot.selectedTopic,
     sort: snapshot.selectedSort,
     cold_start: snapshot.profile === null,

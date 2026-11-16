@@ -1,7 +1,11 @@
 // @vitest-environment node
 
 import { afterEach, describe, expect, it, vi } from "vitest"
-import { hashReaderId, trackFeedHealthEvent } from "./feed-analytics"
+import {
+  hashReaderId,
+  medianYear,
+  trackFeedHealthEvent,
+} from "./feed-analytics"
 
 const { capture } = vi.hoisted(() => ({ capture: vi.fn() }))
 
@@ -38,5 +42,19 @@ describe("feed analytics", () => {
       reader_id_hash:
         "b350a39385fccf30e4534d91b026b5317a3b9cc4e48f855c0a15aed315517c66",
     })
+  })
+})
+
+describe("medianYear", () => {
+  it("reports the middle year of an odd-sized page", () => {
+    expect(medianYear([2024, 2019, 2022])).toBe(2022)
+  })
+
+  it("averages the two middle years of an even-sized page", () => {
+    expect(medianYear([2019, 2024, 2022, 2020])).toBe(2021)
+  })
+
+  it("reports no median for an empty page", () => {
+    expect(medianYear([])).toBeNull()
   })
 })
