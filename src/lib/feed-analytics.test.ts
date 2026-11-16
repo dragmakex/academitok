@@ -2,6 +2,7 @@
 
 import { afterEach, describe, expect, it, vi } from "vitest"
 import {
+  archivalDrift,
   hashReaderId,
   medianYear,
   readingCompletion,
@@ -99,5 +100,32 @@ describe("medianYear", () => {
 
   it("reports no median for an empty page", () => {
     expect(medianYear([])).toBeNull()
+  })
+})
+
+describe("archivalDrift", () => {
+  it("reports the median and the clippings a decade behind the newest", () => {
+    expect(archivalDrift([2010, 2016, 2024])).toEqual({
+      medianYear: 2016,
+      newestYear: 2024,
+      olderThanDecade: 1,
+      total: 3,
+    })
+  })
+
+  it("does not count a clipping exactly ten years older", () => {
+    expect(archivalDrift([2014, 2024])).toMatchObject({
+      newestYear: 2024,
+      olderThanDecade: 0,
+    })
+  })
+
+  it("reports no year when the page has none", () => {
+    expect(archivalDrift([])).toEqual({
+      medianYear: null,
+      newestYear: null,
+      olderThanDecade: 0,
+      total: 0,
+    })
   })
 })

@@ -135,6 +135,30 @@ export function medianYear(years: ReadonlyArray<number>): number | null {
     : sorted[middle]
 }
 
+export type ArchivalDrift = {
+  readonly medianYear: number | null
+  readonly newestYear: number | null
+  readonly olderThanDecade: number
+  readonly total: number
+}
+
+/**
+ * Median year plus how many clippings lag the newest one by more than a decade (SPEC §17.3).
+ * @param years - Page publication years.
+ * @returns Drift readout; `medianYear` and `newestYear` are null when the page has no years.
+ */
+export function archivalDrift(years: ReadonlyArray<number>): ArchivalDrift {
+  const newestYear = years.length === 0 ? null : Math.max(...years)
+  return {
+    medianYear: medianYear(years),
+    newestYear,
+    olderThanDecade: newestYear === null
+      ? 0
+      : years.filter((year) => newestYear - year > 10).length,
+    total: years.length,
+  }
+}
+
 /**
  * Tracks one ranked page returned to the reader.
  * @param snapshot - Ranked page response.
