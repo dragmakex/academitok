@@ -12,7 +12,7 @@ Task order is dependency order, not priority order. Source of truth for requirem
 
 ## P1 — data layer
 
-- [ ] **1. Split the reader-state JSON blob into tables.** Per SPEC §6: `papers`,
+- [x] **1. Split the reader-state JSON blob into tables.** Satisfied by `12919af`. Per SPEC §6: `papers`,
       `impressions`, `reactions`, `reader_profiles`, `feed_sessions` in `src/db/schema.ts`.
       Migrate existing `reader_state.state_json` on first read, keep the blob read-only as a
       migration source, delete it after a clean run. Accept: `bun run validate` green, a
