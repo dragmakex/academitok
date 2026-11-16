@@ -41,9 +41,9 @@ Task order is dependency order, not priority order. Source of truth for requirem
       keep/discard, ≥5 keeps required or explicitly skipped; seeds topic affinity and the content
       centroid. `profile.onboard` RPC. Accept: fresh DB + onboarding produces a non-uniform feed;
       skipping still yields a valid page.
-- [ ] **7. `WHY THIS` from real scoring terms.** SPEC §8.3: rationale must cite only terms
-      that actually fired, max 2, no filler. Accept: test that a cold-start item shows only
-      the beat name, and a high-affinity item cites the term that won.
+- [x] **7. `WHY THIS` from real scoring terms.** Satisfied by `71ef2c2`. SPEC §8.3:
+      rationale must cite only terms that actually fired, max 2, no filler. Accept: test that a
+      cold-start item shows only the beat name, and a high-affinity item cites the term that won.
 
 ## P1 — product surface and identity
 
