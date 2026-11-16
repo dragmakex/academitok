@@ -27,10 +27,11 @@ write the conflict at the bottom instead of guessing.
       a saved paper appears there after a save and disappears after unsave; empty state reads
       as a broadsheet notice, not a spinner.
       — `70caa4a`
-- [ ] **3. `/paper/$id` permalink.** SPEC §5: canonical page per paper with the clipping
+- [x] **3. `/paper/$id` permalink.** SPEC §5: canonical page per paper with the clipping
       anatomy, full metadata and a copyable citation (authors, year, title, venue, DOI or URL).
       Accept: URL renders server-side for a known id, unknown id returns the not-found notice,
       citation copies to the clipboard, and the deck's permalink control reaches it.
+      — `e3d60a1`
 - [ ] **4. Saved-collection export (BibTeX).** SPEC §14: generate `.bib` from the saved
       set in the repository layer, one `@article` per paper, DOIs as `doi`, stable keys.
       Accept: a 3-paper fixture yields 3 parseable entries with stable keys across runs; no
