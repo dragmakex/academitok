@@ -82,7 +82,7 @@ its full-screen contract.
 | `h` / rail cross                                    | hide              | removes from feed, topic affinity penalty, undo via toast (5s) |
 | `o` / rail arrow / `Enter` on link                  | open source       | new tab, `rel="noopener noreferrer"`, tracked                  |
 | `d` / rail dots                                     | open desk drawer  | focus trap, `Esc` closes                                       |
-| `?`                                                 | shortcut sheet    | P2                                                             |
+| `?`                                                 | shortcut sheet    | focus trap, `Esc` closes, rows read the key table              |
 
 Rail sits in the right margin, outside the text measure, as a vertical column of icon + micro-label.
 

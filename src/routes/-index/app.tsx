@@ -14,6 +14,7 @@ import { FeedDeck } from "@/design-system/components/FeedDeck"
 import { FeedStateSlide } from "@/design-system/components/FeedStateSlide"
 import { Page } from "@/design-system/components/Page"
 import { PaperSlide } from "@/design-system/components/PaperSlide"
+import { ShortcutSheet } from "@/design-system/components/ShortcutSheet"
 import { Tabs } from "@/design-system/components/Tabs"
 import { Text } from "@/design-system/components/Text"
 import { TextField } from "@/design-system/components/TextField"
@@ -21,6 +22,7 @@ import { Grid } from "@/design-system/primitives/Grid"
 import { Inline } from "@/design-system/primitives/Inline"
 import { Stack } from "@/design-system/primitives/Stack"
 import { trackFeedPageEvent } from "@/lib/feed-analytics"
+import { deckAction, shortcutRows } from "@/lib/shortcuts"
 import { useAtomSet, useAtomValue } from "@effect/atom-react"
 import { useCallback, useEffect, useRef, useState } from "react"
 import {
@@ -381,6 +383,7 @@ export function App() {
     : undefined
 
   const [drawerOpen, setDrawerOpen] = useState(false)
+  const [sheetOpen, setSheetOpen] = useState(false)
   const [activeIndex, setActiveIndex] = useState(0)
   const [query, setQuery] = useState<FeedQuery>({
     topic: snapshot?.selectedTopic ?? "All",
@@ -447,87 +450,71 @@ export function App() {
     }
   }, [loadNextPage, query, snapshot?.items.length, snapshot?.nextCursor])
 
+  const reactToPaper = useAtomSet(reactToPaperAtom)
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
       const target = event.target
-      const interactive = target instanceof HTMLInputElement
+      if (event.metaKey || event.ctrlKey || event.altKey) {
+        return
+      }
+
+      const formField = target instanceof HTMLInputElement
         || target instanceof HTMLTextAreaElement
         || target instanceof HTMLSelectElement
-        || target instanceof HTMLButtonElement
+      const control = target instanceof HTMLButtonElement
         || target instanceof HTMLAnchorElement
-      if (
-        interactive || drawerOpen || event
-          .metaKey || event
-          .ctrlKey || event
-          .altKey
-      ) {
-        return
-      }
-
-      const next = event.key === "ArrowDown"
-        || event.key === "j"
-        || event.key === " "
-      const previous = event.key === "ArrowUp" || event.key === "k"
-      if (next || previous) {
-        event.preventDefault()
-        navigate(activeIndex + (next ? 1 : -1))
-      } else if (event.key === "d") {
-        setDrawerOpen(true)
-      }
-    }
-
-    window.addEventListener("keydown", onKeyDown)
-    return () => window.removeEventListener("keydown", onKeyDown)
-  }, [activeIndex, drawerOpen, navigate])
-
-  const reactToPaper = useAtomSet(reactToPaperAtom)
-  useEffect(() => {
-    const onShortcut = (event: KeyboardEvent) => {
-      const target = event.target
-      if (
-        drawerOpen
-        || event.metaKey
-        || event.ctrlKey
-        || event.altKey
-        || target instanceof HTMLInputElement
-        || target instanceof HTMLTextAreaElement
-        || target instanceof HTMLSelectElement
-        || target instanceof HTMLButtonElement
-        || target instanceof HTMLAnchorElement
-      ) {
-        return
-      }
-      const item = snapshot?.items[activeIndex]
-      if (item === undefined) {
-        return
-      }
-      const kind = event.key === "l"
-        ? "like"
-        : event.key === "s"
-        ? "bookmark"
-        : event.key === "h"
-        ? "hide"
-        : event.key === "o"
-        ? "open-site"
-        : undefined
-      if (kind === undefined) {
+      const action = deckAction(
+        event.key,
+        formField ? "form" : control ? "control" : "deck",
+        sheetOpen ? "sheet" : drawerOpen ? "desk" : "none",
+      )
+      if (action === undefined) {
         return
       }
       event.preventDefault()
-      if (kind === "open-site") {
-        if (item.paper.externalUrl === undefined) {
+
+      if (action === "help") {
+        setSheetOpen((current) => !current)
+        return
+      }
+
+      const item = snapshot?.items[activeIndex]
+      switch (action) {
+        case "next":
+          navigate(activeIndex + 1)
           return
-        }
-        window.open(item.paper.externalUrl, "_blank", "noopener,noreferrer")
+        case "previous":
+          navigate(activeIndex - 1)
+          return
+        case "desk":
+          setDrawerOpen(true)
+          return
+        default:
+          if (item === undefined) {
+            return
+          }
+          if (
+            action === "open-site"
+            && item.paper.externalUrl !== undefined
+          ) {
+            window.open(item.paper.externalUrl, "_blank", "noopener,noreferrer")
+          }
+          if (action === "hide") {
+            navigate(activeIndex + 1)
+          }
+          reactToPaper({ kind: action, paperId: item.paper.id })
       }
-      if (kind === "hide") {
-        navigate(activeIndex + 1)
-      }
-      reactToPaper({ kind, paperId: item.paper.id })
     }
-    window.addEventListener("keydown", onShortcut)
-    return () => window.removeEventListener("keydown", onShortcut)
-  }, [activeIndex, drawerOpen, navigate, reactToPaper, snapshot?.items])
+    window.addEventListener("keydown", onKeyDown)
+    return () => window.removeEventListener("keydown", onKeyDown)
+  }, [
+    activeIndex,
+    drawerOpen,
+    navigate,
+    reactToPaper,
+    sheetOpen,
+    snapshot?.items,
+  ])
 
   const loading = snapshotAsync._tag === "Initial" || snapshotAsync.waiting
   const error = snapshotAsync._tag === "Failure" ? snapshotAsync.cause : null
@@ -645,6 +632,13 @@ export function App() {
           </Card>
         </Stack>
       </EdgeDrawer>
+
+      <ShortcutSheet
+        open={sheetOpen}
+        onOpenChange={setSheetOpen}
+        title="Keyboard shortcuts"
+        items={shortcutRows}
+      />
 
       {error !== null
         ? (

@@ -1,6 +1,7 @@
 import { Button } from "@/design-system/components/Button"
 import { Heading } from "@/design-system/components/Heading"
 import { Text } from "@/design-system/components/Text"
+import { useFocusTrap } from "@/design-system/foundation/useFocusTrap"
 import { Stack } from "@/design-system/primitives/Stack"
 import { X } from "lucide-react"
 import { useEffect, useRef } from "react"
@@ -33,53 +34,10 @@ export function EdgeDrawer(
   const touchStartX = useRef<number | null>(null)
   const touchStartY = useRef<number | null>(null)
   const gestureOrigin = useRef<"edge" | "drawer" | null>(null)
-  const drawerRef = useRef<HTMLElement | null>(null)
-
-  useEffect(() => {
-    if (!open || drawerRef.current === null) {
-      return
-    }
-
-    const previousFocus = document.activeElement instanceof HTMLElement
-      ? document.activeElement
-      : null
-    const drawer = drawerRef.current
-    const focusable = () => [...drawer.querySelectorAll<HTMLElement>(
-      "a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex='-1'])",
-    )]
-    focusable()[0]?.focus()
-
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") {
-        event.preventDefault()
-        onOpenChange(false)
-        return
-      }
-      if (event.key !== "Tab") {
-        return
-      }
-
-      const elements = focusable()
-      const first = elements[0]
-      const last = elements.at(-1)
-      if (first === undefined || last === undefined) {
-        return
-      }
-      if (event.shiftKey && document.activeElement === first) {
-        event.preventDefault()
-        last.focus()
-      } else if (!event.shiftKey && document.activeElement === last) {
-        event.preventDefault()
-        first.focus()
-      }
-    }
-
-    document.addEventListener("keydown", onKeyDown)
-    return () => {
-      document.removeEventListener("keydown", onKeyDown)
-      previousFocus?.focus()
-    }
-  }, [onOpenChange, open])
+  const drawerRef = useFocusTrap<HTMLElement>({
+    active: open,
+    onClose: () => onOpenChange(false),
+  })
 
   useEffect(() => {
     const onTouchStart = (event: TouchEvent) => {

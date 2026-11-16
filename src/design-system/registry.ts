@@ -16,6 +16,8 @@ export const registry = {
       "cx() class joiner — shared utility for DS internals",
     "foundation/tokens.ts":
       "Typed spacing scale mapping to Tailwind @theme classes",
+    "foundation/useFocusTrap.ts":
+      "Focus trap hook — shared by every modal surface so keyboard dismissal and focus restore cannot drift",
   },
 
   primitives: {
@@ -68,6 +70,8 @@ export const registry = {
       "Complex feed surface — short-form paper card with action rail and metadata",
     "components/PaperPage.tsx":
       "Canonical permalink surface — full broadsheet clipping with citation copy",
+    "components/ShortcutSheet.tsx":
+      "Keyboard reference sheet — focus-trapped key/action list rendered from the deck binding table",
   },
 } as const
 
