@@ -1,65 +1,51 @@
 # TASKS — execution queue
 
 Work top to bottom. Take the **first unchecked task only**, implement it, run
-`bun run validate`, commit, then tick the box. Never re-audit the whole repo and never
-report "already implemented" — if a task is already satisfied, tick it, note the commit
-that satisfies it on the same line, and move to the next.
+`bun run validate`, commit, then tick the box. One box per run. Never re-audit the whole
+repo and never report "already implemented" — if a task is already satisfied, tick it with
+the commit that satisfies it and take the next one, but never tick a box you did not verify
+against code.
 
-Task order is dependency order, not priority order. Source of truth for requirements:
-`SPEC.md`. If a task conflicts with the spec, stop and write the conflict at the bottom.
-
----
-
-## P1 — data layer
-
-- [x] **1. Split the reader-state JSON blob into tables.** Satisfied by `12919af`. Per SPEC §6: `papers`,
-      `impressions`, `reactions`, `reader_profiles`, `feed_sessions` in `src/db/schema.ts`.
-      Migrate existing `reader_state.state_json` on first read, keep the blob read-only as a
-      migration source, delete it after a clean run. Accept: `bun run validate` green, a
-      `-pglite-reader-state` restart preserves likes/saves/hides, `docs/guides/database-pglite.md`
-      notes the migration.
-- [x] **2. Batched impression transport.** Satisfied by `d486604`. Per SPEC §9: client buffers
-      impression events, flushes every 10 events and on `visibilitychange`; one RPC call per batch.
-      Accept: no per-slide RPC during a 20-slide scroll (check network log), dwell_ms still
-      recorded, test covering the flush-on-hide path.
-
-## P1 — the algo finishes learning
-
-- [x] **3. Content affinity (tf-idf cosine).** Satisfied by `a539c3d`. SPEC §8.1 term
-      `0.9·contentAffinity`: build the centroid from liked and saved abstracts, cosine against candidate abstracts.
-      No new dependency — tokenise and weight by hand. Accept: unit tests for the centroid,
-      known-similar abstracts outrank unrelated ones, `bun run test:coverage` green.
-- [x] **4. MMR diversity.** Satisfied by `8d0722c`. SPEC §8.1 step 4: replace the greedy
-      topic/author caps with `argmax(λ·score − (1−λ)·maxSim)`, λ = 0.7, using
-      `0.5·cosine + 0.5·topicJaccard`. Keep
-      the hard caps as a guard rail. Accept: a page of 10 still respects ≤2 per topic and
-      ≤1 per author; a test shows MMR demoting a near-duplicate that raw score would have kept.
-- [x] **5. Author and venue affinity.** Satisfied by `0931243`. SPEC §8.1 term
-      `0.5·authorVenueAffinity`, decayed like topic affinity. Accept: liking two papers by the
-      same author raises that author's later papers; test asserts ordering.
-- [x] **6. Onboarding picks.** Satisfied by `89b254a`. SPEC §8.2: 15 candidates in 3 pages of 5,
-      keep/discard, ≥5 keeps required or explicitly skipped; seeds topic affinity and the content
-      centroid. `profile.onboard` RPC. Accept: fresh DB + onboarding produces a non-uniform feed;
-      skipping still yields a valid page.
-- [x] **7. `WHY THIS` from real scoring terms.** Satisfied by `71ef2c2`. SPEC §8.3:
-      rationale must cite only terms that actually fired, max 2, no filler. Accept: test that a
-      cold-start item shows only the beat name, and a high-affinity item cites the term that won.
-
-## P1 — product surface and identity
-
-- [x] **8. Feed health metrics.** Satisfied by `e35a341`. SPEC §8.4: emit `impression`, `dwell`, `reaction`,
-      `feed.next` events to PostHog with hashed reader id. Accept: events visible locally,
-      `docs/guides/posthog.md` updated with the feed event table.
-- [x] **9. Repo identity.** Satisfied by `bad9086` (README) and `9b11548` (package name). Replace
-      the template `README.md` and `package.json` name with AcademiTok (link `PROMPT.md`, `SPEC.md`,
-      `AGENTS.md`). Accept: no "Effect TanStack Start" marketing copy left, no stale todo screenshots.
-- [x] **10. Retire the todo template.** Satisfied by `3793fd8`. Delete `src/features/todos/`, todo
-      routes, todo docs and their tests in **one** commit after everything above is green. Accept:
-      `bun run validate` green with the feature gone, no dangling imports.
+Source of truth for requirements: `SPEC.md`. If a task conflicts with the spec, stop and
+write the conflict at the bottom instead of guessing.
 
 ---
 
-## Blocked / needs a human decision
+## P1 leftover
 
-Record conflicts here instead of guessing: task number, what the spec says, what the code
-says, what you chose not to do.
+- [ ] **1. Persisted feed session state.** SPEC §16 remaining work: the cursor carries the
+      session's seen ids, so a client can desynchronise from the server's idea of the session.
+      Move it to a `feed_sessions` row (id, reader_id, seen paper ids, cursor, updated_at) with
+      a TTL sweep. Accept: two `feed.next` calls with the same session id never repeat a paper
+      even if the client passes a stale cursor; a fresh session id starts clean.
+
+## P2 — breadth
+
+- [ ] **2. `/saved` route.** SPEC §5: saved clippings as a static, filterable list, not a
+      deck. Reuse the clipping component in a compact variant; no new design language. Accept:
+      a saved paper appears there after a save and disappears after unsave; empty state reads
+      as a broadsheet notice, not a spinner.
+- [ ] **3. `/paper/$id` permalink.** SPEC §5: canonical page per paper with the clipping
+      anatomy, full metadata and a copyable citation (authors, year, title, venue, DOI or URL).
+      Accept: URL renders server-side for a known id, unknown id returns the not-found notice,
+      citation copies to the clipboard, and the deck's permalink control reaches it.
+- [ ] **4. Saved-collection export (BibTeX).** SPEC §14: generate `.bib` from the saved
+      set in the repository layer, one `@article` per paper, DOIs as `doi`, stable keys.
+      Accept: a 3-paper fixture yields 3 parseable entries with stable keys across runs; no
+      network calls.
+
+---
+
+## Blocked — needs a product decision
+
+- **Additional sources (arXiv, bioRxiv, Crossref).** Each adds a fetch client, a schema
+  drift surface and rate-limit etiquette. Pick which one lands first, or none.
+- **LLM dek behind a flag.** Costs money per page view and adds a provider dependency;
+  SPEC keeps it out of P0. Needs a written cost ceiling before it becomes a task.
+
+## Done (P1, for the record)
+
+Reaction/impression tables · batched impression transport · tf-idf content affinity ·
+MMR diversity with topic/author caps · author and venue affinity · onboarding picks ·
+`WHY THIS` from real scoring terms · PostHog feed-health events · packaging identity ·
+todo template retired.
