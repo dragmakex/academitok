@@ -80,6 +80,17 @@ write the conflict at the bottom instead of guessing.
       helper is unit-tested; the ranked page for a fixed seed is unchanged.
       — `cf473fa`
 
+- [ ] **9. Shareable edition as plain text.** SPEC §16 P3 lists shareable "editions", but a deck
+      page only exists inside the app, so a reader cannot hand one to a colleague. Add a pure
+      `formatEdition` helper beside `formatCitation` that renders the loaded page as a broadsheet
+      notice: one masthead line naming the edition and folio, then one line per clipping in page
+      order with kicker, headline, first author and year, and the DOI or source URL. Add a copy
+      control that writes it to the clipboard and announces success in the permalink's live-region
+      pattern. No new route, no persistence, no network. Accept: a 3-paper page yields exactly one
+      header line and three clipping lines in page order, each carrying its source URL; an empty
+      page yields an empty string and the control stays disabled; a failed clipboard write is
+      reported, never silent; the helper is unit-tested.
+
 ---
 
 ## Blocked — needs a product decision
