@@ -18,10 +18,10 @@ Task order is dependency order, not priority order. Source of truth for requirem
       migration source, delete it after a clean run. Accept: `bun run validate` green, a
       `-pglite-reader-state` restart preserves likes/saves/hides, `docs/guides/database-pglite.md`
       notes the migration.
-- [ ] **2. Batched impression transport.** Per SPEC §9: client buffers impression events,
-      flushes every 10 events and on `visibilitychange`; one RPC call per batch. Accept: no
-      per-slide RPC during a 20-slide scroll (check network log), dwell_ms still recorded,
-      test covering the flush-on-hide path.
+- [x] **2. Batched impression transport.** Satisfied by `d486604`. Per SPEC §9: client buffers
+      impression events, flushes every 10 events and on `visibilitychange`; one RPC call per batch.
+      Accept: no per-slide RPC during a 20-slide scroll (check network log), dwell_ms still
+      recorded, test covering the flush-on-hide path.
 
 ## P1 — the algo finishes learning
 
