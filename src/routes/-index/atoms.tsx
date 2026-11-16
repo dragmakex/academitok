@@ -6,9 +6,15 @@ import {
   type OnboardProfileInput,
   type ReactToPaperInput,
   type SaveProfileInput,
+  type Topic,
   type TrackPaperViewInput,
 } from "@/api/paper-schema"
 import { serializable } from "@/lib/atom-utils"
+import {
+  trackFeedPageEvent,
+  trackPaperReactionEvent,
+  trackPaperViewEvent,
+} from "@/lib/feed-analytics"
 import * as Context from "effect/Context"
 import * as Effect from "effect/Effect"
 import * as Layer from "effect/Layer"
@@ -105,6 +111,7 @@ export const loadPaperFeedAtom = runtime.fn<FeedQuery>()(
     const api = yield* Api
     const snapshot = yield* api.snapshot({ query, cursor: null })
     replaceDashboardSnapshot(get, snapshot)
+    trackFeedPageEvent(snapshot, null)
     return snapshot
   }),
 )
@@ -113,6 +120,7 @@ export const loadNextPaperPageAtom = runtime.fn<FeedRequest>()(
   Effect.fnUntraced(function*(request, get) {
     const api = yield* Api
     const page = yield* api.snapshot(request)
+    trackFeedPageEvent(page, request.cursor)
     const current = get(dashboardSnapshotAtom)
     if (current._tag !== "Success") {
       replaceDashboardSnapshot(get, page)
@@ -140,6 +148,7 @@ export const saveReaderProfileAtom = runtime.fn<{
     const api = yield* Api
     const snapshot = yield* api.saveProfile(input, { query, cursor: null })
     replaceDashboardSnapshot(get, snapshot)
+    trackFeedPageEvent(snapshot, null)
     return snapshot
   }),
 )
@@ -150,6 +159,7 @@ export const onboardReaderAtom = runtime.fn<OnboardProfileInput>()(
     const result = yield* api.onboard(input)
     const snapshot = yield* api.snapshot({ query: defaultQuery, cursor: null })
     replaceDashboardSnapshot(get, snapshot)
+    trackFeedPageEvent(snapshot, null)
     return result
   }),
 )
@@ -158,6 +168,7 @@ export const reactToPaperAtom = runtime.fn<ReactToPaperInput>()(
   Effect.fnUntraced(function*(input, get) {
     const api = yield* Api
     const result = yield* api.react(input)
+    trackPaperReactionEvent(input, result.active)
     const current = get(dashboardSnapshotAtom)
     if (current._tag !== "Success") {
       return result
@@ -192,11 +203,15 @@ const impressionQueueAtom = Atom.make<ReadonlyArray<TrackPaperViewInput>>([])
 
 type TrackPaperViewCommand = {
   readonly event?: TrackPaperViewInput
+  readonly topics?: ReadonlyArray<Topic>
   readonly flush?: boolean
 }
 
 export const trackPaperViewAtom = runtime.fn<TrackPaperViewCommand>()(
   Effect.fnUntraced(function*(command, get) {
+    if (command.event !== undefined) {
+      trackPaperViewEvent(command.event, command.topics ?? [])
+    }
     const { batch, queued } = bufferImpression(
       get(impressionQueueAtom),
       command.event,

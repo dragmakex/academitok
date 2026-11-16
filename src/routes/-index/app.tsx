@@ -20,6 +20,7 @@ import { TextField } from "@/design-system/components/TextField"
 import { Grid } from "@/design-system/primitives/Grid"
 import { Inline } from "@/design-system/primitives/Inline"
 import { Stack } from "@/design-system/primitives/Stack"
+import { trackFeedPageEvent } from "@/lib/feed-analytics"
 import { useAtomSet, useAtomValue } from "@effect/atom-react"
 import { useCallback, useEffect, useRef, useState } from "react"
 import {
@@ -125,7 +126,7 @@ function VisiblePaperSlide({
     const sendDwell = () => {
       const event = takeDwell()
       if (event !== undefined) {
-        trackView({ event })
+        trackView({ event, topics: item.paper.topics })
       }
     }
     const onVisibilityChange = () => {
@@ -160,6 +161,7 @@ function VisiblePaperSlide({
               position: index,
               exploration: item.exploration,
             },
+            topics: item.paper.topics,
           })
         }, 400)
       },
@@ -394,6 +396,14 @@ export function App() {
   const deckRef = useRef<HTMLElement | null>(null)
   const slideNodes = useRef(new Map<number, HTMLElement>())
   const requestedCursors = useRef(new Set<string>())
+  const initialFeedTracked = useRef(false)
+
+  useEffect(() => {
+    if (snapshot !== undefined && !initialFeedTracked.current) {
+      initialFeedTracked.current = true
+      trackFeedPageEvent(snapshot, null)
+    }
+  }, [snapshot])
 
   useEffect(
     () =>

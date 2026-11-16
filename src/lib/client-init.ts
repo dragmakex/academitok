@@ -14,6 +14,8 @@ let posthogInitPromise: Promise<void> | null = null
 
 type SentryModule = typeof import("@sentry/react")
 type PostHogModule = typeof import("posthog-js")
+type PostHogClient = PostHogModule["default"]
+let posthogClient: PostHogClient | null = null
 
 const capturePostHogPageView = (posthog: PostHogModule["default"]): void => {
   posthog.capture("$pageview", {
@@ -71,6 +73,7 @@ const initPostHog = async (): Promise<void> => {
         capture_pageleave: true,
       })
 
+      posthogClient = posthog
       capturePostHogPageView(posthog)
     })
     .catch((error: unknown) => {
@@ -79,6 +82,15 @@ const initPostHog = async (): Promise<void> => {
     })
 
   return posthogInitPromise
+}
+
+/**
+ * Returns the initialized browser PostHog client when analytics is configured.
+ * @returns Configured client, or null when PostHog is disabled.
+ */
+export async function getPostHogClient(): Promise<PostHogClient | null> {
+  await initPostHog()
+  return posthogClient
 }
 
 const reportErrorToSentry = async (
