@@ -169,6 +169,53 @@ describe("paper recommendation", () => {
     expect(items[0]?.paper.topics.includes("AI")).toBe(true)
   })
 
+  it("explains a cold-start paper with only its beat", () => {
+    const paper = paperFixture("cold", "a neutral abstract", {
+      topics: ["Climate"],
+      citations: 500,
+    })
+
+    const [item] = buildFeedItems(
+      { profile: null, reactions: [] },
+      [paper],
+      "All",
+      "recommended",
+    )
+
+    expect(item?.rationale).toEqual(["Climate"])
+  })
+
+  it("explains the strongest affinity term that raised a paper's score", () => {
+    const papers = [
+      paperFixture("liked", "neural networks learn image representations"),
+      paperFixture("similar", "neural networks learn visual representations", {
+        topics: ["Climate"],
+        venue: "Different Journal",
+      }),
+      paperFixture("unrelated", "ocean currents alter coastal sediment", {
+        topics: ["Health"],
+      }),
+    ]
+
+    const items = buildFeedItems(
+      {
+        profile: null,
+        reactions: [{
+          paperId: "liked",
+          kind: "like",
+          active: true,
+          timestamp: Date.now(),
+        }],
+      },
+      papers,
+      "All",
+      "recommended",
+    )
+
+    expect(items.find((item) => item.paper.id === "similar")?.rationale)
+      .toEqual(["Similar to papers you liked or saved"])
+  })
+
   it("never resurfaces hidden papers in another ordering", () => {
     const target = curatedPapers[0]
     if (target === undefined) {
@@ -256,12 +303,6 @@ describe("paper recommendation", () => {
             active: true,
             timestamp: Date.now(),
             dwellMs: 12_000,
-          },
-          {
-            paperId: target.id,
-            kind: "open-site",
-            active: true,
-            timestamp: Date.now(),
           },
         ],
       },

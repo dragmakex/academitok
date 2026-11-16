@@ -4,7 +4,6 @@ import type {
   FeedSort,
   Institution,
   Paper,
-  ReaderProfile,
   ReaderState,
   Topic,
   TopicFilter,
@@ -364,39 +363,19 @@ function authorVenueWeights(
 }
 
 /**
- * Explains the strongest real signals.
+ * Explains the strongest personalized scoring terms.
  * @param paper - Candidate paper.
- * @param profile - Reader profile.
- * @param accessible - Whether the source is accessible.
- * @param matchedTopics - Explicitly matched beats.
- * @param signals - Prior engagement counts.
- * @param signals.dwellCount - Prior dwell count.
- * @param signals.openCount - Prior source-open count.
- * @returns At most two rationale lines.
+ * @param terms - Scoring contributions and their explanations.
+ * @returns At most two rationale lines, or the paper's beat.
  */
 function rationaleForPaper(
   paper: Paper,
-  profile: ReaderProfile | null,
-  accessible: boolean,
-  matchedTopics: ReadonlyArray<Topic>,
-  signals: {
-    readonly dwellCount: number
-    readonly openCount: number
-  },
+  terms: ReadonlyArray<readonly [contribution: number, rationale: string]>,
 ): ReadonlyArray<string> {
-  const reasons = [
-    ...(matchedTopics.length > 0
-      ? [`Matches ${matchedTopics.join(", ")}`]
-      : []),
-    ...(signals.dwellCount > 0 ? ["Held your attention"] : []),
-    ...(signals.openCount > 0 ? ["You opened the source"] : []),
-    ...(paper.access === "open" ? [`Free via ${paper.site}`] : []),
-    ...(paper.access === "institution" && accessible
-      ? [`Available through ${profile?.institution ?? "your institution"}`]
-      : []),
-    ...(paper.year >= 2024 ? ["Recent publication"] : []),
-    ...(paper.citations >= 100 ? ["Highly cited"] : []),
-  ]
+  const reasons = terms
+    .filter(([contribution]) => contribution > 0)
+    .sort(([left], [right]) => right - left)
+    .map(([, rationale]) => rationale)
 
   return (reasons.length > 0 ? reasons : [paper.topics[0] ?? paper.venue])
     .slice(0, 2)
@@ -458,8 +437,8 @@ export function buildFeedItems(
       const authorVenueAffinity = (
         authorAffinity + (authorVenue.venues.get(paper.venue) ?? 0)
       ) / 2
-      const score = matchedTopics.length * 2.6
-        + learnedBoost
+      const topicAffinity = matchedTopics.length * 2.6 + learnedBoost
+      const score = topicAffinity
         + 0.9 * contentAffinity
         + 0.5 * authorVenueAffinity
         + (paper.access === "open" ? 0.8 : accessible ? 0.3 : -0.6)
@@ -475,16 +454,25 @@ export function buildFeedItems(
       return {
         paper,
         score,
-        rationale: rationaleForPaper(
-          paper,
-          profile,
-          accessible,
-          matchedTopics,
-          {
-            dwellCount,
-            openCount,
-          },
-        ),
+        rationale: rationaleForPaper(paper, [
+          [
+            topicAffinity,
+            `Matches ${
+              paper
+                .topics
+                .filter((topic) =>
+                  interests.has(topic) || (weights.get(topic) ?? 0) > 0
+                )
+                .join(", ")
+            }`,
+          ],
+          [0.9 * contentAffinity, "Similar to papers you liked or saved"],
+          [0.5 * authorVenueAffinity, "Familiar authors or venue"],
+          [active.liked.has(paper.id) ? 4 : 0, "You liked this paper"],
+          [active.bookmarked.has(paper.id) ? 3.5 : 0, "You saved this paper"],
+          [Math.min(dwellCount, 3) * 1.4, "Held your attention"],
+          [Math.min(openCount, 2) * 1.8, "You opened the source"],
+        ]),
         accessible,
         liked: active.liked.has(paper.id),
         bookmarked: active.bookmarked.has(paper.id),
