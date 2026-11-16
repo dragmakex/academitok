@@ -118,3 +118,6 @@ workflows/*.db-wal
 
 # Local LAOS clone (keep out of git)
 laos/
+
+# Ralph loop runtime (logs, pid)
+.pi/loop/
