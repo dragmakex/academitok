@@ -6,6 +6,7 @@ import type {
   TopicFilter,
 } from "@/api/paper-schema"
 import { curatedPapers } from "@/data/papers"
+import { createSourceGuard } from "@/lib/source-guard"
 
 const baseUrl = "https://api.openalex.org/works"
 const cacheTtlMs = 24 * 60 * 60 * 1_000
@@ -17,6 +18,12 @@ const catalogCache = new Map<
   }
 >()
 let openAlexRequestQueue: Promise<void> = Promise.resolve()
+
+const catalogGuard = createSourceGuard((milliseconds) =>
+  new Promise((resolve) => {
+    setTimeout(resolve, milliseconds)
+  })
+)
 
 const topicSearchTerms: Record<TopicFilter, string> = {
   All: "research discovery scholarly paper",
@@ -218,14 +225,17 @@ function dedupeByTitle(papers: ReadonlyArray<Paper>): ReadonlyArray<Paper> {
 }
 
 /**
- * Fetches one bounded OpenAlex page while serializing requests to the host.
+ * Fetches one bounded OpenAlex page while serializing requests to the host and
+ * holding the retry schedule and circuit breaker from `sourceGuard`.
  * @param topic - Requested beat.
  * @param sort - Requested ordering.
+ * @param now - Boundary-supplied current time.
  * @returns Paper metadata.
  */
 async function requestOpenAlexPapers(
   topic: TopicFilter,
   sort: FeedSort,
+  now: number,
 ): Promise<ReadonlyArray<Paper>> {
   const params = new URLSearchParams({
     search: topicSearchTerms[topic],
@@ -243,21 +253,20 @@ async function requestOpenAlexPapers(
   }
 
   const request = openAlexRequestQueue.then(() =>
-    fetch(`${baseUrl}?${params.toString()}`, {
-      headers: { Accept: "application/json" },
-      signal: AbortSignal.timeout(10_000),
-    })
+    catalogGuard.run(
+      () =>
+        fetch(`${baseUrl}?${params.toString()}`, {
+          headers: { Accept: "application/json" },
+          signal: AbortSignal.timeout(10_000),
+        }),
+      now,
+    )
   )
   openAlexRequestQueue = request.then(
     () => undefined,
     () => undefined,
   )
   const response = await request
-
-  if (!response.ok) {
-    throw new Error(`OpenAlex request failed with status ${response.status}`)
-  }
-
   const json = await response.json() as OpenAlexResponse
   const mapped = (json.results ?? [])
     .map(mapWorkToPaper)
@@ -284,10 +293,12 @@ export function fetchOpenAlexPapers(
     return cached.promise
   }
 
-  const promise = requestOpenAlexPapers(topic, sort).catch((error: unknown) => {
-    catalogCache.delete(key)
-    throw error
-  })
+  const promise = requestOpenAlexPapers(topic, sort, now).catch(
+    (error: unknown) => {
+      catalogCache.delete(key)
+      throw error
+    },
+  )
   catalogCache.set(key, { expiresAt: now + cacheTtlMs, promise })
   return promise
 }

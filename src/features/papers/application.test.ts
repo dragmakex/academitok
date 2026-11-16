@@ -53,7 +53,11 @@ afterEach(async () => {
 })
 
 describe("papers application", () => {
-  it("keeps a persisted feed session clean across a stale cursor", async () => {
+  // The offline stub walks the source guard's retry ladder (1s + 2s) before the
+  // fallback, so this test needs more than the default budget.
+  it("keeps a persisted feed session clean across a stale cursor", {
+    timeout: 15_000,
+  }, async () => {
     const dataDir = await mkdtemp(join(tmpdir(), "academitok-feed-session-"))
     directories.push(dataDir)
     vi.stubGlobal("fetch", () => Promise.reject(new Error("offline")))
