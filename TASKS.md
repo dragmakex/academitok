@@ -53,7 +53,7 @@ write the conflict at the bottom instead of guessing.
       and nothing it does not; each row's key text comes from the same source as the handler; the
       sheet is reachable and dismissable by keyboard alone with focus returning to where it left.
       — `46418df`
-- [ ] **10. Source politeness guard ahead of the P2 sources.** SPEC §7 requires, for every source,
+- [x] **10. Source politeness guard ahead of the P2 sources.** SPEC §7 requires, for every source,
       exponential backoff (1s → 8s, 3 tries), a hard 10s timeout and a circuit break of 15 minutes
       after 3 consecutive errors. `src/lib/openalex.ts` has only the timeout and a serial request
       queue, so the first arXiv/Crossref client would be written against a client with no backoff
@@ -65,6 +65,7 @@ write the conflict at the bottom instead of guessing.
       attempts; three consecutive failures open the breaker so a call inside 15 minutes fails
       without a fetch, and a single success resets the streak; an upstream failure still falls back
       to the frozen seed edition; the guard is unit-tested with injected clock and fake request.
+      — `aca77a9`
 
 ---
 
