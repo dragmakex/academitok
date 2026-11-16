@@ -105,7 +105,7 @@ write the conflict at the bottom instead of guessing.
       reported, never silent; the helper is unit-tested.
       — `ad6ca64`
 
-- [ ] **11. Beat-mapping coverage on `feed.next`.** SPEC §17.2 keeps the fixed nine beats on the
+- [x] **11. Beat-mapping coverage on `feed.next`.** SPEC §17.2 keeps the fixed nine beats on the
       condition that source papers are mapped onto them, but `detectTopics` in
       `src/lib/openalex.ts` files every paper whose title and abstract carry no beat keyword under
       `Education`, so an unmapped paper spends an education slot in the ≤2-per-topic cap, earns
@@ -119,6 +119,7 @@ write the conflict at the bottom instead of guessing.
       every paper matches a beat reports 0; an empty page reports 0, never `NaN`; `detectTopics`
       still returns `["Education"]` for unmatched text; the helper is unit-tested; the ranked page
       for a fixed seed is identical before and after.
+      — `d7e214f`
 
 ---
 
