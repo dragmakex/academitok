@@ -105,6 +105,21 @@ write the conflict at the bottom instead of guessing.
       reported, never silent; the helper is unit-tested.
       — `ad6ca64`
 
+- [ ] **11. Beat-mapping coverage on `feed.next`.** SPEC §17.2 keeps the fixed nine beats on the
+      condition that source papers are mapped onto them, but `detectTopics` in
+      `src/lib/openalex.ts` files every paper whose title and abstract carry no beat keyword under
+      `Education`, so an unmapped paper spends an education slot in the ≤2-per-topic cap, earns
+      education affinity and counts as an education paper in the §8.4 topic mix — nobody can tell a
+      real education paper from a fallback, and the open decision has no number to revisit it with.
+      Move the beat keyword table and the keyword match into one pure exported `matchedTopics`
+      helper that returns the beats that actually matched, keep `detectTopics` as that helper plus
+      today's `Education` fallback, and report `unmatched_beat_count` on the existing `feed.next`
+      feed-health event beside `median_year`. Measurement only: ranking output must not change.
+      Accept: a page whose three papers match no beat, one beat and no beat reports 2; a page where
+      every paper matches a beat reports 0; an empty page reports 0, never `NaN`; `detectTopics`
+      still returns `["Education"]` for unmatched text; the helper is unit-tested; the ranked page
+      for a fixed seed is identical before and after.
+
 ---
 
 ## Blocked — needs a product decision
