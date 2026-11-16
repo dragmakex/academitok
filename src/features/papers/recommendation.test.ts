@@ -5,6 +5,7 @@ import {
   buildFeedItems,
   buildFeedPage,
   buildFeedStats,
+  savedPaperIds,
 } from "@/features/papers/recommendation"
 import { describe, expect, it } from "vitest"
 
@@ -272,6 +273,20 @@ describe("paper recommendation", () => {
     )
 
     expect(items.some((item) => item.paper.id === target.id)).toBe(true)
+  })
+
+  it("lists saved papers newest first and forgets unsaved ones", () => {
+    const ids = savedPaperIds({
+      ...baseState,
+      reactions: [
+        { paperId: "paper-1", kind: "bookmark", active: false, timestamp: 40 },
+        { paperId: "paper-2", kind: "bookmark", active: true, timestamp: 30 },
+        { paperId: "paper-3", kind: "bookmark", active: true, timestamp: 20 },
+        { paperId: "paper-1", kind: "bookmark", active: true, timestamp: 10 },
+      ],
+    })
+
+    expect(ids).toEqual(["paper-2", "paper-3"])
   })
 
   it("reports accessible paper counts", () => {

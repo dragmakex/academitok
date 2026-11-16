@@ -12,6 +12,40 @@ const actions = {
   onNext: vi.fn(),
 }
 
+test("compact clipping renders a list row with an unsave action", async () => {
+  const onUnsave = vi.fn()
+  await render(
+    <PaperSlide
+      variant="compact"
+      id="paper-2"
+      title="Saved Clipping"
+      authors="Ada Lovelace"
+      venue="Journal of Kept Papers"
+      year={2026}
+      abstract="A kept abstract supplied by the metadata source."
+      accessLabel="Open access"
+      siteLabel="OpenAlex"
+      citations={9}
+      readMinutes={3}
+      topics={["AI"]}
+      externalUrl="https://example.com/saved"
+      onUnsave={onUnsave}
+    />,
+  )
+
+  await expect
+    .element(page.getByRole("heading", { name: "Saved Clipping" }))
+    .toBeVisible()
+  await expect
+    .element(page.getByText(/Journal of Kept Papers/))
+    .toBeVisible()
+
+  await page
+    .getByRole("button", { name: "Remove Saved Clipping from saved" })
+    .click()
+  expect(onUnsave).toHaveBeenCalledOnce()
+})
+
 test("PaperSlide renders metadata and exposes accessible actions", async () => {
   await render(
     <PaperSlide

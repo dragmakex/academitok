@@ -20,7 +20,7 @@ type ActionHandlers = {
   readonly onNext: () => void
 }
 
-type PaperSlideProps = {
+type PaperMeta = {
   readonly id: string
   readonly title: string
   readonly authors: string
@@ -31,20 +31,105 @@ type PaperSlideProps = {
   readonly siteLabel: string
   readonly citations: number
   readonly readMinutes: number
-  readonly rationale: ReadonlyArray<string>
   readonly topics: ReadonlyArray<string>
+  readonly externalUrl: string | undefined
+}
+
+type DeckPaperSlideProps = PaperMeta & {
+  readonly variant?: "deck" | undefined
+  readonly rationale: ReadonlyArray<string>
   readonly liked: boolean
   readonly bookmarked: boolean
-  readonly externalUrl: string | undefined
   readonly actions: ActionHandlers
   readonly position: number
   readonly total: number
   readonly skeleton: boolean
 }
 
+type CompactPaperSlideProps = PaperMeta & {
+  readonly variant: "compact"
+  readonly onUnsave: () => void
+}
+
+type PaperSlideProps = DeckPaperSlideProps | CompactPaperSlideProps
+
 export const PaperSlide = forwardRef<HTMLElement, PaperSlideProps>(
-  function PaperSlide(
-    {
+  function PaperSlide(props, ref) {
+    const headlineId = `paper-headline-${
+      props.id.replaceAll(/[^a-zA-Z0-9_-]/g, "-")
+    }`
+
+    if (props.variant === "compact") {
+      const {
+        abstract,
+        accessLabel,
+        authors,
+        citations,
+        externalUrl,
+        onUnsave,
+        readMinutes,
+        siteLabel,
+        title,
+        topics,
+        venue,
+        year,
+      } = props
+
+      return (
+        <article
+          ref={ref}
+          aria-labelledby={headlineId}
+          className="border-t border-rule bg-paper px-[clamp(1.25rem,5vw,3rem)] py-m text-ink first:border-t-0"
+        >
+          <p className="m-0 font-label text-[0.68rem] uppercase tracking-[0.18em] text-stamp">
+            {topics[0] ?? "Research"}
+          </p>
+          <h2
+            id={headlineId}
+            className="mt-xs m-0 font-display text-[clamp(1.35rem,3vw,1.85rem)] leading-[1.08] font-bold tracking-[-0.02em]"
+          >
+            {title}
+          </h2>
+          <p className="mt-s m-0 line-clamp-2 max-w-[60ch] font-body text-[0.95rem] leading-[1.45]">
+            {abstract}
+          </p>
+          <div className="mt-s flex flex-wrap items-center justify-between gap-s border-t border-rule pt-xs">
+            <p className="m-0 font-body text-[0.8rem] text-ink-muted">
+              {authors} · {venue} · {year}
+            </p>
+            <div className="flex flex-wrap items-center gap-m">
+              <span className="font-label text-[0.62rem] uppercase tracking-[0.12em] text-ink-muted">
+                {siteLabel} · {citations} citations · {readMinutes} min ·{" "}
+                {accessLabel}
+              </span>
+              {externalUrl === undefined
+                ? null
+                : (
+                  <a
+                    className="font-label text-[0.62rem] uppercase tracking-[0.12em] text-ink-muted hover:text-stamp focus-visible:outline-2 focus-visible:outline-focus-ring"
+                    href={externalUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label={`Open source for ${title} in a new tab`}
+                  >
+                    Source
+                  </a>
+                )}
+              <button
+                className="border-0 bg-transparent p-0 font-label text-[0.62rem] uppercase tracking-[0.12em] text-stamp cursor-pointer focus-visible:outline-2 focus-visible:outline-focus-ring aria-pressed:text-ink-muted"
+                type="button"
+                onClick={onUnsave}
+                aria-label={`Remove ${title} from saved`}
+              >
+                Remove
+              </button>
+            </div>
+          </div>
+        </article>
+      )
+    }
+
+    const {
       abstract,
       accessLabel,
       actions,
@@ -52,7 +137,6 @@ export const PaperSlide = forwardRef<HTMLElement, PaperSlideProps>(
       bookmarked,
       citations,
       externalUrl,
-      id,
       liked,
       position,
       rationale,
@@ -64,10 +148,7 @@ export const PaperSlide = forwardRef<HTMLElement, PaperSlideProps>(
       total,
       venue,
       year,
-    },
-    ref,
-  ) {
-    const headlineId = `paper-headline-${id.replaceAll(/[^a-zA-Z0-9_-]/g, "-")}`
+    } = props
 
     return (
       <article

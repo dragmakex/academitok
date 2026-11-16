@@ -1,8 +1,12 @@
 // @vitest-environment node
 
 import type { FeedRequest } from "@/api/paper-schema"
+import { curatedPapers } from "@/data/papers"
 import { ReaderStateRepository } from "@/db/reader-state-repository"
-import { getPaperFeedSnapshot } from "@/features/papers/application"
+import {
+  getPaperFeedSnapshot,
+  getSavedPapers,
+} from "@/features/papers/application"
 import { recordReaderReaction } from "@/features/papers/reactions"
 import * as ConfigProvider from "effect/ConfigProvider"
 import * as Effect from "effect/Effect"
@@ -79,6 +83,39 @@ describe("papers application", () => {
       fresh.items.some((item) => firstIds.includes(item.paper.id)),
     )
       .toBe(true)
+  })
+
+  it("files bookmarked papers in the saved list and drops them on unsave", async () => {
+    const dataDir = await mkdtemp(join(tmpdir(), "academitok-saved-"))
+    directories.push(dataDir)
+    vi.stubGlobal("fetch", () => Promise.reject(new Error("offline")))
+    const target = curatedPapers[0]
+    if (target === undefined) {
+      throw new Error("missing curated paper fixture")
+    }
+
+    const [afterSave, afterUnsave, empty] = await runFeed(
+      dataDir,
+      Effect.gen(function*() {
+        const repository = yield* ReaderStateRepository
+        yield* repository.onboard({
+          keptPaperIds: [],
+          rejectedPaperIds: [],
+          skipped: true,
+        })
+        yield* getPaperFeedSnapshot(requestFor("saved-a"))
+        yield* repository.react({ paperId: target.id, kind: "bookmark" })
+        const saved = yield* getSavedPapers
+        yield* repository.react({ paperId: target.id, kind: "bookmark" })
+        const unsaved = yield* getSavedPapers
+        return [saved, unsaved, yield* getSavedPapers] as const
+      }),
+    )
+
+    expect(afterSave.items.map((item) => item.paper.id)).toEqual([target.id])
+    expect(afterSave.items[0]?.bookmarked).toBe(true)
+    expect(afterUnsave.items).toHaveLength(0)
+    expect(empty.items).toHaveLength(0)
   })
 
   it("toggles desk reactions but keeps open-site as an append-only signal", () => {

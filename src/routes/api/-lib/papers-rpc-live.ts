@@ -7,6 +7,7 @@ import type {
 } from "@/api/paper-schema"
 import {
   getPaperFeedSnapshot,
+  getSavedPapers,
   onboardReader,
   reactToPaper,
   saveReaderProfile,
@@ -24,6 +25,7 @@ export const createPaperRpcHandlers = Effect.succeed({
     reactToPaper(input),
   papers_trackViews: ({ inputs }: { inputs: TrackPaperViewsInput }) =>
     trackPaperViews(inputs),
+  papers_savedList: () => getSavedPapers,
   profile_onboard: ({ input }: { input: OnboardProfileInput }) =>
     onboardReader(input),
 })

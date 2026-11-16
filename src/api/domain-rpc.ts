@@ -8,6 +8,7 @@ import * as Schema from "effect/Schema"
 import * as Rpc from "effect/unstable/rpc/Rpc"
 import * as RpcGroup from "effect/unstable/rpc/RpcGroup"
 import {
+  FeedPage,
   FeedRequest,
   FeedSnapshot,
   OnboardingResult,
@@ -34,6 +35,9 @@ export class PapersRpc extends RpcGroup
     Rpc.make("trackViews", {
       success: Schema.Void,
       payload: { inputs: TrackPaperViewsInput },
+    }),
+    Rpc.make("savedList", {
+      success: FeedPage,
     }),
   )
   .prefix("papers_")

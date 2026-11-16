@@ -240,6 +240,30 @@ function activeState(state: ReaderState) {
 }
 
 /**
+ * Lists saved papers, most recently saved first.
+ * @param state - Reader state.
+ * @returns Paper IDs with an active bookmark reaction.
+ */
+export function savedPaperIds(state: ReaderState): ReadonlyArray<string> {
+  const bookmarked = activeState(state).bookmarked
+  const savedAt = new Map<string, number>()
+
+  for (const reaction of state.reactions) {
+    if (reaction.kind !== "bookmark" || !bookmarked.has(reaction.paperId)) {
+      continue
+    }
+    savedAt.set(
+      reaction.paperId,
+      Math.max(savedAt.get(reaction.paperId) ?? 0, reaction.timestamp),
+    )
+  }
+
+  return [...bookmarked].sort((left, right) =>
+    (savedAt.get(right) ?? 0) - (savedAt.get(left) ?? 0)
+  )
+}
+
+/**
  * Counts engagement signals.
  * @param state - Reader state.
  * @returns Signal counts by paper.

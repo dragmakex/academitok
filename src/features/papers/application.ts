@@ -12,6 +12,7 @@ import {
   buildFeedItems,
   buildFeedPage,
   buildFeedStats,
+  savedPaperIds,
 } from "@/features/papers/recommendation"
 import { fetchOpenAlexPapers } from "@/lib/openalex"
 import * as Clock from "effect/Clock"
@@ -48,6 +49,8 @@ export const getPaperFeedSnapshot = (request: FeedRequest) =>
         request.query.topic,
         request.query.sort,
       )
+      // The pool is what lets /saved and permalinks resolve papers seen earlier.
+      yield* repository.savePapers(papers)
       const ranked = buildFeedItems(
         state,
         papers,
@@ -98,6 +101,36 @@ export const getPaperFeedSnapshot = (request: FeedRequest) =>
       }
     })
     .pipe(Effect.withSpan("feed.next"))
+
+export const getSavedPapers = Effect
+  .gen(function*() {
+    const repository = yield* ReaderStateRepository
+    const state = yield* repository.load
+    const savedIds = savedPaperIds(state)
+    if (savedIds.length === 0) {
+      return { items: [], nextCursor: null, exploration: 0 }
+    }
+
+    const catalog = yield* resolveCatalog("All", "latest")
+    const pooled = yield* repository.papersByIds(
+      savedIds.filter((id) => !catalog.some((paper) => paper.id === id)),
+    )
+    const items = new Map(
+      buildFeedItems(state, [...catalog, ...pooled], "All", "latest").map(
+        (item) => [item.paper.id, item] as const,
+      ),
+    )
+
+    return {
+      items: savedIds.flatMap((id) => {
+        const item = items.get(id)
+        return item === undefined ? [] : [item]
+      }),
+      nextCursor: null,
+      exploration: 0,
+    }
+  })
+  .pipe(Effect.withSpan("saved.list"))
 
 export const saveReaderProfile = (
   input: SaveProfileInput,

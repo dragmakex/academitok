@@ -1,5 +1,6 @@
 import { ApiClient } from "@/api/api-client"
 import {
+  FeedPage as FeedPageSchema,
   type FeedQuery,
   type FeedRequest,
   FeedSnapshot,
@@ -29,6 +30,11 @@ const FeedSnapshotAsyncResultSchema = AsyncResult.Schema({
   error: RpcClientError.RpcClientError,
 })
 
+const FeedPageAsyncResultSchema = AsyncResult.Schema({
+  success: FeedPageSchema,
+  error: RpcClientError.RpcClientError,
+})
+
 /** One feed session per page load; the server persists its seen papers. */
 const feedSessionId = globalThis.crypto.randomUUID()
 
@@ -49,6 +55,7 @@ class Api extends Context.Service<Api>()("@app/index/Api", {
       react: (input: ReactToPaperInput) => rpc.papers_react({ input }),
       trackViews: (inputs: ReadonlyArray<TrackPaperViewInput>) =>
         rpc.papers_trackViews({ inputs }),
+      savedList: () => rpc.papers_savedList(),
     } as const
   }),
 }) {
@@ -105,6 +112,34 @@ const dashboardSnapshotRemoteAtom = runtime
 export const dashboardSnapshotAtom = Object.assign(
   makeWritableAsyncAtom(dashboardSnapshotRemoteAtom),
   { remote: dashboardSnapshotRemoteAtom },
+)
+
+const savedPageRemoteAtom = runtime
+  .atom(Effect.gen(function*() {
+    const api = yield* Api
+    return yield* api.savedList()
+  }))
+  .pipe(
+    serializable({
+      key: "@app/saved/clippings",
+      schema: Schema.toCodecJson(FeedPageAsyncResultSchema),
+    }),
+  )
+
+export const savedPageAtom = Object.assign(
+  makeWritableAsyncAtom(savedPageRemoteAtom),
+  { remote: savedPageRemoteAtom },
+)
+
+export const removeSavedPaperAtom = runtime.fn<string>()(
+  Effect.fnUntraced(function*(paperId, get) {
+    const api = yield* Api
+    const result = yield* api.react({ kind: "bookmark", paperId })
+    trackPaperReactionEvent({ kind: "bookmark", paperId }, result.active)
+    const page = yield* api.savedList()
+    get.set(savedPageAtom, { _tag: "Replace", value: page })
+    return page
+  }),
 )
 
 const replaceDashboardSnapshot = (
