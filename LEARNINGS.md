@@ -25,3 +25,19 @@ the ordering. Also worth knowing before copying them: X lets a 30-second dwell
 (0.05 + 0.225) outrank a link click (0.2), which is the opposite of what a reader
 asked for here — so the ladder caps passive dwell below the price of opening the
 paper and says so in the source.
+A CSS `filter: blur()` on a full-bleed background div fades its own edges, so
+pair it with a slight `scale(105%)`; otherwise the viewport shows a pale frame on
+every side that reads as a bug.
+
+Blur radius is a budget, not a taste: features smaller than roughly twice the
+radius vanish. At 12px the drawn broadsheet became flat grey, at 4–5px the column
+gutters, headline bars and halftone block survive as structure. Choose the radius
+from the smallest feature you need the reader to feel.
+
+Text columns inside a link are legal and useful: `md:columns-2` on a paragraph
+inside `<a>` gives a real broadsheet measure without splitting the anchor.
+
+Onboarding in this app is three pages of five picks and only submits on the third
+page's "Print edition" button — browser automation that clicks "Next" twice and
+stops sits forever on the gate.
+

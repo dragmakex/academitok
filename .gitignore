@@ -121,3 +121,6 @@ laos/
 
 # Ralph loop runtime (logs, pid)
 .pi/loop/
+
+# vitest-browser failure screenshots
+src/component/__screenshots__/
