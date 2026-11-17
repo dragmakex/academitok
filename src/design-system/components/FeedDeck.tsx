@@ -12,7 +12,7 @@ export const FeedDeck = forwardRef<HTMLElement, FeedDeckProps>(
         {...props}
         ref={ref}
         aria-label="Academic paper feed"
-        className="h-[100dvh] overflow-y-auto overscroll-y-contain bg-paper-deep snap-y snap-mandatory focus:outline-none"
+        className="h-[100dvh] overflow-y-auto overscroll-y-contain bg-paper-deep snap-y snap-mandatory pl-[env(safe-area-inset-left)] pr-[env(safe-area-inset-right)] focus:outline-none"
         tabIndex={0}
       >
         <div className="sr-only" aria-live="polite" aria-atomic="true">

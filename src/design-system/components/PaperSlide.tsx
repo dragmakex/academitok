@@ -167,7 +167,7 @@ export const PaperSlide = forwardRef<HTMLElement, PaperSlideProps>(
           )
           : (
             <>
-              <div className="flex min-w-0 flex-col px-[clamp(1.25rem,5vw,4rem)] py-[clamp(1rem,3vh,2rem)]">
+              <div className="flex min-w-0 flex-col px-[clamp(1.25rem,5vw,4rem)] py-[clamp(1rem,3vh,2rem)] pt-[max(clamp(1rem,3vh,2rem),env(safe-area-inset-top))]">
                 <header className="flex items-center justify-between gap-m border-b border-ink pb-xs font-label text-[0.62rem] uppercase tracking-[0.16em] text-ink-muted sm:text-[0.68rem]">
                   <strong className="text-ink">
                     AcademiTok
@@ -217,7 +217,7 @@ export const PaperSlide = forwardRef<HTMLElement, PaperSlideProps>(
                   </div>
                 </div>
 
-                <footer className="flex items-center justify-between border-t border-ink pt-xs font-label text-[0.62rem] uppercase tracking-[0.14em] text-ink-muted">
+                <footer className="flex items-center justify-between border-t border-ink pt-xs pb-[env(safe-area-inset-bottom)] font-label text-[0.62rem] uppercase tracking-[0.14em] text-ink-muted">
                   <span>
                     {position} of {total}
                   </span>
@@ -230,7 +230,7 @@ export const PaperSlide = forwardRef<HTMLElement, PaperSlideProps>(
               <div
                 role="group"
                 aria-label="Paper actions"
-                className="flex h-full flex-col border-l border-rule bg-paper-deep"
+                className="flex h-full flex-col border-l border-rule bg-paper-deep pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)]"
               >
                 <button
                   className={railButtonClass}

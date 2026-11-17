@@ -16,7 +16,7 @@ export const rootHead = () => ({
     },
     {
       name: "viewport",
-      content: "width=device-width, initial-scale=1",
+      content: "width=device-width, initial-scale=1, viewport-fit=cover",
     },
     {
       title: "AcademiTok Gazette",
