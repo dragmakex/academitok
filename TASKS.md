@@ -583,7 +583,7 @@ write the conflict at the bottom instead of guessing.
       fixed-seed page is identical; the helper is unit-tested and `bun run validate` is green.
       — `4bf1b6a`
 
-- [ ] **36. A name and a description for every surface.** SPEC §16 P3's native shell and the P2
+- [x] **36. A name and a description for every surface.** SPEC §16 P3's native shell and the P2
       permalink exist so a clipping can leave the deck, but no surface answers "what is this link":
       `rootHead()` in `src/routes/__root.tsx` carries one static `AcademiTok Gazette` title and no
       `description`, `src/routes/index.tsx` and `src/routes/saved.tsx` set no `head` at all, and
@@ -605,6 +605,7 @@ write the conflict at the bottom instead of guessing.
       `AcademiTok Gazette` title; the helper is unit-tested and the three route heads are asserted
       from the route modules with router and server modules mocked the way `__root.test.tsx` already
       mocks them.
+      — `aa4516e`
 
 ---
 
