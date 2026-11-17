@@ -8,43 +8,17 @@ import type {
   Topic,
   TopicFilter,
 } from "@/api/paper-schema"
+import {
+  dwellSignal,
+  engagementWeights,
+  reactionSignal,
+} from "@/features/papers/engagement"
 
 /** Papers viewed inside this window are repeats (SPEC §8.1 step 5). */
 const repeatWindowMs = 14 * 86_400_000
 
 /** Share of the ranked list eligible to refill an exhausted page. */
 const repeatShare = 0.03
-
-const reactionWeights = {
-  view: 1.2,
-  like: 4.5,
-  bookmark: 3.8,
-  hide: -5,
-  "open-site": 3.4,
-  "onboard-keep": 4.5,
-  "onboard-reject": -5,
-} as const
-
-/**
- * Buckets dwell so brief skips reduce affinity and long reads cannot dominate it.
- * @param dwellMs - Measured visible time.
- * @returns Bounded dwell signal weight.
- */
-function dwellWeight(dwellMs: number): number {
-  if (dwellMs < 1_500) {
-    return -0.6
-  }
-  if (dwellMs < 4_000) {
-    return 1.2
-  }
-  if (dwellMs < 10_000) {
-    return 3.2
-  }
-  if (dwellMs < 30_000) {
-    return 5
-  }
-  return 6
-}
 
 /**
  * Identifies toggle reactions.
@@ -270,9 +244,9 @@ export function savedPaperIds(state: ReaderState): ReadonlyArray<string> {
 }
 
 /**
- * Counts engagement signals.
+ * Counts engagement signals, summing dwell strength rather than its count.
  * @param state - Reader state.
- * @returns Signal counts by paper.
+ * @returns Signal totals by paper.
  */
 function paperSignals(state: ReaderState) {
   const views = new Map<string, number>()
@@ -284,10 +258,17 @@ function paperSignals(state: ReaderState) {
       continue
     }
 
+    if (reaction.kind === "dwell") {
+      dwells.set(
+        reaction.paperId,
+        (dwells.get(reaction.paperId) ?? 0)
+          + dwellSignal(reaction.dwellMs ?? 0),
+      )
+      continue
+    }
+
     const target = reaction.kind === "view"
       ? views
-      : reaction.kind === "dwell"
-      ? dwells
       : reaction.kind === "open-site"
       ? opens
       : undefined
@@ -316,6 +297,12 @@ function topicWeights(
   const now = Date.now()
 
   for (const reaction of state.reactions) {
+    // A dislike is a verdict on one paper, not on its beat: hide and reject
+    // scores are large by design, so letting them into a topic bucket would
+    // bury an entire field after one skip.
+    if (reaction.kind === "hide" || reaction.kind === "onboard-reject") {
+      continue
+    }
     if (isToggleReactionKind(reaction.kind)) {
       const key = `${reaction.kind}:${reaction.paperId}`
       if (resolvedToggles.has(key)) {
@@ -335,8 +322,8 @@ function topicWeights(
     const ageDays = Math.max(1, (now - reaction.timestamp) / 86_400_000)
     const decay = 1 / Math.min(12, ageDays)
     const signalWeight = reaction.kind === "dwell"
-      ? dwellWeight(reaction.dwellMs ?? 0)
-      : reactionWeights[reaction.kind]
+      ? dwellSignal(reaction.dwellMs ?? 0)
+      : reactionSignal(reaction.kind)
     const weight = signalWeight * decay / Math.max(1, paper.topics.length)
 
     for (const topic of paper.topics) {
@@ -381,7 +368,7 @@ function authorVenueWeights(
       continue
     }
     const ageDays = Math.max(1, (now - reaction.timestamp) / 86_400_000)
-    const weight = reactionWeights[reaction.kind]
+    const weight = reactionSignal(reaction.kind)
       / Math.min(12, ageDays)
     for (const author of paper.authors) {
       authors.set(author, (authors.get(author) ?? 0) + weight)
@@ -390,25 +377,6 @@ function authorVenueWeights(
   }
 
   return { authors, venues }
-}
-
-/**
- * Explains the strongest scoring terms that fired.
- * @param paper - Candidate paper.
- * @param terms - Scoring contributions and their explanations.
- * @returns At most two rationale lines, or the paper's beat.
- */
-function rationaleForPaper(
-  paper: Paper,
-  terms: ReadonlyArray<readonly [contribution: number, rationale: string]>,
-): ReadonlyArray<string> {
-  const reasons = terms
-    .filter(([contribution]) => contribution > 0)
-    .sort(([left], [right]) => right - left)
-    .map(([, rationale]) => rationale)
-
-  return (reasons.length > 0 ? reasons : [paper.topics[0] ?? paper.venue])
-    .slice(0, 2)
 }
 
 /**
@@ -450,7 +418,7 @@ export function buildFeedItems(
       const accessible = institutionCanAccess(institution, paper)
       const matchedTopics = paper.topics.filter((topic) => interests.has(topic))
       const viewCount = signals.views.get(paper.id) ?? 0
-      const dwellCount = signals.dwells.get(paper.id) ?? 0
+      const dwellTotal = signals.dwells.get(paper.id) ?? 0
       const openCount = signals.opens.get(paper.id) ?? 0
       const learnedBoost = paper.topics.reduce(
         (sum, topic) => sum + (weights.get(topic) ?? 0),
@@ -472,38 +440,18 @@ export function buildFeedItems(
         + 0.9 * contentAffinity
         + 0.5 * authorVenueAffinity
         + (paper.access === "open" ? 0.8 : accessible ? 0.3 : -0.6)
-        + (active.hidden.has(paper.id) ? -20 : 0)
-        + (active.liked.has(paper.id) ? 4 : 0)
-        + (active.bookmarked.has(paper.id) ? 3.5 : 0)
-        + Math.min(viewCount, 3) * 0.4
-        + Math.min(dwellCount, 3) * 1.4
-        + Math.min(openCount, 2) * 1.8
+        + (active.hidden.has(paper.id) ? engagementWeights.hide : 0)
+        + (active.liked.has(paper.id) ? engagementWeights.like : 0)
+        + (active.bookmarked.has(paper.id) ? engagementWeights.bookmark : 0)
+        + Math.min(viewCount, 3) * engagementWeights.view
+        + Math.min(dwellTotal, engagementWeights.readThrough * 2)
+        + Math.min(openCount, 2) * engagementWeights.openSite
         + recencyBoost(paper.year)
         + citationBoost(paper.citations)
 
       return {
         paper,
         score,
-        rationale: rationaleForPaper(paper, [
-          [
-            topicAffinity,
-            `Matches ${
-              paper
-                .topics
-                .filter((topic) =>
-                  interests.has(topic) || (weights.get(topic) ?? 0) > 0
-                )
-                .join(", ")
-            }`,
-          ],
-          [0.9 * contentAffinity, "Similar to papers you liked or saved"],
-          [0.5 * authorVenueAffinity, "Familiar authors or venue"],
-          [active.liked.has(paper.id) ? 4 : 0, "You liked this paper"],
-          [active.bookmarked.has(paper.id) ? 3.5 : 0, "You saved this paper"],
-          [Math.min(dwellCount, 3) * 1.4, "Held your attention"],
-          [Math.min(openCount, 2) * 1.8, "You opened the source"],
-          [citationBoost(paper.citations), `Cited ${paper.citations} times`],
-        ]),
         accessible,
         liked: active.liked.has(paper.id),
         bookmarked: active.bookmarked.has(paper.id),

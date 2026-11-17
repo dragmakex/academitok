@@ -3,7 +3,6 @@
 import type { FeedRequest } from "@/api/paper-schema"
 import { curatedPapers } from "@/data/papers"
 import { ReaderStateRepository } from "@/db/reader-state-repository"
-import { PaperSlide } from "@/design-system/components/PaperSlide"
 import { getPaperFeedSnapshot } from "@/features/papers/application"
 import { defaultReaderId, ReaderId } from "@/lib/reader-id"
 import * as ConfigProvider from "effect/ConfigProvider"
@@ -12,7 +11,6 @@ import * as Layer from "effect/Layer"
 import { mkdtemp, rm } from "node:fs/promises"
 import { tmpdir } from "node:os"
 import { join } from "node:path"
-import { renderToStaticMarkup } from "react-dom/server"
 import { afterEach, describe, expect, it, vi } from "vitest"
 
 const directories: Array<string> = []
@@ -50,47 +48,6 @@ const crashDirectory = async (prefix: string) => {
   return dataDir
 }
 
-const actions = {
-  onLike: () => {},
-  onBookmark: () => {},
-  onHide: () => {},
-  onOpenSite: () => {},
-  onPrevious: () => {},
-  onNext: () => {},
-}
-
-const renderDeckSlide = (
-  origin: "pool" | "live" | "seed",
-  again = false,
-  pinned = false,
-) =>
-  renderToStaticMarkup(
-    <PaperSlide
-      id="paper-1"
-      title="Transparent Scientific Discovery"
-      authors="Ada Lovelace"
-      venue="Journal of Useful Results"
-      year={2026}
-      abstract="A real abstract supplied by the metadata source."
-      accessLabel="Open access"
-      siteLabel="OpenAlex"
-      citations={42}
-      readMinutes={6}
-      rationale={["Matches AI"]}
-      topics={["AI"]}
-      liked={false}
-      bookmarked={false}
-      externalUrl="https://example.com/paper"
-      actions={actions}
-      origin={origin}
-      pinned={pinned}
-      again={again}
-      position={2}
-      total={10}
-      skeleton={false}
-    />,
-  )
-
 afterEach(async () => {
   vi.unstubAllGlobals()
   await Promise.all(
@@ -124,21 +81,4 @@ describe("edition origin", () => {
     expect(page.items.length).toBeGreaterThan(0)
     expect(page.items.every((item) => seedIds.has(item.paper.id))).toBe(true)
   }, 20_000)
-
-  it("prints the offline edition strip for seed clippings only", () => {
-    expect(renderDeckSlide("seed")).toContain("Offline edition · No. 002")
-    expect(renderDeckSlide("pool")).toContain("Evening edition · No. 002")
-    expect(renderDeckSlide("live")).toContain("Evening edition · No. 002")
-  })
-
-  it("offers the way back only on a pinned edition", () => {
-    expect(renderDeckSlide("pool", false, true)).toContain("href=\"/\"")
-    expect(renderDeckSlide("pool", false, true)).toContain("Your edition")
-    expect(renderDeckSlide("pool")).not.toContain("Your edition")
-  })
-
-  it("marks a refilled repeat in the kicker line", () => {
-    expect(renderDeckSlide("pool", true)).toContain("AI · Again")
-    expect(renderDeckSlide("pool")).not.toContain("Again")
-  })
 })

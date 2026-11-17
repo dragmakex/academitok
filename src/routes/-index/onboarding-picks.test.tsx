@@ -8,7 +8,6 @@ import { page } from "vitest/browser"
 const candidates: ReadonlyArray<FeedItem> = curatedPapers.map((paper) => ({
   paper,
   score: 0,
-  rationale: [],
   accessible: true,
   liked: false,
   bookmarked: false,

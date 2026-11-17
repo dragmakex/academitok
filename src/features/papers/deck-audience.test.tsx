@@ -2,7 +2,6 @@
 
 import type { FeedRequest } from "@/api/paper-schema"
 import { ReaderStateRepository } from "@/db/reader-state-repository"
-import { PaperSlide } from "@/design-system/components/PaperSlide"
 import { getPaperFeedSnapshot } from "@/features/papers/application"
 import { ReaderId } from "@/lib/reader-id"
 import * as ConfigProvider from "effect/ConfigProvider"
@@ -11,7 +10,6 @@ import * as Layer from "effect/Layer"
 import { mkdtemp, rm } from "node:fs/promises"
 import { tmpdir } from "node:os"
 import { join } from "node:path"
-import { renderToStaticMarkup } from "react-dom/server"
 import { afterEach, describe, expect, it, vi } from "vitest"
 
 const directories: Array<string> = []
@@ -66,48 +64,6 @@ const requestFor = (sessionId: string): FeedRequest => ({
   sessionId,
 })
 
-const actions = {
-  onLike: () => {},
-  onBookmark: () => {},
-  onHide: () => {},
-  onOpenSite: () => {},
-  onPrevious: () => {},
-  onNext: () => {},
-}
-
-const renderDeck = (
-  alsoKeptBy: number | undefined,
-  alsoLikedBy: number | undefined,
-) =>
-  renderToStaticMarkup(
-    <PaperSlide
-      id="paper-1"
-      title="Notes on the Analytical Engine"
-      authors="Ada Lovelace"
-      venue="Scientific Memoirs"
-      year={1843}
-      abstract="A kept abstract supplied by the metadata source."
-      accessLabel="Open access"
-      siteLabel="OpenAlex"
-      citations={9}
-      readMinutes={3}
-      rationale={["Matches AI"]}
-      topics={["AI"]}
-      liked={false}
-      bookmarked={false}
-      externalUrl="https://example.com/notes"
-      actions={actions}
-      origin="pool"
-      pinned={false}
-      alsoKeptBy={alsoKeptBy}
-      alsoLikedBy={alsoLikedBy}
-      again={false}
-      position={2}
-      total={10}
-      skeleton={false}
-    />,
-  )
-
 afterEach(async () => {
   vi.unstubAllGlobals()
   await Promise.all(
@@ -117,7 +73,7 @@ afterEach(async () => {
   )
 })
 
-describe("deck audience", () => {
+describe("feed audience", () => {
   it("reports other readers' filings on the served page", async () => {
     const dataDir = await crashDirectory("academitok-deck-audience-")
     vi.stubGlobal("fetch", vi.fn(() => Promise.reject(new Error("offline"))))
@@ -206,27 +162,4 @@ describe("deck audience", () => {
 
     expect(undone.alsoLikedBy[paperId]).toBe(1)
   }, 30_000)
-})
-
-describe("deck clipping audience line", () => {
-  it("prints how many other readers keep the clipping", () => {
-    expect(renderDeck(2, undefined)).toContain("Also kept by 2 readers")
-    expect(renderDeck(1, undefined)).toContain("Also kept by 1 reader")
-  })
-
-  it("omits the clause when nobody else filed it", () => {
-    expect(renderDeck(0, undefined)).not.toContain("Also kept by")
-    expect(renderDeck(undefined, undefined)).not.toContain("Also kept by")
-  })
-
-  it("prints how many other readers liked the clipping", () => {
-    expect(renderDeck(undefined, 2)).toContain("Also liked by 2 readers")
-    expect(renderDeck(undefined, 1)).toContain("Also liked by 1 reader")
-    expect(renderDeck(2, 4)).toContain("Also liked by 4 readers")
-  })
-
-  it("omits the like clause when nobody else liked it", () => {
-    expect(renderDeck(2, 0)).not.toContain("Also liked by")
-    expect(renderDeck(2, undefined)).not.toContain("Also liked by")
-  })
 })

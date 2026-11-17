@@ -211,11 +211,33 @@ score(p) = 1.0·topicAffinity(p)      // decayed reaction weight per topic, see 
          + 0.2·accessBonus(p)        // open access and institution-entitled
 ```
 
-`topicAffinity` keeps the prototype's formula: `Σ kindWeight × 1/min(12, ageDays)` per topic,
-with `view 1.2, dwell 3.2, like 4.5, bookmark 3.8, open-site 3.4, skip −0.6, hide −5`.
-Dwell is bucketed (1.5s / 4s / 10s / 30s → 1.2 / 3.2 / 5 / 6) so one number never dominates.
-A like on a 5-topic paper does not dump 4.5 into all five: weight splits by topic rarity
-(`1/df(topic)` normalised).
+`topicAffinity` keeps the formula `Σ signalWeight × 1/min(12, ageDays)` per topic. Signal
+weights come from the engagement ladder in `src/features/papers/engagement.ts`, calibrated
+against X's open-sourced For You ranker (`xai-org/x-algorithm`, `home-mixer/params/param.rs`):
+like 0.708, open-link 0.2, dwell 0.05, continuous dwell 0.0075/s, click-through dwell 0.385/s,
+not-dwelled −0.02, not-interested −53.07. X multiplies predicted probabilities; this feed
+multiplies observed signal strength, so only the ratios carry over:
+
+| Signal            | Weight       | Reads as                               |
+| ----------------- | ------------ | -------------------------------------- |
+| away read ≥ 5 min | 28           | Highest: opened the paper and read it  |
+| away read 1 min   | 14           | Above a like                           |
+| like              | 10           | Explicit approval                      |
+| save              | 7            | Deferred intent, below a like          |
+| source open       | 2.8          | Intent to read, above all passive time |
+| dwell 30s+        | 1.6          | Attention, capped below an open        |
+| dwell 1.5s+       | 0.7 + 0.03/s | Attention                              |
+| view              | 0.3          | Impression; breaks ties only           |
+| skip < 1.5s       | −0.4         | Instant rejection (X: not-dwelled)     |
+| hide              | −30          | Explicit rejection                     |
+| onboarding reject | −30          | Explicit rejection                     |
+
+Dwell above 60s is reported as a dwell impression and is read as away time at the source, so
+click-through reading outranks every on-page signal. Deliberate deviation from X: X lets a
+30s dwell (0.275) edge out a link click (0.2); here a passive read never outbids opening the
+paper. Hide and onboarding-reject stay out of `topicAffinity` — one rejection must not bury a
+whole field. A like on a 5-topic paper does not dump 10 into all five: weight splits by topic
+rarity (`1/df(topic)` normalised).
 
 3. **Explore** — 15% of each page (1–2 slots) taken uniformly from candidates whose score rank is
    below the top 40%, biased to under-represented topics. Exploration impressions are logged with
@@ -273,6 +295,8 @@ the server. `feed.next` is never called per reaction; the client keeps a 12-item
 - Prefetch when queue ≤ 4. Deduplicate by `paper.id` on append — the client refuses duplicates even
   if the server errs.
 - Impression: `IntersectionObserver` at `threshold: 0.6`, arm at 400ms, flush dwell on exit.
+- Source journey: opening the paper records `open-site`; on return, away time ≥ 60s is recorded as
+  a dwell impression carrying that duration, which the ladder prices as a read-through.
   Re-entering the same slide does not create a second impression (one per session).
 - Optimistic reactions; rollback on failure with a toast, never a silent divergence.
 - No `useState` for server data, no `Effect.runPromise` in components, no `any`.

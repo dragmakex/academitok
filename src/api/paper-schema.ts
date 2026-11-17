@@ -101,7 +101,6 @@ export type ReaderState = typeof ReaderState.Type
 export const FeedItem = Schema.Struct({
   paper: Paper,
   score: Schema.Number,
-  rationale: Schema.Array(Schema.NonEmptyString),
   accessible: Schema.Boolean,
   liked: Schema.Boolean,
   bookmarked: Schema.Boolean,

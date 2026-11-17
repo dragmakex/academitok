@@ -68,7 +68,6 @@ test("a refused reaction records the kind the desk never received", async () => 
     item: {
       paper: curatedPapers[0],
       score: 0,
-      rationale: [],
       accessible: true,
       liked: false,
       bookmarked: false,

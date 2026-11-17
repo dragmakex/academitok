@@ -11,7 +11,6 @@ const item = (id: string): FeedItem => ({
     id,
   },
   score: 1,
-  rationale: ["fresh"],
   accessible: true,
   liked: false,
   bookmarked: false,

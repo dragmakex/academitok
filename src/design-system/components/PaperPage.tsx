@@ -38,11 +38,7 @@ const linkClass =
 export function PaperPage(props: PaperPageProps) {
   return (
     <article className="mx-auto w-full max-w-[58rem] bg-paper text-ink">
-      <Masthead
-        left="Clipping"
-        right="Metadata only"
-        section="The archive"
-      />
+      <Masthead section="The archive" />
 
       <div className="mt-l grid gap-l md:grid-cols-[minmax(0,1fr)_15rem]">
         <div className="min-w-0">

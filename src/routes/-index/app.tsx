@@ -1,6 +1,5 @@
 import {
   type FeedItem,
-  type FeedOrigin,
   type FeedQuery,
   type Topic,
   type TopicFilter,
@@ -16,10 +15,7 @@ import { FeedDeck } from "@/design-system/components/FeedDeck"
 import { FeedStateSlide } from "@/design-system/components/FeedStateSlide"
 import { Notice, type NoticeAction } from "@/design-system/components/Notice"
 import { Page } from "@/design-system/components/Page"
-import {
-  type DeckTeaser,
-  PaperSlide,
-} from "@/design-system/components/PaperSlide"
+import { PaperSlide } from "@/design-system/components/PaperSlide"
 import { ShortcutSheet } from "@/design-system/components/ShortcutSheet"
 import { StatCard } from "@/design-system/components/StatCard"
 import { Tabs } from "@/design-system/components/Tabs"
@@ -102,14 +98,8 @@ type VisiblePaperSlideProps = {
   readonly active: boolean
   readonly index: number
   readonly item: FeedItem
-  readonly origin: FeedOrigin
-  readonly pinned: boolean
-  readonly alsoKeptBy: number | undefined
-  readonly alsoLikedBy: number | undefined
   readonly total: number
-  readonly teasers: ReadonlyArray<DeckTeaser>
   readonly onBookmark: () => void
-  readonly onHide: () => void
   readonly onNavigate: (index: number) => void
   readonly onVisible: (index: number) => void
   readonly registerNode: (index: number, node: HTMLElement | null) => void
@@ -121,14 +111,8 @@ type VisiblePaperSlideProps = {
  * @param root0.active - Whether full content is mounted.
  * @param root0.index - Feed index.
  * @param root0.item - Feed item.
- * @param root0.origin - Where the edition came from.
- * @param root0.pinned - Whether the page is a shared, unranked edition.
- * @param root0.alsoKeptBy - Other readers who filed this clipping.
- * @param root0.alsoLikedBy - Other readers who liked this clipping.
  * @param root0.total - Mounted feed length.
- * @param root0.teasers - Headlines printed below the fold.
  * @param root0.onBookmark - Save reaction callback.
- * @param root0.onHide - Hide reaction callback.
  * @param root0.onNavigate - Navigation callback.
  * @param root0.onVisible - Visibility callback.
  * @param root0.registerNode - Slide registration callback.
@@ -136,18 +120,12 @@ type VisiblePaperSlideProps = {
  */
 function VisiblePaperSlide({
   active,
-  alsoKeptBy,
-  alsoLikedBy,
   index,
   item,
   onBookmark,
-  onHide,
   onNavigate,
   onVisible,
-  origin,
-  pinned,
   registerNode,
-  teasers,
   total,
 }: VisiblePaperSlideProps) {
   const nodeRef = useRef<HTMLElement | null>(null)
@@ -155,6 +133,7 @@ function VisiblePaperSlide({
   const reactToPaper = useAtomSet(reactToPaperAtom)
   const armed = useRef(false)
   const dwellSent = useRef(false)
+  const openedAt = useRef<number | null>(null)
   const visibleAt = useRef<number | null>(null)
   const armTimer = useRef<number | null>(null)
 
@@ -198,7 +177,34 @@ function VisiblePaperSlide({
         sendDwell()
       }
     }
+    /**
+     * Reads away time back as a dwell impression once the reader returns from
+     * the source: an open that is actually read outweighs a like (engagement
+     * ladder), while a bounce back in seconds does not count.
+     */
+    const onReturn = () => {
+      if (document.visibilityState !== "visible" || openedAt.current === null) {
+        return
+      }
+      const awayMs = Math.max(0, performance.now() - openedAt.current)
+      openedAt.current = null
+      if (awayMs < 60_000) {
+        return
+      }
+      trackView({
+        event: {
+          paperId: item.paper.id,
+          kind: "dwell",
+          dwellMs: awayMs,
+          position: index,
+          exploration: item.exploration,
+        },
+        topics: item.paper.topics,
+        readMinutes: item.paper.readMinutes,
+      })
+    }
     document.addEventListener("visibilitychange", onVisibilityChange, true)
+    document.addEventListener("visibilitychange", onReturn, true)
 
     const observer = new IntersectionObserver(
       ([entry]) => {
@@ -238,6 +244,7 @@ function VisiblePaperSlide({
       clearArmTimer()
       sendDwell()
       document.removeEventListener("visibilitychange", onVisibilityChange, true)
+      document.removeEventListener("visibilitychange", onReturn, true)
       observer.disconnect()
     }
   }, [
@@ -250,6 +257,9 @@ function VisiblePaperSlide({
   ])
 
   const react = (kind: "like" | "open-site") => {
+    if (kind === "open-site") {
+      openedAt.current = performance.now()
+    }
     reactToPaper({ kind, paperId: item.paper.id })
   }
 
@@ -261,37 +271,19 @@ function VisiblePaperSlide({
       }}
       id={item.paper.id}
       title={item.paper.title}
-      authors={item.paper.authors.join(", ")}
-      venue={item.paper.venue}
-      year={item.paper.year}
       abstract={item.paper.summary}
-      accessLabel={item.paper.access === "open"
-        ? "Open access"
-        : item.accessible
-        ? "Institution access"
-        : "Source access"}
-      siteLabel={item.paper.site}
       citations={item.paper.citations}
       readMinutes={item.paper.readMinutes}
-      rationale={item.rationale}
-      again={item.again}
       topics={item.paper.topics}
       liked={item.liked}
       bookmarked={item.bookmarked}
       externalUrl={item.paper.externalUrl}
       position={index + 1}
-      origin={origin}
-      pinned={pinned}
-      alsoKeptBy={alsoKeptBy}
-      alsoLikedBy={alsoLikedBy}
       total={total}
-      teasers={teasers}
-      onJump={(position) => onNavigate(position - 1)}
       skeleton={!active}
       actions={{
         onLike: () => react("like"),
         onBookmark,
-        onHide,
         onOpenSite: () => react("open-site"),
         onPrevious: () => onNavigate(index - 1),
         onNext: () => onNavigate(index + 1),
@@ -1139,29 +1131,13 @@ export function App() {
               <VisiblePaperSlide
                 key={item.paper.id}
                 item={item}
-                origin={snapshot.origin}
-                pinned={snapshot.pinned}
-                alsoKeptBy={snapshot.alsoKeptBy[item.paper.id]}
-                alsoLikedBy={snapshot.alsoLikedBy[item.paper.id]}
                 index={index}
                 total={snapshot.items.length}
-                teasers={snapshot
-                  .items
-                  .slice(index + 1, index + 7)
-                  .map((teaser, offset) => ({
-                    position: index + offset + 2,
-                    topic: teaser.paper.topics[0] ?? "Research",
-                    title: teaser.paper.title,
-                    venue: teaser.paper.venue,
-                    year: teaser.paper.year,
-                    summary: teaser.paper.summary,
-                  }))}
                 active={Math.abs(index - activeIndex) <= 1}
                 onBookmark={() => {
                   reactToPaper({ kind: "bookmark", paperId: item.paper.id })
                   setNotice({ label: "Filed in clippings" })
                 }}
-                onHide={() => hideClipping(index)}
                 onNavigate={navigate}
                 onVisible={onVisible}
                 registerNode={registerNode}

@@ -7,7 +7,6 @@ import { page } from "vitest/browser"
 const actions = {
   onLike: vi.fn(),
   onBookmark: vi.fn(),
-  onHide: vi.fn(),
   onOpenSite: vi.fn(),
   onPrevious: vi.fn(),
   onNext: vi.fn(),
@@ -75,23 +74,63 @@ test("compact clipping headlines link to its permalink", () => {
   expect(html).toContain(">Remove</button>")
 })
 
-test("PaperSlide renders metadata and exposes accessible actions", async () => {
+test("the deck slide is one paper, one screen, one way out", async () => {
+  const html = renderToStaticMarkup(
+    <PaperSlide
+      id="paper-1"
+      title="Transparent Scientific Discovery"
+      abstract="A real abstract supplied by the metadata source."
+      citations={42}
+      readMinutes={6}
+      topics={["AI"]}
+      liked={false}
+      bookmarked={true}
+      externalUrl="https://example.com/paper"
+      actions={actions}
+      position={2}
+      total={10}
+      skeleton={false}
+    />,
+  )
+
+  // Essentials only: beat, citation count, reading estimate, headline, abstract.
+  expect(html).toContain("AI")
+  expect(html).toContain("42 citations")
+  expect(html).toContain("6 min read")
+  expect(html).toContain("Transparent Scientific Discovery")
+  expect(html).toContain("A real abstract supplied by the metadata source.")
+
+  // The whole sheet is the source link; nothing else competes with it.
+  expect(html).toContain("href=\"https://example.com/paper\"")
+  expect(html).toContain("rel=\"noopener noreferrer\"")
+  expect(html.match(/href="https:\/\//g)).toHaveLength(1)
+
+  // Every piece of furniture the redesign removed stays removed.
+  for (
+    const dropped of [
+      "Why this",
+      "Also in this edition",
+      "Also kept by",
+      "Also liked by",
+      "Metadata only",
+      "Evening edition",
+      "The record",
+      "OpenAlex",
+      "Journal of",
+    ]
+  ) {
+    expect(html).not.toContain(dropped)
+  }
+})
+
+test("the deck slide toggles like and save without leaving the page", async () => {
   await render(
     <PaperSlide
       id="paper-1"
-      origin="pool"
-      pinned={false}
-      again={false}
       title="Transparent Scientific Discovery"
-      authors="Ada Lovelace, Grace Hopper"
-      venue="Journal of Useful Results"
-      year={2026}
       abstract="A real abstract supplied by the metadata source."
-      accessLabel="Open access"
-      siteLabel="OpenAlex"
       citations={42}
       readMinutes={6}
-      rationale={["Matches AI", "Cited 42 times"]}
       topics={["AI"]}
       liked={false}
       bookmarked={true}
@@ -109,32 +148,12 @@ test("PaperSlide renders metadata and exposes accessible actions", async () => {
     }))
     .toBeVisible()
   await expect
-    .element(page.getByText(/Journal of Useful Results/))
-    .toBeVisible()
-  await expect
-    .element(page.getByText("Matches AI · Cited 42 times"))
-    .toBeVisible()
-  await expect.element(page.getByText("The record")).toBeVisible()
-  await expect.element(page.getByText("6 min")).toBeVisible()
-  await expect
     .element(page.getByRole("button", { name: "Like paper" }))
-    .toHaveAttribute(
-      "aria-pressed",
-      "false",
-    )
+    .toHaveAttribute("aria-pressed", "false")
   await expect
-    .element(page.getByRole("button", {
-      name: "Remove saved paper",
-    }))
+    .element(page.getByRole("button", { name: "Remove saved paper" }))
     .toHaveAttribute("aria-pressed", "true")
   await expect
-    .element(page.getByRole("link", {
-      name: "Open paper source in a new tab",
-    }))
+    .element(page.getByRole("link", { name: "Open paper source in a new tab" }))
     .toHaveAttribute("rel", "noopener noreferrer")
-  await expect
-    .element(page.getByRole("link", {
-      name: "Open the permalink page for this paper",
-    }))
-    .toHaveAttribute("href", "/paper/paper-1")
 })

@@ -589,7 +589,6 @@ const snapshotWith = (
   items: papers.map((paper) => ({
     paper,
     score: 1,
-    rationale: ["fresh"],
     accessible: true,
     liked: false,
     bookmarked: false,
