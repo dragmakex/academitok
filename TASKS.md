@@ -473,6 +473,26 @@ write the conflict at the bottom instead of guessing.
       a fixed seed is identical before and after.
       — `beeb177`
 
+- [ ] **32. Archival drift over the §8.4 impression window on the desk.** SPEC §17.3 keeps citation
+      count as a quality signal on the condition that we "measure whether the feed feels archival",
+      and task 31 has just shown the desk reading a window-scoped metric off the wrong window: the
+      Archival drift block renders `archivalDrift` over the loaded page's ten clippings, so the
+      question §17.3 actually asks — does the feed this reader receives feel archival — is answered
+      one page at a time and never over what the reader has read. `getPaperFeedSnapshot` already
+      builds `windowPapers` (the last 50 `view` reactions joined to the loaded catalog) for
+      `windowTopicEntropy`. Reuse it to report `windowMedianYear` on `FeedStats` through the existing
+      `medianYear` helper, and render it in the desk's Archival drift block with the existing
+      `StatCard`/`Grid` primitives beside the page figure, its helper naming the 50-impression
+      window. An impression whose paper is not in the loaded catalog is dropped rather than counted
+      as a year. Display only: no new helper, no ranking, RPC procedure, persistence or PostHog
+      payload change, and the one-clipping-per-viewport snap is untouched.
+      Accept: a window of three impressions on 2019/2022/2024 reports 2022 and the desk renders it
+      beside the loaded page's median year; an even-sized window averages the two middle years; an
+      impression older than the window's fifty does not move the figure; a reader with no
+      impressions, or whose impression papers are absent from the loaded catalog, reports null and
+      the desk renders an em dash, never `NaN`; the figure reaches `getPaperFeedSnapshot` from real
+      `ReaderState` view reactions; the ranked page for a fixed seed is identical before and after.
+
 ---
 
 ## Blocked — needs a product decision
