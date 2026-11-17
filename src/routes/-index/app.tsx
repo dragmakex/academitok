@@ -98,6 +98,7 @@ type VisiblePaperSlideProps = {
   readonly origin: FeedOrigin
   readonly pinned: boolean
   readonly alsoKeptBy: number | undefined
+  readonly alsoLikedBy: number | undefined
   readonly total: number
   readonly onBookmark: () => void
   readonly onHide: () => void
@@ -115,6 +116,7 @@ type VisiblePaperSlideProps = {
  * @param root0.origin - Where the edition came from.
  * @param root0.pinned - Whether the page is a shared, unranked edition.
  * @param root0.alsoKeptBy - Other readers who filed this clipping.
+ * @param root0.alsoLikedBy - Other readers who liked this clipping.
  * @param root0.total - Mounted feed length.
  * @param root0.onBookmark - Save reaction callback.
  * @param root0.onHide - Hide reaction callback.
@@ -126,6 +128,7 @@ type VisiblePaperSlideProps = {
 function VisiblePaperSlide({
   active,
   alsoKeptBy,
+  alsoLikedBy,
   index,
   item,
   onBookmark,
@@ -270,6 +273,7 @@ function VisiblePaperSlide({
       origin={origin}
       pinned={pinned}
       alsoKeptBy={alsoKeptBy}
+      alsoLikedBy={alsoLikedBy}
       total={total}
       skeleton={!active}
       actions={{
@@ -1062,6 +1066,7 @@ export function App() {
                 origin={snapshot.origin}
                 pinned={snapshot.pinned}
                 alsoKeptBy={snapshot.alsoKeptBy[item.paper.id]}
+                alsoLikedBy={snapshot.alsoLikedBy[item.paper.id]}
                 index={index}
                 total={snapshot.items.length}
                 active={Math.abs(index - activeIndex) <= 1}

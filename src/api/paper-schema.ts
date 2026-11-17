@@ -159,6 +159,8 @@ export const FeedSnapshot = Schema.Struct({
   pinned: Schema.Boolean,
   /** Other readers who filed each clipping on the page, by paper id. */
   alsoKeptBy: Schema.Record(Schema.String, Schema.Number),
+  /** Other readers who liked each clipping on the page, by paper id. */
+  alsoLikedBy: Schema.Record(Schema.String, Schema.Number),
   profile: Schema.NullOr(ReaderProfile),
   selectedTopic: TopicFilter,
   selectedSort: FeedSort,

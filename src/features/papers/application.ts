@@ -187,15 +187,15 @@ export const getPaperFeedSnapshot = (request: FeedRequest) =>
         )
       }
 
-      const alsoKeptBy = yield* repository.filedByOthers(
-        page.items.map((item) => item.paper.id),
-        readerId,
-      )
+      const pageIds = page.items.map((item) => item.paper.id)
+      const alsoKeptBy = yield* repository.filedByOthers(pageIds, readerId)
+      const alsoLikedBy = yield* repository.likedByOthers(pageIds, readerId)
 
       return {
         origin,
         pinned: edition !== undefined,
         alsoKeptBy,
+        alsoLikedBy,
         profile: state.profile,
         selectedTopic: request.query.topic,
         selectedSort: request.query.sort,

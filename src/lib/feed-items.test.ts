@@ -57,6 +57,9 @@ describe("appendPaperPage", () => {
     alsoKeptBy: {
       a: 1,
     } as Record<string, number>,
+    alsoLikedBy: {
+      a: 3,
+    } as Record<string, number>,
     profile: null,
     selectedTopic: "All",
     selectedSort: "recommended",
@@ -99,15 +102,17 @@ describe("appendPaperPage", () => {
     expect(next.items.map((entry) => entry.paper.id)).toEqual(["a", "b"])
   })
 
-  it("merges the filing counts of both pages", () => {
+  it("merges the filing and like counts of both pages", () => {
     const next = appendPaperPage(snapshot, {
       ...snapshot,
       alsoKeptBy: { b: 2 },
+      alsoLikedBy: { b: 4 },
       items: [item("b")],
       nextCursor: null,
     })
 
     expect(next.alsoKeptBy).toEqual({ a: 1, b: 2 })
+    expect(next.alsoLikedBy).toEqual({ a: 3, b: 4 })
   })
 
   it("does not repeat a clipping already on the deck", () => {

@@ -79,6 +79,10 @@ type ReaderStateRepositoryShape = {
     paperIds: ReadonlyArray<string>,
     readerId: string,
   ) => Effect.Effect<Record<string, number>>
+  readonly likedByOthers: (
+    paperIds: ReadonlyArray<string>,
+    readerId: string,
+  ) => Effect.Effect<Record<string, number>>
 }
 
 type StoredState = {
@@ -138,6 +142,10 @@ type StateStorage = {
   readonly likedByReaders: (paperId: string) => Promise<number>
   readonly hiddenByReaders: (paperId: string) => Promise<number>
   readonly filedByOthers: (
+    paperIds: ReadonlyArray<string>,
+    readerId: string,
+  ) => Promise<Record<string, number>>
+  readonly likedByOthers: (
     paperIds: ReadonlyArray<string>,
     readerId: string,
   ) => Promise<Record<string, number>>
@@ -652,6 +660,11 @@ function makeRepositoryService(storage: StateStorage) {
           await ensureMigrated()
           return storage.filedByOthers(paperIds, readerId)
         }),
+      likedByOthers: (paperIds, readerId) =>
+        Effect.promise(async () => {
+          await ensureMigrated()
+          return storage.likedByOthers(paperIds, readerId)
+        }),
     } satisfies ReaderStateRepositoryShape,
   )
 }
@@ -983,6 +996,26 @@ function makePostgresRepository(databaseUrl: string) {
               .where(and(
                 inArray(reactionsTable.paperId, paperIds),
                 eq(reactionsTable.kind, "bookmark"),
+                ne(reactionsTable.readerId, readerId),
+              ))
+              .orderBy(desc(reactionsTable.createdAt)),
+          )
+        },
+        likedByOthers: async (paperIds, readerId) => {
+          if (paperIds.length === 0) {
+            return {}
+          }
+          return otherFilers(
+            await db
+              .select({
+                paperId: reactionsTable.paperId,
+                readerId: reactionsTable.readerId,
+                active: reactionsTable.active,
+              })
+              .from(reactionsTable)
+              .where(and(
+                inArray(reactionsTable.paperId, paperIds),
+                eq(reactionsTable.kind, "like"),
                 ne(reactionsTable.readerId, readerId),
               ))
               .orderBy(desc(reactionsTable.createdAt)),
@@ -1363,6 +1396,26 @@ function makePgliteRepository(dataDir: string | undefined) {
               .where(and(
                 inArray(reactionsTable.paperId, paperIds),
                 eq(reactionsTable.kind, "bookmark"),
+                ne(reactionsTable.readerId, readerId),
+              ))
+              .orderBy(desc(reactionsTable.createdAt)),
+          )
+        },
+        likedByOthers: async (paperIds, readerId) => {
+          if (paperIds.length === 0) {
+            return {}
+          }
+          return otherFilers(
+            await db
+              .select({
+                paperId: reactionsTable.paperId,
+                readerId: reactionsTable.readerId,
+                active: reactionsTable.active,
+              })
+              .from(reactionsTable)
+              .where(and(
+                inArray(reactionsTable.paperId, paperIds),
+                eq(reactionsTable.kind, "like"),
                 ne(reactionsTable.readerId, readerId),
               ))
               .orderBy(desc(reactionsTable.createdAt)),

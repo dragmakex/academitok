@@ -577,6 +577,7 @@ const snapshotWith = (
   origin,
   pinned: false,
   alsoKeptBy: {},
+  alsoLikedBy: {},
   profile: null,
   selectedTopic: "All",
   selectedSort: "recommended",

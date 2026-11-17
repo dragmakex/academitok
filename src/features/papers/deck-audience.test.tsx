@@ -54,6 +54,12 @@ const file = (paperId: string) =>
     yield* repository.react({ paperId, kind: "bookmark" })
   })
 
+const like = (paperId: string) =>
+  Effect.gen(function*() {
+    const repository = yield* ReaderStateRepository
+    yield* repository.react({ paperId, kind: "like" })
+  })
+
 const requestFor = (sessionId: string): FeedRequest => ({
   query: { topic: "All", sort: "recommended" },
   cursor: null,
@@ -69,7 +75,10 @@ const actions = {
   onNext: () => {},
 }
 
-const renderDeck = (alsoKeptBy: number | undefined) =>
+const renderDeck = (
+  alsoKeptBy: number | undefined,
+  alsoLikedBy: number | undefined,
+) =>
   renderToStaticMarkup(
     <PaperSlide
       id="paper-1"
@@ -91,6 +100,7 @@ const renderDeck = (alsoKeptBy: number | undefined) =>
       origin="pool"
       pinned={false}
       alsoKeptBy={alsoKeptBy}
+      alsoLikedBy={alsoLikedBy}
       again={false}
       position={2}
       total={10}
@@ -150,16 +160,73 @@ describe("deck audience", () => {
 
     expect(undone.alsoKeptBy[paperId]).toBe(1)
   }, 30_000)
+
+  it("reports other readers' likes on the served page", async () => {
+    const dataDir = await crashDirectory("academitok-deck-likes-")
+    vi.stubGlobal("fetch", vi.fn(() => Promise.reject(new Error("offline"))))
+
+    const page = await runAs(
+      dataDir,
+      readerA,
+      Effect.gen(function*() {
+        const repository = yield* ReaderStateRepository
+        yield* repository.onboard({
+          keptPaperIds: [],
+          rejectedPaperIds: [],
+          skipped: true,
+        })
+        return yield* getPaperFeedSnapshot(requestFor("deck-likes-a"))
+      }),
+    )
+    const paperId = page.items[0]?.paper.id
+    if (paperId === undefined) {
+      throw new Error("empty feed fixture")
+    }
+
+    // Reader A's own like is not counted, and a filing is not a like.
+    await runAs(dataDir, readerA, Effect.all([like(paperId), file(paperId)]))
+    await runAs(dataDir, readerB, like(paperId))
+    await runAs(dataDir, readerC, file(paperId))
+    await runAs(dataDir, readerC, like(paperId))
+    const shared = await runAs(
+      dataDir,
+      readerA,
+      getPaperFeedSnapshot(requestFor("deck-likes-b")),
+    )
+
+    expect(shared.alsoLikedBy[paperId]).toBe(2)
+
+    // Reader B undoes their like; the count drops back to one.
+    await runAs(dataDir, readerB, like(paperId))
+    const undone = await runAs(
+      dataDir,
+      readerA,
+      getPaperFeedSnapshot(requestFor("deck-likes-c")),
+    )
+
+    expect(undone.alsoLikedBy[paperId]).toBe(1)
+  }, 30_000)
 })
 
 describe("deck clipping audience line", () => {
   it("prints how many other readers keep the clipping", () => {
-    expect(renderDeck(2)).toContain("Also kept by 2 readers")
-    expect(renderDeck(1)).toContain("Also kept by 1 reader")
+    expect(renderDeck(2, undefined)).toContain("Also kept by 2 readers")
+    expect(renderDeck(1, undefined)).toContain("Also kept by 1 reader")
   })
 
   it("omits the clause when nobody else filed it", () => {
-    expect(renderDeck(0)).not.toContain("Also kept by")
-    expect(renderDeck(undefined)).not.toContain("Also kept by")
+    expect(renderDeck(0, undefined)).not.toContain("Also kept by")
+    expect(renderDeck(undefined, undefined)).not.toContain("Also kept by")
+  })
+
+  it("prints how many other readers liked the clipping", () => {
+    expect(renderDeck(undefined, 2)).toContain("Also liked by 2 readers")
+    expect(renderDeck(undefined, 1)).toContain("Also liked by 1 reader")
+    expect(renderDeck(2, 4)).toContain("Also liked by 4 readers")
+  })
+
+  it("omits the like clause when nobody else liked it", () => {
+    expect(renderDeck(2, 0)).not.toContain("Also liked by")
+    expect(renderDeck(2, undefined)).not.toContain("Also liked by")
   })
 })
