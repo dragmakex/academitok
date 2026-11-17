@@ -3,6 +3,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest"
 import {
   archivalDrift,
+  citationAgeSkew,
   hashReaderId,
   medianYear,
   readingCompletion,
@@ -130,6 +131,35 @@ describe("unmatchedBeatCount", () => {
 
   it("reports none for an empty page", () => {
     expect(unmatchedBeatCount([])).toBe(0)
+  })
+})
+
+const dated = (year: number, citations: number) => ({ year, citations })
+
+describe("citationAgeSkew", () => {
+  it("splits the page on its median year and reports both medians", () => {
+    expect(
+      citationAgeSkew([dated(2010, 400), dated(2016, 50), dated(2024, 10)]),
+    )
+      .toEqual({ olderCitations: 400, newerCitations: 30 })
+  })
+
+  it("counts a clipping dated exactly the median year as newer", () => {
+    expect(citationAgeSkew([dated(2010, 400), dated(2020, 7)])).toEqual({
+      olderCitations: 400,
+      newerCitations: 7,
+    })
+  })
+
+  it("reports null for an empty page and for the empty side of one clipping", () => {
+    expect(citationAgeSkew([])).toEqual({
+      olderCitations: null,
+      newerCitations: null,
+    })
+    expect(citationAgeSkew([dated(2020, 12)])).toEqual({
+      olderCitations: null,
+      newerCitations: 12,
+    })
   })
 })
 

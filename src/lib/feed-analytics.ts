@@ -122,19 +122,60 @@ export function trackPaperReactionEvent(
 }
 
 /**
+ * Median of a numeric sample.
+ * @param values - Sample values.
+ * @returns Median, averaging the middle pair on even-sized samples, or null when empty.
+ */
+function median(values: ReadonlyArray<number>): number | null {
+  if (values.length === 0) {
+    return null
+  }
+  const sorted = [...values].sort((left, right) => left - right)
+  const middle = Math.floor(sorted.length / 2)
+  return sorted.length % 2 === 0
+    ? (sorted[middle - 1] + sorted[middle]) / 2
+    : sorted[middle]
+}
+
+/**
  * Median publication year of a page, the archival-drift signal (SPEC §17.3).
  * @param years - Page publication years.
  * @returns Median year, averaging the middle pair on even-sized pages, or null when empty.
  */
 export function medianYear(years: ReadonlyArray<number>): number | null {
-  if (years.length === 0) {
-    return null
+  return median(years)
+}
+
+export type CitationAgeSkew = {
+  readonly olderCitations: number | null
+  readonly newerCitations: number | null
+}
+
+/**
+ * Median citation count either side of the page's median year, the half of the
+ * archival bias that citation damping is meant to offset (SPEC §17.3).
+ * @param papers - Page clippings with publication year and citation count.
+ * @returns Median citation counts; null for an empty side or an empty page.
+ */
+export function citationAgeSkew(
+  papers: ReadonlyArray<Pick<Paper, "year" | "citations">>,
+): CitationAgeSkew {
+  const pageMedian = median(papers.map((paper) => paper.year))
+  if (pageMedian === null) {
+    return { olderCitations: null, newerCitations: null }
   }
-  const sorted = [...years].sort((left, right) => left - right)
-  const middle = Math.floor(sorted.length / 2)
-  return sorted.length % 2 === 0
-    ? (sorted[middle - 1] + sorted[middle]) / 2
-    : sorted[middle]
+  const citationsOn = (older: boolean) =>
+    median(
+      papers
+        .filter((paper) =>
+          older ? paper.year < pageMedian : paper.year >= pageMedian
+        )
+        .map((paper) => paper.citations),
+    )
+  return {
+    olderCitations: citationsOn(true),
+    newerCitations: citationsOn(false),
+  }
 }
 
 export type ArchivalDrift = {
@@ -184,16 +225,18 @@ export function trackFeedPageEvent(
   snapshot: FeedSnapshot,
   cursor: string | null,
 ): void {
-  const ids = snapshot.items.map((item) => item.paper.id)
+  const papers = snapshot.items.map((item) => item.paper)
+  const ids = papers.map((paper) => paper.id)
+  const skew = citationAgeSkew(papers)
   void trackFeedHealthEvent("feed.next", {
     cursor: cursor ?? "first",
     item_count: ids.length,
     duplicate_count: ids.length - new Set(ids).size,
     exploration_count: snapshot.exploration,
-    median_year: medianYear(snapshot.items.map((item) => item.paper.year)),
-    unmatched_beat_count: unmatchedBeatCount(
-      snapshot.items.map((item) => item.paper),
-    ),
+    median_year: medianYear(papers.map((paper) => paper.year)),
+    older_citation_median: skew.olderCitations,
+    newer_citation_median: skew.newerCitations,
+    unmatched_beat_count: unmatchedBeatCount(papers),
     topic: snapshot.selectedTopic,
     sort: snapshot.selectedSort,
     cold_start: snapshot.profile === null,
