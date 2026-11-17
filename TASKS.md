@@ -607,6 +607,28 @@ write the conflict at the bottom instead of guessing.
       mocks them.
       — `aa4516e`
 
+- [ ] **37. A filing count on the permalink.** SPEC §16 P3 lists "multi-reader with collaborative
+      signals": task 20 gave every visitor their own `reader_id`, but nothing ever reads the
+      `reactions` rows across readers — the `/paper/$id` permalink prints one clipping's metadata
+      and citations as if the reader were alone in the morgue, so the one collaborative fact the
+      split rows can already answer (how many readers filed this clipping) is thrown away and
+      multi-reader buys nothing a reader can see. Add a `savedByReaders(paperId)` read to
+      `ReaderStateRepository` counting distinct `reader_id` rows in `reactions` where `paper_id`
+      matches, `kind = 'bookmark'` and `active = true` — deliberately not reader-scoped — implement
+      it for both the PGlite and Postgres storages, wrap it in an exported `getPaperAudience(id)` in
+      `src/features/papers/application.ts`, resolve it beside the paper through a second
+      `createServerFn` in the permalink route's existing `loader`, and render it as one more fact in
+      `PaperPage`'s `<dl>` (`Filed by` → `3 readers`). Display only: no ranking, `ReaderState`, RPC
+      procedure, schema, contract or PostHog change, no new dependency, no new component, and the
+      one-clipping-per-viewport snap is untouched.
+      Accept: two readers filing the same paper report 2 and the permalink renders `Filed by` with
+      `2 readers`; an undone save (`active = false`) is not counted, so a reader who files and
+      undoes leaves the count at 0 and the fact is omitted rather than printed as `0 readers`; the
+      count is visible to a reader who never filed it, so it is not reader-scoped; an unknown
+      permalink id still returns the not-found notice; the count is asserted from a real repository
+      written under two `ReaderId` values, and the omitted/rendered fact from
+      `renderToStaticMarkup` of the real `PaperPage`.
+
 ---
 
 ## Blocked — needs a product decision
