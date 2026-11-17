@@ -652,7 +652,7 @@ write the conflict at the bottom instead of guessing.
       `renderToStaticMarkup` of the real `PaperSlide`.
       — `120c862`
 
-- [ ] **39. Which path filed the beat, counted three ways.** SPEC §17.2 keeps the fixed nine beats
+- [x] **39. Which path filed the beat, counted three ways.** SPEC §17.2 keeps the fixed nine beats
       only until someone can tell whether they cover what the sources actually serve, and
       `unmatched_beat_count` (task 11) was meant to answer that — but it filters on
       `matchedTopics(paper.title, paper.abstract)` alone, so since task 12 taught `detectTopics` to
@@ -677,6 +677,7 @@ write the conflict at the bottom instead of guessing.
       to the page size; the helper is unit-tested, the payload is asserted from a real
       `trackFeedPageEvent` call with the PostHog client mocked, and the ranked page for a fixed seed
       is identical before and after.
+      — `a28507d`
 
 ---
 
