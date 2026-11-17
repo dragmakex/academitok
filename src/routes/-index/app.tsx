@@ -31,6 +31,7 @@ import {
   beatSourceCounts,
   citationAgeSkew,
   conceptOnlyBeats,
+  explorationShare,
   topicEntropy,
   trackFeedPageEvent,
 } from "@/lib/feed-analytics"
@@ -633,6 +634,9 @@ export function App() {
   const entropy = topicEntropy(pagePapers)
   const beatSources = beatSourceCounts(pagePapers)
   const conceptOnly = conceptOnlyBeats(pagePapers)
+  const exploration = snapshot === undefined
+    ? null
+    : explorationShare(snapshot.exploration, snapshot.items.length)
   const medianDwellMs = snapshot?.stats.medianDwellMs ?? null
   const medianCompletion = snapshot?.stats.medianCompletion ?? null
   const hideRate = snapshot?.stats.hideRate ?? null
@@ -739,6 +743,13 @@ export function App() {
                 label="Entropy"
                 value={snapshot === undefined ? "—" : entropy.toFixed(2)}
                 helper="nats across the page's primary beats"
+              />
+              <StatCard
+                label="Exploration share"
+                value={exploration === null
+                  ? "—"
+                  : `${(exploration * 100).toFixed(0)}%`}
+                helper="of the loaded page against the 15% reserve"
               />
               <StatCard
                 label="Beats on the page"

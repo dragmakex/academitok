@@ -13,6 +13,7 @@ import { recordReaderReaction } from "@/features/papers/reactions"
 import {
   beatSourceCounts,
   conceptOnlyBeats,
+  explorationShare,
   unmatchedBeatCount,
 } from "@/lib/feed-analytics"
 import { defaultReaderId, ReaderId } from "@/lib/reader-id"
@@ -1048,6 +1049,31 @@ describe("papers application", () => {
       [...new Set(beats)].filter((beat) => !keywordBeats.has(beat)),
     )
     expect(new Set(conceptOnly).size).toBe(conceptOnly.length)
+  })
+
+  it("serves a skipped reader's cold start as all exploration", async () => {
+    const dataDir = await mkdtemp(join(tmpdir(), "academitok-exploration-"))
+    directories.push(dataDir)
+    vi.stubGlobal("fetch", () => Promise.reject(new Error("offline")))
+
+    const snapshot = await runFeed(
+      dataDir,
+      Effect.gen(function*() {
+        const repository = yield* ReaderStateRepository
+        yield* repository.onboard({
+          keptPaperIds: [],
+          rejectedPaperIds: [],
+          skipped: true,
+        })
+        return yield* getPaperFeedSnapshot(requestFor("exploration-share"))
+      }),
+    )
+
+    expect(snapshot.items.length).toBeGreaterThan(0)
+    expect(snapshot.exploration).toBe(snapshot.items.length)
+    expect(explorationShare(snapshot.exploration, snapshot.items.length)).toBe(
+      1,
+    )
   })
 
   it("files bookmarked papers in the saved list and drops them on unsave", async () => {

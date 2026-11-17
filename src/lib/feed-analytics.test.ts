@@ -11,6 +11,7 @@ import {
   conceptOnlyBeats,
   duplicateRate,
   dwellEntropy,
+  explorationShare,
   hashReaderId,
   lowestCompletionBeat,
   medianCompletion,
@@ -257,6 +258,22 @@ describe("duplicateRate", () => {
 
   it("reports no rate when the window holds no impression", () => {
     expect(duplicateRate([], 50)).toBeNull()
+  })
+})
+
+describe("explorationShare", () => {
+  it("reports the reserve's share of the page the reader got", () => {
+    expect(explorationShare(2, 10)).toBeCloseTo(0.2, 5)
+    expect(explorationShare(1, 5)).toBeCloseTo(0.2, 5)
+    expect(explorationShare(3, 10)).toBeCloseTo(0.3, 5)
+  })
+
+  it("reports the whole page for a skipped reader's cold start", () => {
+    expect(explorationShare(10, 10)).toBe(1)
+  })
+
+  it("reports no share for an empty page", () => {
+    expect(explorationShare(0, 0)).toBeNull()
   })
 })
 

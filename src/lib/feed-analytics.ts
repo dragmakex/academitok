@@ -285,6 +285,20 @@ export function duplicateRate(
 }
 
 /**
+ * Share of a page served outside the reader's affinity, so the ~15% exploration
+ * reserve is read on the desk instead of only asserted (SPEC §8.1.3).
+ * @param explored - Exploration clippings on the page.
+ * @param total - Clippings on the page.
+ * @returns Share of the page, or null when the page is empty.
+ */
+export function explorationShare(
+  explored: number,
+  total: number,
+): number | null {
+  return total === 0 ? null : explored / total
+}
+
+/**
  * Median reading completion of the clippings that could be measured (SPEC §16 P3).
  * @param values - Per-clip ratios; null marks a clipping without a usable estimate.
  * @returns Median ratio, or null when nothing was measurable.
