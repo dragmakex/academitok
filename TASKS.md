@@ -129,7 +129,7 @@ write the conflict at the bottom instead of guessing.
       the TTL boundary helper is unit-tested.
       — `cb77936`
 
-- [ ] **23. Serve the saved-collection BibTeX.** SPEC §14 and the P2 line "saved-collection
+- [x] **23. Serve the saved-collection BibTeX.** SPEC §14 and the P2 line "saved-collection
       export (BibTeX)" are only half-built: `formatBibtex` and `getSavedBibtex` sit in
       `src/features/papers/application.ts`, but nothing calls `getSavedBibtex` — no route, no
       control — so a reader cannot obtain the `.bib` for the clippings they saved and the P2
@@ -146,6 +146,7 @@ write the conflict at the bottom instead of guessing.
       the singleton reader; an empty saved set answers an empty body, never a 500; `/saved` shows
       the export control when clippings exist and hides it when the morgue file is empty; a test
       asserts the route registration, the attachment headers and the body from the real handler.
+      — `1ea7eaf`
 
 ---
 
