@@ -12,6 +12,7 @@ import {
   medianYear,
   reactionRates,
   readingCompletion,
+  savesPerHundred,
   topicEntropy,
   trackFeedHealthEvent,
   trackPaperViewEvent,
@@ -147,6 +148,33 @@ describe("reactionRates", () => {
       hideRate: null,
       openSourceRate: null,
     })
+  })
+})
+
+describe("savesPerHundred", () => {
+  it("reports the saves per hundred impressions of the view window", () => {
+    const kinds = [
+      ...Array<"bookmark">(2).fill("bookmark"),
+      ...Array<"view">(50).fill("view"),
+    ] as const
+    expect(savesPerHundred(kinds, 50)).toBeCloseTo(4, 5)
+  })
+
+  it("reports zero when the window holds views but no save", () => {
+    expect(savesPerHundred(Array<"view">(50).fill("view"), 50)).toBe(0)
+  })
+
+  it("ignores saves older than the view window", () => {
+    const kinds = [
+      ...Array<"view">(50).fill("view"),
+      "bookmark",
+    ] as const
+    expect(savesPerHundred(kinds, 50)).toBe(0)
+  })
+
+  it("reports no rate when the window holds no impression", () => {
+    expect(savesPerHundred([], 50)).toBeNull()
+    expect(savesPerHundred(["bookmark"], 50)).toBeNull()
   })
 })
 

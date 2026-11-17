@@ -20,6 +20,7 @@ import {
   medianDwell,
   reactionRates,
   readingCompletion,
+  savesPerHundred,
 } from "@/lib/feed-analytics"
 import { fetchOpenAlexPapers } from "@/lib/openalex"
 import * as Clock from "effect/Clock"
@@ -97,6 +98,10 @@ export const getPaperFeedSnapshot = (request: FeedRequest) =>
         state.reactions.map((reaction) => reaction.kind),
         dwellWindow,
       )
+      const saves = savesPerHundred(
+        state.reactions.map((reaction) => reaction.kind),
+        dwellWindow,
+      )
       const sessionSeen: ReadonlyArray<string> = request.sessionId === undefined
         ? []
         : yield* repository.loadFeedSession(request.sessionId)
@@ -149,6 +154,7 @@ export const getPaperFeedSnapshot = (request: FeedRequest) =>
           ),
           hideRate: rates.hideRate,
           openSourceRate: rates.openSourceRate,
+          savesPerHundred: saves,
         },
         items: page.items,
         nextCursor: page.nextCursor,

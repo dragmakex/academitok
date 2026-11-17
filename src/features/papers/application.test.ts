@@ -281,9 +281,61 @@ describe("papers application", () => {
 
     expect(empty.stats.hideRate).toBeNull()
     expect(empty.stats.openSourceRate).toBeNull()
+    expect(empty.stats.savesPerHundred).toBeNull()
     expect(recorded.stats.hideRate).toBeCloseTo(0.02, 5)
     expect(recorded.stats.openSourceRate).toBeCloseTo(0.12, 5)
   })
+
+  it(
+    "reports the reader's saves per hundred impressions on the feed snapshot",
+    {
+      timeout: 15_000,
+    },
+    async () => {
+      const dataDir = await mkdtemp(join(tmpdir(), "academitok-saves-rate-"))
+      directories.push(dataDir)
+      vi.stubGlobal("fetch", () => Promise.reject(new Error("offline")))
+      const target = curatedPapers[0]
+      const second = curatedPapers[1]
+      if (target === undefined || second === undefined) {
+        throw new Error("missing curated paper fixture")
+      }
+
+      const [empty, unsaved, saved] = await runFeed(
+        dataDir,
+        Effect.gen(function*() {
+          const repository = yield* ReaderStateRepository
+          yield* repository.onboard({
+            keptPaperIds: [],
+            rejectedPaperIds: [],
+            skipped: true,
+          })
+          const before = yield* getPaperFeedSnapshot(requestFor("saves-a"))
+          for (let index = 0; index < 50; index += 1) {
+            yield* repository.track({
+              paperId: target.id,
+              position: index,
+              exploration: false,
+              kind: "view",
+              dwellMs: 0,
+            })
+          }
+          const viewed = yield* getPaperFeedSnapshot(requestFor("saves-b"))
+          yield* repository.react({ paperId: target.id, kind: "bookmark" })
+          yield* repository.react({ paperId: second.id, kind: "bookmark" })
+          return [
+            before,
+            viewed,
+            yield* getPaperFeedSnapshot(requestFor("saves-c")),
+          ] as const
+        }),
+      )
+
+      expect(empty.stats.savesPerHundred).toBeNull()
+      expect(unsaved.stats.savesPerHundred).toBe(0)
+      expect(saved.stats.savesPerHundred).toBeCloseTo(4, 5)
+    },
+  )
 
   it("files bookmarked papers in the saved list and drops them on unsave", async () => {
     const dataDir = await mkdtemp(join(tmpdir(), "academitok-saved-"))

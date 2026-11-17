@@ -149,6 +149,46 @@ export function medianDwell(
   return median(dwells)
 }
 
+type ReactionWindow = {
+  readonly views: number
+  readonly hides: number
+  readonly opens: number
+  readonly saves: number
+}
+
+/**
+ * Counts the reaction kinds inside the reader's most recent impression window.
+ * @param kinds - Reaction kinds, newest first.
+ * @param window - Impressions in the measurement window.
+ * @returns Counts of the windowed views and the reactions they carry.
+ */
+const reactionWindow = (
+  kinds: ReadonlyArray<ReactionKind>,
+  window: number,
+): ReactionWindow => {
+  const counts = { views: 0, hides: 0, opens: 0, saves: 0 }
+  for (const kind of kinds) {
+    if (counts.views >= window) {
+      break
+    }
+    switch (kind) {
+      case "view":
+        counts.views += 1
+        break
+      case "hide":
+        counts.hides += 1
+        break
+      case "open-site":
+        counts.opens += 1
+        break
+      case "bookmark":
+        counts.saves += 1
+        break
+    }
+  }
+  return counts
+}
+
 export type ReactionRates = {
   readonly hideRate: number | null
   readonly openSourceRate: number | null
@@ -164,21 +204,25 @@ export function reactionRates(
   kinds: ReadonlyArray<ReactionKind>,
   window: number,
 ): ReactionRates {
-  const counts = { view: 0, hide: 0, "open-site": 0 }
-  for (const kind of kinds) {
-    if (counts.view >= window) {
-      break
-    }
-    if (kind === "view" || kind === "hide" || kind === "open-site") {
-      counts[kind] += 1
-    }
-  }
+  const counts = reactionWindow(kinds, window)
   return {
-    hideRate: counts.view === 0 ? null : counts.hide / counts.view,
-    openSourceRate: counts.view === 0
-      ? null
-      : counts["open-site"] / counts.view,
+    hideRate: counts.views === 0 ? null : counts.hides / counts.views,
+    openSourceRate: counts.views === 0 ? null : counts.opens / counts.views,
   }
+}
+
+/**
+ * Saves per 100 impressions over the reader's most recent impression window (SPEC §8.4).
+ * @param kinds - Reaction kinds, newest first.
+ * @param window - Impressions in the measurement window.
+ * @returns Saves per hundred impressions, or null when the window holds no impression.
+ */
+export function savesPerHundred(
+  kinds: ReadonlyArray<ReactionKind>,
+  window: number,
+): number | null {
+  const counts = reactionWindow(kinds, window)
+  return counts.views === 0 ? null : (counts.saves / counts.views) * 100
 }
 
 /**

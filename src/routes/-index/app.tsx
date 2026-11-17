@@ -565,6 +565,7 @@ export function App() {
   const medianCompletion = snapshot?.stats.medianCompletion ?? null
   const hideRate = snapshot?.stats.hideRate ?? null
   const openSourceRate = snapshot?.stats.openSourceRate ?? null
+  const savesPerHundred = snapshot?.stats.savesPerHundred ?? null
   const beats = new Set(
     pagePapers.flatMap((paper) =>
       paper.topics[0] === undefined ? [] : [paper.topics[0]]
@@ -673,6 +674,13 @@ export function App() {
                   ? "—"
                   : formatRate(openSourceRate)}
                 helper="against the 12% floor"
+              />
+              <StatCard
+                label="Saves per 100 impressions"
+                value={savesPerHundred === null
+                  ? "—"
+                  : savesPerHundred.toFixed(1)}
+                helper="against the 1.0 target"
               />
             </Grid>
           </Stack>
