@@ -42,6 +42,24 @@ const savedPage = (items: ReadonlyArray<unknown>) => ({
   exploration: 0,
 })
 
+test("a morgue row links its headline to the clipping's permalink", async () => {
+  store.saved = savedPage([clipping])
+  await render(<SavedPage />)
+
+  const headline = page.getByRole("link", {
+    name: "A Kept Clipping",
+    exact: true,
+  })
+  await expect.element(headline).toBeVisible()
+  await expect
+    .element(headline)
+    .toHaveAttribute("href", "/paper/paper-bibtex")
+  await expect.element(page.getByText("Source", { exact: true })).toBeVisible()
+  await expect
+    .element(page.getByRole("button", { name: /Remove A Kept Clipping/ }))
+    .toBeVisible()
+})
+
 test("the morgue file offers the BibTeX export when clippings exist", async () => {
   store.saved = savedPage([clipping])
   await render(<SavedPage />)

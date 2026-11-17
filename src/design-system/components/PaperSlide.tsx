@@ -73,6 +73,7 @@ export const PaperSlide = forwardRef<HTMLElement, PaperSlideProps>(
         citations,
         externalUrl,
         filedByOthers,
+        id,
         onUnsave,
         readMinutes,
         siteLabel,
@@ -95,7 +96,12 @@ export const PaperSlide = forwardRef<HTMLElement, PaperSlideProps>(
             id={headlineId}
             className="mt-xs m-0 font-display text-[clamp(1.35rem,3vw,1.85rem)] leading-[1.08] font-bold tracking-[-0.02em]"
           >
-            {title}
+            <a
+              className="text-ink no-underline focus-visible:outline-2 focus-visible:outline-focus-ring"
+              href={`/paper/${encodeURIComponent(id)}`}
+            >
+              {title}
+            </a>
           </h2>
           <p className="mt-s m-0 line-clamp-2 max-w-[60ch] font-body text-[0.95rem] leading-[1.45]">
             {abstract}

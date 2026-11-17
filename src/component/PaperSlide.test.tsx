@@ -1,4 +1,5 @@
 import { PaperSlide } from "@/design-system/components/PaperSlide"
+import { renderToStaticMarkup } from "react-dom/server"
 import { expect, test, vi } from "vitest"
 import { render } from "vitest-browser-react"
 import { page } from "vitest/browser"
@@ -44,6 +45,33 @@ test("compact clipping renders a list row with an unsave action", async () => {
     .getByRole("button", { name: "Remove Saved Clipping from saved" })
     .click()
   expect(onUnsave).toHaveBeenCalledOnce()
+})
+
+test("compact clipping headlines link to its permalink", () => {
+  const html = renderToStaticMarkup(
+    <PaperSlide
+      variant="compact"
+      id="10.1000/a b"
+      title="Saved Clipping"
+      authors="Ada Lovelace"
+      venue="Journal of Kept Papers"
+      year={2026}
+      abstract="A kept abstract supplied by the metadata source."
+      accessLabel="Open access"
+      siteLabel="OpenAlex"
+      citations={9}
+      readMinutes={3}
+      topics={["AI"]}
+      externalUrl="https://example.com/saved"
+      onUnsave={() => {}}
+    />,
+  )
+
+  expect(html).toContain("href=\"/paper/10.1000%2Fa%20b\"")
+  expect(html).toContain(">Saved Clipping</a>")
+  expect(html.match(/href="\/paper\//g)).toHaveLength(1)
+  expect(html).toContain(">Source</a>")
+  expect(html).toContain(">Remove</button>")
 })
 
 test("PaperSlide renders metadata and exposes accessible actions", async () => {
