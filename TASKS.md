@@ -311,6 +311,26 @@ write the conflict at the bottom instead of guessing.
       undefined.
       — `240bc03`
 
+- [ ] **24. Name the offline edition.** SPEC §7 promises the frozen seed file is served "with a
+      visible 'offline edition' notice. Never an empty screen", and §16 P3's native shell makes
+      the promise load-bearing: in an installed deck with no network the reader is handed the seed
+      clippings dressed as the live edition. `resolveCatalog` in
+      `src/features/papers/application.ts` swaps in `curatedPapers` on an upstream failure and
+      returns the same shape either way, and neither `FeedSnapshot` nor `PaperSlide` has anywhere
+      to say where a page came from. Have `resolveCatalog` report its own origin (`"pool"` for the
+      stored-page branch, `"live"` for a fresh fetch, `"seed"` for the frozen fallback), add one
+      `origin` field to `FeedSnapshot` — leave `FeedPage` alone so `saved.list` keeps its shape —
+      carry it through `getPaperFeedSnapshot` and the next-page append in
+      `src/routes/-index/atoms.tsx`, and let `PaperSlide` print `Offline Edition · No. 042` in the
+      masthead strip that already prints `Evening Edition · No. 042` when the origin is `seed`. No
+      new component, no design-language, ranking, PostHog or dependency change, no change to
+      `FeedPage` or `saved.list`, and the one-clipping-per-viewport snap is untouched.
+      Accept: an empty pool with a failing upstream reports `origin: "seed"` and the strip reads
+      `Offline Edition`; a warm pool reports `"pool"` and a successful fetch `"live"`, both with the
+      strip still reading `Evening Edition`; a page appended by `loadNextPaperPage` keeps the first
+      page's origin; the origin and strip assertions run from the real `getPaperFeedSnapshot`
+      (stubbed fetch, temp PGlite dir) and from `renderToStaticMarkup` of the component.
+
 ---
 
 ## Blocked — needs a product decision
