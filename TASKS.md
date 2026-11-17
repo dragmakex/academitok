@@ -429,7 +429,7 @@ write the conflict at the bottom instead of guessing.
       view/bookmark reactions; the ranked page for a fixed seed is identical before and after.
       — `75ee75a`
 
-- [ ] **30. Undo a hide from the notice line.** SPEC §5.2 promises `h` hides with "undo via
+- [x] **30. Undo a hide from the notice line.** SPEC §5.2 promises `h` hides with "undo via
       toast (5s)" and §10 promises a failed reaction is "never a silent divergence", but no notice
       surface exists anywhere in `src/` — `reactToPaperAtom` filters a hidden paper straight out of
       the deck and `app.tsx` jumps to the next clipping, so a mistyped `h` permanently drops the
@@ -450,6 +450,7 @@ write the conflict at the bottom instead of guessing.
       focus; `removeItemAt`/`restoreItem` round-trip a three-item page and are unit-tested, and a
       test renders the notice from the real component for the label, the status role and the
       optional action.
+      — `c77c005`
 
 ---
 
