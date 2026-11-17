@@ -40,4 +40,3 @@ inside `<a>` gives a real broadsheet measure without splitting the anchor.
 Onboarding in this app is three pages of five picks and only submits on the third
 page's "Print edition" button — browser automation that clicks "Next" twice and
 stops sits forever on the gate.
-
