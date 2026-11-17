@@ -20,6 +20,26 @@ write the conflict at the bottom instead of guessing.
       even if the client passes a stale cursor; a fresh session id starts clean.
       — `41d1119`
 
+- [ ] **20. Anonymous reader cookie.** SPEC §17.1 settles `reader_id` on "anonymous cookie +
+      `reader_id` in state, no login", but `src/db/reader-state-repository.ts` writes and reads the
+      `reader_id` column as one module constant (`singletonId = "singleton"`, 42 uses) while the
+      schema already carries `reader_id` on `impressions`, `reactions` and `feed_sessions` — so every
+      visitor shares one reading history: one reader's saves, likes, hides, impressions, profile and
+      feed-session seen-ids are handed to the next, the §16 session dedupe cannot tell two readers
+      apart, and the desk and `/saved` show somebody else's clippings. Add one `ReaderId` Context
+      service provided once per request from a first-party cookie (read via an `RpcMiddleware` beside
+      the existing `RpcLogger`, name and id validation in one pure exported helper: `[A-Za-z0-9-]{8,64}`,
+      everything else ignored rather than stored), have the repository replace the constant with that
+      service, and have the client set the cookie from a generated id when the browser has none (no
+      `document` on the server). A request with no cookie still resolves to `"singleton"` so offline
+      scripts and existing tests keep their single-row behaviour. No login, no account model, no
+      schema column, ranking, RPC contract or PostHog change.
+      Accept: two reader ids keep separate saved sets, so a save under one is absent under the other;
+      two `feed.next` calls with the same session id under different reader ids do not share seen
+      papers; a request without the cookie resolves to `"singleton"` and a garbage cookie value is
+      ignored instead of written; the cookie-name and id parser is unit-tested, and a repository test
+      proves the two-reader separation.
+
 ## P2 — breadth
 
 - [x] **2. `/saved` route.** SPEC §5: saved clippings as a static, filterable list, not a
