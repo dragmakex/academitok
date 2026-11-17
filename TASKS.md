@@ -558,7 +558,7 @@ write the conflict at the bottom instead of guessing.
       changes nothing.
       — `606cdc9`
 
-- [ ] **35. An edition link the reader can hand to somebody.** SPEC §16 P3 lists shareable
+- [x] **35. An edition link the reader can hand to somebody.** SPEC §16 P3 lists shareable
       "editions" and the desk's `CopyBlock` ("Share this edition", `app.tsx`) already copies
       `formatEdition`'s plain text, but text is not a link: whoever receives it cannot open the same
       ten clippings, and `feed.next` has no way to serve a named page — `getPaperFeedSnapshot`
@@ -581,6 +581,7 @@ write the conflict at the bottom instead of guessing.
       rejected by the schema; opening `/?edition=…` for a fixed set renders the same first clipping
       as the page it was copied from; a request without `edition` ranks exactly as before, so the
       fixed-seed page is identical; the helper is unit-tested and `bun run validate` is green.
+      — `4bf1b6a`
 
 ---
 
