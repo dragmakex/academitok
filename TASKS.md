@@ -755,6 +755,26 @@ write the conflict at the bottom instead of guessing.
       and after.
       — `e3d2f75`
 
+- [ ] **43. Page reading load on `feed.next`.** SPEC §16 P3 lists reading-time analytics: the
+      per-clip ratio lands on the `dwell` event (task 7) and the desk aggregates dwell and
+      completion into medians (tasks 25, 26), but `trackFeedPageEvent` in
+      `src/lib/feed-analytics.ts` sends `item_count`, `duplicate_count`, `median_year`,
+      `unmatched_beat_count`, `topic_entropy`, both citation medians, `origin` and the three
+      beat-source counts, and never how much reading the page asks for — a page of ten forty-minute
+      survey reviews and a page of ten three-minute letters both read `item_count: 10`, so the
+      §8.4 `Median dwell ≥ 8s` floor is compared across pages of incomparable length and the
+      reading-time half of the decision has no denominator. Add one pure exported
+      `pageReadMinutes` helper beside `medianDwell` in `src/lib/feed-analytics.ts` summing the
+      clippings' `readMinutes`, and report it as `page_read_minutes` on the existing `feed.next`
+      feed-health event beside `topic_entropy`. Measurement only: no ranking, RPC contract, schema,
+      desk, widget or dependency change.
+      Accept: clippings of 2, 4 and 6 minutes report 12; a clipping with a zero or missing estimate
+      contributes nothing rather than `NaN`; a page whose clippings all lack an estimate reports
+      null, never `0`, and an empty page reports null; the field is sent on every page, including
+      an empty one; the helper is unit-tested, the payload is asserted from a real
+      `trackFeedPageEvent` call with the PostHog client mocked, and PostHog staying unconfigured
+      changes nothing; the ranked page for a fixed seed is identical before and after.
+
 ---
 
 ## Blocked — needs a product decision
