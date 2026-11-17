@@ -652,6 +652,32 @@ write the conflict at the bottom instead of guessing.
       `renderToStaticMarkup` of the real `PaperSlide`.
       — `120c862`
 
+- [ ] **39. Which path filed the beat, counted three ways.** SPEC §17.2 keeps the fixed nine beats
+      only until someone can tell whether they cover what the sources actually serve, and
+      `unmatched_beat_count` (task 11) was meant to answer that — but it filters on
+      `matchedTopics(paper.title, paper.abstract)` alone, so since task 12 taught `detectTopics` to
+      fall back to OpenAlex concepts before `Education`, a clipping filed under a real beat by its
+      concepts is counted as a fallback: the number now reads "keyword table missed it", its
+      docstring still claims those papers are `Education`-filed, and open decision 2 still has no
+      way to separate a paper the concept map rescued from a paper the taxonomy genuinely dropped.
+      Add one pure exported `beatSourceCounts` helper beside `unmatchedBeatCount` in
+      `src/lib/feed-analytics.ts` classifying each page clipping by the path `detectTopics` took
+      from the fields `Paper` already carries: `keyword` when `matchedTopics` names a beat,
+      `concept` when it names none and the stored primary beat is not `Education`, `education`
+      otherwise. Keep `unmatchedBeatCount` and `unmatched_beat_count` as they are (their value is
+      `concept + education`, now stated in the docstring) and report `concept_beat_count` and
+      `education_beat_count` on the existing `feed.next` feed-health event beside it. Measurement
+      only: no ranking, RPC contract, schema, ingestion, desk or dependency change.
+      Accept: a page of three clippings — one whose text names Physics, one with no keyword match
+      whose stored primary beat is Physics, one with no keyword match whose stored primary beat is
+      `Education` — reports keyword 1, concept 1 and education 1, and the three counts sum to the
+      page size; a page whose clippings all name their beat in text reports concept 0 and
+      education 0; an empty page reports 0 for both, never `NaN`; a clipping with no keyword match
+      and no stored topic at all counts as education, never keyword, so the three counts still sum
+      to the page size; the helper is unit-tested, the payload is asserted from a real
+      `trackFeedPageEvent` call with the PostHog client mocked, and the ranked page for a fixed seed
+      is identical before and after.
+
 ---
 
 ## Blocked — needs a product decision
