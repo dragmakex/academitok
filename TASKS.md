@@ -1122,6 +1122,34 @@ write the conflict at the bottom instead of guessing.
       `renderToStaticMarkup` of the real `PaperPage`; `bun run validate` is green.
       — `1483754`
 
+- [ ] **56. The share of the page nobody asked for, on the desk.** SPEC §8.1.3 reserves 15% of every
+      page (1–2 slots) for exploration and says those impressions are logged "so the metric can be
+      read separately", §8.2 makes a skipped onboarding "everything is exploration for the first 20
+      impressions", and `AGENTS.md` states the ~15% reserve as a non-negotiable — but nothing reads
+      it: `getPaperFeedSnapshot` reports the loaded page's count as `exploration` (`page.items
+      .filter((item) => item.exploration).length`), `trackFeedPageEvent` forwards it to PostHog as
+      `exploration_count`, and the desk's Topic mix block renders entropy, beats on the page, the
+      50-impression window, dwell entropy, the top dwell beat, the duplicate rate and the beat-source
+      split and never the one figure that says whether the reserve is actually being kept — so a
+      page that is 0% unasked clippings and a page that is half unasked clippings are the same
+      drawer, and the cold-start promise is asserted only in `recommendation.test.ts`. Add one pure
+      exported `explorationShare(explored, total)` beside `duplicateRate` in
+      `src/lib/feed-analytics.ts` returning `explored / total`, and `null` when `total` is 0 so an
+      empty page never prints `NaN`. Render it in the desk's Topic mix block with the existing
+      `StatCard`/`Grid` primitives beside the entropy card, as a percentage of the loaded page with
+      its helper naming the 15% reserve, reading an em dash when the snapshot is unloaded or its
+      share is null. Display only: no `FeedStats` field, ranking, RPC procedure, schema, persistence
+      or PostHog payload change, no new component or dependency, and the one-clipping-per-viewport
+      snap is untouched.
+      Accept: a loaded page of 10 clippings with 2 exploration items renders `20%`, and a page of 5
+      with 1 renders `20%`, so the share is of the page the reader got and not a fixed ten; the
+      whole-exploration page a skipped reader receives under 20 views renders `100%`; an exploration
+      count of 0 renders `0%` while an unloaded snapshot and a snapshot with no items render an em
+      dash, never `NaN`; `explorationShare` of `(0, 0)` is null and of `(3, 10)` is `0.3`; the share
+      is asserted from a real `getPaperFeedSnapshot` (stubbed catalog, temp PGlite dir), whose
+      cold-start page for a skipped reader reports an `exploration` count equal to its item count;
+      the helper is unit-tested and the ranked page for a fixed seed is identical before and after.
+
 ---
 
 ## Blocked — needs a product decision
