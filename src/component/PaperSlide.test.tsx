@@ -7,6 +7,7 @@ import { page } from "vitest/browser"
 const actions = {
   onLike: vi.fn(),
   onBookmark: vi.fn(),
+  onShare: vi.fn(),
   onOpenSite: vi.fn(),
   onPrevious: vi.fn(),
   onNext: vi.fn(),
@@ -156,4 +157,33 @@ test("the deck slide toggles like and save without leaving the page", async () =
   await expect
     .element(page.getByRole("link", { name: "Open paper source in a new tab" }))
     .toHaveAttribute("rel", "noopener noreferrer")
+})
+
+test("the deck slide shares the paper and keeps its foot band full width", async () => {
+  await render(
+    <PaperSlide
+      id="paper-1"
+      title="Transparent Scientific Discovery"
+      abstract="A real abstract supplied by the metadata source."
+      citations={42}
+      readMinutes={6}
+      topics={["AI"]}
+      liked={false}
+      bookmarked={false}
+      externalUrl="https://example.com/paper"
+      actions={actions}
+      position={2}
+      total={10}
+      skeleton={false}
+    />,
+  )
+
+  await page.getByRole("button", { name: "Share paper" }).click()
+  expect(actions.onShare).toHaveBeenCalledOnce()
+
+  // The foot band is the nameplate's twin: full-bleed stock on its own paper.
+  const band = document.querySelector("article > div:last-child")
+  expect(band?.className).toContain("border-t-[3px]")
+  expect(band?.className).toContain("bg-paper")
+  expect(band?.className).not.toContain("max-w-")
 })

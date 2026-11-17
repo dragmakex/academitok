@@ -13,7 +13,6 @@ import { EmptyState } from "@/design-system/components/EmptyState"
 import { ErrorState } from "@/design-system/components/ErrorState"
 import { FeedDeck } from "@/design-system/components/FeedDeck"
 import { FeedStateSlide } from "@/design-system/components/FeedStateSlide"
-import { LinkButton } from "@/design-system/components/LinkButton"
 import { Notice, type NoticeAction } from "@/design-system/components/Notice"
 import { Page } from "@/design-system/components/Page"
 import { PaperSlide } from "@/design-system/components/PaperSlide"
@@ -24,9 +23,9 @@ import { TextField } from "@/design-system/components/TextField"
 import { Grid } from "@/design-system/primitives/Grid"
 import { Inline } from "@/design-system/primitives/Inline"
 import { Stack } from "@/design-system/primitives/Stack"
-import { formatEdition, formatEditionLink } from "@/features/papers/citation"
 import { reactionFailureNotice, trackFeedPageEvent } from "@/lib/feed-analytics"
-import { shareTargets } from "@/lib/share"
+import { appShare, paperShare, sharePayload } from "@/lib/share"
+import type { SharePayload } from "@/lib/share"
 import { deckAction, shortcutRows } from "@/lib/shortcuts"
 import { useAtomSet, useAtomValue } from "@effect/atom-react"
 import { useCallback, useEffect, useRef, useState } from "react"
@@ -78,6 +77,7 @@ type VisiblePaperSlideProps = {
   readonly item: FeedItem
   readonly total: number
   readonly onBookmark: () => void
+  readonly onShare: () => void
   readonly onNavigate: (index: number) => void
   readonly onVisible: (index: number) => void
   readonly registerNode: (index: number, node: HTMLElement | null) => void
@@ -91,6 +91,7 @@ type VisiblePaperSlideProps = {
  * @param root0.item - Feed item.
  * @param root0.total - Mounted feed length.
  * @param root0.onBookmark - Save reaction callback.
+ * @param root0.onShare - Share-sheet callback.
  * @param root0.onNavigate - Navigation callback.
  * @param root0.onVisible - Visibility callback.
  * @param root0.registerNode - Slide registration callback.
@@ -101,6 +102,7 @@ function VisiblePaperSlide({
   index,
   item,
   onBookmark,
+  onShare,
   onNavigate,
   onVisible,
   registerNode,
@@ -262,6 +264,7 @@ function VisiblePaperSlide({
       actions={{
         onLike: () => react("like"),
         onBookmark,
+        onShare,
         onOpenSite: () => react("open-site"),
         onPrevious: () => onNavigate(index - 1),
         onNext: () => onNavigate(index + 1),
@@ -645,37 +648,17 @@ export function App() {
     : `${activeItem.paper.title}, ${activeItem.paper.venue} ${activeItem.paper.year}, ${
       activeIndex + 1
     } of ${snapshot?.items.length ?? 0}`
-  const pagePapers = (snapshot?.items ?? []).map((item) => item.paper)
-  const editionNotice = formatEdition(
-    (snapshot?.items ?? []).map((item) => item.paper),
-    "Evening Edition",
-  )
-  const editionLink = origin === ""
-    ? ""
-    : formatEditionLink(pagePapers, origin)
-  const editionText = editionLink === ""
-    ? editionNotice
-    : `${editionNotice}\n\n${editionLink}`
-  const editionTitle = "AcademiTok · Evening Edition"
-  const editionSummary = pagePapers.length === 0
-    ? "No papers on the page yet."
-    : `${pagePapers.length} papers with beats, authors, years and source links.`
   const [canShare, setCanShare] = useState(false)
 
-  const shareEdition = useCallback(() => {
-    navigator
-      .share({
-        title: editionTitle,
-        text: editionNotice,
-        url: editionLink === "" ? origin : editionLink,
-      })
-      .catch(() =>
-        navigator.clipboard.writeText(editionText).then(
-          () => setNotice({ label: "Edition copied" }),
-          () => undefined,
-        )
-      )
-  }, [editionLink, editionNotice, editionText, origin])
+  const share = useCallback(async (payload: SharePayload) => {
+    const outcome = await sharePayload(payload, navigator)
+    if (outcome === "copied") {
+      setNotice({ label: "Link copied" })
+    }
+    if (outcome === "failed") {
+      setNotice({ label: "The link could not be shared" })
+    }
+  }, [])
 
   return (
     <Page fullBleed>
@@ -786,39 +769,31 @@ export function App() {
           <Card>
             <Stack gap="m">
               <Text tone="label" as="span">
-                Share this edition
+                Pass it on
               </Text>
               <Text tone="muted">
-                {editionSummary}
+                Send AcademiTok, not the papers: the reader who opens it gets
+                their own edition.
               </Text>
               <Inline gap="xs" wrap>
                 {canShare
                   ? (
-                    <Button variant="secondary" onClick={shareEdition}>
-                      Share…
+                    <Button
+                      variant="secondary"
+                      onClick={() => {
+                        void share(appShare(origin))
+                      }}
+                    >
+                      Share AcademiTok
                     </Button>
                   )
                   : null}
-                {shareTargets({
-                  text: editionNotice,
-                  title: editionTitle,
-                  url: editionLink === "" ? origin : editionLink,
-                })
-                  .map((target) => (
-                    <LinkButton
-                      key={target.label}
-                      variant="secondary"
-                      href={target.href}
-                    >
-                      {target.label}
-                    </LinkButton>
-                  ))}
               </Inline>
               <CopyBlock
                 actionLabel="Copy"
-                announcement="Edition copied to the clipboard"
-                label="Plain text with metadata"
-                text={editionText}
+                announcement="Link copied to the clipboard"
+                label="Link"
+                text={origin}
               />
             </Stack>
           </Card>
@@ -946,6 +921,16 @@ export function App() {
                 index={index}
                 total={snapshot.items.length}
                 active={Math.abs(index - activeIndex) <= 1}
+                onShare={() => {
+                  void share(paperShare({
+                    authors: item.paper.authors[0] ?? "Unknown",
+                    permalink: `${origin}/paper/${
+                      encodeURIComponent(item.paper.id)
+                    }`,
+                    title: item.paper.title,
+                    year: item.paper.year,
+                  }))
+                }}
                 onBookmark={() => {
                   reactToPaper({ kind: "bookmark", paperId: item.paper.id })
                   setNotice({ label: "Filed in clippings" })

@@ -12,52 +12,6 @@ export function formatCitation(paper: Paper): string {
 }
 
 /**
- * Renders a loaded edition as a plain-text broadsheet notice.
- * @param papers - Page clippings in page order.
- * @param edition - Edition name printed in the masthead.
- * @param folio - Folio number of the loaded page.
- * @returns Masthead line plus one clipping line each, or an empty string when the page is empty.
- */
-export function formatEdition(
-  papers: ReadonlyArray<Paper>,
-  edition: string,
-  folio = 1,
-): string {
-  if (papers.length === 0) {
-    return ""
-  }
-
-  return [
-    `AcademiTok · ${edition} · Folio ${String(folio).padStart(3, "0")}`,
-    ...papers.map((paper) =>
-      [
-        paper.topics[0] ?? "Research",
-        paper.title,
-        `${paper.authors[0] ?? "Unknown"} (${paper.year})`,
-        paper.externalUrl ?? paper.id,
-      ]
-        .join(" — ")
-    ),
-  ]
-    .join("\n")
-}
-
-/**
- * Renders a reopenable link for a loaded edition.
- * @param papers - Page clippings in page order.
- * @param baseUrl - Origin the link points at.
- * @returns Parametric feed link, or an empty string when the page is empty.
- */
-export function formatEditionLink(
-  papers: ReadonlyArray<Paper>,
-  baseUrl: string,
-): string {
-  return papers.length === 0
-    ? ""
-    : `${baseUrl}/?edition=${papers.map((paper) => paper.id).join(",")}`
-}
-
-/**
  * Escapes a value for a braced BibTeX field.
  * @param value - Raw metadata.
  * @returns Single-line value with braces and backslashes escaped.
