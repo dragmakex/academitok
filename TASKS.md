@@ -1274,7 +1274,7 @@ write the conflict at the bottom instead of guessing.
       before and after; `bun run validate` is green.
       — `1b32c1d`
 
-- [ ] **62. A word when a reaction never reaches the desk.** SPEC §10 promises reactions are
+- [x] **62. A word when a reaction never reaches the desk.** SPEC §10 promises reactions are
       reported "never a silent divergence", and task 30 gave the deck a `Notice` for the successful
       path — but every reaction write is fired and forgotten: `reactToPaperAtom`,
       `removeSavedPaperAtom` and `restoreHiddenPaperAtom` in `src/routes/-index/atoms.tsx` `yield*`
@@ -1300,6 +1300,7 @@ write the conflict at the bottom instead of guessing.
       the notice renders `role="status"` with the label from the real `Notice` component; the three
       write atoms are asserted to set the failure atom from the real atom module; `bun run validate`
       is green.
+      — `36d52cf`
 
 ---
 
