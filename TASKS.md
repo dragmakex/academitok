@@ -161,7 +161,7 @@ write the conflict at the bottom instead of guessing.
       is identical before and after.
       — `ed2ea39`
 
-- [ ] **15. Citation-age skew on the desk.** SPEC §17.3 keeps citation count as a quality signal only
+- [x] **15. Citation-age skew on the desk.** SPEC §17.3 keeps citation count as a quality signal only
       on the condition that we measure the archival bias it introduces, and the desk is where that
       decision is meant to be revisited. `archivalDrift` (task 8) is rendered there, but
       `citationAgeSkew` (task 13) stays in PostHog, so a reader sees how old the page feels and never
@@ -171,6 +171,7 @@ write the conflict at the bottom instead of guessing.
       RPC contract or PostHog payload change.
       Accept: years 2010/2016/2024 with citations 400/50/10 render 400 and 30; an empty side or an
       unloaded snapshot renders an em dash, never `NaN`; no ranking output changes.
+      — `667e0a0`
 
 ---
 
