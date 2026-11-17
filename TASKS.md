@@ -940,7 +940,7 @@ write the conflict at the bottom instead of guessing.
       `__root.test.tsx` already makes; `bun run validate` is green.
       — `df14bd3`
 
-- [ ] **50. The beat the grain is actually too coarse for.** SPEC §17.2 keeps the fixed nine
+- [x] **50. The beat the grain is actually too coarse for.** SPEC §17.2 keeps the fixed nine
       beats only until someone can tell whether they cover what the sources serve, and task 47
       gave the Topic mix block `windowDwellEntropy` — one number that says _whether_ the reader's
       attention is spread across beats and never _which_ beat takes it, so a window where one beat
@@ -966,6 +966,7 @@ write the conflict at the bottom instead of guessing.
       reader with no dwell reactions reports null and the desk renders an em dash, never `NaN` or
       `0%`; the helper is unit-tested and the figure reaches `getPaperFeedSnapshot` from real
       `ReaderState` dwell reactions; the ranked page for a fixed seed is identical before and after.
+      — `81e5ab6`
 
 ---
 
