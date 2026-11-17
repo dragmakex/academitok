@@ -5,12 +5,15 @@ import { createFileRoute } from "@tanstack/react-router"
 import { createServerFn } from "@tanstack/react-start"
 import * as AsyncResult from "effect/unstable/reactivity/AsyncResult"
 import { savedPageAtom } from "./-index/atoms"
+import { withRequestReader } from "./-lib/request-reader"
 import { SavedPage } from "./-saved/saved"
 import { serverRuntime } from "./api/$"
 
 const getSavedClippings = createServerFn({ method: "GET" }).handler(
   async () => {
-    const page = await serverRuntime.runPromise(getSavedPapers)
+    const page = await serverRuntime.runPromise(
+      withRequestReader(getSavedPapers),
+    )
     return [
       dehydrate(savedPageAtom.remote, AsyncResult.success(page), Date.now()),
     ]

@@ -4,9 +4,11 @@ import type { FeedRequest } from "@/api/paper-schema"
 import { curatedPapers } from "@/data/papers"
 import { ReaderStateRepository } from "@/db/reader-state-repository"
 import { getPaperFeedSnapshot } from "@/features/papers/application"
+import { defaultReaderId, ReaderId } from "@/lib/reader-id"
 import * as EffectArray from "effect/Array"
 import * as ConfigProvider from "effect/ConfigProvider"
 import * as Effect from "effect/Effect"
+import * as Layer from "effect/Layer"
 import { mkdtemp, rm } from "node:fs/promises"
 import { tmpdir } from "node:os"
 import { join } from "node:path"
@@ -22,11 +24,14 @@ const requestFor = (sessionId: string): FeedRequest => ({
 
 const runFeed = <A>(
   dataDir: string,
-  effect: Effect.Effect<A, never, ReaderStateRepository>,
+  effect: Effect.Effect<A, never, ReaderStateRepository | ReaderId>,
 ) =>
   Effect.runPromise(
     effect.pipe(
-      Effect.provide(ReaderStateRepository.layer),
+      Effect.provide([
+        ReaderStateRepository.layer,
+        Layer.succeed(ReaderId, defaultReaderId),
+      ]),
       Effect.provide(
         ConfigProvider.layer(
           ConfigProvider.fromEnv({

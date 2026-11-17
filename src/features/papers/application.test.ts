@@ -10,8 +10,10 @@ import {
   getSavedPapers,
 } from "@/features/papers/application"
 import { recordReaderReaction } from "@/features/papers/reactions"
+import { defaultReaderId, ReaderId } from "@/lib/reader-id"
 import * as ConfigProvider from "effect/ConfigProvider"
 import * as Effect from "effect/Effect"
+import * as Layer from "effect/Layer"
 import { mkdtemp, rm } from "node:fs/promises"
 import { tmpdir } from "node:os"
 import { join } from "node:path"
@@ -27,11 +29,14 @@ const requestFor = (sessionId: string): FeedRequest => ({
 
 const runFeed = <A>(
   dataDir: string,
-  effect: Effect.Effect<A, never, ReaderStateRepository>,
+  effect: Effect.Effect<A, never, ReaderStateRepository | ReaderId>,
 ) =>
   Effect.runPromise(
     effect.pipe(
-      Effect.provide(ReaderStateRepository.layer),
+      Effect.provide([
+        ReaderStateRepository.layer,
+        Layer.succeed(ReaderId, defaultReaderId),
+      ]),
       Effect.provide(
         ConfigProvider.layer(
           ConfigProvider.fromEnv({
@@ -42,6 +47,14 @@ const runFeed = <A>(
       Effect.scoped,
     ),
   )
+
+const paperIds = (page: { items: ReadonlyArray<{ paper: { id: string } }> }) =>
+  page.items.map((item) => item.paper.id)
+
+const asReader = (readerId: string) =>
+<A, E, R>(
+  effect: Effect.Effect<A, E, ReaderId | R>,
+): Effect.Effect<A, E, R> => Effect.provideService(effect, ReaderId, readerId)
 
 afterEach(async () => {
   vi.unstubAllGlobals()
@@ -80,13 +93,58 @@ describe("papers application", () => {
       }),
     )
 
-    const firstIds = first.items.map((item) => item.paper.id)
-    const secondIds = second.items.map((item) => item.paper.id)
+    const firstIds = paperIds(first)
+    const secondIds = paperIds(second)
 
     expect(firstIds.length).toBeGreaterThan(0)
     expect(secondIds.filter((id) => firstIds.includes(id))).toHaveLength(0)
     expect(
       fresh.items.some((item) => firstIds.includes(item.paper.id)),
+    )
+      .toBe(true)
+  })
+
+  it("keeps two readers' feed sessions apart under one session id", {
+    timeout: 20_000,
+  }, async () => {
+    const dataDir = await mkdtemp(join(tmpdir(), "academitok-reader-feed-"))
+    directories.push(dataDir)
+    vi.stubGlobal("fetch", () => Promise.reject(new Error("offline")))
+    const readerA = "0f8c7f4e-1c3e-4f22-9a1a-9b4b1c0a1d11"
+    const readerB = "7b2c9d10-4a55-4f8e-8c1f-2d6e3a5b7c99"
+
+    const pages = await runFeed(
+      dataDir,
+      Effect.gen(function*() {
+        const repository = yield* ReaderStateRepository
+        const onboard = repository.onboard({
+          keptPaperIds: [],
+          rejectedPaperIds: [],
+          skipped: true,
+        })
+        const readAs = (readerId: string) =>
+          asReader(readerId)(getPaperFeedSnapshot(requestFor("shared")))
+
+        yield* asReader(readerA)(onboard)
+        yield* asReader(readerB)(onboard)
+
+        return {
+          firstA: yield* readAs(readerA),
+          secondA: yield* readAs(readerA),
+          firstB: yield* readAs(readerB),
+        }
+      }),
+    )
+
+    expect(paperIds(pages.firstA).length).toBeGreaterThan(0)
+    expect(
+      paperIds(pages.secondA).filter((id) =>
+        paperIds(pages.firstA).includes(id)
+      ),
+    )
+      .toHaveLength(0)
+    expect(
+      paperIds(pages.firstB).some((id) => paperIds(pages.firstA).includes(id)),
     )
       .toBe(true)
   })
@@ -118,7 +176,7 @@ describe("papers application", () => {
       }),
     )
 
-    expect(afterSave.items.map((item) => item.paper.id)).toEqual([target.id])
+    expect(paperIds(afterSave)).toEqual([target.id])
     expect(afterSave.items[0]?.bookmarked).toBe(true)
     expect(afterUnsave.items).toHaveLength(0)
     expect(empty.items).toHaveLength(0)

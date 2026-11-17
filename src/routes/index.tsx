@@ -6,13 +6,18 @@ import { createServerFn } from "@tanstack/react-start"
 import * as AsyncResult from "effect/unstable/reactivity/AsyncResult"
 import { App } from "./-index/app"
 import { dashboardSnapshotAtom } from "./-index/atoms"
+import { withRequestReader } from "./-lib/request-reader"
 import { serverRuntime } from "./api/$"
 
 const getPaperFeed = createServerFn({ method: "GET" }).handler(async () => {
-  const snapshot = await serverRuntime.runPromise(getPaperFeedSnapshot({
-    query: { topic: "All", sort: "recommended" },
-    cursor: null,
-  }))
+  const snapshot = await serverRuntime.runPromise(
+    withRequestReader(
+      getPaperFeedSnapshot({
+        query: { topic: "All", sort: "recommended" },
+        cursor: null,
+      }),
+    ),
+  )
   const dehydratedAt = Date.now()
 
   return [

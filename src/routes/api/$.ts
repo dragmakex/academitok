@@ -12,6 +12,7 @@ import {
   initPyroscopeServer,
   shutdownPyroscopeServer,
 } from "@/lib/pyroscope-server"
+import { ReaderId, readerIdFromCookieHeader } from "@/lib/reader-id"
 import { SentryLive } from "@/lib/sentry-effect"
 import { handleSentryTestPost } from "@/lib/sentry-service"
 import { initServer } from "@/lib/server-init"
@@ -22,6 +23,8 @@ import * as Exit from "effect/Exit"
 import * as Layer from "effect/Layer"
 import * as Logger from "effect/Logger"
 import * as ManagedRuntime from "effect/ManagedRuntime"
+import * as Option from "effect/Option"
+import * as Headers from "effect/unstable/http/Headers"
 import * as HttpRouter from "effect/unstable/http/HttpRouter"
 import * as HttpServerResponse from "effect/unstable/http/HttpServerResponse"
 import * as RpcMiddleware from "effect/unstable/rpc/RpcMiddleware"
@@ -112,20 +115,57 @@ export const RpcLoggerLive = Layer.succeed(
 )
 
 /**
- * Router layers - exported for testing.
+ * RPC reader-identity middleware - resolves the anonymous reader from the
+ * request cookie so every handler is scoped to one visitor (SPEC 17.1).
  */
-const DomainRpcLive = DomainRpc.toLayer(createPaperRpcHandlers).pipe(
-  Layer.provide(PapersApplicationLive),
+export class RpcReaderId
+  extends RpcMiddleware.Service<RpcReaderId, { provides: ReaderId }>()(
+    "RpcReaderId",
+  )
+{}
+
+const rpcReaderIdMiddleware = <A, E>(
+  effect: Effect.Effect<A, E, ReaderId>,
+  opts: RpcMiddlewareOptions,
+): Effect.Effect<A, E> =>
+  Effect.provideService(
+    effect,
+    ReaderId,
+    readerIdFromCookieHeader(Option.getOrUndefined(Headers.get(
+      opts.headers,
+      "cookie",
+    ))),
+  )
+
+export const RpcReaderIdLive = Layer.succeed(
+  RpcReaderId,
+  RpcReaderId.of(rpcReaderIdMiddleware),
 )
 
+/**
+ * Router layers - exported for testing.
+ */
+const DomainRpcWithMiddleware = DomainRpc
+  .middleware(RpcLogger)
+  .middleware(RpcReaderId)
+
+const DomainRpcLive = DomainRpcWithMiddleware
+  .toLayer(
+    createPaperRpcHandlers,
+  )
+  .pipe(
+    Layer.provide(PapersApplicationLive),
+  )
+
 export const RpcRouter = RpcServer
-  .layer(DomainRpc.middleware(RpcLogger), {
+  .layer(DomainRpcWithMiddleware, {
     spanPrefix: "rpc",
     disableFatalDefects: true,
   })
   .pipe(
     Layer.provide(DomainRpcLive),
     Layer.provide(RpcLoggerLive),
+    Layer.provide(RpcReaderIdLive),
     Layer.provide(
       RpcServer.layerProtocolHttp({ path: "/api/rpc" }).pipe(
         Layer.provide(RpcSerialization.layerNdjson),
