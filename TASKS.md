@@ -1334,6 +1334,33 @@ write the conflict at the bottom instead of guessing.
       the ranked page for a fixed seed is identical before and after.
       — `8174b57`
 
+- [ ] **64. A reading time measured against the clipping, not a clamp.** SPEC §16 P3 lists
+      reading-time analytics, and tasks 7, 26, 43, 44, 47 and 53 built completion, median reading
+      load, page reading load, reading time per beat and the lowest-completion beat on top of one
+      private estimator in `src/lib/openalex.ts`: `Math.max(4, Math.min(18, Math.round(words / 180)
+      || 6))`. That formula cannot report a measured value. A real OpenAlex abstract runs 150–250
+      words, so the round is 1 and the floor hands back `4`; anything under ninety words rounds to 0,
+      hits the `|| 6` fallback and hands back `6`; only text past 720 words leaves either value. Every
+      live clipping therefore prints the same `4 min`, `readingCompletion` demands 240 s of dwell on
+      a five-line dek to register 100%, and the desk's reading-time numbers all divide by a constant
+      the clipping never earned — while the frozen seed edition carries hand-written `6`–`12` minute
+      values for 33–54 word abstracts, so pool and seed print two scales that came from neither
+      measurement. Measure the served text instead: export one pure `estimateReadMinutes` reading at
+      200 words per minute, rounded up, floor 1, ceiling 10, with no `|| 6` fallback; recompute the
+      fifteen seed clippings' `readMinutes` from their own abstracts with that helper so the whole
+      feed speaks one scale; and let the three surfaces that print the number name what it measures —
+      `min abstract` on the deck rail fact line and the morgue row, `Abstract read time` on the
+      permalink fact. `readingCompletion` and its clamp stay, and the field keeps its name and type.
+      No ranking weight, RPC contract, schema, persistence, PostHog payload, dependency, route or new
+      component change, and the one-clipping-per-viewport snap is untouched.
+      Accept: a 40-word text estimates 1 min, a 200-word text 1 min, 900 words 5 min and 4,000 words
+      clamp to 10, and empty text 1 min (never 0, never the old 4 or 6); a 1-minute clipping dwelled
+      30 s reports completion 0.5 where the old floor reported 0.125; every entry in
+      `curatedPapers` carries a `readMinutes` equal to `estimateReadMinutes` of its own abstract, so
+      no hand-written value survives; the deck, morgue row and permalink render `min abstract` and
+      `Abstract read time` with the clipping's own number; the ranked page for a fixed seed is
+      identical before and after; `bun run validate` is green.
+
 ---
 
 ## Blocked — needs a product decision
