@@ -92,6 +92,22 @@ write the conflict at the bottom instead of guessing.
       helper is unit-tested.
       — `f284725`
 
+- [ ] **18. Serve the feed from the stored catalog pool.** SPEC §16 names this as the remaining P1
+      work: "persist the OpenAlex catalog in `papers` instead of refetching per page". `savePapers`
+      already writes the pool, but `resolveCatalog` in `src/features/papers/application.ts` still
+      calls OpenAlex on every `feed.next` and never reads the rows back — so ten swipes are ten
+      upstream requests, against §7's cached-response rule, §15's politeness rule and §11's warm p95
+      budget, and the 24-hour refresh in §6 has nothing to refresh. Add a repository read of `papers`
+      rows fetched within the 24-hour TTL, export a pure `poolCutoff` boundary beside
+      `impressionCutoff` in `src/db/reader-state-repository.ts`, and let `resolveCatalog` rank the
+      stored pool when it holds at least a page times three (`10 × 3`) papers for the requested beat,
+      fetching and storing only otherwise; the frozen seed edition stays the fallback when the pool
+      is empty and upstream fails. No ranking, RPC contract, schema or PostHog change. Accept: two
+      `feed.next` calls inside the TTL window make one upstream request while a pool fetched two days
+      before the injected clock makes a fresh one; a pool with fewer than 30 papers for the requested
+      beat still refreshes; an empty pool plus a failing upstream still serves the offline edition;
+      the TTL boundary helper is unit-tested.
+
 ---
 
 ## P3 — optional
