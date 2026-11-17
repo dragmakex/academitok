@@ -1213,6 +1213,33 @@ write the conflict at the bottom instead of guessing.
       dir); the ranked page for a fixed seed is identical before and after.
       — `21d85dc`
 
+- [ ] **60. The share of editions the reader never really received, on the desk.** SPEC §8.4's
+      table ends with `Cold-feed failure rate` at `< 0.5%`, and task 34 added `origin` to the
+      `feed.next` payload so the per-page share of `seed` is that rate — but the desk shows the
+      other six rows (tasks 25, 28, 29, 31, 33) and never how much of what this reader opened was
+      the frozen seed edition, so the last row of the table is the only one with no visible input,
+      and the §16 P3 native shell makes it load-bearing: an installed deck with no network is
+      handed seed clippings page after page and nothing on the desk says the whole session was
+      offline. Feed requests are never persisted, so the tally has to live where pages are loaded:
+      add one session atom in `src/routes/-index/atoms.tsx` holding the origins of the pages this
+      session loaded, kept to the most recent 200 by one pure exported `recordEdition(origins,
+      origin)` beside `reactionRates` in `src/lib/feed-analytics.ts`, and one pure exported
+      `coldFeedRate(origins)` returning the share of `"seed"` origins, `null` when no page has been
+      loaded. Record the origin on every snapshot write path (`loadPaperFeedAtom`,
+      `loadNextPaperPageAtom`, `saveReaderProfileAtom`, `onboardReaderAtom`), and render the share
+      in the desk's Reading pace block beside `Saves per 100 impressions` with the existing
+      `StatCard`/`Grid` primitives as a percentage beside its 0.5% ceiling, its helper naming the
+      session window. Display only: no `FeedStats` field, no ranking, RPC procedure, persistence,
+      schema, `feed.next` payload or dependency change, and the one-clipping-per-viewport snap is
+      untouched.
+      Accept: a session of 200 loaded pages of which 2 were seed reports 0.01 and the desk renders
+      `1.0%`; a session that loaded only seed pages reports 1 and renders `100%`, and a session
+      whose pages all came from the pool or a live fetch reports 0 and renders `0.0%`, never an em
+      dash; a session that loaded no page reports null and the desk renders an em dash, never `NaN`
+      or `0%`; an origin older than the last 200 loaded pages does not move the figure; both
+      helpers are unit-tested, and the recording sites are asserted from the real atom module;
+      the ranked page for a fixed seed is identical before and after.
+
 ---
 
 ## Blocked — needs a product decision
