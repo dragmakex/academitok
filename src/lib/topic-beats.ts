@@ -12,6 +12,85 @@ const topicKeywords: Record<Topic, ReadonlyArray<string>> = {
   Robotics: ["robot", "robotics", "autonomous", "control"],
 }
 
+const conceptBeats: Record<Topic, ReadonlyArray<string>> = {
+  AI: [
+    "artificial intelligence",
+    "machine learning",
+    "deep learning",
+    "computer vision",
+    "natural language processing",
+    "data science",
+  ],
+  Biology: [
+    "biology",
+    "genetics",
+    "genomics",
+    "ecology",
+    "microbiology",
+    "neuroscience",
+  ],
+  Climate: [
+    "climate",
+    "environmental science",
+    "sustainability",
+    "atmospheric science",
+    "oceanography",
+  ],
+  Education: ["education", "pedagogy", "curriculum", "didactics"],
+  Economics: [
+    "economics",
+    "econometrics",
+    "finance",
+    "management",
+    "political science",
+  ],
+  Health: [
+    "medicine",
+    "public health",
+    "epidemiology",
+    "nursing",
+    "pharmacology",
+  ],
+  Physics: [
+    "physics",
+    "quantum",
+    "materials science",
+    "astronomy",
+    "optics",
+    "thermodynamics",
+  ],
+  Psychology: [
+    "psychology",
+    "psychiatry",
+    "cognitive science",
+    "behavioral science",
+  ],
+  Robotics: [
+    "robotics",
+    "automation",
+    "control engineering",
+    "mechatronics",
+  ],
+}
+
+/**
+ * Maps OpenAlex concept names onto the fixed beats (SPEC §17.2), without a
+ * fallback so callers can count what the source metadata failed to cover.
+ * @param concepts - Concept display names from the source.
+ * @returns Up to three beats named by the concepts, empty when none matched.
+ */
+export function conceptTopics(
+  concepts: ReadonlyArray<string>,
+): ReadonlyArray<Topic> {
+  const haystack = concepts.join(" ").toLowerCase()
+  return (Object.entries(conceptBeats) as ReadonlyArray<
+    readonly [Topic, ReadonlyArray<string>]
+  >)
+    .filter(([, names]) => names.some((name) => haystack.includes(name)))
+    .map(([topic]) => topic)
+    .slice(0, 3)
+}
+
 /**
  * Maps text onto the fixed beats (SPEC §17.2), without a fallback so callers can
  * count what the taxonomy failed to cover.

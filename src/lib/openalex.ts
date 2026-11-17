@@ -7,7 +7,7 @@ import type {
 } from "@/api/paper-schema"
 import { curatedPapers } from "@/data/papers"
 import { createSourceGuard } from "@/lib/source-guard"
-import { matchedTopics } from "@/lib/topic-beats"
+import { conceptTopics, matchedTopics } from "@/lib/topic-beats"
 
 const baseUrl = "https://api.openalex.org/works"
 const cacheTtlMs = 24 * 60 * 60 * 1_000
@@ -53,10 +53,15 @@ type OpenAlexLocation = {
   }
 }
 
+type OpenAlexConcept = {
+  readonly display_name?: string
+}
+
 type OpenAlexWork = {
   readonly id?: string
   readonly title?: string
   readonly authorships?: ReadonlyArray<OpenAlexAuthor>
+  readonly concepts?: ReadonlyArray<OpenAlexConcept>
   readonly abstract_inverted_index?: Record<string, ReadonlyArray<number>>
   readonly publication_year?: number
   readonly primary_location?: OpenAlexLocation | null
@@ -94,17 +99,25 @@ export function indexToText(
 }
 
 /**
- * Maps text onto fixed beats, filing anything unmatched under Education (SPEC §17.2).
+ * Maps text onto fixed beats, falling back to the source concepts and then to
+ * Education (SPEC §17.2).
  * @param title - Paper title.
  * @param abstract - Paper abstract.
+ * @param concepts - Concept display names from the source.
  * @returns Matching beats, or the Education fallback.
  */
 export function detectTopics(
   title: string,
   abstract: string,
+  concepts: ReadonlyArray<string> = [],
 ): ReadonlyArray<Topic> {
   const matches = matchedTopics(title, abstract)
-  return matches.length > 0 ? matches : ["Education"]
+  if (matches.length > 0) {
+    return matches
+  }
+
+  const conceptMatches = conceptTopics(concepts)
+  return conceptMatches.length > 0 ? conceptMatches : ["Education"]
 }
 
 /**
@@ -168,6 +181,12 @@ function mapWorkToPaper(work: OpenAlexWork): Paper | null {
     )
     .slice(0, 6)
 
+  const concepts = (work.concepts ?? [])
+    .map((concept) => concept.display_name?.trim())
+    .filter((value): value is string =>
+      typeof value === "string" && value.length > 0
+    )
+
   const externalUrl = work.best_oa_location?.landing_page_url
     ?? work.primary_location?.landing_page_url
     ?? work.id
@@ -181,7 +200,7 @@ function mapWorkToPaper(work: OpenAlexWork): Paper | null {
     summary: abstract.length > 220 ? `${abstract.slice(0, 217)}...` : abstract,
     year: work.publication_year,
     venue: work.primary_location?.source?.display_name?.trim() || "OpenAlex",
-    topics: [...detectTopics(title, abstract)],
+    topics: [...detectTopics(title, abstract, concepts)],
     access: work.open_access?.is_oa === true ? "open" : "institution",
     citations: work.cited_by_count ?? 0,
     readMinutes: estimateReadMinutes(abstract),
