@@ -607,7 +607,7 @@ write the conflict at the bottom instead of guessing.
       mocks them.
       — `aa4516e`
 
-- [ ] **37. A filing count on the permalink.** SPEC §16 P3 lists "multi-reader with collaborative
+- [x] **37. A filing count on the permalink.** SPEC §16 P3 lists "multi-reader with collaborative
       signals": task 20 gave every visitor their own `reader_id`, but nothing ever reads the
       `reactions` rows across readers — the `/paper/$id` permalink prints one clipping's metadata
       and citations as if the reader were alone in the morgue, so the one collaborative fact the
@@ -628,6 +628,7 @@ write the conflict at the bottom instead of guessing.
       permalink id still returns the not-found notice; the count is asserted from a real repository
       written under two `ReaderId` values, and the omitted/rendered fact from
       `renderToStaticMarkup` of the real `PaperPage`.
+      — `7ff938c`
 
 ---
 
