@@ -908,7 +908,7 @@ write the conflict at the bottom instead of guessing.
       and the row from the real `SavedPage`.
       — `06a2561`
 
-- [ ] **49. A home-screen icon iOS will actually draw.** SPEC §16 P3 lists a native shell and
+- [x] **49. A home-screen icon iOS will actually draw.** SPEC §16 P3 lists a native shell and
       tasks 19, 21, 22 and 45 gave it the gazette manifest, the safe-area insets, `/mark.svg` as
       the favicon and manifest icon, and the three `apple-mobile-web-app-*` metas that opt an
       iPhone home-screen app into standalone mode — so iOS now installs the deck as an app, and
@@ -938,6 +938,7 @@ write the conflict at the bottom instead of guessing.
       to a screenshot; the link is asserted from the real `rootHead()` and the signature, dimensions
       and opaque ground from `readFileSync` of the real file, beside the shell-metadata assertions
       `__root.test.tsx` already makes; `bun run validate` is green.
+      — `df14bd3`
 
 ---
 
