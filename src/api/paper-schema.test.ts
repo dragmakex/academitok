@@ -1,5 +1,6 @@
 import {
   FeedPage,
+  FeedRequest,
   OnboardProfileInput,
   Paper,
   TrackPaperViewInput,
@@ -14,6 +15,7 @@ const decodeFeedPage = Schema.decodeUnknownSync(FeedPage)
 const decodeImpression = Schema.decodeUnknownSync(TrackPaperViewInput)
 const decodeImpressions = Schema.decodeUnknownSync(TrackPaperViewsInput)
 const decodeOnboarding = Schema.decodeUnknownSync(OnboardProfileInput)
+const decodeFeedRequest = Schema.decodeUnknownSync(FeedRequest)
 
 describe("paper feed contracts", () => {
   it("round-trips the fifteen offline onboarding candidates", () => {
@@ -77,6 +79,22 @@ describe("paper feed contracts", () => {
         keptPaperIds: ["1", "2", "3", "4"],
         rejectedPaperIds: [],
         skipped: false,
+      })
+    )
+      .toThrow()
+  })
+
+  it("pins at most ten edition ids on a feed request", () => {
+    const request = {
+      query: { topic: "All" as const, sort: "recommended" as const },
+      cursor: null,
+    }
+    expect(decodeFeedRequest({ ...request, edition: ["paper-1", "paper-2"] }))
+      .toMatchObject({ edition: ["paper-1", "paper-2"] })
+    expect(() =>
+      decodeFeedRequest({
+        ...request,
+        edition: curatedPapers.slice(0, 11).map((paper) => paper.id),
       })
     )
       .toThrow()

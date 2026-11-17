@@ -43,6 +43,21 @@ export function formatEdition(
 }
 
 /**
+ * Renders a reopenable link for a loaded edition.
+ * @param papers - Page clippings in page order.
+ * @param baseUrl - Origin the link points at.
+ * @returns Parametric feed link, or an empty string when the page is empty.
+ */
+export function formatEditionLink(
+  papers: ReadonlyArray<Paper>,
+  baseUrl: string,
+): string {
+  return papers.length === 0
+    ? ""
+    : `${baseUrl}/?edition=${papers.map((paper) => paper.id).join(",")}`
+}
+
+/**
  * Escapes a value for a braced BibTeX field.
  * @param value - Raw metadata.
  * @returns Single-line value with braces and backslashes escaped.

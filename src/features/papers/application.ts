@@ -141,10 +141,22 @@ export const getPaperFeedSnapshot = (request: FeedRequest) =>
       const recent = recentPaperIds(state.reactions, now)
       const fresh = candidates.filter((item) => !recent.has(item.paper.id))
       const repeats = ranked.filter((item) => recent.has(item.paper.id))
-      const page = onboarding
-        ? { items: candidates.slice(0, 15), nextCursor: null }
-        : buildFeedPage(fresh, request.cursor, 10, sessionSeen, repeats)
-      if (request.sessionId !== undefined) {
+      const edition = request.edition
+      const pinned = edition === undefined ? undefined : new Map(
+        ranked.map((item) => [item.paper.id, item] as const),
+      )
+      const page = edition === undefined || pinned === undefined
+        ? onboarding
+          ? { items: candidates.slice(0, 15), nextCursor: null }
+          : buildFeedPage(fresh, request.cursor, 10, sessionSeen, repeats)
+        : {
+          items: edition.flatMap((id) => {
+            const item = pinned.get(id)
+            return item === undefined ? [] : [item]
+          }),
+          nextCursor: null,
+        }
+      if (edition === undefined && request.sessionId !== undefined) {
         yield* repository.saveFeedSession(
           request.sessionId,
           [

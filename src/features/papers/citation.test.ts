@@ -1,6 +1,11 @@
 import { curatedPapers } from "@/data/papers"
 import { describe, expect, it } from "vitest"
-import { formatBibtex, formatCitation, formatEdition } from "./citation"
+import {
+  formatBibtex,
+  formatCitation,
+  formatEdition,
+  formatEditionLink,
+} from "./citation"
 
 describe("formatCitation", () => {
   it("prints authors, year, title, venue and source URL", () => {
@@ -65,6 +70,22 @@ describe("formatEdition", () => {
 
   it("renders an empty notice for an empty page", () => {
     expect(formatEdition([], "Evening Edition")).toBe("")
+  })
+})
+
+describe("formatEditionLink", () => {
+  const fixture = curatedPapers.slice(0, 3)
+
+  it("renders the page ids in order under the origin", () => {
+    expect(formatEditionLink(fixture, "https://academitok.test")).toBe(
+      `https://academitok.test/?edition=${
+        fixture.map((paper) => paper.id).join(",")
+      }`,
+    )
+  })
+
+  it("renders an empty link for an empty page", () => {
+    expect(formatEditionLink([], "https://academitok.test")).toBe("")
   })
 })
 

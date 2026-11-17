@@ -161,10 +161,17 @@ export const FeedQuery = Schema.Struct({
 })
 export type FeedQuery = typeof FeedQuery.Type
 
+/** Paper ids pinned for a shared edition; one page at most. */
+export const EditionIds = Schema.Array(Schema.String).check(
+  Schema.isMaxLength(10),
+)
+export type EditionIds = typeof EditionIds.Type
+
 export const FeedRequest = Schema.Struct({
   query: FeedQuery,
   cursor: Schema.NullOr(FeedCursor),
   sessionId: Schema.optional(Schema.NonEmptyString),
+  edition: Schema.optional(EditionIds),
 })
 export type FeedRequest = typeof FeedRequest.Type
 

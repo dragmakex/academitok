@@ -196,6 +196,48 @@ describe("papers application", () => {
       .toBe(true)
   })
 
+  it(
+    "serves a pinned edition in page order without ranking or a session write",
+    {
+      timeout: 15_000,
+    },
+    async () => {
+      const dataDir = await mkdtemp(join(tmpdir(), "academitok-edition-pin-"))
+      directories.push(dataDir)
+      vi.stubGlobal("fetch", () => Promise.reject(new Error("offline")))
+      const ids = curatedPapers.slice(0, 3).map((paper) => paper.id)
+
+      const [pinned, sessionSeen] = await runFeed(
+        dataDir,
+        Effect.gen(function*() {
+          const repository = yield* ReaderStateRepository
+          yield* repository.onboard({
+            keptPaperIds: [],
+            rejectedPaperIds: [],
+            skipped: true,
+          })
+          const page = yield* getPaperFeedSnapshot({
+            query: { topic: "All", sort: "recommended" },
+            cursor: null,
+            sessionId: "edition-a",
+            edition: [...ids, "missing-paper"],
+          })
+          return [
+            page,
+            yield* repository.loadFeedSession("edition-a"),
+          ] as const
+        }),
+      )
+
+      expect(paperIds(pinned)).toEqual(ids)
+      expect(pinned.nextCursor).toBeNull()
+      expect(pinned.items.every((item) => item.exploration === false)).toBe(
+        true,
+      )
+      expect(sessionSeen).toHaveLength(0)
+    },
+  )
+
   it("reports the reader's median dwell on the feed snapshot", {
     timeout: 15_000,
   }, async () => {

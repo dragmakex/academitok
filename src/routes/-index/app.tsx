@@ -25,7 +25,7 @@ import { TextField } from "@/design-system/components/TextField"
 import { Grid } from "@/design-system/primitives/Grid"
 import { Inline } from "@/design-system/primitives/Inline"
 import { Stack } from "@/design-system/primitives/Stack"
-import { formatEdition } from "@/features/papers/citation"
+import { formatEdition, formatEditionLink } from "@/features/papers/citation"
 import {
   archivalDrift,
   citationAgeSkew,
@@ -430,6 +430,7 @@ export function App() {
     } | null
   >(null)
   const [activeIndex, setActiveIndex] = useState(0)
+  const [origin, setOrigin] = useState("")
   const [query, setQuery] = useState<FeedQuery>({
     topic: snapshot?.selectedTopic ?? "All",
     sort: snapshot?.selectedSort ?? "recommended",
@@ -445,6 +446,10 @@ export function App() {
   const slideNodes = useRef(new Map<number, HTMLElement>())
   const requestedCursors = useRef(new Set<string>())
   const initialFeedTracked = useRef(false)
+
+  useEffect(() => {
+    setOrigin(window.location.origin)
+  }, [])
 
   useEffect(() => {
     if (snapshot !== undefined && !initialFeedTracked.current) {
@@ -634,6 +639,12 @@ export function App() {
     (snapshot?.items ?? []).map((item) => item.paper),
     "Evening Edition",
   )
+  const editionLink = origin === ""
+    ? ""
+    : formatEditionLink(pagePapers, origin)
+  const editionText = editionLink === ""
+    ? editionNotice
+    : `${editionNotice}\n\n${editionLink}`
 
   return (
     <Page fullBleed>
@@ -685,7 +696,7 @@ export function App() {
               actionLabel="Copy edition"
               announcement="Edition copied to the clipboard"
               label="Share this edition"
-              text={editionNotice}
+              text={editionText}
             />
           </Stack>
 
