@@ -25,6 +25,20 @@ export const rootHead = () => ({
       name: "theme-color",
       content: "oklch(0.18 0.012 60)",
     },
+    {
+      name: "apple-mobile-web-app-capable",
+      content: "yes",
+    },
+    {
+      name: "apple-mobile-web-app-status-bar-style",
+      content: "black-translucent",
+    },
+    {
+      name: "apple-mobile-web-app-title",
+      content: "AcademiTok",
+    },
+    // shortcut: the mark is SVG and iOS cannot use it, so iOS falls back to a
+    // screenshot for the home-screen icon; add a PNG when the mark is redrawn.
   ],
   links: [
     {

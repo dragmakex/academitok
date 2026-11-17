@@ -130,6 +130,34 @@ describe("gazette shell metadata", () => {
     })
   })
 
+  it("opts the installed iOS shell out of Safari chrome", async () => {
+    const { rootHead } = await import("./__root")
+    const meta = rootHead().meta ?? []
+    const appleMeta = (name: string) =>
+      meta.filter((entry) => "name" in entry && entry.name === name)
+
+    expect(appleMeta("apple-mobile-web-app-capable")).toEqual([
+      { name: "apple-mobile-web-app-capable", content: "yes" },
+    ])
+    expect(appleMeta("apple-mobile-web-app-status-bar-style")).toEqual([
+      {
+        name: "apple-mobile-web-app-status-bar-style",
+        content: "black-translucent",
+      },
+    ])
+    expect(appleMeta("apple-mobile-web-app-title")).toEqual([
+      { name: "apple-mobile-web-app-title", content: manifest.short_name },
+    ])
+    expect(meta).toContainEqual({
+      name: "viewport",
+      content: "width=device-width, initial-scale=1, viewport-fit=cover",
+    })
+    expect(meta).toContainEqual({
+      name: "theme-color",
+      content: manifest.theme_color,
+    })
+  })
+
   it("serves a hand-drawn gazette mark and retires the sample assets", () => {
     const markPath = join(process.cwd(), "public/mark.svg")
     expect(existsSync(markPath)).toBe(true)
