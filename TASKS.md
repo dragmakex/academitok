@@ -829,6 +829,33 @@ write the conflict at the bottom instead of guessing.
       when the mark is redrawn).
       — `236e986`
 
+- [ ] **46. Who else keeps the clipping, on the clipping.** SPEC §16 P3 lists "multi-reader with
+      collaborative signals": task 37 gave the permalink `Filed by N readers` and task 40 gave the
+      morgue's rows `Also kept by N readers`, but the deck — the surface every reader actually
+      reads — still sets one clipping as if they were the only person in the morgue, and
+      `PaperSlide`'s deck variant prints site, citations, read time and access and never the one
+      collaborative fact the split `reader_id` rows already answer, so multi-reader buys the reader
+      nothing where they spend their time. Reuse the batched `filedByOthers(paperIds, readerId)`
+      read task 40 added (it already excludes the reader), call it once in
+      `getPaperFeedSnapshot` over the page's paper ids by yielding the existing `ReaderId` service
+      the way `getSavedAudience` does, report the result on `FeedSnapshot` as
+      `alsoKeptBy: Record<string, number>` (an empty record, never null; leave `FeedPage` and
+      `saved.list` alone), merge the two records in `appendPaperPage` so an appended page keeps the
+      first page's counts, and let `PaperSlide`'s deck variant print
+      `Also kept by 2 readers` under the `venue · year · site · citations · read time` line,
+      omitting the clause when the count is 0 or absent. Display only: no ranking, RPC procedure,
+      persistence, PostHog payload or dependency change, no new component, and the
+      one-clipping-per-viewport snap is untouched.
+      Accept: a page whose clipping is filed by two other readers reports 2 and the deck renders
+      `Also kept by 2 readers`; a clipping nobody filed, or that only the reading reader filed,
+      renders no clause rather than `0 readers`; an undone save by another reader
+      (`active = false`) is not counted; a page appended by `appendPaperPage` keeps the first
+      page's counts and adds the appended page's; the counts are asserted from the real
+      `getPaperFeedSnapshot` over a real repository written under two `ReaderId` values (temp
+      PGlite dir, stubbed catalog) and the rendered and omitted clause from
+      `renderToStaticMarkup` of the real deck-variant `PaperSlide`; the ranked page for a fixed
+      seed is identical before and after.
+
 ---
 
 ## Blocked — needs a product decision
