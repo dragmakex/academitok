@@ -51,7 +51,7 @@ is what is wrong, and it is ~3 files.
 ```
 ┌──────────────────────────────────────────────┐
 │  /                     full-screen feed deck │  P0
-│  /desk                 profile, beats, stats │  P0 (drawer, not route)
+│  /desk          profile, beats, share, auth │  P0 (drawer, not route)
 │  /saved                saved clippings       │  P2 (route)
 │  /paper/$id            permalink + cite      │  P2 (route)
 └──────────────────────────────────────────────┘
@@ -258,11 +258,14 @@ scrolling" / throws the rest away. Seeds `topicAffinity` and `contentCentroid`. 
 
 ### 8.3 Explainability
 
-Every item carries `rationale: string[]` (max 2) rendered as the `WHY THIS` stamp. Rationale must be
-derived from the actual scoring terms that fired — never generic filler. If nothing fired, show the
-beat name.
+The slide shows the paper and nothing else — no `WHY THIS` stamp, no score, no rationale. Ranking is
+legible through the order of the deck, not through prose about it. Signal weights live in
+`src/features/papers/engagement.ts` and are the single source of truth.
 
-### 8.4 Metrics (feed health dashboard)
+### 8.4 Metrics (feed health targets)
+
+These are engineering targets read from PostHog and tests, **not** surfaces in the product. The desk
+carries no readouts: the numbers below are for whoever maintains the ranker.
 
 | Metric                                      | Target P1  |
 | ------------------------------------------- | ---------- |
