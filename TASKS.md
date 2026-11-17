@@ -968,7 +968,7 @@ write the conflict at the bottom instead of guessing.
       `ReaderState` dwell reactions; the ranked page for a fixed seed is identical before and after.
       — `81e5ab6`
 
-- [ ] **51. The term decision 3 worries about, named in `Why this`.** SPEC §17.3 keeps citation
+- [x] **51. The term decision 3 worries about, named in `Why this`.** SPEC §17.3 keeps citation
       count as a quality signal only on the condition that we "measure whether the feed feels
       archival", and §8.3 requires every item's `rationale` to be "derived from the actual scoring
       terms that fired" — but `rankPapers` in `src/features/papers/recommendation.ts` adds
@@ -995,6 +995,7 @@ write the conflict at the bottom instead of guessing.
       served page for a fixed seed are identical before and after, asserted from a real
       `buildFeedItems` call over the same fixtures; the label carries the same count the facts
       line prints; `bun run validate` is green.
+      — `869bc83`
 
 ---
 
