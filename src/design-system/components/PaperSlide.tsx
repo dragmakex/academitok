@@ -52,6 +52,7 @@ type DeckPaperSlideProps = PaperMeta & {
 
 type CompactPaperSlideProps = PaperMeta & {
   readonly variant: "compact"
+  readonly filedByOthers?: number | undefined
   readonly onUnsave: () => void
 }
 
@@ -70,6 +71,7 @@ export const PaperSlide = forwardRef<HTMLElement, PaperSlideProps>(
         authors,
         citations,
         externalUrl,
+        filedByOthers,
         onUnsave,
         readMinutes,
         siteLabel,
@@ -106,6 +108,15 @@ export const PaperSlide = forwardRef<HTMLElement, PaperSlideProps>(
                 {siteLabel} · {citations} citations · {readMinutes} min ·{" "}
                 {accessLabel}
               </span>
+              {filedByOthers === undefined || filedByOthers === 0
+                ? null
+                : (
+                  <span className="font-label text-[0.62rem] uppercase tracking-[0.12em] text-stamp">
+                    {`Also kept by ${filedByOthers} ${
+                      filedByOthers === 1 ? "reader" : "readers"
+                    }`}
+                  </span>
+                )}
               {externalUrl === undefined
                 ? null
                 : (

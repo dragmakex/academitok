@@ -18,7 +18,7 @@ import {
 } from "@/db/schema"
 import { ReaderId } from "@/lib/reader-id"
 import { PGlite } from "@electric-sql/pglite"
-import { and, desc, eq, gte, inArray, isNull, lt } from "drizzle-orm"
+import { and, desc, eq, gte, inArray, isNull, lt, ne } from "drizzle-orm"
 import { drizzle as drizzlePglite } from "drizzle-orm/pglite"
 import { drizzle as drizzlePostgres } from "drizzle-orm/postgres-js"
 import * as Config from "effect/Config"
@@ -72,6 +72,10 @@ type ReaderStateRepositoryShape = {
     now: Date,
   ) => Effect.Effect<ReadonlyArray<Paper>>
   readonly savedByReaders: (paperId: string) => Effect.Effect<number>
+  readonly filedByOthers: (
+    paperIds: ReadonlyArray<string>,
+    readerId: string,
+  ) => Effect.Effect<Record<string, number>>
 }
 
 type StoredState = {
@@ -127,6 +131,10 @@ type StateStorage = {
   ) => Promise<ReadonlyArray<Paper>>
   readonly recentPapers: (since: Date) => Promise<ReadonlyArray<Paper>>
   readonly savedByReaders: (paperId: string) => Promise<number>
+  readonly filedByOthers: (
+    paperIds: ReadonlyArray<string>,
+    readerId: string,
+  ) => Promise<Record<string, number>>
 }
 
 const decodeReaderState = Schema.decodeUnknownSync(ReaderState)
@@ -500,6 +508,38 @@ const activeFilers = (
 }
 
 /**
+ * Counts live filings per paper for readers other than the current one.
+ * @param rows - Bookmark rows by other readers, newest first.
+ * @returns Paper id to filer count, omitting papers nobody else keeps.
+ */
+const otherFilers = (
+  rows: ReadonlyArray<{
+    readonly paperId: string
+    readonly readerId: string
+    readonly active: boolean
+  }>,
+): Record<string, number> => {
+  const byPaper = new Map<
+    string,
+    Array<{ readonly readerId: string; readonly active: boolean }>
+  >()
+  for (const row of rows) {
+    const filings = byPaper.get(row.paperId) ?? []
+    filings.push({ readerId: row.readerId, active: row.active })
+    byPaper.set(row.paperId, filings)
+  }
+
+  const counts: Record<string, number> = {}
+  for (const [paperId, filings] of byPaper) {
+    const active = activeFilers(filings)
+    if (active > 0) {
+      counts[paperId] = active
+    }
+  }
+  return counts
+}
+
+/**
  * Builds the repository service over adapter-specific storage.
  * @param storage - Database adapter operations.
  * @returns Reader-state repository service.
@@ -582,6 +622,11 @@ function makeRepositoryService(storage: StateStorage) {
         Effect.promise(async () => {
           await ensureMigrated()
           return storage.savedByReaders(paperId)
+        }),
+      filedByOthers: (paperIds, readerId) =>
+        Effect.promise(async () => {
+          await ensureMigrated()
+          return storage.filedByOthers(paperIds, readerId)
         }),
     } satisfies ReaderStateRepositoryShape,
   )
@@ -899,6 +944,26 @@ function makePostgresRepository(databaseUrl: string) {
               ))
               .orderBy(desc(reactionsTable.createdAt)),
           ),
+        filedByOthers: async (paperIds, readerId) => {
+          if (paperIds.length === 0) {
+            return {}
+          }
+          return otherFilers(
+            await db
+              .select({
+                paperId: reactionsTable.paperId,
+                readerId: reactionsTable.readerId,
+                active: reactionsTable.active,
+              })
+              .from(reactionsTable)
+              .where(and(
+                inArray(reactionsTable.paperId, paperIds),
+                eq(reactionsTable.kind, "bookmark"),
+                ne(reactionsTable.readerId, readerId),
+              ))
+              .orderBy(desc(reactionsTable.createdAt)),
+          )
+        },
       }
 
       return makeRepositoryService(postgresStorage)
@@ -1217,6 +1282,26 @@ function makePgliteRepository(dataDir: string | undefined) {
               ))
               .orderBy(desc(reactionsTable.createdAt)),
           ),
+        filedByOthers: async (paperIds, readerId) => {
+          if (paperIds.length === 0) {
+            return {}
+          }
+          return otherFilers(
+            await db
+              .select({
+                paperId: reactionsTable.paperId,
+                readerId: reactionsTable.readerId,
+                active: reactionsTable.active,
+              })
+              .from(reactionsTable)
+              .where(and(
+                inArray(reactionsTable.paperId, paperIds),
+                eq(reactionsTable.kind, "bookmark"),
+                ne(reactionsTable.readerId, readerId),
+              ))
+              .orderBy(desc(reactionsTable.createdAt)),
+          )
+        },
       }
 
       return makeRepositoryService(storage)

@@ -27,6 +27,7 @@ import {
   topicEntropy,
 } from "@/lib/feed-analytics"
 import { fetchOpenAlexPapers } from "@/lib/openalex"
+import { ReaderId } from "@/lib/reader-id"
 import * as Clock from "effect/Clock"
 import * as Effect from "effect/Effect"
 import * as Layer from "effect/Layer"
@@ -263,6 +264,21 @@ export const getPaperAudience = (id: string) =>
       return yield* repository.savedByReaders(id)
     })
     .pipe(Effect.withSpan("paper.audience"))
+
+export const getSavedAudience: Effect.Effect<
+  Record<string, number>,
+  never,
+  ReaderStateRepository | ReaderId
+> = Effect
+  .gen(function*() {
+    const repository = yield* ReaderStateRepository
+    const readerId = yield* ReaderId
+    const savedIds = savedPaperIds(yield* repository.load)
+    return savedIds.length === 0
+      ? {}
+      : yield* repository.filedByOthers(savedIds, readerId)
+  })
+  .pipe(Effect.withSpan("saved.audience"))
 
 export const saveReaderProfile = (
   input: SaveProfileInput,

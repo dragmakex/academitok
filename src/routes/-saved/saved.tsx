@@ -15,9 +15,13 @@ import { removeSavedPaperAtom, savedPageAtom } from "../-index/atoms"
 
 /**
  * Renders the saved clippings list as a static broadsheet page.
+ * @param props - Loader data for the page.
+ * @param props.audience - Other readers' filing counts per paper id.
  * @returns Saved clippings route content.
  */
-export function SavedPage() {
+export function SavedPage(
+  { audience = {} }: { readonly audience?: Record<string, number> },
+) {
   const pageAsync = useAtomValue(savedPageAtom)
   const removeSaved = useAtomSet(removeSavedPaperAtom)
   const refresh = useAtomRefresh(savedPageAtom)
@@ -137,6 +141,7 @@ export function SavedPage() {
                         readMinutes={item.paper.readMinutes}
                         topics={item.paper.topics}
                         externalUrl={item.paper.externalUrl}
+                        filedByOthers={audience[item.paper.id] ?? 0}
                         onUnsave={() => removeSaved(item.paper.id)}
                       />
                     ))}

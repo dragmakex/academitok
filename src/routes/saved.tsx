@@ -1,4 +1,4 @@
-import { getSavedPapers } from "@/features/papers/application"
+import { getSavedAudience, getSavedPapers } from "@/features/papers/application"
 import { HydrationBoundary } from "@/lib/atom-hydration"
 import { dehydrate } from "@/lib/atom-utils"
 import { createFileRoute } from "@tanstack/react-router"
@@ -21,6 +21,10 @@ const getSavedClippings = createServerFn({ method: "GET" }).handler(
   },
 )
 
+const getSavedAudienceCount = createServerFn({ method: "GET" }).handler(
+  async () => serverRuntime.runPromise(withRequestReader(getSavedAudience)),
+)
+
 /**
  * Head entries for the morgue.
  * @returns The morgue title and preview copy.
@@ -34,7 +38,13 @@ export const morgueHead = () =>
 
 export const Route = createFileRoute("/saved")({
   head: morgueHead,
-  loader: () => getSavedClippings(),
+  loader: async () => {
+    const [dehydrated, audience] = await Promise.all([
+      getSavedClippings(),
+      getSavedAudienceCount(),
+    ])
+    return { dehydrated, audience }
+  },
   component: SavedRoute,
 })
 
@@ -43,10 +53,10 @@ export const Route = createFileRoute("/saved")({
  * @returns Saved route with hydrated atoms.
  */
 function SavedRoute() {
-  const dehydrated = Route.useLoaderData()
+  const { audience, dehydrated } = Route.useLoaderData()
   return (
     <HydrationBoundary state={dehydrated}>
-      <SavedPage />
+      <SavedPage audience={audience} />
     </HydrationBoundary>
   )
 }
