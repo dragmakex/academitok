@@ -79,6 +79,10 @@ describe("readingCompletion", () => {
     expect(readingCompletion(60_000, 2)).toBe(0.5)
   })
 
+  it("reports the share of a one-minute clipping read for half a minute", () => {
+    expect(readingCompletion(30_000, 1)).toBe(0.5)
+  })
+
   it("clamps over-reading to a full completion", () => {
     expect(readingCompletion(900_000, 2)).toBe(1)
   })

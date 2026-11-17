@@ -17,6 +17,7 @@ import {
   multiBeatCount,
   unmatchedBeatCount,
 } from "@/lib/feed-analytics"
+import { estimateReadMinutes } from "@/lib/openalex"
 import { defaultReaderId, ReaderId } from "@/lib/reader-id"
 import * as ConfigProvider from "effect/ConfigProvider"
 import * as Effect from "effect/Effect"
@@ -662,8 +663,9 @@ describe("papers application", () => {
         }
         return paper
       }
-      // Estimates 9/8/11 -> median 9; the 12-minute clipping makes the even
-      // window 8/9/11/12 -> 10; fifty of the 12-minute clipping -> 12.
+      // Every seed clipping measures 1 minute at 200 wpm, so the window can only
+      // prove the figure is joined from the catalog and displaced by newer views;
+      // the median's odd/even handling is unit-tested in feed-analytics.test.ts.
       const nine = pick("hal-2022-open-science-collaboration-markets")
       const eight = pick("arxiv-2023-quantum-sensor-compression")
       const eleven = pick("biorxiv-2024-fast-protein-folding-signals")
@@ -706,9 +708,15 @@ describe("papers application", () => {
       )
 
       expect(empty.stats.windowMedianReadMinutes).toBeNull()
-      expect(odd.stats.windowMedianReadMinutes).toBe(9)
-      expect(even.stats.windowMedianReadMinutes).toBe(10)
-      expect(displaced.stats.windowMedianReadMinutes).toBe(12)
+      expect(odd.stats.windowMedianReadMinutes).toBe(
+        estimateReadMinutes(nine.abstract),
+      )
+      expect(even.stats.windowMedianReadMinutes).toBe(
+        estimateReadMinutes(twelve.abstract),
+      )
+      expect(displaced.stats.windowMedianReadMinutes).toBe(
+        estimateReadMinutes(twelve.abstract),
+      )
     },
   )
 

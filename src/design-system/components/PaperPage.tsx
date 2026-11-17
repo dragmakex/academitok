@@ -149,7 +149,7 @@ export function PaperPage(props: PaperPageProps) {
             )}
             <div>
               <dt className={factLabelClass}>
-                Reading time
+                Abstract read time
               </dt>
               <dd className="m-0 font-body text-[0.85rem] leading-tight">
                 {props.readMinutes} min

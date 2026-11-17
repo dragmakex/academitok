@@ -68,6 +68,7 @@ test("compact clipping headlines link to its permalink", () => {
   )
 
   expect(html).toContain("href=\"/paper/10.1000%2Fa%20b\"")
+  expect(html).toContain("3 min abstract")
   expect(html).toContain(">Saved Clipping</a>")
   expect(html.match(/href="\/paper\//g)).toHaveLength(1)
   expect(html).toContain(">Source</a>")
@@ -113,6 +114,7 @@ test("PaperSlide renders metadata and exposes accessible actions", async () => {
   await expect
     .element(page.getByText("Matches AI · Cited 42 times"))
     .toBeVisible()
+  await expect.element(page.getByText(/6 min abstract/)).toBeVisible()
   await expect
     .element(page.getByRole("button", { name: "Like paper" }))
     .toHaveAttribute(

@@ -1,6 +1,8 @@
 import type { Paper } from "@/api/paper-schema"
+import { curatedPapers } from "@/data/papers"
 import {
   collapseTitleDuplicates,
+  estimateReadMinutes,
   fetchOpenAlexPapers,
   indexToText,
 } from "@/lib/openalex"
@@ -45,6 +47,27 @@ describe("OpenAlex abstract reconstruction", () => {
     await fetchOpenAlexPapers("Psychology", "recommended", 1_000)
 
     expect(fetchMock).toHaveBeenCalledOnce()
+  })
+})
+
+const words = (count: number) => "word ".repeat(count).trim()
+
+describe("Reading time", () => {
+  it("measures the served text at 200 words per minute", () => {
+    expect(estimateReadMinutes(words(40))).toBe(1)
+    expect(estimateReadMinutes(words(200))).toBe(1)
+    expect(estimateReadMinutes(words(900))).toBe(5)
+    expect(estimateReadMinutes(words(4_000))).toBe(10)
+  })
+
+  it("never reports less than a minute for empty text", () => {
+    expect(estimateReadMinutes("")).toBe(1)
+  })
+
+  it("derives every seed clipping's read time from its own abstract", () => {
+    for (const paper of curatedPapers) {
+      expect(paper.readMinutes).toBe(estimateReadMinutes(paper.abstract))
+    }
   })
 })
 

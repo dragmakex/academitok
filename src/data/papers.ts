@@ -1,6 +1,7 @@
 import type { Paper } from "@/api/paper-schema"
+import { estimateReadMinutes } from "@/lib/openalex"
 
-export const curatedPapers: ReadonlyArray<Paper> = [
+const clippings: ReadonlyArray<Omit<Paper, "readMinutes">> = [
   {
     id: "arxiv-2501-attention-maps-science-agents",
     title: "Attention Maps for Transparent Scientific Discovery Agents",
@@ -14,7 +15,6 @@ export const curatedPapers: ReadonlyArray<Paper> = [
     topics: ["AI", "Education"],
     access: "open",
     citations: 118,
-    readMinutes: 9,
     site: "arXiv",
     source: "curated",
     externalUrl: "https://arxiv.org/",
@@ -33,7 +33,6 @@ export const curatedPapers: ReadonlyArray<Paper> = [
     access: "institution",
     allowedInstitutions: ["MIT", "Oxford", "Max Planck"],
     citations: 76,
-    readMinutes: 11,
     site: "bioRxiv",
     source: "curated",
     externalUrl: "https://www.biorxiv.org/",
@@ -50,7 +49,6 @@ export const curatedPapers: ReadonlyArray<Paper> = [
     topics: ["Climate", "AI"],
     access: "open",
     citations: 52,
-    readMinutes: 8,
     site: "DOAJ",
     source: "curated",
     externalUrl: "https://doaj.org/",
@@ -68,7 +66,6 @@ export const curatedPapers: ReadonlyArray<Paper> = [
     topics: ["Education", "Psychology"],
     access: "open",
     citations: 204,
-    readMinutes: 7,
     site: "PubMed Central",
     source: "curated",
     externalUrl: "https://pmc.ncbi.nlm.nih.gov/",
@@ -86,7 +83,6 @@ export const curatedPapers: ReadonlyArray<Paper> = [
     access: "institution",
     allowedInstitutions: ["Stanford", "Oxford", "Max Planck"],
     citations: 89,
-    readMinutes: 12,
     site: "PubMed Central",
     source: "curated",
     externalUrl: "https://pmc.ncbi.nlm.nih.gov/",
@@ -104,7 +100,6 @@ export const curatedPapers: ReadonlyArray<Paper> = [
     topics: ["Robotics", "AI", "Physics"],
     access: "open",
     citations: 64,
-    readMinutes: 10,
     site: "OpenReview",
     source: "curated",
     externalUrl: "https://openreview.net/",
@@ -121,7 +116,6 @@ export const curatedPapers: ReadonlyArray<Paper> = [
     topics: ["Economics", "Education", "Psychology"],
     access: "open",
     citations: 151,
-    readMinutes: 9,
     site: "HAL",
     source: "curated",
     externalUrl: "https://hal.science/",
@@ -140,7 +134,6 @@ export const curatedPapers: ReadonlyArray<Paper> = [
     access: "institution",
     allowedInstitutions: ["MIT", "Stanford"],
     citations: 43,
-    readMinutes: 8,
     site: "arXiv",
     source: "curated",
     externalUrl: "https://arxiv.org/",
@@ -157,7 +150,6 @@ export const curatedPapers: ReadonlyArray<Paper> = [
     topics: ["Climate", "Health"],
     access: "open",
     citations: 37,
-    readMinutes: 8,
     site: "DOAJ",
     source: "curated",
     externalUrl: "https://doaj.org/",
@@ -174,7 +166,6 @@ export const curatedPapers: ReadonlyArray<Paper> = [
     topics: ["Psychology", "Health", "Education"],
     access: "open",
     citations: 22,
-    readMinutes: 7,
     site: "PubMed Central",
     source: "curated",
     externalUrl: "https://pmc.ncbi.nlm.nih.gov/",
@@ -191,7 +182,6 @@ export const curatedPapers: ReadonlyArray<Paper> = [
     topics: ["Robotics", "Physics"],
     access: "open",
     citations: 48,
-    readMinutes: 10,
     site: "arXiv",
     source: "curated",
     externalUrl: "https://arxiv.org/",
@@ -209,7 +199,6 @@ export const curatedPapers: ReadonlyArray<Paper> = [
     access: "institution",
     allowedInstitutions: ["Oxford", "Stanford"],
     citations: 93,
-    readMinutes: 11,
     site: "OpenAlex",
     source: "curated",
     externalUrl: "https://openalex.org/",
@@ -226,7 +215,6 @@ export const curatedPapers: ReadonlyArray<Paper> = [
     topics: ["Biology", "Climate"],
     access: "open",
     citations: 31,
-    readMinutes: 9,
     site: "bioRxiv",
     source: "curated",
     externalUrl: "https://www.biorxiv.org/",
@@ -243,7 +231,6 @@ export const curatedPapers: ReadonlyArray<Paper> = [
     topics: ["Education", "Psychology"],
     access: "open",
     citations: 19,
-    readMinutes: 6,
     site: "HAL",
     source: "curated",
     externalUrl: "https://hal.science/",
@@ -260,9 +247,15 @@ export const curatedPapers: ReadonlyArray<Paper> = [
     topics: ["AI", "Education"],
     access: "open",
     citations: 41,
-    readMinutes: 8,
     site: "OpenReview",
     source: "curated",
     externalUrl: "https://openreview.net/",
   },
 ]
+// Read time is measured from each abstract so the seed and the pool share one scale.
+export const curatedPapers: ReadonlyArray<Paper> = clippings.map((
+  clipping,
+) => ({
+  ...clipping,
+  readMinutes: estimateReadMinutes(clipping.abstract),
+}))

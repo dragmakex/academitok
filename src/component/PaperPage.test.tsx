@@ -128,6 +128,13 @@ test("omits the hide fact when nobody hid it", () => {
   expect(markupFor(0, 0, 0, 0)).not.toContain("Hidden by")
 })
 
+test("names the reading time as the abstract's", () => {
+  const markup = markupFor(0)
+
+  expect(markup).toContain("Abstract read time")
+  expect(markup).toContain("6 min")
+})
+
 test("exports the clipping beside the citation control", () => {
   const markup = markupFor(0)
 

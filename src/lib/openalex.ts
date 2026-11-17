@@ -121,13 +121,13 @@ export function detectTopics(
 }
 
 /**
- * Estimates reading time.
+ * Estimates reading time from the served text at 200 words per minute.
  * @param text - Abstract text.
- * @returns Bounded minutes.
+ * @returns Whole minutes, 1 to 10.
  */
-function estimateReadMinutes(text: string): number {
+export function estimateReadMinutes(text: string): number {
   const words = text.trim().split(/\s+/).filter(Boolean).length
-  return Math.max(4, Math.min(18, Math.round(words / 180) || 6))
+  return Math.min(10, Math.max(1, Math.ceil(words / 200)))
 }
 
 /**

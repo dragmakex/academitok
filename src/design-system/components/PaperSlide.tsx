@@ -113,8 +113,8 @@ export const PaperSlide = forwardRef<HTMLElement, PaperSlideProps>(
             </p>
             <div className="flex flex-wrap items-center gap-m">
               <span className="font-label text-[0.62rem] uppercase tracking-[0.12em] text-ink-muted">
-                {siteLabel} · {citations} citations · {readMinutes} min ·{" "}
-                {accessLabel}
+                {siteLabel} · {citations} citations · {readMinutes}{" "}
+                min abstract · {accessLabel}
               </span>
               {filedByOthers === undefined || filedByOthers === 0
                 ? null
@@ -238,7 +238,7 @@ export const PaperSlide = forwardRef<HTMLElement, PaperSlideProps>(
                     <p className="mt-xs font-label text-[0.68rem] uppercase tracking-[0.08em] text-ink-muted">
                       {venue} · {year} · {siteLabel} · {citations} citations ·
                       {" "}
-                      {readMinutes} min
+                      {readMinutes} min abstract
                     </p>
                     {alsoKeptBy === undefined || alsoKeptBy === 0
                       ? null
