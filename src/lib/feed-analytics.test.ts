@@ -18,6 +18,7 @@ import {
   medianDwell,
   medianReadMinutes,
   medianYear,
+  multiBeatCount,
   pageReadMinutes,
   reactionRates,
   readingCompletion,
@@ -414,6 +415,37 @@ describe("conceptOnlyBeats", () => {
   })
 })
 
+describe("multiBeatCount", () => {
+  it("counts the clippings the grain cannot name as one thing", () => {
+    expect(
+      multiBeatCount([
+        { topics: ["Physics"] },
+        { topics: ["Health", "Psychology"] },
+        { topics: ["Education"] },
+      ]),
+    )
+      .toBe(1)
+  })
+
+  it("reports none when every clipping names a single beat", () => {
+    expect(multiBeatCount([{ topics: ["Physics"] }, { topics: ["Health"] }]))
+      .toBe(0)
+  })
+
+  it("counts a clipping with three beats once", () => {
+    expect(multiBeatCount([{ topics: ["Physics", "Climate", "Biology"] }]))
+      .toBe(1)
+  })
+
+  it("never inflates the count with a clipping carrying no beat", () => {
+    expect(multiBeatCount([{ topics: [] }, { topics: ["Physics"] }])).toBe(0)
+  })
+
+  it("reports zero for an empty page", () => {
+    expect(multiBeatCount([])).toBe(0)
+  })
+})
+
 const emptyStats = {
   total: 0,
   openAccess: 0,
@@ -512,6 +544,25 @@ describe("trackFeedPageEvent", () => {
         concept_beat_count: 1,
         education_beat_count: 1,
       }),
+    )
+  })
+
+  it("sends how many clippings the grain names as more than one beat", async () => {
+    vi.stubEnv("VITE_POSTHOG_KEY", "test-key")
+    vi.stubGlobal("window", {})
+
+    trackFeedPageEvent(
+      snapshotWith("pool", [
+        { ...curatedPapers[0], topics: ["Physics"] },
+        { ...curatedPapers[1], topics: ["Health", "Psychology"] },
+        { ...curatedPapers[2], topics: ["Education"] },
+      ]),
+      null,
+    )
+    await vi.waitFor(() => expect(capture).toHaveBeenCalledTimes(1))
+    expect(capture).toHaveBeenCalledWith(
+      "feed.next",
+      expect.objectContaining({ multi_beat_count: 1 }),
     )
   })
 

@@ -442,6 +442,18 @@ export function conceptOnlyBeats(
 }
 
 /**
+ * Page clippings naming more than one beat, so the share the fixed taxonomy
+ * cannot name as one thing is countable (SPEC §17.2).
+ * @param papers - Page clippings, with the beats they were stored under.
+ * @returns Count of split clippings; a clipping with no beat is not split.
+ */
+export function multiBeatCount(
+  papers: ReadonlyArray<Pick<Paper, "topics">>,
+): number {
+  return papers.filter((paper) => paper.topics.length > 1).length
+}
+
+/**
  * Shannon entropy in nats of a page's primary beat per clipping (SPEC §8.4).
  * @param papers - Page clippings.
  * @returns Entropy; 0 for an empty page or a page sharing one beat.
@@ -627,6 +639,7 @@ export function trackFeedPageEvent(
     unmatched_beat_count: unmatchedBeatCount(papers),
     concept_beat_count: beats.concept,
     education_beat_count: beats.education,
+    multi_beat_count: multiBeatCount(papers),
     topic_entropy: topicEntropy(papers),
     page_read_minutes: pageReadMinutes(papers),
     topic: snapshot.selectedTopic,

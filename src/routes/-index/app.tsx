@@ -32,6 +32,7 @@ import {
   citationAgeSkew,
   conceptOnlyBeats,
   explorationShare,
+  multiBeatCount,
   topicEntropy,
   trackFeedPageEvent,
 } from "@/lib/feed-analytics"
@@ -634,6 +635,7 @@ export function App() {
   const entropy = topicEntropy(pagePapers)
   const beatSources = beatSourceCounts(pagePapers)
   const conceptOnly = conceptOnlyBeats(pagePapers)
+  const multiBeat = multiBeatCount(pagePapers)
   const exploration = snapshot === undefined
     ? null
     : explorationShare(snapshot.exploration, snapshot.items.length)
@@ -754,6 +756,11 @@ export function App() {
               <StatCard
                 label="Beats on the page"
                 value={snapshot === undefined ? "—" : beats}
+                helper={`of ${drift.total} loaded clippings`}
+              />
+              <StatCard
+                label="Clippings with several beats"
+                value={snapshot === undefined ? "—" : multiBeat}
                 helper={`of ${drift.total} loaded clippings`}
               />
               <StatCard

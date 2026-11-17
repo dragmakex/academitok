@@ -14,6 +14,7 @@ import {
   beatSourceCounts,
   conceptOnlyBeats,
   explorationShare,
+  multiBeatCount,
   unmatchedBeatCount,
 } from "@/lib/feed-analytics"
 import { defaultReaderId, ReaderId } from "@/lib/reader-id"
@@ -1049,6 +1050,14 @@ describe("papers application", () => {
       [...new Set(beats)].filter((beat) => !keywordBeats.has(beat)),
     )
     expect(new Set(conceptOnly).size).toBe(conceptOnly.length)
+
+    // The clipping grain is split wherever a clipping names more than one beat.
+    const multiBeat = multiBeatCount(papers)
+    expect(multiBeat).toBe(
+      papers.filter((paper) => paper.topics.length > 1).length,
+    )
+    expect(multiBeat).toBeGreaterThan(0)
+    expect(multiBeat).toBeLessThanOrEqual(papers.length)
   })
 
   it("serves a skipped reader's cold start as all exploration", async () => {
