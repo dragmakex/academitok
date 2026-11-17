@@ -410,7 +410,7 @@ write the conflict at the bottom instead of guessing.
       reactions; the ranked page for a fixed seed is identical before and after.
       — `3c48da4`
 
-- [ ] **29. Saves per 100 impressions on the desk.** SPEC §8.4 sets saves at ≥ 1.0 per 100
+- [x] **29. Saves per 100 impressions on the desk.** SPEC §8.4 sets saves at ≥ 1.0 per 100
       impressions and the rail records a save as a `bookmark` reaction, but the desk's Reading pace
       block shows median dwell (task 25), median completion (task 26), hide rate and open-source
       rate (task 28) and never the number the feed is judged on for keeping value — so a window of
@@ -427,6 +427,7 @@ write the conflict at the bottom instead of guessing.
       no view reactions reports null and the desk renders an em dash, never `NaN`; the helper is
       unit-tested and its counts reach `getPaperFeedSnapshot` from the real `ReaderState`
       view/bookmark reactions; the ranked page for a fixed seed is identical before and after.
+      — `75ee75a`
 
 ---
 
