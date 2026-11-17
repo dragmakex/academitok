@@ -1,0 +1,44 @@
+import {
+  defaultReaderId,
+  ensureReaderIdCookie,
+  ReaderId,
+  readerIdCookieName,
+  readerIdFromCookieHeader,
+} from "@/lib/reader-id"
+import { describe, expect, it } from "vitest"
+
+const readerId = "0f8c7f4e-1c3e-4f22-9a1a-9b4b1c0a1d11"
+
+describe("reader id", () => {
+  it("names the cookie and the fallback reader", () => {
+    expect(readerIdCookieName).toBe("academitok_reader_id")
+    expect(defaultReaderId).toBe("singleton")
+    expect(ReaderId.key).toBe("ReaderId")
+  })
+
+  it("reads a valid id from the cookie header", () => {
+    expect(readerIdFromCookieHeader(`${readerIdCookieName}=${readerId}`))
+      .toBe(readerId)
+    expect(
+      readerIdFromCookieHeader(
+        `theme=dark; ${readerIdCookieName}=${readerId}; lang=en`,
+      ),
+    )
+      .toBe(readerId)
+  })
+
+  it("ignores missing, malformed and too-long values", () => {
+    expect(readerIdFromCookieHeader(undefined)).toBe(defaultReaderId)
+    expect(readerIdFromCookieHeader("theme=dark")).toBe(defaultReaderId)
+    expect(readerIdFromCookieHeader(`${readerIdCookieName}=short`))
+      .toBe(defaultReaderId)
+    expect(readerIdFromCookieHeader(`${readerIdCookieName}=drop;table`))
+      .toBe(defaultReaderId)
+    expect(readerIdFromCookieHeader(`${readerIdCookieName}=${"a".repeat(65)}`))
+      .toBe(defaultReaderId)
+  })
+
+  it("does nothing outside the browser", () => {
+    expect(() => ensureReaderIdCookie()).not.toThrow()
+  })
+})
