@@ -6,6 +6,7 @@ import * as EffectArray from "effect/Array"
 import { afterEach, describe, expect, it, vi } from "vitest"
 import {
   archivalDrift,
+  beatSourceCounts,
   citationAgeSkew,
   duplicateRate,
   hashReaderId,
@@ -239,6 +240,11 @@ describe("medianYear", () => {
 })
 
 const clipping = (title: string, abstract: string) => ({ title, abstract })
+const filed = (
+  title: string,
+  abstract: string,
+  topics: ReadonlyArray<Topic>,
+) => ({ title, abstract, topics })
 
 describe("unmatchedBeatCount", () => {
   it("counts the clippings that matched no beat", () => {
@@ -264,6 +270,42 @@ describe("unmatchedBeatCount", () => {
 
   it("reports none for an empty page", () => {
     expect(unmatchedBeatCount([])).toBe(0)
+  })
+})
+
+describe("beatSourceCounts", () => {
+  it("splits the page by the path detectTopics took to each beat", () => {
+    const counts = beatSourceCounts([
+      filed("Quantum sensors", "A material study.", ["Physics"]),
+      filed("Potsherd stratigraphy", "Field notes from a dig.", ["Physics"]),
+      filed("Parish registers", "A list of names.", ["Education"]),
+    ])
+    expect(counts).toEqual({ keyword: 1, concept: 1, education: 1 })
+    expect(counts.keyword + counts.concept + counts.education).toBe(3)
+  })
+
+  it("reports no fallback paths when every clipping names its beat in text", () => {
+    expect(
+      beatSourceCounts([
+        filed("Quantum sensors", "A material study.", ["Physics"]),
+        filed("Clinical medicine", "A patient study.", ["Health"]),
+      ]),
+    )
+      .toEqual({ keyword: 2, concept: 0, education: 0 })
+  })
+
+  it("reports zeroes for an empty page", () => {
+    const counts = beatSourceCounts([])
+    expect(counts).toEqual({ keyword: 0, concept: 0, education: 0 })
+    expect(counts.concept).not.toBeNaN()
+    expect(counts.education).not.toBeNaN()
+  })
+
+  it("files a clipping with no keyword match and no stored topic as education", () => {
+    const counts = beatSourceCounts([
+      filed("Potsherd stratigraphy", "Field notes from a dig.", []),
+    ])
+    expect(counts).toEqual({ keyword: 0, concept: 0, education: 1 })
   })
 })
 
@@ -322,6 +364,43 @@ describe("trackFeedPageEvent", () => {
       expect.objectContaining({ origin: "live" }),
       expect.objectContaining({ origin: "seed" }),
     ])
+  })
+
+  it("sends the beat source counts on every page", async () => {
+    vi.stubEnv("VITE_POSTHOG_KEY", "test-key")
+    vi.stubGlobal("window", {})
+
+    trackFeedPageEvent(
+      snapshotWith("pool", [
+        {
+          ...curatedPapers[0],
+          title: "Quantum sensors",
+          abstract: "A material study.",
+          topics: ["Physics"],
+        },
+        {
+          ...curatedPapers[1],
+          title: "Potsherd stratigraphy",
+          abstract: "Field notes from a dig.",
+          topics: ["Physics"],
+        },
+        {
+          ...curatedPapers[2],
+          title: "Parish registers",
+          abstract: "A list of names.",
+          topics: ["Education"],
+        },
+      ]),
+      null,
+    )
+    await vi.waitFor(() => expect(capture).toHaveBeenCalledTimes(1))
+    expect(capture).toHaveBeenCalledWith(
+      "feed.next",
+      expect.objectContaining({
+        concept_beat_count: 1,
+        education_beat_count: 1,
+      }),
+    )
   })
 
   it("still sends the origin for an empty page", async () => {

@@ -319,10 +319,11 @@ export function archivalDrift(years: ReadonlyArray<number>): ArchivalDrift {
 }
 
 /**
- * Clippings whose text matched no beat, so `detectTopics` filed them under its
- * Education fallback (SPEC §17.2).
+ * Clippings whose text matched no beat, so `detectTopics` did not file them from
+ * the keyword table; the count is `concept + education` of `beatSourceCounts`
+ * (SPEC §17.2).
  * @param papers - Page clippings.
- * @returns Count of fallback clippings; 0 for an empty page.
+ * @returns Count of clippings the keyword table missed; 0 for an empty page.
  */
 export function unmatchedBeatCount(
   papers: ReadonlyArray<Pick<Paper, "title" | "abstract">>,
@@ -330,6 +331,35 @@ export function unmatchedBeatCount(
   return papers
     .filter((paper) => matchedTopics(paper.title, paper.abstract).length === 0)
     .length
+}
+
+export type BeatSourceCounts = {
+  readonly keyword: number
+  readonly concept: number
+  readonly education: number
+}
+
+/**
+ * Splits a page by the path `detectTopics` took to file each clipping: the beat
+ * keyword table, the source concept map, or the Education fallback (SPEC §17.2).
+ * @param papers - Page clippings, with the beat they were stored under.
+ * @returns Counts per path, summing to the page size.
+ */
+export function beatSourceCounts(
+  papers: ReadonlyArray<Pick<Paper, "title" | "abstract" | "topics">>,
+): BeatSourceCounts {
+  const counts = { keyword: 0, concept: 0, education: 0 }
+  for (const paper of papers) {
+    const beat = paper.topics[0]
+    if (matchedTopics(paper.title, paper.abstract).length > 0) {
+      counts.keyword += 1
+    } else if (beat !== undefined && beat !== "Education") {
+      counts.concept += 1
+    } else {
+      counts.education += 1
+    }
+  }
+  return counts
 }
 
 /**
@@ -369,6 +399,7 @@ export function trackFeedPageEvent(
   const papers = snapshot.items.map((item) => item.paper)
   const ids = papers.map((paper) => paper.id)
   const skew = citationAgeSkew(papers)
+  const beats = beatSourceCounts(papers)
   void trackFeedHealthEvent("feed.next", {
     cursor: cursor ?? "first",
     origin: snapshot.origin,
@@ -379,6 +410,8 @@ export function trackFeedPageEvent(
     older_citation_median: skew.olderCitations,
     newer_citation_median: skew.newerCitations,
     unmatched_beat_count: unmatchedBeatCount(papers),
+    concept_beat_count: beats.concept,
+    education_beat_count: beats.education,
     topic_entropy: topicEntropy(papers),
     topic: snapshot.selectedTopic,
     sort: snapshot.selectedSort,
