@@ -857,7 +857,7 @@ write the conflict at the bottom instead of guessing.
       seed is identical before and after.
       — `2b99a5f`
 
-- [ ] **47. Reading time per beat on the desk.** SPEC §17.2 keeps the fixed nine beats only until
+- [x] **47. Reading time per beat on the desk.** SPEC §17.2 keeps the fixed nine beats only until
       someone can tell whether they cover what the sources serve, and open decision 2 says to
       revisit the taxonomy on evidence — but every behavioural figure the desk shows is averaged
       across all beats at once: `windowTopicEntropy` (task 31) counts clippings per beat, the beat
@@ -885,6 +885,7 @@ write the conflict at the bottom instead of guessing.
       null and the desk renders an em dash, never `NaN`; the helper is unit-tested and the figure
       reaches `getPaperFeedSnapshot` from real `ReaderState` dwell reactions; the ranked page for a
       fixed seed is identical before and after.
+      — `1ae6b04`
 
 ---
 
