@@ -1302,6 +1302,37 @@ write the conflict at the bottom instead of guessing.
       is green.
       — `36d52cf`
 
+- [ ] **63. Who else liked the clipping, on the clipping.** SPEC §16 P3 lists "multi-reader with
+      collaborative signals", and tasks 57 and 61 gave the permalink `Liked by N readers` and
+      `Hidden by N readers` from the single-paper `likedByReaders`/`hiddenByReaders` reads while
+      task 46 put the batched `Also kept by N readers` on the deck itself — but the deck counts
+      only the bookmark: `filedByOthers` is the one batched, reader-scoped read
+      `getPaperFeedSnapshot` calls, so a clipping a dozen colleagues pressed the rail's heart on is
+      set exactly like one nobody ever liked, and the reaction the deck's rail is built around
+      (SPEC §5.2) is the only cross-reader signal the deck produces that no clipping prints. Add a
+      `likedByOthers(paperIds, readerId)` read beside `filedByOthers` in `ReaderStateRepository`
+      mirroring it exactly (`kind = 'like'`, excluding the reading reader, counted through the
+      existing `otherFilers(rows)` so a reader who likes twice counts once and an undone like drops
+      out), implement it for both the PGlite and Postgres storages by reading the same
+      `{ paperId, readerId, active }` rows `filedByOthers` selects, call it once beside the
+      existing `filedByOthers` call in `getPaperFeedSnapshot` over the page's paper ids, report the
+      result on `FeedSnapshot` as `alsoLikedBy: Record<string, number>` (an empty record, never
+      null; leave `FeedPage` and `saved.list` alone), merge the two records in `appendPaperPage` so
+      an appended page keeps the first page's counts and adds the appended page's, and let
+      `PaperSlide`'s deck variant print `Also liked by 2 readers` directly below the `Also kept by`
+      clause in the same label style, omitting the clause when the count is 0 or absent. Display
+      only: no ranking, `ReaderState`, RPC procedure, desk, PostHog payload, dependency or new
+      component change, `likedByReaders`/`filedByOthers`/`savedByReaders`/`openedByReaders`/
+      `hiddenByReaders` stay as they are, and the one-clipping-per-viewport snap is untouched.
+      Accept: a page whose clipping is liked by two other readers reports 2 and the deck renders
+      `Also liked by 2 readers`; a clipping nobody liked, or that only the reading reader liked,
+      renders no clause rather than `0 readers`; an undone like by another reader (`active = false`)
+      is not counted; a page appended by `appendPaperPage` keeps the first page's counts and adds
+      the appended page's; the counts are asserted from the real `getPaperFeedSnapshot` over a real
+      repository written under two `ReaderId` values (temp PGlite dir, stubbed catalog) and the
+      rendered and omitted clause from `renderToStaticMarkup` of the real deck-variant `PaperSlide`;
+      the ranked page for a fixed seed is identical before and after.
+
 ---
 
 ## Blocked — needs a product decision
