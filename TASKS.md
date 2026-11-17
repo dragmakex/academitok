@@ -350,7 +350,7 @@ write the conflict at the bottom instead of guessing.
       after.
       — `0cde77a`
 
-- [ ] **26. Median reading completion on the desk.** SPEC §16 P3 lists reading-time analytics and
+- [x] **26. Median reading completion on the desk.** SPEC §16 P3 lists reading-time analytics and
       task 7 already computes a per-clip `completion` ratio (measured dwell over estimated read
       time, clamped to 1) for the PostHog `dwell` event, but nothing aggregates it: the desk shows
       median dwell beside its 8 s target (task 25) and never whether the clippings are read to the
@@ -370,6 +370,7 @@ write the conflict at the bottom instead of guessing.
       and the desk renders an em dash, never `NaN` or `0%`; the helper is unit-tested and reaches
       `getPaperFeedSnapshot` from real `ReaderState` dwell reactions; the ranked page for a fixed
       seed is identical before and after.
+      — `37c6cf5`
 
 ---
 
