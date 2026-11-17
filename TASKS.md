@@ -1213,7 +1213,7 @@ write the conflict at the bottom instead of guessing.
       dir); the ranked page for a fixed seed is identical before and after.
       — `21d85dc`
 
-- [ ] **60. The share of editions the reader never really received, on the desk.** SPEC §8.4's
+- [x] **60. The share of editions the reader never really received, on the desk.** SPEC §8.4's
       table ends with `Cold-feed failure rate` at `< 0.5%`, and task 34 added `origin` to the
       `feed.next` payload so the per-page share of `seed` is that rate — but the desk shows the
       other six rows (tasks 25, 28, 29, 31, 33) and never how much of what this reader opened was
@@ -1239,6 +1239,7 @@ write the conflict at the bottom instead of guessing.
       or `0%`; an origin older than the last 200 loaded pages does not move the figure; both
       helpers are unit-tested, and the recording sites are asserted from the real atom module;
       the ranked page for a fixed seed is identical before and after.
+      — `924742f`
 
 ---
 
