@@ -392,8 +392,94 @@ describe("papers application", () => {
       )
 
       expect(empty.stats.windowTopicEntropy).toBeNull()
+      expect(empty.stats.windowMedianYear).toBeNull()
       expect(spread.stats.windowTopicEntropy).toBeCloseTo(Math.log(3))
       expect(single.stats.windowTopicEntropy).toBe(0)
+    },
+  )
+
+  it(
+    "reports the median year over the reader's last 50 impressions",
+    {
+      timeout: 15_000,
+    },
+    async () => {
+      const dataDir = await mkdtemp(
+        join(tmpdir(), "academitok-window-year-"),
+      )
+      directories.push(dataDir)
+      vi.stubGlobal("fetch", () => Promise.reject(new Error("offline")))
+      const windowed = [
+        "hal-2022-open-science-collaboration-markets",
+        "arxiv-2023-quantum-sensor-compression",
+        "biorxiv-2024-fast-protein-folding-signals",
+        "arxiv-2501-attention-maps-science-agents",
+      ]
+        .map((id) => {
+          const paper = curatedPapers.find((candidate) => candidate.id === id)
+          if (paper === undefined) {
+            throw new Error(`missing curated paper fixture ${id}`)
+          }
+          return paper
+        })
+      const newest = windowed[3]
+      if (newest === undefined) {
+        throw new Error("missing curated paper fixture")
+      }
+
+      const [empty, odd, even, displaced] = await runFeed(
+        dataDir,
+        Effect.gen(function*() {
+          const repository = yield* ReaderStateRepository
+          yield* repository.onboard({
+            keptPaperIds: [],
+            rejectedPaperIds: [],
+            skipped: true,
+          })
+          const before = yield* getPaperFeedSnapshot(requestFor("year-a"))
+          for (const [position, paper] of windowed.slice(0, 3).entries()) {
+            yield* repository.track({
+              paperId: paper.id,
+              position,
+              exploration: false,
+              kind: "view",
+              dwellMs: 0,
+            })
+          }
+          const threeYears = yield* getPaperFeedSnapshot(
+            requestFor("year-b"),
+          )
+          yield* repository.track({
+            paperId: newest.id,
+            position: 3,
+            exploration: false,
+            kind: "view",
+            dwellMs: 0,
+          })
+          const fourYears = yield* getPaperFeedSnapshot(requestFor("year-c"))
+          // Fifty newer impressions push the mixed years out of the §8.4 window.
+          for (let index = 0; index < 50; index += 1) {
+            yield* repository.track({
+              paperId: newest.id,
+              position: index,
+              exploration: false,
+              kind: "view",
+              dwellMs: 0,
+            })
+          }
+          return [
+            before,
+            threeYears,
+            fourYears,
+            yield* getPaperFeedSnapshot(requestFor("year-d")),
+          ] as const
+        }),
+      )
+
+      expect(empty.stats.windowMedianYear).toBeNull()
+      expect(odd.stats.windowMedianYear).toBe(2023)
+      expect(even.stats.windowMedianYear).toBe(2023.5)
+      expect(displaced.stats.windowMedianYear).toBe(newest.year)
     },
   )
 
@@ -425,6 +511,7 @@ describe("papers application", () => {
     )
 
     expect(snapshot.stats.windowTopicEntropy).toBeNull()
+    expect(snapshot.stats.windowMedianYear).toBeNull()
   })
 
   it("files bookmarked papers in the saved list and drops them on unsave", async () => {

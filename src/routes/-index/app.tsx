@@ -621,6 +621,7 @@ export function App() {
   const openSourceRate = snapshot?.stats.openSourceRate ?? null
   const savesPerHundred = snapshot?.stats.savesPerHundred ?? null
   const windowTopicEntropy = snapshot?.stats.windowTopicEntropy ?? null
+  const windowMedianYear = snapshot?.stats.windowMedianYear ?? null
   const beats = new Set(
     pagePapers.flatMap((paper) =>
       paper.topics[0] === undefined ? [] : [paper.topics[0]]
@@ -654,6 +655,11 @@ export function App() {
                 label="Median year"
                 value={drift.medianYear ?? "—"}
                 helper={`of ${drift.total} loaded clippings`}
+              />
+              <StatCard
+                label="Last 50 impressions"
+                value={windowMedianYear ?? "—"}
+                helper="median year of the 50-impression window"
               />
               <StatCard
                 label="A decade behind"

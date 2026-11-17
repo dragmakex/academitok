@@ -18,6 +18,7 @@ import {
 import {
   medianCompletion,
   medianDwell,
+  medianYear,
   reactionRates,
   readingCompletion,
   savesPerHundred,
@@ -170,6 +171,9 @@ export const getPaperFeedSnapshot = (request: FeedRequest) =>
           windowTopicEntropy: windowPapers.length === 0
             ? null
             : topicEntropy(windowPapers),
+          windowMedianYear: medianYear(
+            windowPapers.map((paper) => paper.year),
+          ),
         },
         items: page.items,
         nextCursor: page.nextCursor,
