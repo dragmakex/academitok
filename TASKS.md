@@ -755,7 +755,7 @@ write the conflict at the bottom instead of guessing.
       and after.
       — `e3d2f75`
 
-- [ ] **43. Page reading load on `feed.next`.** SPEC §16 P3 lists reading-time analytics: the
+- [x] **43. Page reading load on `feed.next`.** SPEC §16 P3 lists reading-time analytics: the
       per-clip ratio lands on the `dwell` event (task 7) and the desk aggregates dwell and
       completion into medians (tasks 25, 26), but `trackFeedPageEvent` in
       `src/lib/feed-analytics.ts` sends `item_count`, `duplicate_count`, `median_year`,
@@ -774,6 +774,7 @@ write the conflict at the bottom instead of guessing.
       an empty one; the helper is unit-tested, the payload is asserted from a real
       `trackFeedPageEvent` call with the PostHog client mocked, and PostHog staying unconfigured
       changes nothing; the ranked page for a fixed seed is identical before and after.
+      — `a4ed11e`
 
 ---
 
