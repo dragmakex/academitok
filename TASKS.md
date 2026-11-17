@@ -188,7 +188,7 @@ write the conflict at the bottom instead of guessing.
       for a fixed seed is identical before and after.
       — `06d08de`
 
-- [ ] **17. Topic mix on the desk.** SPEC §8.4 asks for Shannon topic entropy at ≥ 1.6 nats per 50
+- [x] **17. Topic mix on the desk.** SPEC §8.4 asks for Shannon topic entropy at ≥ 1.6 nats per 50
       impressions and open decision 2 keeps the fixed nine beats only until someone can tell whether
       those beats are too coarse. `topicEntropy` (task 16) reports it to PostHog but no reader can see
       it, so the decision has no visible input on the same desk that already shows archival drift
@@ -199,6 +199,7 @@ write the conflict at the bottom instead of guessing.
       Accept: a page with three clippings on three beats renders 1.10 nats and 3 beats; ten clippings
       all on one beat renders 0 and 1 beat; an unloaded snapshot renders an em dash, never `NaN`; the
       ranked page for a fixed seed is unchanged.
+      — `4a5f8d9`
 
 ---
 
