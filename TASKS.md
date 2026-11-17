@@ -887,7 +887,7 @@ write the conflict at the bottom instead of guessing.
       fixed seed is identical before and after.
       — `1ae6b04`
 
-- [ ] **48. A way from the morgue row to its clipping.** SPEC §4 and §16 P2 pair `/saved` with
+- [x] **48. A way from the morgue row to its clipping.** SPEC §4 and §16 P2 pair `/saved` with
       `/paper/$id` ("permalink + cite"), and tasks 36, 37 and 40 have since made the permalink the
       only surface that prints the whole abstract, the copyable citation and `Filed by N readers`
       — but the morgue row cannot reach it: `PaperSlide`'s compact variant prints the headline as
@@ -906,6 +906,7 @@ write the conflict at the bottom instead of guessing.
       renders `Source` and `Remove` beside it; the deck variant's rail `Link` is unchanged; the
       href and its text are asserted from `renderToStaticMarkup` of the real compact `PaperSlide`,
       and the row from the real `SavedPage`.
+      — `06a2561`
 
 ---
 
