@@ -1,5 +1,6 @@
 import { cx } from "@/design-system/foundation/classes"
 import type { ReactNode } from "react"
+import { NewsprintField } from "./NewsprintField"
 
 const metaClass =
   "font-label text-[0.62rem] font-bold uppercase tracking-[0.14em] text-ink-muted"
@@ -33,9 +34,11 @@ export function Masthead(
 ) {
   if (variant === "banner") {
     return (
-      <header className="shrink-0 border-b-2 border-ink bg-paper px-[clamp(1rem,4vw,2.5rem)] pt-[max(0.35rem,env(safe-area-inset-top))] pb-[0.5rem]">
+      <header className="relative shrink-0 overflow-hidden border-b-[3px] border-ink bg-paper px-[clamp(1rem,4vw,2.5rem)] pt-[max(0.35rem,env(safe-area-inset-top))] pb-[0.45rem] after:absolute after:inset-x-0 after:bottom-[6px] after:h-px after:bg-ink/40">
+        {/* A photographed front page, held a little out of focus. */}
+        <NewsprintField variant="band" />
         <a
-          className="mx-auto block w-fit font-masthead text-[clamp(1.4rem,3.2vw,2.2rem)] leading-[1] tracking-[-0.02em] text-ink no-underline"
+          className="relative mx-auto block w-fit font-masthead text-[clamp(1.5rem,min(3.4vw,4vh),3.4rem)] leading-[1] tracking-[-0.02em] text-ink no-underline"
           href="/"
         >
           AcademiTok

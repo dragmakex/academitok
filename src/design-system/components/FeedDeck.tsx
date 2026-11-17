@@ -1,5 +1,6 @@
 import { forwardRef, type HTMLAttributes, type ReactNode } from "react"
 import { Masthead } from "./Masthead"
+import { NewsprintField } from "./NewsprintField"
 
 type FeedDeckProps = Omit<HTMLAttributes<HTMLElement>, "className"> & {
   readonly announcement?: string | undefined
@@ -25,12 +26,13 @@ export const FeedDeck = forwardRef<HTMLElement, FeedDeckProps>(
         {...props}
         ref={ref}
         aria-label="Academic paper feed"
-        className="flex h-[100dvh] flex-col bg-paper-deep focus:outline-none"
+        className="relative flex h-[100dvh] flex-col overflow-hidden bg-paper-deep focus:outline-none"
         tabIndex={0}
       >
         <div className="sr-only" aria-live="polite" aria-atomic="true">
           {announcement}
         </div>
+        <NewsprintField variant="page" />
         <Masthead variant="banner" />
         <div className="min-h-0 flex-1 snap-y snap-mandatory overflow-y-auto overscroll-y-contain pl-[env(safe-area-inset-left)] pr-[env(safe-area-inset-right)]">
           {children}
