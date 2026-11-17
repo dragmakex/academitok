@@ -1,5 +1,7 @@
 // @vitest-environment node
 
+import type { Topic } from "@/api/paper-schema"
+import * as EffectArray from "effect/Array"
 import { afterEach, describe, expect, it, vi } from "vitest"
 import {
   archivalDrift,
@@ -7,6 +9,7 @@ import {
   hashReaderId,
   medianYear,
   readingCompletion,
+  topicEntropy,
   trackFeedHealthEvent,
   trackPaperViewEvent,
   unmatchedBeatCount,
@@ -160,6 +163,26 @@ describe("citationAgeSkew", () => {
       olderCitations: null,
       newerCitations: 12,
     })
+  })
+})
+
+const beat = (topics: ReadonlyArray<Topic>) => ({ topics })
+
+describe("topicEntropy", () => {
+  it("reports natural-log entropy for a page spread across beats", () => {
+    expect(
+      topicEntropy([beat(["AI"]), beat(["Biology"]), beat(["Physics"])]),
+    )
+      .toBeCloseTo(Math.log(3))
+  })
+
+  it("reports no entropy when every clipping shares one beat", () => {
+    expect(topicEntropy(EffectArray.replicate(beat(["AI"]), 10)))
+      .toBe(0)
+  })
+
+  it("reports no entropy for an empty page", () => {
+    expect(topicEntropy([])).toBe(0)
   })
 })
 

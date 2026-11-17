@@ -217,6 +217,31 @@ export function unmatchedBeatCount(
 }
 
 /**
+ * Shannon entropy in nats of a page's primary beat per clipping (SPEC §8.4).
+ * @param papers - Page clippings.
+ * @returns Entropy; 0 for an empty page or a page sharing one beat.
+ */
+export function topicEntropy(
+  papers: ReadonlyArray<Pick<Paper, "topics">>,
+): number {
+  const counts = new Map<Topic, number>()
+  for (const paper of papers) {
+    const beat = paper.topics[0]
+    if (beat !== undefined) {
+      counts.set(beat, (counts.get(beat) ?? 0) + 1)
+    }
+  }
+  const total = [...counts.values()].reduce((sum, count) => sum + count, 0)
+  if (total === 0) {
+    return 0
+  }
+  return [...counts.values()].reduce((entropy, count) => {
+    const share = count / total
+    return entropy - share * Math.log(share)
+  }, 0)
+}
+
+/**
  * Tracks one ranked page returned to the reader.
  * @param snapshot - Ranked page response.
  * @param cursor - Requested cursor, or null for the first page.
@@ -237,6 +262,7 @@ export function trackFeedPageEvent(
     older_citation_median: skew.olderCitations,
     newer_citation_median: skew.newerCitations,
     unmatched_beat_count: unmatchedBeatCount(papers),
+    topic_entropy: topicEntropy(papers),
     topic: snapshot.selectedTopic,
     sort: snapshot.selectedSort,
     cold_start: snapshot.profile === null,
