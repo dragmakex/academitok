@@ -171,6 +171,7 @@ export const getPaperFeedSnapshot = (request: FeedRequest) =>
 
       return {
         origin,
+        pinned: edition !== undefined,
         profile: state.profile,
         selectedTopic: request.query.topic,
         selectedSort: request.query.sort,

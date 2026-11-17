@@ -85,6 +85,7 @@ type VisiblePaperSlideProps = {
   readonly index: number
   readonly item: FeedItem
   readonly origin: FeedOrigin
+  readonly pinned: boolean
   readonly total: number
   readonly onBookmark: () => void
   readonly onHide: () => void
@@ -100,6 +101,7 @@ type VisiblePaperSlideProps = {
  * @param root0.index - Feed index.
  * @param root0.item - Feed item.
  * @param root0.origin - Where the edition came from.
+ * @param root0.pinned - Whether the page is a shared, unranked edition.
  * @param root0.total - Mounted feed length.
  * @param root0.onBookmark - Save reaction callback.
  * @param root0.onHide - Hide reaction callback.
@@ -117,6 +119,7 @@ function VisiblePaperSlide({
   onNavigate,
   onVisible,
   origin,
+  pinned,
   registerNode,
   total,
 }: VisiblePaperSlideProps) {
@@ -251,6 +254,7 @@ function VisiblePaperSlide({
       externalUrl={item.paper.externalUrl}
       position={index + 1}
       origin={origin}
+      pinned={pinned}
       total={total}
       skeleton={!active}
       actions={{
@@ -929,6 +933,7 @@ export function App() {
                 key={item.paper.id}
                 item={item}
                 origin={snapshot.origin}
+                pinned={snapshot.pinned}
                 index={index}
                 total={snapshot.items.length}
                 active={Math.abs(index - activeIndex) <= 1}

@@ -59,7 +59,11 @@ const actions = {
   onNext: () => {},
 }
 
-const renderDeckSlide = (origin: "pool" | "live" | "seed", again = false) =>
+const renderDeckSlide = (
+  origin: "pool" | "live" | "seed",
+  again = false,
+  pinned = false,
+) =>
   renderToStaticMarkup(
     <PaperSlide
       id="paper-1"
@@ -79,6 +83,7 @@ const renderDeckSlide = (origin: "pool" | "live" | "seed", again = false) =>
       externalUrl="https://example.com/paper"
       actions={actions}
       origin={origin}
+      pinned={pinned}
       again={again}
       position={2}
       total={10}
@@ -114,6 +119,7 @@ describe("edition origin", () => {
     )
 
     expect(page.origin).toBe("seed")
+    expect(page.pinned).toBe(false)
     const seedIds = new Set(curatedPapers.map((paper) => paper.id))
     expect(page.items.length).toBeGreaterThan(0)
     expect(page.items.every((item) => seedIds.has(item.paper.id))).toBe(true)
@@ -123,6 +129,12 @@ describe("edition origin", () => {
     expect(renderDeckSlide("seed")).toContain("Offline Edition · No. 002")
     expect(renderDeckSlide("pool")).toContain("Evening Edition · No. 002")
     expect(renderDeckSlide("live")).toContain("Evening Edition · No. 002")
+  })
+
+  it("offers the way back only on a pinned edition", () => {
+    expect(renderDeckSlide("pool", false, true)).toContain("href=\"/\"")
+    expect(renderDeckSlide("pool", false, true)).toContain("Your edition")
+    expect(renderDeckSlide("pool")).not.toContain("Your edition")
   })
 
   it("marks a refilled repeat in the kicker line", () => {

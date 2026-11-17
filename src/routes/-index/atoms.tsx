@@ -17,7 +17,12 @@ import {
   trackPaperReactionEvent,
   trackPaperViewEvent,
 } from "@/lib/feed-analytics"
-import { type RemovedItem, removeItemAt, restoreItem } from "@/lib/feed-items"
+import {
+  appendPaperPage,
+  type RemovedItem,
+  removeItemAt,
+  restoreItem,
+} from "@/lib/feed-items"
 import * as Context from "effect/Context"
 import * as Effect from "effect/Effect"
 import * as Layer from "effect/Layer"
@@ -172,15 +177,7 @@ export const loadNextPaperPageAtom = runtime.fn<FeedRequest>()(
       return page
     }
 
-    const ids = new Set(current.value.items.map((item) => item.paper.id))
-    const snapshot = {
-      ...page,
-      origin: current.value.origin,
-      items: [
-        ...current.value.items,
-        ...page.items.filter((item) => !ids.has(item.paper.id)),
-      ],
-    }
+    const snapshot = appendPaperPage(current.value, page)
     replaceDashboardSnapshot(get, snapshot)
     return snapshot
   }),

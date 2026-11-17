@@ -1,7 +1,24 @@
-import { removeItemAt, restoreItem } from "@/lib/feed-items"
+import type { FeedItem } from "@/api/paper-schema"
+import { curatedPapers } from "@/data/papers"
+import { appendPaperPage, removeItemAt, restoreItem } from "@/lib/feed-items"
 import { describe, expect, it } from "vitest"
 
 const page = ["a", "b", "c"] as const
+
+const item = (id: string): FeedItem => ({
+  paper: curatedPapers.find((paper) => paper.id === id) ?? {
+    ...curatedPapers[0]!,
+    id,
+  },
+  score: 1,
+  rationale: ["fresh"],
+  accessible: true,
+  liked: false,
+  bookmarked: false,
+  hidden: false,
+  exploration: false,
+  again: false,
+})
 
 describe("removeItemAt", () => {
   it("reports the item and the index it left", () => {
@@ -30,5 +47,56 @@ describe("restoreItem", () => {
 
   it("clamps a slot past the end of the page", () => {
     expect(restoreItem(["a"], { item: "z", index: 7 })).toEqual(["a", "z"])
+  })
+})
+
+describe("appendPaperPage", () => {
+  const snapshot = {
+    origin: "seed",
+    pinned: true,
+    profile: null,
+    selectedTopic: "All",
+    selectedSort: "recommended",
+    stats: {
+      total: 0,
+      openAccess: 0,
+      institutionAccess: 0,
+      liked: 0,
+      bookmarked: 0,
+      medianDwellMs: null,
+      medianCompletion: null,
+      hideRate: null,
+      openSourceRate: null,
+      savesPerHundred: null,
+      windowTopicEntropy: null,
+      windowMedianYear: null,
+      windowDuplicateRate: null,
+    },
+    items: [item("a")],
+    nextCursor: "cursor-1",
+    exploration: 0,
+  } as const
+
+  it("keeps the first page's origin and pinned flag", () => {
+    const next = appendPaperPage(snapshot, {
+      ...snapshot,
+      pinned: false,
+      items: [item("b")],
+      nextCursor: null,
+    })
+
+    expect(next.origin).toBe("seed")
+    expect(next.pinned).toBe(true)
+    expect(next.items.map((entry) => entry.paper.id)).toEqual(["a", "b"])
+  })
+
+  it("does not repeat a clipping already on the deck", () => {
+    const next = appendPaperPage(snapshot, {
+      ...snapshot,
+      items: [item("a"), item("b")],
+      nextCursor: null,
+    })
+
+    expect(next.items.map((entry) => entry.paper.id)).toEqual(["a", "b"])
   })
 })

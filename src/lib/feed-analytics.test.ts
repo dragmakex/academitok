@@ -288,6 +288,7 @@ const snapshotWith = (
   papers: ReadonlyArray<(typeof curatedPapers)[number]>,
 ): FeedSnapshot => ({
   origin,
+  pinned: false,
   profile: null,
   selectedTopic: "All",
   selectedSort: "recommended",

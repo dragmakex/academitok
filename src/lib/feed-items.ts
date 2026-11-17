@@ -8,6 +8,8 @@
  * @see SPEC.md §5.2
  */
 
+import type { FeedSnapshot } from "@/api/paper-schema"
+
 /** An item taken off a page, with the index it occupied. */
 export type RemovedItem<A> = {
   readonly item: A
@@ -35,6 +37,29 @@ export function removeItemAt<A>(
   return {
     items: [...items.slice(0, index), ...items.slice(index + 1)],
     removed: { item, index },
+  }
+}
+
+/**
+ * Appends a fetched page to the loaded deck without repeating a clipping.
+ * @param current - Snapshot already on the deck.
+ * @param page - Following page from the feed.
+ * @returns Deck extended with the new clippings and the first page's origin and pinned flag.
+ */
+export function appendPaperPage(
+  current: FeedSnapshot,
+  page: FeedSnapshot,
+): FeedSnapshot {
+  const ids = new Set(current.items.map((item) => item.paper.id))
+
+  return {
+    ...page,
+    origin: current.origin,
+    pinned: current.pinned,
+    items: [
+      ...current.items,
+      ...page.items.filter((item) => !ids.has(item.paper.id)),
+    ],
   }
 }
 

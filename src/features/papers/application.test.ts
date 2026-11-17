@@ -230,6 +230,7 @@ describe("papers application", () => {
       )
 
       expect(paperIds(pinned)).toEqual(ids)
+      expect(pinned.pinned).toBe(true)
       expect(pinned.nextCursor).toBeNull()
       expect(pinned.items.every((item) => item.exploration === false)).toBe(
         true,

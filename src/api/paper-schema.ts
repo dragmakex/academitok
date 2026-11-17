@@ -145,6 +145,8 @@ export type FeedOrigin = typeof FeedOrigin.Type
 
 export const FeedSnapshot = Schema.Struct({
   origin: FeedOrigin,
+  /** True when the page was served from a shared `edition`, not ranked. */
+  pinned: Schema.Boolean,
   profile: Schema.NullOr(ReaderProfile),
   selectedTopic: TopicFilter,
   selectedSort: FeedSort,
