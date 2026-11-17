@@ -452,6 +452,26 @@ write the conflict at the bottom instead of guessing.
       optional action.
       — `c77c005`
 
+- [ ] **31. Topic entropy over the §8.4 impression window on the desk.** SPEC §8.4 sets Shannon
+      topic entropy at ≥ 1.6 nats per 50 impressions and open decision 2 keeps the fixed nine beats
+      only until someone can tell whether those beats are too coarse — but the desk's Topic mix
+      block (task 17) renders `topicEntropy` over the loaded page's ten clippings, the wrong window
+      for a floor defined per 50 impressions, so a well-mixed page is judged against a target it
+      was never measured on. Add `windowTopicEntropy` to `FeedStats` as the entropy of the reader's
+      last 50 impressions (the §8.4 window `medianDwell` already uses), computed in
+      `getPaperFeedSnapshot` by reusing the existing `topicEntropy` over the primary beat of each
+      impression's paper from the loaded catalog, and render it in the desk's Topic mix block with
+      the existing `StatCard`/`Grid` primitives beside its 1.6 nats floor. An impression whose
+      paper is not in the loaded catalog is dropped rather than counted as a beat. Display only: no
+      new helper, no ranking, RPC procedure, persistence or PostHog payload change, and the
+      one-clipping-per-viewport snap is untouched.
+      Accept: a window of three impressions on three distinct beats reports ln 3 ≈ 1.10 and a
+      fifty-impression window on one beat reports 0; an impression older than the window's fifty
+      does not move the figure; a reader with no impressions, or whose impression papers are absent
+      from the loaded catalog, reports null and the desk renders an em dash, never `NaN` or `0`; the
+      figure reaches `getPaperFeedSnapshot` from real `ReaderState.impressions`; the ranked page for
+      a fixed seed is identical before and after.
+
 ---
 
 ## Blocked — needs a product decision
