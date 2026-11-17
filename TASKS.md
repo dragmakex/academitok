@@ -517,7 +517,7 @@ write the conflict at the bottom instead of guessing.
       page for a fixed seed is identical before and after.
       — `ab9e1f9`
 
-- [ ] **34. Cold-feed failure rate on `feed.next`.** SPEC §8.4 sets cold-feed failure at < 0.5% and
+- [x] **34. Cold-feed failure rate on `feed.next`.** SPEC §8.4 sets cold-feed failure at < 0.5% and
       it is the last row of the metric table nothing reports: `trackFeedPageEvent` in
       `src/lib/feed-analytics.ts` sends `item_count`, `duplicate_count`, `median_year`,
       `unmatched_beat_count`, `topic_entropy` and both citation medians, but not where the page came
@@ -532,6 +532,7 @@ write the conflict at the bottom instead of guessing.
       for a fixed seed is identical before and after; the payload is asserted from a real
       `trackFeedPageEvent` call with the PostHog client mocked, and PostHog staying unconfigured
       changes nothing.
+      — `606cdc9`
 
 ---
 
