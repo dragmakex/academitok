@@ -1241,6 +1241,38 @@ write the conflict at the bottom instead of guessing.
       the ranked page for a fixed seed is identical before and after.
       — `924742f`
 
+- [ ] **61. Who else gave up on the clipping, on the permalink.** SPEC §16 P3 lists "multi-reader
+      with collaborative signals" and §15 says opaque judgement is not acceptable — opaque feeds
+      least of all — but tasks 37, 55 and 57 gave the permalink the three cross-reader facts the
+      split `reader_id` rows can answer (`Filed by` from `savedByReaders` on `bookmark`, `Opened by`
+      from `openedByReaders` on `open-site`, `Liked by` from `likedByReaders` on `like`) and left
+      the one reaction that records a judgement _against_ the clipping uncounted: `hide` rows are
+      written by the deck's hide and its undo (task 30) and read by nobody across readers, so a
+      clipping a dozen colleagues hid reads on the permalink exactly like one nobody ever skipped,
+      and the reader deciding whether to spend ten minutes on it is shown the praise and not the
+      abstentions. Add a `hiddenByReaders(paperId)` read to `ReaderStateRepository` counting
+      distinct `reader_id` rows in `reactions` where `paper_id` matches, `kind = 'hide'` and
+      `active = true` — deliberately not reader-scoped — implement it for both the PGlite and
+      Postgres storages by reading the same `{ readerId, active }` rows through the existing
+      `activeFilers` count that `savedByReaders` already uses, so an undone hide drops out, wrap it
+      in an exported `getPaperHiddenBy(id)` in `src/features/papers/application.ts`, resolve it
+      beside the paper and its three counts through a fifth `createServerFn` in the permalink
+      route's existing `loader`, and render it as one more fact in `PaperPage`'s `<dl>` below
+      `Liked by` (`Hidden by` → `3 readers`), omitted rather than printed as `0 readers` when
+      nobody has. Display only: no ranking, `ReaderState`, RPC procedure, schema, contract or
+      PostHog change, no new dependency, no new component,
+      `savedByReaders`/`filedByOthers`/`openedByReaders`/`likedByReaders` stay as they are, and the
+      one-clipping-per-viewport snap is untouched.
+      Accept: two readers hiding the same clipping report 2 and the permalink renders `Hidden by`
+      with `2 readers`; one reader hiding it twice reports 1, so the count is by reader and not by
+      press, and an undone hide (`active = false`) leaves it at 0, so the fact is omitted rather
+      than printed as `0 readers`; the count is visible to a reader who never hid it, so it is not
+      reader-scoped; a clipping nobody hid reports 0 and the fact is omitted; an unknown permalink
+      id still returns the not-found notice; the count is asserted from a real repository written
+      under two `ReaderId` values, and the rendered and omitted fact from
+      `renderToStaticMarkup` of the real `PaperPage`; the ranked page for a fixed seed is identical
+      before and after; `bun run validate` is green.
+
 ---
 
 ## Blocked — needs a product decision
