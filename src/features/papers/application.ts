@@ -21,6 +21,7 @@ import {
   reactionRates,
   readingCompletion,
   savesPerHundred,
+  topicEntropy,
 } from "@/lib/feed-analytics"
 import { fetchOpenAlexPapers } from "@/lib/openalex"
 import * as Clock from "effect/Clock"
@@ -30,7 +31,7 @@ import * as Layer from "effect/Layer"
 /** Pool coverage needed before a page is served without an upstream request. */
 const poolPageThreshold = 10 * 3
 
-/** Impressions behind the median dwell, the §8.4 measurement window. */
+/** Impressions behind the dwell and topic-entropy windows (SPEC §8.4). */
 const dwellWindow = 50
 
 /**
@@ -94,6 +95,17 @@ export const getPaperFeedSnapshot = (request: FeedRequest) =>
       const readMinutes = new Map(
         papers.map((paper) => [paper.id, paper.readMinutes] as const),
       )
+      const papersById = new Map(
+        papers.map((paper) => [paper.id, paper] as const),
+      )
+      const windowPapers = state
+        .reactions
+        .filter((reaction) => reaction.kind === "view")
+        .slice(0, dwellWindow)
+        .flatMap((reaction) => {
+          const paper = papersById.get(reaction.paperId)
+          return paper === undefined ? [] : [paper]
+        })
       const rates = reactionRates(
         state.reactions.map((reaction) => reaction.kind),
         dwellWindow,
@@ -155,6 +167,9 @@ export const getPaperFeedSnapshot = (request: FeedRequest) =>
           hideRate: rates.hideRate,
           openSourceRate: rates.openSourceRate,
           savesPerHundred: saves,
+          windowTopicEntropy: windowPapers.length === 0
+            ? null
+            : topicEntropy(windowPapers),
         },
         items: page.items,
         nextCursor: page.nextCursor,

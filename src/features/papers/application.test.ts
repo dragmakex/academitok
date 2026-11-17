@@ -337,6 +337,96 @@ describe("papers application", () => {
     },
   )
 
+  it(
+    "reports topic entropy over the reader's last 50 impressions",
+    {
+      timeout: 15_000,
+    },
+    async () => {
+      const dataDir = await mkdtemp(
+        join(tmpdir(), "academitok-window-entropy-"),
+      )
+      directories.push(dataDir)
+      vi.stubGlobal("fetch", () => Promise.reject(new Error("offline")))
+      const [ai, biology, climate] = curatedPapers
+      if (ai === undefined || biology === undefined || climate === undefined) {
+        throw new Error("missing curated paper fixture")
+      }
+
+      const [empty, spread, single] = await runFeed(
+        dataDir,
+        Effect.gen(function*() {
+          const repository = yield* ReaderStateRepository
+          yield* repository.onboard({
+            keptPaperIds: [],
+            rejectedPaperIds: [],
+            skipped: true,
+          })
+          const before = yield* getPaperFeedSnapshot(requestFor("entropy-a"))
+          for (const [position, paper] of [ai, biology, climate].entries()) {
+            yield* repository.track({
+              paperId: paper.id,
+              position,
+              exploration: false,
+              kind: "view",
+              dwellMs: 0,
+            })
+          }
+          const mixed = yield* getPaperFeedSnapshot(requestFor("entropy-b"))
+          // Fifty newer impressions push the mixed three out of the §8.4 window.
+          for (let index = 0; index < 50; index += 1) {
+            yield* repository.track({
+              paperId: ai.id,
+              position: index,
+              exploration: false,
+              kind: "view",
+              dwellMs: 0,
+            })
+          }
+          return [
+            before,
+            mixed,
+            yield* getPaperFeedSnapshot(requestFor("entropy-c")),
+          ] as const
+        }),
+      )
+
+      expect(empty.stats.windowTopicEntropy).toBeNull()
+      expect(spread.stats.windowTopicEntropy).toBeCloseTo(Math.log(3))
+      expect(single.stats.windowTopicEntropy).toBe(0)
+    },
+  )
+
+  it("reports no windowed entropy for impressions absent from the catalog", async () => {
+    const dataDir = await mkdtemp(
+      join(tmpdir(), "academitok-window-entropy-none-"),
+    )
+    directories.push(dataDir)
+    vi.stubGlobal("fetch", () => Promise.reject(new Error("offline")))
+
+    const snapshot = await runFeed(
+      dataDir,
+      Effect.gen(function*() {
+        const repository = yield* ReaderStateRepository
+        yield* repository.onboard({
+          keptPaperIds: [],
+          rejectedPaperIds: [],
+          skipped: true,
+        })
+        yield* repository.track({
+          paperId: "absent-from-catalog",
+          position: 0,
+          exploration: false,
+          kind: "view",
+          dwellMs: 0,
+        })
+        return yield* getPaperFeedSnapshot(requestFor("entropy-absent"))
+      }),
+    )
+
+    expect(snapshot.stats.windowTopicEntropy).toBeNull()
+  })
+
   it("files bookmarked papers in the saved list and drops them on unsave", async () => {
     const dataDir = await mkdtemp(join(tmpdir(), "academitok-saved-"))
     directories.push(dataDir)

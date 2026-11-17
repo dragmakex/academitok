@@ -620,6 +620,7 @@ export function App() {
   const hideRate = snapshot?.stats.hideRate ?? null
   const openSourceRate = snapshot?.stats.openSourceRate ?? null
   const savesPerHundred = snapshot?.stats.savesPerHundred ?? null
+  const windowTopicEntropy = snapshot?.stats.windowTopicEntropy ?? null
   const beats = new Set(
     pagePapers.flatMap((paper) =>
       paper.topics[0] === undefined ? [] : [paper.topics[0]]
@@ -694,6 +695,13 @@ export function App() {
                 label="Beats on the page"
                 value={snapshot === undefined ? "—" : beats}
                 helper={`of ${drift.total} loaded clippings`}
+              />
+              <StatCard
+                label="Last 50 impressions"
+                value={windowTopicEntropy === null
+                  ? "—"
+                  : windowTopicEntropy.toFixed(2)}
+                helper="nats against the 1.6 floor"
               />
             </Grid>
           </Stack>
