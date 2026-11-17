@@ -120,6 +120,7 @@ export const FeedStats = Schema.Struct({
   liked: Schema.Number,
   bookmarked: Schema.Number,
   medianDwellMs: Schema.NullOr(Schema.Number),
+  medianCompletion: Schema.NullOr(Schema.Number),
 })
 export type FeedStats = typeof FeedStats.Type
 

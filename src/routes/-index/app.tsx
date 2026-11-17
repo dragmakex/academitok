@@ -554,6 +554,7 @@ export function App() {
   const skew = citationAgeSkew(pagePapers)
   const entropy = topicEntropy(pagePapers)
   const medianDwellMs = snapshot?.stats.medianDwellMs ?? null
+  const medianCompletion = snapshot?.stats.medianCompletion ?? null
   const beats = new Set(
     pagePapers.flatMap((paper) =>
       paper.topics[0] === undefined ? [] : [paper.topics[0]]
@@ -643,6 +644,13 @@ export function App() {
                   ? "—"
                   : `${(medianDwellMs / 1000).toFixed(1)} s`}
                 helper="against the 8 s target"
+              />
+              <StatCard
+                label="Median completion"
+                value={medianCompletion === null
+                  ? "—"
+                  : `${Math.round(medianCompletion * 100)}%`}
+                helper="against the 100% target"
               />
             </Grid>
           </Stack>

@@ -149,6 +149,17 @@ export function medianDwell(
 }
 
 /**
+ * Median reading completion of the clippings that could be measured (SPEC §16 P3).
+ * @param values - Per-clip ratios; null marks a clipping without a usable estimate.
+ * @returns Median ratio, or null when nothing was measurable.
+ */
+export function medianCompletion(
+  values: ReadonlyArray<number | null>,
+): number | null {
+  return median(values.filter((value): value is number => value !== null))
+}
+
+/**
  * Median publication year of a page, the archival-drift signal (SPEC §17.3).
  * @param years - Page publication years.
  * @returns Median year, averaging the middle pair on even-sized pages, or null when empty.

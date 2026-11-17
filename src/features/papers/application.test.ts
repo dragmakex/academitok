@@ -186,6 +186,58 @@ describe("papers application", () => {
     expect(recorded.stats.medianDwellMs).toBe(6_000)
   })
 
+  it("reports the reader's median reading completion on the feed snapshot", {
+    timeout: 15_000,
+  }, async () => {
+    const dataDir = await mkdtemp(
+      join(tmpdir(), "academitok-median-completion-"),
+    )
+    directories.push(dataDir)
+    vi.stubGlobal("fetch", () => Promise.reject(new Error("offline")))
+    const [first, second] = curatedPapers
+    if (first === undefined || second === undefined) {
+      throw new Error("missing curated paper fixture")
+    }
+
+    const [empty, recorded] = await runFeed(
+      dataDir,
+      Effect.gen(function*() {
+        const repository = yield* ReaderStateRepository
+        yield* repository.onboard({
+          keptPaperIds: [],
+          rejectedPaperIds: [],
+          skipped: true,
+        })
+        const before = yield* getPaperFeedSnapshot(requestFor("completion-a"))
+        // Half the estimated reading time on both clippings; the third is absent
+        // from the loaded catalog, so it is dropped rather than counted as 0.
+        for (const paper of [first, second]) {
+          yield* repository.track({
+            paperId: paper.id,
+            position: 0,
+            exploration: false,
+            kind: "dwell",
+            dwellMs: paper.readMinutes * 30_000,
+          })
+        }
+        yield* repository.track({
+          paperId: "absent-from-catalog",
+          position: 0,
+          exploration: false,
+          kind: "dwell",
+          dwellMs: 60_000,
+        })
+        return [
+          before,
+          yield* getPaperFeedSnapshot(requestFor("completion-b")),
+        ] as const
+      }),
+    )
+
+    expect(empty.stats.medianCompletion).toBeNull()
+    expect(recorded.stats.medianCompletion).toBe(0.5)
+  })
+
   it("files bookmarked papers in the saved list and drops them on unsave", async () => {
     const dataDir = await mkdtemp(join(tmpdir(), "academitok-saved-"))
     directories.push(dataDir)

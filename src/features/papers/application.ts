@@ -15,7 +15,11 @@ import {
   buildFeedStats,
   savedPaperIds,
 } from "@/features/papers/recommendation"
-import { medianDwell } from "@/lib/feed-analytics"
+import {
+  medianCompletion,
+  medianDwell,
+  readingCompletion,
+} from "@/lib/feed-analytics"
 import { fetchOpenAlexPapers } from "@/lib/openalex"
 import * as Clock from "effect/Clock"
 import * as Effect from "effect/Effect"
@@ -79,6 +83,15 @@ export const getPaperFeedSnapshot = (request: FeedRequest) =>
         request.query.sort,
       )
       const onboarding = state.profile === null
+      const dwells = state
+        .reactions
+        .filter((reaction) =>
+          reaction.kind === "dwell" && reaction.dwellMs !== undefined
+        )
+        .slice(0, dwellWindow)
+      const readMinutes = new Map(
+        papers.map((paper) => [paper.id, paper.readMinutes] as const),
+      )
       const sessionSeen: ReadonlyArray<string> = request.sessionId === undefined
         ? []
         : yield* repository.loadFeedSession(request.sessionId)
@@ -119,13 +132,15 @@ export const getPaperFeedSnapshot = (request: FeedRequest) =>
         stats: {
           ...buildFeedStats(ranked),
           medianDwellMs: medianDwell(
-            state
-              .reactions
-              .filter((reaction) =>
-                reaction.kind === "dwell" && reaction.dwellMs !== undefined
+            dwells.map((reaction) => reaction.dwellMs ?? 0),
+          ),
+          medianCompletion: medianCompletion(
+            dwells.map((reaction) =>
+              readingCompletion(
+                reaction.dwellMs ?? 0,
+                readMinutes.get(reaction.paperId),
               )
-              .slice(0, dwellWindow)
-              .map((reaction) => reaction.dwellMs ?? 0),
+            ),
           ),
         },
         items: page.items,

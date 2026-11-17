@@ -7,6 +7,7 @@ import {
   archivalDrift,
   citationAgeSkew,
   hashReaderId,
+  medianCompletion,
   medianDwell,
   medianYear,
   readingCompletion,
@@ -106,6 +107,21 @@ describe("medianDwell", () => {
 
   it("reports no median when nothing was recorded", () => {
     expect(medianDwell([])).toBeNull()
+  })
+})
+
+describe("medianCompletion", () => {
+  it("reports the middle completion of a measurable sample", () => {
+    expect(medianCompletion([0.5, 1, 0.25])).toBe(0.5)
+  })
+
+  it("drops clippings without a usable estimate instead of counting them as zero", () => {
+    expect(medianCompletion([0.5, null, 0.5])).toBe(0.5)
+  })
+
+  it("reports no completion when nothing was measurable", () => {
+    expect(medianCompletion([])).toBeNull()
+    expect(medianCompletion([null, null])).toBeNull()
   })
 })
 
