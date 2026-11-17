@@ -473,7 +473,7 @@ write the conflict at the bottom instead of guessing.
       a fixed seed is identical before and after.
       — `beeb177`
 
-- [ ] **32. Archival drift over the §8.4 impression window on the desk.** SPEC §17.3 keeps citation
+- [x] **32. Archival drift over the §8.4 impression window on the desk.** SPEC §17.3 keeps citation
       count as a quality signal on the condition that we "measure whether the feed feels archival",
       and task 31 has just shown the desk reading a window-scoped metric off the wrong window: the
       Archival drift block renders `archivalDrift` over the loaded page's ten clippings, so the
@@ -492,6 +492,7 @@ write the conflict at the bottom instead of guessing.
       impressions, or whose impression papers are absent from the loaded catalog, reports null and
       the desk renders an em dash, never `NaN`; the figure reaches `getPaperFeedSnapshot` from real
       `ReaderState` view reactions; the ranked page for a fixed seed is identical before and after.
+      — `80327d9`
 
 ---
 
