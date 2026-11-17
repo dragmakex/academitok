@@ -804,6 +804,30 @@ write the conflict at the bottom instead of guessing.
       after.
       — `3b2e8c7`
 
+- [ ] **45. A home-screen deck iOS will actually install as one.** SPEC §16 P3 lists a native
+      shell; tasks 19, 21 and 22 gave it the gazette manifest, the safe-area insets and the mark,
+      but every one of those rides on the web manifest, and Safari does not read
+      `display: "standalone"` from it — a reader who adds the deck to an iPhone home screen gets
+      the page inside Safari's chrome with a screenshot for an icon and a Safari-generated name,
+      and the `viewport-fit=cover` viewport meta plus the `env(safe-area-inset-*)` padding task 21
+      added never come into play, because the page is never painted under the status bar they
+      pad against. Only the `apple-mobile-web-app-*` metas opt an iOS home-screen app into
+      standalone mode. Add three entries to `rootHead()` in `src/routes/__root.tsx`:
+      `apple-mobile-web-app-capable` = `yes`, `apple-mobile-web-app-status-bar-style` =
+      `black-translucent` (the value that lets the paper reach beneath the status bar the deck's
+      top inset already clears), and `apple-mobile-web-app-title` = the manifest's `short_name`.
+      Leave the manifest, the icon link, `theme-color`, the viewport meta and every
+      safe-area padding untouched; no dependency, route, component, ranking, RPC contract or
+      PostHog change.
+      Accept: `rootHead()` carries exactly one meta entry for each of the three names with those
+      values; `apple-mobile-web-app-title` equals `short_name` read from the real
+      `public/manifest.json`; the `theme-color`, `viewport-fit=cover` viewport meta, `/mark.svg`
+      icon link and `/manifest.json` link are unchanged and `display: "standalone"` still parses
+      from the manifest; a test asserts all three metas from the real `rootHead()` and the title
+      against the manifest file; no `apple-touch-icon` is invented, since the mark is SVG and iOS
+      cannot use it (shortcut: iOS falls back to a screenshot for the home-screen icon, add a PNG
+      when the mark is redrawn).
+
 ---
 
 ## Blocked — needs a product decision
