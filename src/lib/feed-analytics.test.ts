@@ -13,6 +13,7 @@ import {
   medianCompletion,
   medianDwell,
   medianYear,
+  pageReadMinutes,
   reactionRates,
   readingCompletion,
   savesPerHundred,
@@ -113,6 +114,25 @@ describe("medianDwell", () => {
 
   it("reports no median when nothing was recorded", () => {
     expect(medianDwell([])).toBeNull()
+  })
+})
+
+const readTime = (readMinutes: number | null | undefined) => ({ readMinutes })
+
+describe("pageReadMinutes", () => {
+  it("sums the reading time the page asks for", () => {
+    expect(pageReadMinutes([readTime(2), readTime(4), readTime(6)])).toBe(12)
+  })
+
+  it("ignores a clipping without a usable estimate", () => {
+    expect(pageReadMinutes([readTime(2), readTime(0), readTime(null)]))
+      .toBe(2)
+    expect(pageReadMinutes([readTime(2), { readMinutes: undefined }])).toBe(2)
+  })
+
+  it("reports null when no clipping carries an estimate", () => {
+    expect(pageReadMinutes([readTime(0), readTime(null)])).toBeNull()
+    expect(pageReadMinutes([])).toBeNull()
   })
 })
 
@@ -417,7 +437,27 @@ describe("trackFeedPageEvent", () => {
         origin: "seed",
         cursor: "cursor-1",
         item_count: 0,
+        page_read_minutes: null,
       }),
+    )
+  })
+
+  it("sends the reading load of the page on every page", async () => {
+    vi.stubEnv("VITE_POSTHOG_KEY", "test-key")
+    vi.stubGlobal("window", {})
+
+    trackFeedPageEvent(
+      snapshotWith("pool", [
+        { ...curatedPapers[0], readMinutes: 2 },
+        { ...curatedPapers[1], readMinutes: 4 },
+        { ...curatedPapers[2], readMinutes: 6 },
+      ]),
+      null,
+    )
+    await vi.waitFor(() => expect(capture).toHaveBeenCalledTimes(1))
+    expect(capture).toHaveBeenCalledWith(
+      "feed.next",
+      expect.objectContaining({ page_read_minutes: 12 }),
     )
   })
 

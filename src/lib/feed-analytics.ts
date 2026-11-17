@@ -149,6 +149,28 @@ export function medianDwell(
   return median(dwells)
 }
 
+/**
+ * Total estimated reading time a page asks for, so the dwell floor is judged
+ * against comparable pages (SPEC §16 P3).
+ * @param papers - Page clippings with an optional reading-time estimate.
+ * @returns Summed minutes, or null when no clipping carries a usable estimate.
+ */
+export function pageReadMinutes(
+  papers: ReadonlyArray<{
+    readonly readMinutes?: number | null | undefined
+  }>,
+): number | null {
+  let total: number | null = null
+  for (const paper of papers) {
+    const minutes = paper.readMinutes
+    if (minutes === null || minutes === undefined || minutes <= 0) {
+      continue
+    }
+    total = (total ?? 0) + minutes
+  }
+  return total
+}
+
 type ReactionWindow = {
   readonly views: number
   readonly hides: number
@@ -413,6 +435,7 @@ export function trackFeedPageEvent(
     concept_beat_count: beats.concept,
     education_beat_count: beats.education,
     topic_entropy: topicEntropy(papers),
+    page_read_minutes: pageReadMinutes(papers),
     topic: snapshot.selectedTopic,
     sort: snapshot.selectedSort,
     cold_start: snapshot.profile === null,
