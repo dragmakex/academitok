@@ -66,6 +66,8 @@ export const registry = {
       "Scrollable snap container — reusable short-form feed viewport pattern",
     "components/FeedStateSlide.tsx":
       "Fullscreen feed state wrapper — centers loading, empty, and error states inside the snap feed",
+    "components/Masthead.tsx":
+      "Nameplate band — shared by the deck, the permalink, and the morgue file so the folio line and wordmark cannot drift",
     "components/PaperSlide.tsx":
       "Complex feed surface — short-form paper card with action rail and metadata",
     "components/PaperPage.tsx":

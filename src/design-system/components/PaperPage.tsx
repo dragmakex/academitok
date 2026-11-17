@@ -1,5 +1,6 @@
 import { CopyBlock } from "./CopyBlock"
 import { LinkButton } from "./LinkButton"
+import { Masthead } from "./Masthead"
 
 type PaperPageProps = {
   readonly abstract: string
@@ -22,7 +23,10 @@ type PaperPageProps = {
 }
 
 const factLabelClass =
-  "m-0 font-label text-[0.62rem] uppercase tracking-[0.16em] text-ink-muted"
+  "m-0 font-label text-[0.62rem] font-bold uppercase tracking-[0.16em] text-ink-muted"
+const factValueClass = "m-0 font-body text-[0.9rem] leading-[1.3]"
+const linkClass =
+  "font-label text-[0.64rem] font-bold uppercase tracking-[0.14em] text-ink underline underline-offset-4 hover:text-ink-muted focus-visible:outline-2 focus-visible:outline-ink"
 
 /**
  * Renders the canonical broadsheet clipping for one paper.
@@ -34,44 +38,39 @@ const factLabelClass =
 export function PaperPage(props: PaperPageProps) {
   return (
     <article className="mx-auto w-full max-w-[58rem] bg-paper text-ink">
-      <header className="flex flex-wrap items-center justify-between gap-s border-b border-ink pb-xs font-label text-[0.68rem] uppercase tracking-[0.16em] text-ink-muted">
-        <a
-          className="text-ink no-underline hover:text-stamp focus-visible:outline-2 focus-visible:outline-focus-ring"
-          href="/"
-        >
-          AcademiTok
-        </a>
-        <span>
-          Canonical clipping · Metadata only
-        </span>
-      </header>
+      <Masthead
+        left="Clipping"
+        right="Metadata only"
+        section="The archive"
+      />
 
       <div className="mt-l grid gap-l md:grid-cols-[minmax(0,1fr)_15rem]">
         <div className="min-w-0">
-          <p className="m-0 font-label text-[0.72rem] uppercase tracking-[0.18em] text-stamp">
+          <p className="m-0 border-y border-rule-soft py-2xs text-center font-label text-[0.66rem] font-bold uppercase tracking-[0.22em] text-ink">
             {props.topics.join(" / ") || "Research"}
           </p>
-          <h1 className="mt-s m-0 font-display text-[clamp(2rem,5vw,3.4rem)] leading-[1.02] font-bold tracking-[-0.035em]">
+          <h1 className="mt-s m-0 text-center font-display text-[clamp(2rem,4.6vw,3.1rem)] leading-[1.03] font-bold tracking-[-0.025em]">
             {props.title}
           </h1>
-          <p className="mt-m m-0 font-body text-[0.9rem] font-semibold">
-            {props.authors.join(", ")}
+          <p className="mt-s m-0 text-center font-body text-[0.95rem] font-bold">
+            By {props.authors.join(", ")}
           </p>
-          <p className="mt-2xs m-0 font-label text-[0.68rem] uppercase tracking-[0.08em] text-ink-muted">
-            {props.venue} · {props.year}
-          </p>
-          <p className="mt-l max-w-[62ch] font-body text-[1.05rem] leading-[1.5] first-letter:float-left first-letter:mr-xs first-letter:font-display first-letter:text-[3.2rem] first-letter:leading-[0.8] first-letter:text-stamp">
+          <div className="mx-auto mt-s h-px w-16 bg-ink" />
+          <p className="mt-s max-w-[62ch] mx-auto hyphens-auto text-justify font-body text-[1.0625rem] leading-[1.45]">
             {props.abstract}
           </p>
         </div>
 
-        <aside className="border-t border-rule pt-m md:border-t-0 md:border-l md:pl-m">
-          <dl className="m-0 grid grid-cols-2 gap-s">
+        <aside className="border-t-2 border-ink pt-s md:border-t-0 md:border-l md:border-l-rule-soft md:pl-m">
+          <p className="m-0 font-label text-[0.62rem] font-bold uppercase tracking-[0.16em]">
+            The record
+          </p>
+          <dl className="mt-xs m-0 grid grid-cols-2 gap-x-s gap-y-xs">
             <div>
               <dt className={factLabelClass}>
                 Filed under
               </dt>
-              <dd className="m-0 font-body text-[0.85rem] leading-tight">
+              <dd className={factValueClass}>
                 {props.topics.join(", ") || "Research"}
               </dd>
             </div>
@@ -79,7 +78,7 @@ export function PaperPage(props: PaperPageProps) {
               <dt className={factLabelClass}>
                 Access
               </dt>
-              <dd className="m-0 font-body text-[0.85rem] leading-tight">
+              <dd className={factValueClass}>
                 {props.accessLabel}
               </dd>
             </div>
@@ -87,7 +86,7 @@ export function PaperPage(props: PaperPageProps) {
               <dt className={factLabelClass}>
                 Source
               </dt>
-              <dd className="m-0 font-body text-[0.85rem] leading-tight">
+              <dd className={factValueClass}>
                 {props.siteLabel}
               </dd>
             </div>
@@ -95,7 +94,7 @@ export function PaperPage(props: PaperPageProps) {
               <dt className={factLabelClass}>
                 Citations
               </dt>
-              <dd className="m-0 font-body text-[0.85rem] leading-tight">
+              <dd className={factValueClass}>
                 {props.citations}
               </dd>
             </div>
@@ -104,7 +103,7 @@ export function PaperPage(props: PaperPageProps) {
                 <dt className={factLabelClass}>
                   Filed by
                 </dt>
-                <dd className="m-0 font-body text-[0.85rem] leading-tight">
+                <dd className={factValueClass}>
                   {`${props.savedByReaders} ${
                     props.savedByReaders === 1 ? "reader" : "readers"
                   }`}
@@ -116,7 +115,7 @@ export function PaperPage(props: PaperPageProps) {
                 <dt className={factLabelClass}>
                   Opened by
                 </dt>
-                <dd className="m-0 font-body text-[0.85rem] leading-tight">
+                <dd className={factValueClass}>
                   {`${props.openedByReaders} ${
                     props.openedByReaders === 1 ? "reader" : "readers"
                   }`}
@@ -128,7 +127,7 @@ export function PaperPage(props: PaperPageProps) {
                 <dt className={factLabelClass}>
                   Liked by
                 </dt>
-                <dd className="m-0 font-body text-[0.85rem] leading-tight">
+                <dd className={factValueClass}>
                   {`${props.likedByReaders} ${
                     props.likedByReaders === 1 ? "reader" : "readers"
                   }`}
@@ -140,7 +139,7 @@ export function PaperPage(props: PaperPageProps) {
                 <dt className={factLabelClass}>
                   Hidden by
                 </dt>
-                <dd className="m-0 font-body text-[0.85rem] leading-tight">
+                <dd className={factValueClass}>
                   {`${props.hiddenByReaders} ${
                     props.hiddenByReaders === 1 ? "reader" : "readers"
                   }`}
@@ -151,7 +150,7 @@ export function PaperPage(props: PaperPageProps) {
               <dt className={factLabelClass}>
                 Abstract read time
               </dt>
-              <dd className="m-0 font-body text-[0.85rem] leading-tight">
+              <dd className={factValueClass}>
                 {props.readMinutes} min
               </dd>
             </div>
@@ -159,7 +158,7 @@ export function PaperPage(props: PaperPageProps) {
               <dt className={factLabelClass}>
                 Year
               </dt>
-              <dd className="m-0 font-body text-[0.85rem] leading-tight">
+              <dd className={factValueClass}>
                 {props.year}
               </dd>
             </div>
@@ -176,7 +175,7 @@ export function PaperPage(props: PaperPageProps) {
               <LinkButton
                 href={props.bibtexHref}
                 target="_self"
-                variant="primary"
+                variant="secondary"
                 download="academitok-clipping.bib"
               >
                 Export BibTeX
@@ -189,18 +188,15 @@ export function PaperPage(props: PaperPageProps) {
               ? null
               : (
                 <a
-                  className="font-label text-[0.62rem] uppercase tracking-[0.14em] text-ink underline-offset-4 hover:text-stamp focus-visible:outline-2 focus-visible:outline-focus-ring"
+                  className={linkClass}
                   href={props.externalUrl}
                   target="_blank"
                   rel="noopener noreferrer"
                 >
-                  Open source in a new tab
+                  Open source
                 </a>
               )}
-            <a
-              className="font-label text-[0.62rem] uppercase tracking-[0.14em] text-ink-muted no-underline hover:text-stamp focus-visible:outline-2 focus-visible:outline-focus-ring"
-              href="/"
-            >
+            <a className={linkClass} href="/">
               Back to the edition
             </a>
           </div>

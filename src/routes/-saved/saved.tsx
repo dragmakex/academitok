@@ -3,6 +3,7 @@ import { Card } from "@/design-system/components/Card"
 import { EmptyState } from "@/design-system/components/EmptyState"
 import { ErrorState } from "@/design-system/components/ErrorState"
 import { LinkButton } from "@/design-system/components/LinkButton"
+import { Masthead } from "@/design-system/components/Masthead"
 import { Page } from "@/design-system/components/Page"
 import { PageHeader } from "@/design-system/components/PageHeader"
 import { PaperSlide } from "@/design-system/components/PaperSlide"
@@ -55,28 +56,31 @@ export function SavedPage(
 
   return (
     <Page>
+      <Masthead
+        left="The morgue file"
+        right={`${page?.items.length ?? 0} filed`}
+        section="Saved clippings"
+        trailing={page !== undefined && page.items.length > 0
+          ? (
+            <LinkButton
+              href="/api/saved.bib"
+              target="_self"
+              variant="secondary"
+              download="academitok-saved.bib"
+            >
+              BibTeX
+            </LinkButton>
+          )
+          : null}
+      />
       <Stack gap="l">
         <PageHeader
           title="Saved clippings"
           description="The morgue file: every paper you pinned while reading the edition."
           actions={
-            <>
-              {page !== undefined && page.items.length > 0
-                ? (
-                  <LinkButton
-                    href="/api/saved.bib"
-                    target="_self"
-                    variant="primary"
-                    download="academitok-saved.bib"
-                  >
-                    Export BibTeX
-                  </LinkButton>
-                )
-                : null}
-              <LinkButton href="/" variant="secondary">
-                Back to the edition
-              </LinkButton>
-            </>
+            <LinkButton href="/" variant="ghost">
+              Back to the edition
+            </LinkButton>
           }
         />
 

@@ -16,7 +16,10 @@ import { FeedDeck } from "@/design-system/components/FeedDeck"
 import { FeedStateSlide } from "@/design-system/components/FeedStateSlide"
 import { Notice, type NoticeAction } from "@/design-system/components/Notice"
 import { Page } from "@/design-system/components/Page"
-import { PaperSlide } from "@/design-system/components/PaperSlide"
+import {
+  type DeckTeaser,
+  PaperSlide,
+} from "@/design-system/components/PaperSlide"
 import { ShortcutSheet } from "@/design-system/components/ShortcutSheet"
 import { StatCard } from "@/design-system/components/StatCard"
 import { Tabs } from "@/design-system/components/Tabs"
@@ -104,6 +107,7 @@ type VisiblePaperSlideProps = {
   readonly alsoKeptBy: number | undefined
   readonly alsoLikedBy: number | undefined
   readonly total: number
+  readonly teasers: ReadonlyArray<DeckTeaser>
   readonly onBookmark: () => void
   readonly onHide: () => void
   readonly onNavigate: (index: number) => void
@@ -122,6 +126,7 @@ type VisiblePaperSlideProps = {
  * @param root0.alsoKeptBy - Other readers who filed this clipping.
  * @param root0.alsoLikedBy - Other readers who liked this clipping.
  * @param root0.total - Mounted feed length.
+ * @param root0.teasers - Headlines printed below the fold.
  * @param root0.onBookmark - Save reaction callback.
  * @param root0.onHide - Hide reaction callback.
  * @param root0.onNavigate - Navigation callback.
@@ -142,6 +147,7 @@ function VisiblePaperSlide({
   origin,
   pinned,
   registerNode,
+  teasers,
   total,
 }: VisiblePaperSlideProps) {
   const nodeRef = useRef<HTMLElement | null>(null)
@@ -279,6 +285,8 @@ function VisiblePaperSlide({
       alsoKeptBy={alsoKeptBy}
       alsoLikedBy={alsoLikedBy}
       total={total}
+      teasers={teasers}
+      onJump={(position) => onNavigate(position - 1)}
       skeleton={!active}
       actions={{
         onLike: () => react("like"),
@@ -343,7 +351,7 @@ export function OnboardingPicks(
                 Set your front page · {page + 1} of 3
               </Text>
               <Text>
-                Keep at least five papers. Your choices tune topics and writing
+                Keep at least five. Your choices tune beats and writing
                 similarity before the first edition.
               </Text>
             </Stack>
@@ -370,13 +378,13 @@ export function OnboardingPicks(
                             [item.paper.id]: "keep",
                           }))}
                       >
-                        Keep scrolling
+                        Keep
                       </Button>
                       <Button
                         variant={decisions[item.paper.id] === "discard"
                           ? "danger"
                           : "ghost"}
-                        aria-label={`Discard ${item.paper.title}`}
+                        aria-label={`Skip ${item.paper.title}`}
                         aria-pressed={decisions[item.paper.id] === "discard"}
                         onClick={() =>
                           setDecisions((current) => ({
@@ -384,7 +392,7 @@ export function OnboardingPicks(
                             [item.paper.id]: "discard",
                           }))}
                       >
-                        Discard
+                        Skip
                       </Button>
                     </Inline>
                   </Stack>
@@ -401,7 +409,7 @@ export function OnboardingPicks(
                     skipped: true,
                   })}
               >
-                Just show me the front page
+                Skip this
               </Button>
               {page < 2
                 ? (
@@ -409,7 +417,7 @@ export function OnboardingPicks(
                     disabled={!pageComplete}
                     onClick={() => setPage((current) => current + 1)}
                   >
-                    Next five
+                    Next
                   </Button>
                 )
                 : (
@@ -422,7 +430,7 @@ export function OnboardingPicks(
                         skipped: false,
                       })}
                   >
-                    Print my edition
+                    Print edition
                   </Button>
                 )}
             </Inline>
@@ -969,7 +977,7 @@ export function App() {
                     query,
                   })}
               >
-                Save profile
+                Save
               </Button>
             </Stack>
           </Card>
@@ -1060,7 +1068,7 @@ export function App() {
                       {`Signed in as ${email}. Ask for a link on another device to fold it into this desk.`}
                     </Text>
                     <Button variant="secondary" onClick={() => signOut()}>
-                      Sign this device out
+                      Sign out
                     </Button>
                   </>
                 )}
@@ -1137,6 +1145,17 @@ export function App() {
                 alsoLikedBy={snapshot.alsoLikedBy[item.paper.id]}
                 index={index}
                 total={snapshot.items.length}
+                teasers={snapshot
+                  .items
+                  .slice(index + 1, index + 7)
+                  .map((teaser, offset) => ({
+                    position: index + offset + 2,
+                    topic: teaser.paper.topics[0] ?? "Research",
+                    title: teaser.paper.title,
+                    venue: teaser.paper.venue,
+                    year: teaser.paper.year,
+                    summary: teaser.paper.summary,
+                  }))}
                 active={Math.abs(index - activeIndex) <= 1}
                 onBookmark={() => {
                   reactToPaper({ kind: "bookmark", paperId: item.paper.id })
