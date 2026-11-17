@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="AcademiTok">
+  <rect width="64" height="64" fill="oklch(0.18 0.012 60)"/>
+  <text x="32" y="45" text-anchor="middle" font-family="Iowan Old Style, Palatino, Georgia, serif" font-size="42" fill="oklch(0.972 0.014 92)">A</text>
+  <line x1="16" y1="51" x2="48" y2="51" stroke="oklch(0.52 0.19 28)" stroke-width="1"/>
+</svg>

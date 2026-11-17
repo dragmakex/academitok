@@ -4,5 +4,12 @@
   "start_url": "/",
   "display": "standalone",
   "theme_color": "oklch(0.18 0.012 60)",
-  "background_color": "oklch(0.945 0.018 88)"
+  "background_color": "oklch(0.945 0.018 88)",
+  "icons": [
+    {
+      "src": "/mark.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    }
+  ]
 }

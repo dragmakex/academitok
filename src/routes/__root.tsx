@@ -28,6 +28,11 @@ export const rootHead = () => ({
   ],
   links: [
     {
+      rel: "icon",
+      href: "/mark.svg",
+      type: "image/svg+xml",
+    },
+    {
       rel: "manifest",
       href: "/manifest.json",
     },

@@ -1,4 +1,4 @@
-import { readFileSync } from "node:fs"
+import { existsSync, readFileSync } from "node:fs"
 import { join } from "node:path"
 import { describe, expect, it, vi } from "vitest"
 
@@ -62,7 +62,9 @@ describe("gazette shell metadata", () => {
     expect(manifest.theme_color).toBe("oklch(0.18 0.012 60)")
     expect(manifest.background_color).toBe("oklch(0.945 0.018 88)")
     expect(JSON.stringify(manifest)).not.toContain("TanStack")
-    expect(manifest.icons).toBeUndefined()
+    expect(manifest.icons).toEqual([
+      { src: "/mark.svg", sizes: "any", type: "image/svg+xml" },
+    ])
   })
 
   it("links the manifest from the root head", async () => {
@@ -72,9 +74,33 @@ describe("gazette shell metadata", () => {
       rel: "manifest",
       href: "/manifest.json",
     })
+    expect(head.links).toContainEqual({
+      rel: "icon",
+      href: "/mark.svg",
+      type: "image/svg+xml",
+    })
     expect(head.meta).toContainEqual({
       name: "theme-color",
       content: manifest.theme_color,
     })
+  })
+
+  it("serves a hand-drawn gazette mark and retires the sample assets", () => {
+    const markPath = join(process.cwd(), "public/mark.svg")
+    expect(existsSync(markPath)).toBe(true)
+    const mark = readFileSync(markPath, "utf8")
+    expect(mark).toContain("<svg")
+    expect(mark).toContain("oklch(0.18 0.012 60)")
+    expect(mark).toContain("oklch(0.972 0.014 92)")
+    expect(mark).toContain("oklch(0.52 0.19 28)")
+    for (
+      const asset of [
+        "favicon.ico",
+        "tanstack-circle-logo.png",
+        "tanstack-word-logo-white.svg",
+      ]
+    ) {
+      expect(existsSync(join(process.cwd(), "public", asset))).toBe(false)
+    }
   })
 })
