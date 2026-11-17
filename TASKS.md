@@ -129,6 +129,24 @@ write the conflict at the bottom instead of guessing.
       the TTL boundary helper is unit-tested.
       — `cb77936`
 
+- [ ] **23. Serve the saved-collection BibTeX.** SPEC §14 and the P2 line "saved-collection
+      export (BibTeX)" are only half-built: `formatBibtex` and `getSavedBibtex` sit in
+      `src/features/papers/application.ts`, but nothing calls `getSavedBibtex` — no route, no
+      control — so a reader cannot obtain the `.bib` for the clippings they saved and the P2
+      feature is unreachable from the app. Add one `GET /api/saved.bib` HTTP route beside
+      `HealthRoute` in `src/routes/api/$.ts` that resolves the request's `ReaderId` from the cookie
+      with the same `readerIdFromCookieHeader` the RPC middleware uses, runs `getSavedBibtex`, and
+      answers as an attachment named `academitok-saved.bib`; add a `LinkButton`
+      export control in the `/saved` header beside "Back to the edition", rendered only when the
+      morgue file holds clippings. No new dependency, no route file, no RPC contract, ranking or
+      PostHog change — `formatBibtex` stays as it is.
+      Accept: `GET /api/saved.bib` answers with exactly the `getSavedBibtex` body and an attachment
+      filename; a three-paper saved set parses as three `@article` entries with stable keys; the
+      route is exported and merged into `AllRoutes`, and a request without the cookie resolves to
+      the singleton reader; an empty saved set answers an empty body, never a 500; `/saved` shows
+      the export control when clippings exist and hides it when the morgue file is empty; a test
+      asserts the route registration, the attachment headers and the body from the real handler.
+
 ---
 
 ## P3 — optional
