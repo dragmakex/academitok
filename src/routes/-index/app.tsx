@@ -24,7 +24,11 @@ import { Grid } from "@/design-system/primitives/Grid"
 import { Inline } from "@/design-system/primitives/Inline"
 import { Stack } from "@/design-system/primitives/Stack"
 import { formatEdition } from "@/features/papers/citation"
-import { archivalDrift, trackFeedPageEvent } from "@/lib/feed-analytics"
+import {
+  archivalDrift,
+  citationAgeSkew,
+  trackFeedPageEvent,
+} from "@/lib/feed-analytics"
 import { deckAction, shortcutRows } from "@/lib/shortcuts"
 import { useAtomSet, useAtomValue } from "@effect/atom-react"
 import { useCallback, useEffect, useRef, useState } from "react"
@@ -539,9 +543,9 @@ export function App() {
     : `${activeItem.paper.title}, ${activeItem.paper.venue} ${activeItem.paper.year}, ${
       activeIndex + 1
     } of ${snapshot?.items.length ?? 0}`
-  const drift = archivalDrift(
-    (snapshot?.items ?? []).map((item) => item.paper.year),
-  )
+  const pagePapers = (snapshot?.items ?? []).map((item) => item.paper)
+  const drift = archivalDrift(pagePapers.map((paper) => paper.year))
+  const skew = citationAgeSkew(pagePapers)
   const editionNotice = formatEdition(
     (snapshot?.items ?? []).map((item) => item.paper),
     "Evening Edition",
@@ -576,6 +580,16 @@ export function App() {
                 helper={drift.newestYear === null
                   ? "no publication years on the page"
                   : `older than ${drift.newestYear}, the newest`}
+              />
+              <StatCard
+                label="Citations, older half"
+                value={skew.olderCitations ?? "—"}
+                helper="median behind the page's median year"
+              />
+              <StatCard
+                label="Citations, newer half"
+                value={skew.newerCitations ?? "—"}
+                helper="median on or after the median year"
               />
             </Grid>
             <CopyBlock
