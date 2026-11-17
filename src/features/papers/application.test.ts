@@ -638,6 +638,74 @@ describe("papers application", () => {
     },
   )
 
+  it(
+    "reports the median reading load over the reader's last 50 impressions",
+    {
+      timeout: 15_000,
+    },
+    async () => {
+      const dataDir = await mkdtemp(
+        join(tmpdir(), "academitok-window-read-minutes-"),
+      )
+      directories.push(dataDir)
+      vi.stubGlobal("fetch", () => Promise.reject(new Error("offline")))
+      const pick = (id: string) => {
+        const paper = curatedPapers.find((candidate) => candidate.id === id)
+        if (paper === undefined) {
+          throw new Error(`missing curated paper fixture ${id}`)
+        }
+        return paper
+      }
+      // Estimates 9/8/11 -> median 9; the 12-minute clipping makes the even
+      // window 8/9/11/12 -> 10; fifty of the 12-minute clipping -> 12.
+      const nine = pick("hal-2022-open-science-collaboration-markets")
+      const eight = pick("arxiv-2023-quantum-sensor-compression")
+      const eleven = pick("biorxiv-2024-fast-protein-folding-signals")
+      const twelve = pick("pmc-2024-adaptive-icu-triage")
+
+      const [empty, odd, even, displaced] = await runFeed(
+        dataDir,
+        Effect.gen(function*() {
+          const repository = yield* ReaderStateRepository
+          yield* repository.onboard({
+            keptPaperIds: [],
+            rejectedPaperIds: [],
+            skipped: true,
+          })
+          const before = yield* getPaperFeedSnapshot(requestFor("read-a"))
+          const view = (paperId: string, position: number) =>
+            repository.track({
+              paperId,
+              position,
+              exploration: false,
+              kind: "view",
+              dwellMs: 0,
+            })
+          for (const [position, paper] of [nine, eight, eleven].entries()) {
+            yield* view(paper.id, position)
+          }
+          const three = yield* getPaperFeedSnapshot(requestFor("read-b"))
+          yield* view(twelve.id, 3)
+          const four = yield* getPaperFeedSnapshot(requestFor("read-c"))
+          for (let index = 0; index < 50; index += 1) {
+            yield* view(twelve.id, index)
+          }
+          return [
+            before,
+            three,
+            four,
+            yield* getPaperFeedSnapshot(requestFor("read-d")),
+          ] as const
+        }),
+      )
+
+      expect(empty.stats.windowMedianReadMinutes).toBeNull()
+      expect(odd.stats.windowMedianReadMinutes).toBe(9)
+      expect(even.stats.windowMedianReadMinutes).toBe(10)
+      expect(displaced.stats.windowMedianReadMinutes).toBe(12)
+    },
+  )
+
   it("reports no windowed entropy for impressions absent from the catalog", async () => {
     const dataDir = await mkdtemp(
       join(tmpdir(), "academitok-window-entropy-none-"),
@@ -669,6 +737,7 @@ describe("papers application", () => {
     expect(snapshot.stats.windowMedianYear).toBeNull()
     expect(snapshot.stats.windowOlderCitations).toBeNull()
     expect(snapshot.stats.windowNewerCitations).toBeNull()
+    expect(snapshot.stats.windowMedianReadMinutes).toBeNull()
   })
 
   it(

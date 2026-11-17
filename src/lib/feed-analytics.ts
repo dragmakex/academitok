@@ -150,6 +150,26 @@ export function medianDwell(
 }
 
 /**
+ * Median estimated reading time behind the clippings the dwell is measured on,
+ * so the dwell floor is read against what those clippings ask for (SPEC §16 P3).
+ * @param papers - Clippings with an optional reading-time estimate.
+ * @returns Median minutes, or null when no clipping carries a usable estimate.
+ */
+export function medianReadMinutes(
+  papers: ReadonlyArray<{
+    readonly readMinutes?: number | null | undefined
+  }>,
+): number | null {
+  return median(
+    papers
+      .map((paper) => paper.readMinutes)
+      .filter((minutes): minutes is number =>
+        minutes !== null && minutes !== undefined && minutes > 0
+      ),
+  )
+}
+
+/**
  * Total estimated reading time a page asks for, so the dwell floor is judged
  * against comparable pages (SPEC §16 P3).
  * @param papers - Page clippings with an optional reading-time estimate.

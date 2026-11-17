@@ -73,6 +73,7 @@ describe("appendPaperPage", () => {
       windowOlderCitations: null,
       windowNewerCitations: null,
       windowDuplicateRate: null,
+      windowMedianReadMinutes: null,
     },
     items: [item("a")],
     nextCursor: "cursor-1",

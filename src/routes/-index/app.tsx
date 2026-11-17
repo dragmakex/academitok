@@ -637,6 +637,8 @@ export function App() {
   const windowOlderCitations = snapshot?.stats.windowOlderCitations ?? null
   const windowNewerCitations = snapshot?.stats.windowNewerCitations ?? null
   const windowDuplicateRate = snapshot?.stats.windowDuplicateRate ?? null
+  const windowMedianReadMinutes = snapshot?.stats.windowMedianReadMinutes
+    ?? null
   const beats = new Set(
     pagePapers.flatMap((paper) =>
       paper.topics[0] === undefined ? [] : [paper.topics[0]]
@@ -776,6 +778,13 @@ export function App() {
                   ? "—"
                   : `${(medianDwellMs / 1000).toFixed(1)} s`}
                 helper="against the 8 s target"
+              />
+              <StatCard
+                label="Median reading load"
+                value={windowMedianReadMinutes === null
+                  ? "—"
+                  : `${windowMedianReadMinutes.toFixed(1)} min`}
+                helper="over the last 50 impressions"
               />
               <StatCard
                 label="Median completion"

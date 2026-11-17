@@ -776,7 +776,7 @@ write the conflict at the bottom instead of guessing.
       changes nothing; the ranked page for a fixed seed is identical before and after.
       — `a4ed11e`
 
-- [ ] **44. Reading load the dwell is measured against, on the desk.** SPEC §16 P3 lists
+- [x] **44. Reading load the dwell is measured against, on the desk.** SPEC §16 P3 lists
       reading-time analytics and SPEC §8.4 sets median dwell at ≥ 8s; task 43 added
       `page_read_minutes` to PostHog precisely because "the §8.4 `Median dwell ≥ 8s` floor is
       compared across pages of incomparable length and the reading-time half of the decision has
@@ -802,6 +802,7 @@ write the conflict at the bottom instead of guessing.
       helper is unit-tested and the figure reaches `getPaperFeedSnapshot` from real
       `ReaderState` view reactions; the ranked page for a fixed seed is identical before and
       after.
+      — `PLACEHOLDER`
 
 ---
 

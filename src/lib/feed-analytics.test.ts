@@ -12,6 +12,7 @@ import {
   hashReaderId,
   medianCompletion,
   medianDwell,
+  medianReadMinutes,
   medianYear,
   pageReadMinutes,
   reactionRates,
@@ -118,6 +119,31 @@ describe("medianDwell", () => {
 })
 
 const readTime = (readMinutes: number | null | undefined) => ({ readMinutes })
+
+describe("medianReadMinutes", () => {
+  it("reports the middle reading time", () => {
+    expect(medianReadMinutes([readTime(2), readTime(4), readTime(6)]))
+      .toBe(4)
+  })
+
+  it("averages the middle pair on an even-sized window", () => {
+    expect(
+      medianReadMinutes([readTime(2), readTime(4), readTime(6), readTime(8)]),
+    )
+      .toBe(5)
+  })
+
+  it("drops a clipping without a usable estimate rather than counting it as zero", () => {
+    expect(medianReadMinutes([readTime(4), readTime(0), readTime(null)]))
+      .toBe(4)
+    expect(medianReadMinutes([readTime(4), { readMinutes: undefined }])).toBe(4)
+  })
+
+  it("reports null when nothing carries an estimate", () => {
+    expect(medianReadMinutes([readTime(0), readTime(null)])).toBeNull()
+    expect(medianReadMinutes([])).toBeNull()
+  })
+})
 
 describe("pageReadMinutes", () => {
   it("sums the reading time the page asks for", () => {
@@ -345,6 +371,7 @@ const emptyStats = {
   windowOlderCitations: null,
   windowNewerCitations: null,
   windowDuplicateRate: null,
+  windowMedianReadMinutes: null,
 }
 
 const snapshotWith = (
