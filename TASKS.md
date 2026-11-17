@@ -271,6 +271,26 @@ write the conflict at the bottom instead of guessing.
       test asserts the meta from `rootHead()` and the inset usage from the real component files.
       — `a27f7ab`
 
+- [ ] **22. Gazette mark as the tab and install icon.** SPEC §16 P3 lists a native shell; tasks 19
+      and 21 gave it the AcademiTok manifest and the safe-area insets, and task 19 left the icons
+      out with the note "add icons when the mark is drawn". Nothing has been drawn, so the shell is
+      nameless in the places a reader actually sees it: `rootHead()` links no icon, so the tab falls
+      back to `/favicon.ico` — the TanStack sample mark still sitting in `public/` beside the two
+      unreferenced sample logos (`tanstack-circle-logo.png`, `tanstack-word-logo-white.svg`) — and
+      the manifest has no `icons`, so an installed deck shows a generic glyph. Draw the mark once
+      as a hand-written SVG on the paper tokens (ink ground, paper serif `A`, one vermilion
+      hairline), serve it from `/mark.svg` as the favicon and the single manifest icon
+      (`"sizes": "any"`, `image/svg+xml`), link it from `rootHead()`, and delete the three sample
+      assets. No dependency, route, design-system component, ranking, RPC contract or PostHog
+      change.
+      Accept: `public/mark.svg` exists and parses as SVG using only `--color-ink`/`--color-paper`/
+      `--color-stamp` values; `public/manifest.json` lists that one icon with `image/svg+xml`;
+      `rootHead()` links `/mark.svg`; `favicon.ico`, `tanstack-circle-logo.png` and
+      `tanstack-word-logo-white.svg` are gone and nothing in `src/` references them; a test asserts
+      the manifest icon and the head link from the real files, that `public/mark.svg` exists, and
+      that the three sample assets do not; the shell-metadata test stops asserting `icons` is
+      undefined.
+
 ---
 
 ## Blocked — needs a product decision
