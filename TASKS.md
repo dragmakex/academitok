@@ -940,6 +940,33 @@ write the conflict at the bottom instead of guessing.
       `__root.test.tsx` already makes; `bun run validate` is green.
       — `df14bd3`
 
+- [ ] **50. The beat the grain is actually too coarse for.** SPEC §17.2 keeps the fixed nine
+      beats only until someone can tell whether they cover what the sources serve, and task 47
+      gave the Topic mix block `windowDwellEntropy` — one number that says _whether_ the reader's
+      attention is spread across beats and never _which_ beat takes it, so a window where one beat
+      absorbs most of the reading and a window read evenly across nine produce the same figure for
+      a reader deciding whether to split a beat: open decision 2's actual candidate stays invisible.
+      Add one pure exported `topDwellBeat` helper beside `dwellEntropy` in
+      `src/lib/feed-analytics.ts` over the same `{ topics, dwellMs }` pairs, returning the primary
+      beat holding the largest share of the recorded dwell as `{ topic, share }` with `share` in
+      0–1, dropping pairs whose dwell is missing or not positive exactly as `dwellEntropy` does,
+      breaking ties by first appearance in the window so a fixed window cannot flip, and returning
+      `null` when no pair records a positive dwell. Report it as `windowTopDwellBeat` on
+      `FeedStats` (`Schema.NullOr(Schema.Struct({ topic: Topic, share: Schema.Number }))`) from the
+      `windowDwells` set `getPaperFeedSnapshot` already builds for `windowDwellEntropy`, and render
+      it in the desk's Topic mix block with the existing `StatCard`/`Grid` primitives beside the
+      dwell entropy card, its helper naming the 50-impression window and the share against it.
+      Display only: no ranking, RPC procedure, persistence or PostHog payload change, and the
+      one-clipping-per-viewport snap is untouched.
+      Accept: dwell reactions of 10 s on Physics and 1 s each on Biology report
+      `{ topic: "Physics", share: 0.83 }` and the desk renders `Physics` beside `83% of recorded
+      dwell`; three reactions of 1 s each on three distinct beats report a share near `0.33` for
+      the first beat in the window, never `NaN`; a dwell reaction with a missing or zero `dwellMs`,
+      or whose paper is absent from the loaded catalog, is dropped rather than counted as a beat; a
+      reader with no dwell reactions reports null and the desk renders an em dash, never `NaN` or
+      `0%`; the helper is unit-tested and the figure reaches `getPaperFeedSnapshot` from real
+      `ReaderState` dwell reactions; the ranked page for a fixed seed is identical before and after.
+
 ---
 
 ## Blocked — needs a product decision
