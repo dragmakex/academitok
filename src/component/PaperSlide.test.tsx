@@ -183,7 +183,7 @@ test("the deck slide shares the paper and keeps its foot band full width", async
 
   // The foot band is the nameplate's twin: full-bleed stock on its own paper.
   const band = document.querySelector("article > div:last-child")
-  expect(band?.className).toContain("border-t-[3px]")
+  expect(band?.className).toContain("border-t-4")
   expect(band?.className).toContain("bg-paper")
   expect(band?.className).not.toContain("max-w-")
 })

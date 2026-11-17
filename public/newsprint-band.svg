@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 80" width="1440" height="80" role="presentation">
+  <rect width="1440" height="80" fill="#efece7"/>
+  <defs>
+    <pattern id="bandType" width="9" height="5" patternUnits="userSpaceOnUse">
+      <rect width="6" height="3" y="1" fill="#8d8880"/>
+    </pattern>
+    <pattern id="bandHalftone" width="5" height="5" patternUnits="userSpaceOnUse">
+      <rect width="5" height="5" fill="#efece7"/>
+      <circle cx="2.5" cy="2.5" r="1.6" fill="#68635b"/>
+    </pattern>
+  </defs>
+  <!-- a strip of printed page: headline block, type columns, one photograph -->
+  <rect x="0" y="0" width="1440" height="7" fill="#2a2823"/>
+  <g fill="url(#bandType)">
+    <rect x="24" y="16" width="250" height="10"/>
+    <rect x="24" y="30" width="214" height="10"/>
+    <rect x="24" y="44" width="238" height="10"/>
+    <rect x="24" y="58" width="180" height="10"/>
+    <rect x="320" y="16" width="300" height="52"/>
+    <rect x="660" y="16" width="330" height="52"/>
+    <rect x="1024" y="16" width="180" height="10"/>
+    <rect x="1024" y="30" width="164" height="10"/>
+    <rect x="1024" y="44" width="176" height="10"/>
+    <rect x="1024" y="58" width="140" height="10"/>
+  </g>
+  <rect x="1244" y="16" width="172" height="52" fill="url(#bandHalftone)"/>
+  <rect x="0" y="11" width="1440" height="1" fill="#2a2823" opacity="0.5"/>
+  <rect x="0" y="72" width="1440" height="1" fill="#2a2823" opacity="0.5"/>
+  <g fill="#2a2823" opacity="0.5">
+    <rect x="308" y="14" width="1" height="56"/>
+    <rect x="648" y="14" width="1" height="56"/>
+    <rect x="1012" y="14" width="1" height="56"/>
+    <rect x="1232" y="14" width="1" height="56"/>
+  </g>
+  <rect x="0" y="76" width="1440" height="4" fill="#c9c4ba" opacity="0.5"/>
+</svg>

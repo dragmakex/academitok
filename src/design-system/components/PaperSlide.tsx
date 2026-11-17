@@ -6,7 +6,7 @@ const actionButtonClass =
   "flex h-11 w-11 items-center justify-center border border-rule-soft bg-paper text-ink cursor-pointer hover:bg-ink hover:text-paper focus-visible:outline-2 focus-visible:outline-ink focus-visible:outline-offset-2 aria-pressed:bg-ink aria-pressed:text-paper"
 
 const pagerButtonClass =
-  "flex min-h-11 w-11 items-center justify-center border-0 bg-transparent font-display text-[1rem] text-ink cursor-pointer hover:bg-ink hover:text-paper focus-visible:outline-2 focus-visible:outline-ink focus-visible:outline-offset-[-2px]"
+  "flex min-h-12 w-12 items-center justify-center border-0 bg-transparent font-display text-[1.15rem] text-ink cursor-pointer hover:bg-ink hover:text-paper focus-visible:outline-2 focus-visible:outline-ink focus-visible:outline-offset-[-2px]"
 
 const metaClass =
   "font-label text-[0.62rem] font-bold uppercase tracking-[0.14em] text-ink-muted"
@@ -192,7 +192,7 @@ export const PaperSlide = forwardRef<HTMLElement, PaperSlideProps>(
                   /* m-auto, not justify-center: a centred flex child taller than
                     the sheet loses its first lines to the scroll box. */
                 }
-                <div className="m-auto w-full max-w-[min(94vw,clamp(54rem,42vw,84rem))] border border-rule-soft bg-paper px-[clamp(1.1rem,3.2vw,5rem)] py-[clamp(1.5rem,4.5vh,4rem)]">
+                <div className="m-auto w-full max-w-[min(94vw,clamp(54rem,42vw,84rem))] border-y-2 border-ink bg-paper px-[clamp(1.1rem,3.2vw,5rem)] py-[clamp(1.5rem,4.5vh,4rem)]">
                   <a
                     className="block text-ink no-underline"
                     href={externalUrl}
@@ -213,12 +213,12 @@ export const PaperSlide = forwardRef<HTMLElement, PaperSlideProps>(
 
                     <h2
                       id={headlineId}
-                      className="mt-xs max-w-[26ch] overflow-wrap-anywhere m-0 text-balance font-display text-[clamp(2rem,min(4.6vw,6.4vh),4.6rem)] font-bold leading-[0.95] tracking-[-0.035em]"
+                      className="mt-s max-w-[24ch] overflow-wrap-anywhere m-0 text-balance font-display text-[clamp(1.9rem,min(4.2vw,5.8vh),4.1rem)] font-bold leading-[1] tracking-[-0.03em]"
                     >
                       {title}
                     </h2>
 
-                    <p className="mt-m m-0 hyphens-auto text-left font-body text-[clamp(1.05rem,min(1.7vw,2.6vh),1.75rem)] leading-[1.5] md:columns-2 md:gap-[2.5rem]">
+                    <p className="mt-m m-0 hyphens-auto text-left font-body text-[clamp(1.02rem,min(1.6vw,2.4vh),1.6rem)] leading-[1.48] md:columns-2 md:gap-[2rem] md:text-justify md:[text-align-last:left]">
                       {abstract}
                     </p>
 
@@ -299,7 +299,7 @@ export const PaperSlide = forwardRef<HTMLElement, PaperSlideProps>(
                 </div>
               </div>
 
-              <div className="relative flex shrink-0 items-center justify-center border-t-[3px] border-ink bg-paper pb-[max(0.5rem,env(safe-area-inset-bottom))] pt-2xs before:absolute before:inset-x-0 before:top-[6px] before:h-px before:bg-ink/40">
+              <div className="relative flex shrink-0 items-center justify-center border-t-4 border-ink bg-paper pt-xs pb-[max(0.7rem,env(safe-area-inset-bottom))] before:absolute before:inset-x-0 before:top-[6px] before:h-px before:bg-ink/40">
                 {/* The foot band mirrors the nameplate: full-bleed stock, hairlines, one centred control. */}
                 <NewsprintField variant="band" />
                 <div className="relative flex items-stretch">

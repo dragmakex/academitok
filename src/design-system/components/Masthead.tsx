@@ -34,7 +34,7 @@ export function Masthead(
 ) {
   if (variant === "banner") {
     return (
-      <header className="relative shrink-0 overflow-hidden border-b-[3px] border-ink bg-paper px-[clamp(1rem,4vw,2.5rem)] pt-[max(0.35rem,env(safe-area-inset-top))] pb-[0.45rem] after:absolute after:inset-x-0 after:bottom-[6px] after:h-px after:bg-ink/40">
+      <header className="relative shrink-0 overflow-hidden border-y-4 border-ink bg-paper px-[clamp(1rem,4vw,2.5rem)] pt-[max(0.35rem,env(safe-area-inset-top))] pb-[0.55rem] after:absolute after:inset-x-0 after:bottom-[6px] after:h-px after:bg-ink/40">
         {/* A photographed front page, held a little out of focus. */}
         <NewsprintField variant="band" />
         <a
