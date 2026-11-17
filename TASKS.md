@@ -1122,7 +1122,7 @@ write the conflict at the bottom instead of guessing.
       `renderToStaticMarkup` of the real `PaperPage`; `bun run validate` is green.
       — `1483754`
 
-- [ ] **56. The share of the page nobody asked for, on the desk.** SPEC §8.1.3 reserves 15% of every
+- [x] **56. The share of the page nobody asked for, on the desk.** SPEC §8.1.3 reserves 15% of every
       page (1–2 slots) for exploration and says those impressions are logged "so the metric can be
       read separately", §8.2 makes a skipped onboarding "everything is exploration for the first 20
       impressions", and `AGENTS.md` states the ~15% reserve as a non-negotiable — but nothing reads
@@ -1149,6 +1149,8 @@ write the conflict at the bottom instead of guessing.
       is asserted from a real `getPaperFeedSnapshot` (stubbed catalog, temp PGlite dir), whose
       cold-start page for a skipped reader reports an `exploration` count equal to its item count;
       the helper is unit-tested and the ranked page for a fixed seed is identical before and after.
+
+      — `4937126`
 
 ---
 
