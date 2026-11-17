@@ -1025,6 +1025,42 @@ write the conflict at the bottom instead of guessing.
       for a fixed seed is identical before and after.
       — `5c63c2a`
 
+- [ ] **53. The beat the reader gives up on.** SPEC §16 P3 lists reading-time analytics and §8.4
+      sets median dwell at ≥ 8 s, and tasks 44, 47 and 50 gave the desk's Reading pace block the
+      window's reading load, its dwell entropy and the beat that takes the dwell — but every one
+      of those measures _time spent_, never _whether the clipping was finished_: `medianCompletion`
+      (task 26) is the one completion figure on the desk and it averages the whole 50-impression
+      window as a single corpus, so a window where one beat is read to the end and another is
+      abandoned at 5% scores exactly like a window abandoned at 5% everywhere, and the dwell
+      entropy of task 47 separates beats by seconds but cannot separate a beat read slowly from a
+      beat given up on. Add one pure exported `lowestCompletionBeat` helper beside `topDwellBeat`
+      in `src/lib/feed-analytics.ts` over `{ topics, dwellMs, readMinutes }` pairs, grouping by
+      primary beat, scoring each reaction through the existing `readingCompletion` and each beat's
+      median through the existing `medianCompletion`, dropping reactions whose dwell is missing or
+      not positive exactly as `dwellEntropy` drops them and those whose `readMinutes` is missing or
+      not positive exactly as `readingCompletion` declines them, and returning the beat with the
+      lowest median as `{ topic, completion }` with `completion` in 0–1, ties broken by first
+      appearance in the window so a fixed window cannot flip, and `null` when no beat has a
+      completion. Report it as `windowLowestCompletionBeat` on `FeedStats`
+      (`Schema.NullOr(Schema.Struct({ topic: Topic, completion: Schema.Number }))`) from a
+      `windowCompletions` set `getPaperFeedSnapshot` builds beside `windowDwells` — the same
+      window joined to the loaded catalog, carrying each paper's `readMinutes` — and render it in
+      the desk's Reading pace block beside the `Median completion` card with the existing
+      `StatCard`/`Grid` primitives, the beat as the value and its completion as the helper. An
+      impression whose paper is not in the loaded catalog is dropped rather than counted as an
+      unfinished clipping. Display only: no ranking, RPC procedure, persistence or PostHog payload
+      change, and the one-clipping-per-viewport snap is untouched.
+      Accept: dwell reactions of 20 s on a 5-minute Physics clipping and 100 s on a 5-minute
+      Biology clipping report `{ topic: "Physics", completion: 0.07 }` and the desk renders
+      `Physics` beside `7% completed`; two Physics dwells of 3 s and 60 s on 1-minute clippings and
+      one Biology dwell of 6 s on a 1-minute clipping report `Biology` at `0.10`, never `Physics`
+      at its single worst `0.05`, so the beat's median is what is named; a reaction with a missing
+      or zero `dwellMs`, a paper carrying no `readMinutes`, or a paper absent from the loaded
+      catalog is dropped rather than counted as an unfinished clipping; a reader with no dwell
+      reactions reports null and the desk renders an em dash, never `NaN` or `0%`; the helper is
+      unit-tested and the figure reaches `getPaperFeedSnapshot` from real `ReaderState` dwell
+      reactions; the ranked page for a fixed seed is identical before and after.
+
 ---
 
 ## Blocked — needs a product decision
