@@ -630,7 +630,7 @@ write the conflict at the bottom instead of guessing.
       `renderToStaticMarkup` of the real `PaperPage`.
       — `7ff938c`
 
-- [ ] **38. A way out of a shared edition.** SPEC §16 P3 lists shareable "editions" and task 35 made
+- [x] **38. A way out of a shared edition.** SPEC §16 P3 lists shareable "editions" and task 35 made
       `/?edition=<ids>` reopen a pinned page, but that page is a dead end: the pinned branch of
       `getPaperFeedSnapshot` in `src/features/papers/application.ts` serves `nextCursor: null`, the
       deck's `navigate` clamps to the last item and `onVisible` only prefetches when a cursor exists,
@@ -650,6 +650,7 @@ write the conflict at the bottom instead of guessing.
       `loadNextPaperPage` keeps the first page's `pinned` flag; the flag and the strip assertion run
       from the real `getPaperFeedSnapshot` (stubbed catalog, temp PGlite dir) and from
       `renderToStaticMarkup` of the real `PaperSlide`.
+      — `120c862`
 
 ---
 
