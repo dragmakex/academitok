@@ -30,6 +30,7 @@ import {
   archivalDrift,
   beatSourceCounts,
   citationAgeSkew,
+  coldFeedRate,
   conceptOnlyBeats,
   explorationShare,
   multiBeatCount,
@@ -41,6 +42,7 @@ import { useAtomSet, useAtomValue } from "@effect/atom-react"
 import { useCallback, useEffect, useRef, useState } from "react"
 import {
   dashboardSnapshotAtom,
+  editionOriginsAtom,
   loadNextPaperPageAtom,
   loadPaperFeedAtom,
   onboardReaderAtom,
@@ -83,6 +85,9 @@ const institutions = [
  */
 const formatRate = (rate: number): string =>
   `${(rate * 100).toFixed(1).replace(/\.0$/, "")}%`
+
+const formatColdFeed = (rate: number): string =>
+  rate === 1 ? "100%" : `${(rate * 100).toFixed(1)}%`
 
 type VisiblePaperSlideProps = {
   readonly active: boolean
@@ -432,6 +437,7 @@ export function App() {
   const snapshot = snapshotAsync._tag === "Success"
     ? snapshotAsync.value
     : undefined
+  const editionOrigins = useAtomValue(editionOriginsAtom)
 
   const [drawerOpen, setDrawerOpen] = useState(false)
   const [sheetOpen, setSheetOpen] = useState(false)
@@ -655,6 +661,7 @@ export function App() {
   const windowDuplicateRate = snapshot?.stats.windowDuplicateRate ?? null
   const windowMedianReadMinutes = snapshot?.stats.windowMedianReadMinutes
     ?? null
+  const coldFeed = coldFeedRate(editionOrigins)
   const beats = new Set(
     pagePapers.flatMap((paper) =>
       paper.topics[0] === undefined ? [] : [paper.topics[0]]
@@ -873,6 +880,11 @@ export function App() {
                   ? "—"
                   : savesPerHundred.toFixed(1)}
                 helper="against the 1.0 target"
+              />
+              <StatCard
+                label="Cold-feed share"
+                value={coldFeed === null ? "—" : formatColdFeed(coldFeed)}
+                helper="of the last 200 editions this session loaded, against the 0.5% ceiling"
               />
             </Grid>
           </Stack>

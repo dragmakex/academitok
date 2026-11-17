@@ -1,4 +1,5 @@
 import type {
+  FeedOrigin,
   FeedSnapshot,
   Paper,
   ReactionKind,
@@ -296,6 +297,42 @@ export function explorationShare(
   total: number,
 ): number | null {
   return total === 0 ? null : explored / total
+}
+
+/**
+ * Pages a session's edition tally keeps, the window the desk reads the
+ * cold-feed rate over (SPEC §8.4).
+ */
+export const editionWindowSize = 200
+
+/**
+ * Appends a served page's origin to the session tally, keeping the most recent
+ * editions (SPEC §8.4).
+ * @param origins - Origins of the pages already loaded, oldest first.
+ * @param origin - Origin of the page just served.
+ * @returns The tally, trimmed to the window.
+ */
+export function recordEdition(
+  origins: ReadonlyArray<FeedOrigin>,
+  origin: FeedOrigin,
+): ReadonlyArray<FeedOrigin> {
+  return [...origins, origin].slice(-editionWindowSize)
+}
+
+/**
+ * Share of the session's loaded pages that came from the frozen seed edition,
+ * the cold-feed failure rate (SPEC §8.4).
+ * @param origins - Origins of the pages this session loaded.
+ * @returns Seed share of the session, or null when no page was loaded.
+ */
+export function coldFeedRate(
+  origins: ReadonlyArray<FeedOrigin>,
+): number | null {
+  if (origins.length === 0) {
+    return null
+  }
+  const seeded = origins.filter((origin) => origin === "seed").length
+  return seeded / origins.length
 }
 
 /**

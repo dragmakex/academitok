@@ -1,13 +1,16 @@
 // @vitest-environment node
 
-import type { FeedSnapshot, Topic } from "@/api/paper-schema"
+import type { FeedOrigin, FeedSnapshot, Topic } from "@/api/paper-schema"
 import { curatedPapers } from "@/data/papers"
 import * as EffectArray from "effect/Array"
+import { readFileSync } from "node:fs"
+import { join } from "node:path"
 import { afterEach, describe, expect, it, vi } from "vitest"
 import {
   archivalDrift,
   beatSourceCounts,
   citationAgeSkew,
+  coldFeedRate,
   conceptOnlyBeats,
   duplicateRate,
   dwellEntropy,
@@ -22,6 +25,7 @@ import {
   pageReadMinutes,
   reactionRates,
   readingCompletion,
+  recordEdition,
   savesPerHundred,
   topDwellBeat,
   topicEntropy,
@@ -275,6 +279,88 @@ describe("explorationShare", () => {
 
   it("reports no share for an empty page", () => {
     expect(explorationShare(0, 0)).toBeNull()
+  })
+})
+
+describe("recordEdition", () => {
+  it("appends the served origin to the session tally", () => {
+    expect(recordEdition(["pool", "live"], "seed")).toEqual([
+      "pool",
+      "live",
+      "seed",
+    ])
+  })
+
+  it("keeps only the most recent 200 loaded pages", () => {
+    const loaded: ReadonlyArray<FeedOrigin> = [
+      "seed",
+      ...Array<FeedOrigin>(200).fill("pool"),
+    ]
+    const tally = recordEdition(loaded, "seed")
+
+    expect(tally).toHaveLength(200)
+    expect(tally[198]).toBe("pool")
+    expect(tally[199]).toBe("seed")
+  })
+})
+
+describe("coldFeedRate", () => {
+  it("reports the seed share of the session's loaded pages", () => {
+    expect(
+      coldFeedRate([...Array<FeedOrigin>(198).fill("pool"), "seed", "seed"]),
+    )
+      .toBeCloseTo(0.01, 5)
+  })
+
+  it("reports the whole session when every page was the offline edition", () => {
+    expect(coldFeedRate(["seed", "seed"])).toBe(1)
+  })
+
+  it("reports none of the session when every page came from the pool or a fetch", () => {
+    expect(coldFeedRate(["pool", "live"])).toBe(0)
+  })
+
+  it("reports no rate for a session that loaded no page", () => {
+    expect(coldFeedRate([])).toBeNull()
+  })
+})
+
+describe("session edition tally", () => {
+  const atoms = readFileSync(
+    join(process.cwd(), "src/routes/-index/atoms.tsx"),
+    "utf8",
+  )
+
+  /**
+   * The cold-feed rate is only honest if every path that writes a snapshot to
+   * the deck also records where that edition came from (SPEC §8.4).
+   * @param name - Exported atom to slice out of the module.
+   * @returns Source of that atom, up to the next export.
+   */
+  const atomSource = (name: string): string => {
+    const start = atoms.indexOf(`export const ${name} =`)
+    const end = atoms.indexOf("\nexport const ", start + 1)
+    return atoms.slice(start, end === -1 ? undefined : end)
+  }
+
+  for (
+    const name of [
+      "loadPaperFeedAtom",
+      "loadNextPaperPageAtom",
+      "saveReaderProfileAtom",
+      "onboardReaderAtom",
+    ] as const
+  ) {
+    it(`records where the edition came from in ${name}`, () => {
+      expect(atomSource(name)).toContain("recordEditionOrigin(get, ")
+    })
+  }
+
+  it("renders the cold-feed share in the desk's reading pace block", () => {
+    expect(
+      readFileSync(join(process.cwd(), "src/routes/-index/app.tsx"), "utf8"),
+    )
+      .toContain("label=\"Cold-feed share\"")
   })
 })
 

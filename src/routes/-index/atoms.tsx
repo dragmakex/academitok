@@ -1,6 +1,7 @@
 import { ApiClient } from "@/api/api-client"
 import {
   type FeedItem,
+  type FeedOrigin,
   FeedPage as FeedPageSchema,
   type FeedQuery,
   type FeedRequest,
@@ -13,6 +14,7 @@ import {
 } from "@/api/paper-schema"
 import { serializable } from "@/lib/atom-utils"
 import {
+  recordEdition,
   trackFeedPageEvent,
   trackPaperReactionEvent,
   trackPaperViewEvent,
@@ -44,6 +46,18 @@ const FeedPageAsyncResultSchema = AsyncResult.Schema({
 
 /** One feed session per page load; the server persists its seen papers. */
 const feedSessionId = globalThis.crypto.randomUUID()
+
+/** Origins of the pages this session loaded, so the desk can read the cold-feed rate. */
+export const editionOriginsAtom = Atom.make<ReadonlyArray<FeedOrigin>>([])
+
+/**
+ * Adds a served page's origin to the session's edition tally.
+ * @param get - Atom write context.
+ * @param origin - Origin of the page just served.
+ */
+const recordEditionOrigin = (get: Atom.FnContext, origin: FeedOrigin) => {
+  get.set(editionOriginsAtom, recordEdition(get(editionOriginsAtom), origin))
+}
 
 class Api extends Context.Service<Api>()("@app/index/Api", {
   make: Effect.gen(function*() {
@@ -160,6 +174,7 @@ export const loadPaperFeedAtom = runtime.fn<FeedQuery>()(
   Effect.fnUntraced(function*(query, get) {
     const api = yield* Api
     const snapshot = yield* api.snapshot({ query, cursor: null })
+    recordEditionOrigin(get, snapshot.origin)
     replaceDashboardSnapshot(get, snapshot)
     trackFeedPageEvent(snapshot, null)
     return snapshot
@@ -170,6 +185,7 @@ export const loadNextPaperPageAtom = runtime.fn<FeedRequest>()(
   Effect.fnUntraced(function*(request, get) {
     const api = yield* Api
     const page = yield* api.snapshot(request)
+    recordEditionOrigin(get, page.origin)
     trackFeedPageEvent(page, request.cursor)
     const current = get(dashboardSnapshotAtom)
     if (current._tag !== "Success") {
@@ -190,6 +206,7 @@ export const saveReaderProfileAtom = runtime.fn<{
   Effect.fnUntraced(function*({ input, query }, get) {
     const api = yield* Api
     const snapshot = yield* api.saveProfile(input, { query, cursor: null })
+    recordEditionOrigin(get, snapshot.origin)
     replaceDashboardSnapshot(get, snapshot)
     trackFeedPageEvent(snapshot, null)
     return snapshot
@@ -201,6 +218,7 @@ export const onboardReaderAtom = runtime.fn<OnboardProfileInput>()(
     const api = yield* Api
     const result = yield* api.onboard(input)
     const snapshot = yield* api.snapshot({ query: defaultQuery, cursor: null })
+    recordEditionOrigin(get, snapshot.origin)
     replaceDashboardSnapshot(get, snapshot)
     trackFeedPageEvent(snapshot, null)
     return result
