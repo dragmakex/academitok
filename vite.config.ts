@@ -133,6 +133,9 @@ const config = defineConfig(async ({ mode }) => {
     },
     test: {
       globals: true,
+      // PGlite suites run real migrations in a fresh directory; the 5s default
+      // is tight enough to flake when the whole suite runs in parallel.
+      testTimeout: 20_000,
       include: ["src/**/*.test.{ts,tsx}", "tests/**/*.test.{ts,tsx}"],
       exclude: [
         "**/.worktrees/**",

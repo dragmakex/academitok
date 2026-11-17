@@ -16,6 +16,48 @@ const readerIdPattern = /^[A-Za-z0-9-]{8,64}$/
 const cookieMaxAgeSeconds = 365 * 24 * 60 * 60
 
 /**
+ * Fresh reader id for a browser that has none, or for a sign-out.
+ * @returns A random id matching the cookie grammar.
+ */
+export const newReaderId = (): string => globalThis.crypto.randomUUID()
+
+/**
+ * Builds one `Set-Cookie` value for the reader id.
+ * @param value - Reader id to carry.
+ * @param options - Cookie hardening flags.
+ * @param options.httpOnly - Invisible to `document.cookie`, so injected script
+ * cannot lift the id once it stands for a signed-in reader.
+ * @param options.secure - HTTPS only; required wherever sign-in works.
+ * @returns `Set-Cookie` header value.
+ */
+export const readerCookie = (
+  value: string,
+  options: { readonly httpOnly: boolean; readonly secure: boolean },
+): string =>
+  [
+    `${readerIdCookieName}=${value}`,
+    "Path=/",
+    `Max-Age=${cookieMaxAgeSeconds}`,
+    "SameSite=Lax",
+    ...(options.httpOnly ? ["HttpOnly"] : []),
+    ...(options.secure ? ["Secure"] : []),
+  ]
+    .join("; ")
+
+/**
+ * `Set-Cookie` value carrying a fresh, hardened reader id. The cookie is
+ * `HttpOnly` from birth because the server is its only writer: once a device
+ * is signed in, the id stands for an account.
+ * @param readerId - Reader id to carry; a fresh one by default.
+ * @returns `Set-Cookie` header value.
+ */
+export const sessionReaderCookie = (readerId = newReaderId()): string =>
+  readerCookie(readerId, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+  })
+
+/**
  * Reader identity for the current request.
  */
 export class ReaderId extends Context.Service<ReaderId, string>()("ReaderId") {}
@@ -38,20 +80,4 @@ export const readerIdFromCookieHeader = (
   return value !== undefined && readerIdPattern.test(value)
     ? value
     : defaultReaderId
-}
-
-/**
- * Writes the reader cookie when the browser has none; no-op elsewhere.
- */
-export const ensureReaderIdCookie = (): void => {
-  if (
-    typeof document === "undefined"
-    || typeof crypto === "undefined"
-    || readerIdFromCookieHeader(document.cookie) !== defaultReaderId
-  ) {
-    return
-  }
-
-  document.cookie =
-    `${readerIdCookieName}=${crypto.randomUUID()}; Path=/; Max-Age=${cookieMaxAgeSeconds}; SameSite=Lax`
 }

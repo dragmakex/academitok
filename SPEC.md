@@ -373,11 +373,29 @@ Retire the todo template in a single cleanup commit after P0 ships.
 1. `reader_id` source — device cookie vs. explicit account. P0: anonymous cookie + `reader_id` in
    state, no login. Settled: an `RpcMiddleware` beside `RpcLogger` resolves the
    `academitok_reader_id` cookie (value must match `[A-Za-z0-9-]{8,64}`) into the `ReaderId`
-   service the repository writes under; a missing or malformed cookie resolves to `singleton`, and
-   the browser writes the cookie from `crypto.randomUUID()` on first load.
+   service the repository writes under; a malformed cookie resolves to `singleton`. The server mints
+   the cookie (`HttpOnly`, `Secure` in production) from the very first response — see §17.5 — because
+   the id may already stand for an account and it is the only writer. Any device the account claims
+   resolves to the account's canonical reader id at the request boundary, so a claimed device still
+   sees the library it helped build.
 2. Topic taxonomy — fixed 9 beats (current) vs. OpenAlex concepts. P0: fixed beats, map source
    concepts onto them; revisit when P2 sources land.
 3. Citation count as a quality signal biases toward old papers — currently damped by `log10`/3 and
    mixed with recency. Keep, measure, revisit if the feed feels archival.
 4. `Space` for next conflicts with page scroll expectations in embedded contexts. P0: deck owns the
    viewport, no conflict.
+5. Sign-in — settled: **email magic link only**, no passwords, no third-party redirect on first
+   load. Login exists for exactly two jobs: the algorithm follows one taste profile across devices,
+   and the saved-paper library behaves like a Zotero shelf the reader can move between machines.
+   Shape: `accounts` (email unique, `reader_id` canonical), `account_readers` (aliases a device
+   claimed), `login_tokens` (SHA-256 digest only, 15-minute expiry, single use, 3 per address per
+   hour). A token is spent at `/auth/verify?token=…`; spending it attaches the _current_ anonymous
+   reader to the account, so nothing the reader did before signing in is lost. A second device
+   merges into the canonical reader: reactions keep the newest write per paper and kind,
+   impressions and feed sessions simply move, and the canonical profile wins. Signing out hands the
+   browser a fresh anonymous reader; the account keeps the old one, so signing in again folds the
+   device back in. Mail goes through Resend when `RESEND_API_KEY` is set and is logged otherwise, so
+   development needs no mail provider. Rejected: Better Auth — it would install a second owner of
+   identity beside `ReaderId`, with its own user/session tables competing with the `reader_id`
+   foreign key that already keys every table. Revisit only for multi-provider sign-in, passwords,
+   2FA or teams.

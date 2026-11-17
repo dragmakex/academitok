@@ -6,6 +6,7 @@
  */
 
 import { DomainRpc } from "@/api/domain-rpc"
+import { AuthLive } from "@/features/auth/application"
 import {
   getPaperBibtex,
   getSavedBibtex,
@@ -123,29 +124,7 @@ export const RpcLoggerLive = Layer.succeed(
  * RPC reader-identity middleware - resolves the anonymous reader from the
  * request cookie so every handler is scoped to one visitor (SPEC 17.1).
  */
-export class RpcReaderId
-  extends RpcMiddleware.Service<RpcReaderId, { provides: ReaderId }>()(
-    "RpcReaderId",
-  )
-{}
-
-const rpcReaderIdMiddleware = <A, E>(
-  effect: Effect.Effect<A, E, ReaderId>,
-  opts: RpcMiddlewareOptions,
-): Effect.Effect<A, E> =>
-  Effect.provideService(
-    effect,
-    ReaderId,
-    readerIdFromCookieHeader(Option.getOrUndefined(Headers.get(
-      opts.headers,
-      "cookie",
-    ))),
-  )
-
-export const RpcReaderIdLive = Layer.succeed(
-  RpcReaderId,
-  RpcReaderId.of(rpcReaderIdMiddleware),
-)
+import { RpcReaderId, RpcReaderIdLive } from "./-lib/reader-identity"
 
 /**
  * Router layers - exported for testing.
@@ -307,7 +286,8 @@ const ObservabilityRuntimeLive = Layer.orDie(ObservabilityLive)
  *
  * Pattern: Layer.provideMerge — merges multiple service layers into runtime.
  */
-export const ServerRuntimeLive = PapersApplicationLive
+export const ServerRuntimeLive = Layer
+  .mergeAll(PapersApplicationLive, AuthLive)
   .pipe(Layer.provideMerge(ObservabilityRuntimeLive))
   .pipe(Layer.provideMerge(SentryLive))
   .pipe(Layer.provideMerge(DevConsoleLive))

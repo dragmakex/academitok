@@ -32,6 +32,7 @@ import * as Schema from "effect/Schema"
 import * as AsyncResult from "effect/unstable/reactivity/AsyncResult"
 import * as Atom from "effect/unstable/reactivity/Atom"
 import * as RpcClientError from "effect/unstable/rpc/RpcClientError"
+import { readSessionFn, requestSignInFn } from "../-lib/session-functions"
 import { bufferImpression } from "./impression-buffer"
 
 const FeedSnapshotAsyncResultSchema = AsyncResult.Schema({
@@ -188,6 +189,46 @@ export const removeSavedPaperAtom = runtime.fn<string>()(
     const page = yield* api.savedList()
     get.set(savedPageAtom, { _tag: "Replace", value: page })
     return page
+  }),
+)
+
+export const sessionAtom = Atom.make(
+  Effect.tryPromise({
+    try: () => readSessionFn(),
+    catch: (cause) => cause instanceof Error ? cause : new Error(String(cause)),
+  }),
+)
+
+/** Progress of a sign-in request the desk is holding open. */
+export const signInStatusAtom = Atom.make<
+  "idle" | "sending" | "sent" | "failed"
+>("idle")
+
+/** Mails a sign-in link to the address the reader typed. */
+export const requestSignInAtom = runtime.fn<{ email: string }>()(
+  Effect.fnUntraced(function*(input, get) {
+    get.set(signInStatusAtom, "sending")
+    const result = yield* Effect
+      .tryPromise({
+        try: () =>
+          requestSignInFn({
+            data: { email: input.email, origin: globalThis.location.origin },
+          }),
+        catch: (cause) =>
+          cause instanceof Error ? cause : new Error(String(cause)),
+      })
+      .pipe(Effect.result)
+    get.set(
+      signInStatusAtom,
+      result._tag === "Success" && result.success.sent ? "sent" : "failed",
+    )
+  }),
+)
+
+/** Signs this browser out: a document request mints a fresh anonymous reader. */
+export const signOutAtom = runtime.fn<void>()(
+  Effect.fnUntraced(function*(_input, _get) {
+    yield* Effect.sync(() => globalThis.location.assign("/auth/sign-out"))
   }),
 )
 

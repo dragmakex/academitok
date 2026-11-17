@@ -31,6 +31,10 @@ import { Buffer } from "node:buffer"
 import { randomUUID } from "node:crypto"
 import { mkdir } from "node:fs/promises"
 import postgres from "postgres"
+import {
+  type AccountsRepository,
+  makeAccountsRepository,
+} from "./account-repository"
 
 type RepositoryDatabaseConfig =
   | {
@@ -83,6 +87,7 @@ type ReaderStateRepositoryShape = {
     paperIds: ReadonlyArray<string>,
     readerId: string,
   ) => Effect.Effect<Record<string, number>>
+  readonly accounts: AccountsRepository
 }
 
 type StoredState = {
@@ -149,6 +154,7 @@ type StateStorage = {
     paperIds: ReadonlyArray<string>,
     readerId: string,
   ) => Promise<Record<string, number>>
+  readonly accounts: AccountsRepository
 }
 
 const decodeReaderState = Schema.decodeUnknownSync(ReaderState)
@@ -246,7 +252,32 @@ const createReaderStateTablesSql = `
   ALTER TABLE feed_sessions ADD COLUMN IF NOT EXISTS started_at timestamptz;
   ALTER TABLE feed_sessions ALTER COLUMN started_at DROP NOT NULL;
   CREATE INDEX IF NOT EXISTS feed_sessions_updated_at_idx
-    ON feed_sessions (updated_at)
+    ON feed_sessions (updated_at);
+  CREATE TABLE IF NOT EXISTS accounts (
+    id text PRIMARY KEY,
+    email text NOT NULL UNIQUE,
+    reader_id text NOT NULL,
+    created_at timestamptz NOT NULL
+  );
+  CREATE TABLE IF NOT EXISTS account_readers (
+    account_id text NOT NULL,
+    reader_id text NOT NULL,
+    claimed_at timestamptz NOT NULL,
+    PRIMARY KEY (account_id, reader_id)
+  );
+  CREATE INDEX IF NOT EXISTS account_readers_reader_idx
+    ON account_readers (reader_id);
+  CREATE TABLE IF NOT EXISTS login_tokens (
+    id text PRIMARY KEY,
+    email text NOT NULL,
+    token_hash text NOT NULL UNIQUE,
+    reader_id text NOT NULL,
+    created_at timestamptz NOT NULL,
+    expires_at timestamptz NOT NULL,
+    consumed_at timestamptz
+  );
+  CREATE INDEX IF NOT EXISTS login_tokens_email_idx
+    ON login_tokens (email, created_at)
 `
 
 const liveDatabaseConfig = Effect.gen(function*() {
@@ -589,6 +620,7 @@ function makeRepositoryService(storage: StateStorage) {
 
   return ReaderStateRepository.of(
     {
+      accounts: storage.accounts,
       load: withReader(async (readerId) =>
         storedStateToReaderState(await storage.load(readerId))
       ),
@@ -700,6 +732,12 @@ function makePostgresRepository(databaseUrl: string) {
         },
       })
       yield* Effect.addFinalizer(() => Effect.promise(() => client.end()))
+      const accounts = makeAccountsRepository({
+        query: <Row extends Record<string, unknown>>(
+          sql: string,
+          params: ReadonlyArray<string | number | boolean | Date | null>,
+        ) => client.unsafe<Row[]>(sql, [...params]),
+      })
 
       /**
        * Sweeps expired sessions and impressions; reactions are never swept.
@@ -763,6 +801,7 @@ function makePostgresRepository(databaseUrl: string) {
 
       const postgresStorage: StateStorage = {
         ...feedSessionStorage,
+        accounts,
         savePapers: async (papers, fetchedAt) => {
           if (papers.length === 0) {
             return
@@ -1100,6 +1139,12 @@ function makePgliteRepository(dataDir: string | undefined) {
         },
       })
       yield* Effect.addFinalizer(() => Effect.promise(() => client.close()))
+      const accounts = makeAccountsRepository({
+        query: <Row extends Record<string, unknown>>(
+          sql: string,
+          params: ReadonlyArray<string | number | boolean | Date | null>,
+        ) => client.query<Row>(sql, [...params]).then((result) => result.rows),
+      })
 
       /**
        * Sweeps expired sessions and impressions; reactions are never swept.
@@ -1163,6 +1208,7 @@ function makePgliteRepository(dataDir: string | undefined) {
 
       const storage: StateStorage = {
         ...feedSessionStorage,
+        accounts,
         savePapers: async (papers, fetchedAt) => {
           if (papers.length === 0) {
             return

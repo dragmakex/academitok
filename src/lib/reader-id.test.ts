@@ -1,6 +1,7 @@
 import {
   defaultReaderId,
-  ensureReaderIdCookie,
+  newReaderId,
+  readerCookie,
   ReaderId,
   readerIdCookieName,
   readerIdFromCookieHeader,
@@ -38,7 +39,35 @@ describe("reader id", () => {
       .toBe(defaultReaderId)
   })
 
-  it("does nothing outside the browser", () => {
-    expect(() => ensureReaderIdCookie()).not.toThrow()
+  it("mints ids the cookie grammar accepts", () => {
+    const minted = newReaderId()
+    expect(readerIdFromCookieHeader(`${readerIdCookieName}=${minted}`))
+      .toBe(minted)
+    expect(newReaderId()).not.toBe(minted)
+  })
+
+  it("hardens the cookie once it stands for an account", () => {
+    const hardened = readerCookie(readerId, { httpOnly: true, secure: true })
+    expect(hardened).toContain(`${readerIdCookieName}=${readerId}`)
+    expect(hardened).toContain("Path=/")
+    expect(hardened).toContain("Max-Age=31536000")
+    expect(hardened).toContain("SameSite=Lax")
+    expect(hardened).toContain("HttpOnly")
+    expect(hardened).toContain("Secure")
+  })
+
+  it("leaves the cookie script-visible while the reader is anonymous", () => {
+    const plain = readerCookie(readerId, { httpOnly: false, secure: false })
+    expect(plain).not.toContain("HttpOnly")
+    expect(plain).not.toContain("Secure")
+  })
+
+  it("reads the minted cookie back as the reader id", () => {
+    const minted = newReaderId()
+    const header = `${readerIdCookieName}=${minted}; another=1`
+    expect(readerIdFromCookieHeader(header)).toBe(minted)
+    expect(readerIdFromCookieHeader(`${readerIdCookieName}=short`)).toBe(
+      defaultReaderId,
+    )
   })
 })
