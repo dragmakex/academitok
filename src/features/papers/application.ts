@@ -20,6 +20,7 @@ import {
   citationAgeSkew,
   duplicateRate,
   dwellEntropy,
+  lowestCompletionBeat,
   medianCompletion,
   medianDwell,
   medianReadMinutes,
@@ -121,11 +122,15 @@ export const getPaperFeedSnapshot = (request: FeedRequest) =>
         .filter((reaction) => reaction.kind === "view")
         .map((reaction) => reaction.paperId)
       const windowSkew = citationAgeSkew(windowPapers)
-      const windowDwells = dwells.flatMap((reaction) => {
+      const windowCompletions = dwells.flatMap((reaction) => {
         const paper = papersById.get(reaction.paperId)
         return paper === undefined
           ? []
-          : [{ topics: paper.topics, dwellMs: reaction.dwellMs }]
+          : [{
+            topics: paper.topics,
+            dwellMs: reaction.dwellMs,
+            readMinutes: paper.readMinutes,
+          }]
       })
       const rates = reactionRates(
         state.reactions.map((reaction) => reaction.kind),
@@ -220,10 +225,11 @@ export const getPaperFeedSnapshot = (request: FeedRequest) =>
           windowNewerCitations: windowSkew.newerCitations,
           windowDuplicateRate: duplicateRate(viewPaperIds, dwellWindow),
           windowMedianReadMinutes: medianReadMinutes(windowPapers),
-          windowDwellEntropy: windowDwells.length === 0
+          windowDwellEntropy: windowCompletions.length === 0
             ? null
-            : dwellEntropy(windowDwells),
-          windowTopDwellBeat: topDwellBeat(windowDwells),
+            : dwellEntropy(windowCompletions),
+          windowTopDwellBeat: topDwellBeat(windowCompletions),
+          windowLowestCompletionBeat: lowestCompletionBeat(windowCompletions),
         },
         items: page.items,
         nextCursor: page.nextCursor,

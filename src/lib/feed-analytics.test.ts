@@ -12,6 +12,7 @@ import {
   duplicateRate,
   dwellEntropy,
   hashReaderId,
+  lowestCompletionBeat,
   medianCompletion,
   medianDwell,
   medianReadMinutes,
@@ -415,6 +416,7 @@ const emptyStats = {
   windowMedianReadMinutes: null,
   windowDwellEntropy: null,
   windowTopDwellBeat: null,
+  windowLowestCompletionBeat: null,
 }
 
 const snapshotWith = (
@@ -595,6 +597,12 @@ const dwelled = (topics: ReadonlyArray<Topic>, dwellMs: number) => ({
   dwellMs,
 })
 
+const completed = (
+  topics: ReadonlyArray<Topic>,
+  dwellMs: number | undefined,
+  readMinutes: number | undefined,
+) => ({ topics, dwellMs, readMinutes })
+
 describe("dwellEntropy", () => {
   it("reports natural-log entropy for dwell spread evenly across beats", () => {
     expect(
@@ -669,6 +677,46 @@ describe("topDwellBeat", () => {
 
   it("reports null when nothing recorded a positive dwell, never NaN", () => {
     expect(topDwellBeat([])).toBeNull()
+  })
+})
+
+describe("lowestCompletionBeat", () => {
+  it("names the beat whose median completion is lowest, not its single worst", () => {
+    const lowest = lowestCompletionBeat([
+      completed(["Physics"], 3_000, 1),
+      completed(["Physics"], 60_000, 1),
+      completed(["Biology"], 6_000, 1),
+    ])
+    expect(lowest?.topic).toBe("Biology")
+    expect(lowest?.completion).toBeCloseTo(0.1, 5)
+  })
+
+  it("drops unmeasured reactions instead of counting them as unfinished", () => {
+    expect(
+      lowestCompletionBeat([
+        completed(["AI"], 30_000, 1),
+        completed(["Biology"], 0, 1),
+        completed(["Physics"], 30_000, 0),
+        completed(["Climate"], undefined, 1),
+      ]),
+    )
+      .toEqual({ topic: "AI", completion: 0.5 })
+  })
+
+  it("breaks ties by first appearance in the window", () => {
+    expect(
+      lowestCompletionBeat([
+        completed(["Climate"], 30_000, 1),
+        completed(["Physics"], 30_000, 1),
+      ])
+        ?.topic,
+    )
+      .toBe("Climate")
+  })
+
+  it("reports null when no beat was measurable, never NaN", () => {
+    expect(lowestCompletionBeat([])).toBeNull()
+    expect(lowestCompletionBeat([completed(["AI"], 0, 1)])).toBeNull()
   })
 })
 

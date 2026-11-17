@@ -797,6 +797,91 @@ describe("papers application", () => {
     },
   )
 
+  it(
+    "reports the beat with the lowest completion over the reader's last 50 dwells",
+    {
+      timeout: 15_000,
+    },
+    async () => {
+      const dataDir = await mkdtemp(
+        join(tmpdir(), "academitok-window-lowest-completion-"),
+      )
+      directories.push(dataDir)
+      vi.stubGlobal("fetch", () => Promise.reject(new Error("offline")))
+      const pick = (id: string) => {
+        const paper = curatedPapers.find((candidate) => candidate.id === id)
+        if (paper === undefined) {
+          throw new Error(`missing curated paper fixture ${id}`)
+        }
+        return paper
+      }
+      const physics = pick("arxiv-2023-quantum-sensor-compression")
+      const biology = pick("biorxiv-2024-fast-protein-folding-signals")
+      const physicsMinutes = physics.readMinutes * 60_000
+      const biologyMinutes = biology.readMinutes * 60_000
+
+      const [empty, named, displaced] = await runFeed(
+        dataDir,
+        Effect.gen(function*() {
+          const repository = yield* ReaderStateRepository
+          yield* repository.onboard({
+            keptPaperIds: [],
+            rejectedPaperIds: [],
+            skipped: true,
+          })
+          const before = yield* getPaperFeedSnapshot(
+            requestFor("lowest-completion-a"),
+          )
+          const dwell = (paperId: string, position: number, dwellMs: number) =>
+            repository.track({
+              paperId,
+              position,
+              exploration: false,
+              kind: "dwell",
+              dwellMs,
+            })
+          // Physics is given up on once (3 s) but finished once (60 s), so its
+          // median beats its single worst; Biology is steadily abandoned at 6 s.
+          yield* dwell(physics.id, 0, 3_000)
+          yield* dwell(physics.id, 1, 60_000)
+          yield* dwell(biology.id, 2, 6_000)
+          // An absent clipping and a zero dwell are dropped, not counted.
+          yield* dwell("absent-from-catalog", 3, 1_000)
+          yield* dwell(physics.id, 4, 0)
+          const measured = yield* getPaperFeedSnapshot(
+            requestFor("lowest-completion-b"),
+          )
+          // Fifty newer dwells push the measured ones out of the window.
+          for (let index = 0; index < 50; index += 1) {
+            yield* dwell(physics.id, index, 60_000)
+          }
+          return [
+            before,
+            measured,
+            yield* getPaperFeedSnapshot(requestFor("lowest-completion-c")),
+          ] as const
+        }),
+      )
+
+      expect(empty.stats.windowLowestCompletionBeat).toBeNull()
+      expect(named.stats.windowLowestCompletionBeat?.topic).toBe(
+        biology.topics[0],
+      )
+      expect(named.stats.windowLowestCompletionBeat?.completion).toBeCloseTo(
+        6_000 / biologyMinutes,
+        5,
+      )
+      expect(displaced.stats.windowLowestCompletionBeat?.topic).toBe(
+        physics.topics[0],
+      )
+      expect(displaced.stats.windowLowestCompletionBeat?.completion)
+        .toBeCloseTo(
+          60_000 / physicsMinutes,
+          5,
+        )
+    },
+  )
+
   it("reports no windowed entropy for impressions absent from the catalog", async () => {
     const dataDir = await mkdtemp(
       join(tmpdir(), "academitok-window-entropy-none-"),

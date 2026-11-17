@@ -641,6 +641,8 @@ export function App() {
   const windowTopicEntropy = snapshot?.stats.windowTopicEntropy ?? null
   const windowDwellEntropy = snapshot?.stats.windowDwellEntropy ?? null
   const windowTopDwellBeat = snapshot?.stats.windowTopDwellBeat ?? null
+  const windowLowestCompletionBeat = snapshot?.stats.windowLowestCompletionBeat
+    ?? null
   const windowMedianYear = snapshot?.stats.windowMedianYear ?? null
   const windowOlderCitations = snapshot?.stats.windowOlderCitations ?? null
   const windowNewerCitations = snapshot?.stats.windowNewerCitations ?? null
@@ -823,6 +825,17 @@ export function App() {
                   ? "—"
                   : `${Math.round(medianCompletion * 100)}%`}
                 helper="against the 100% target"
+              />
+              <StatCard
+                label="Lowest completion beat"
+                value={windowLowestCompletionBeat === null
+                  ? "—"
+                  : windowLowestCompletionBeat.topic}
+                helper={windowLowestCompletionBeat === null
+                  ? "no measured completion in the last 50 impressions"
+                  : `${
+                    Math.round(windowLowestCompletionBeat.completion * 100)
+                  }% completed over the last 50 impressions`}
               />
               <StatCard
                 label="Hide rate"

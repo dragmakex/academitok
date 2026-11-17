@@ -136,6 +136,9 @@ export const FeedStats = Schema.Struct({
   windowTopDwellBeat: Schema.NullOr(
     Schema.Struct({ topic: Topic, share: Schema.Number }),
   ),
+  windowLowestCompletionBeat: Schema.NullOr(
+    Schema.Struct({ topic: Topic, completion: Schema.Number }),
+  ),
 })
 export type FeedStats = typeof FeedStats.Type
 

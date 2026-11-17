@@ -534,6 +534,60 @@ export function topDwellBeat(
   return top
 }
 
+export type LowestCompletionBeat = {
+  readonly topic: Topic
+  readonly completion: number
+}
+
+/**
+ * The primary beat whose clippings are finished least, so a beat read slowly is
+ * told apart from a beat given up on (SPEC §8.4).
+ * @param pairs - Per-clipping primary beat, recorded dwell and estimated reading time.
+ * @returns Beat with the lowest median completion and its 0–1 ratio, or null when no beat was measurable.
+ */
+export function lowestCompletionBeat(
+  pairs: ReadonlyArray<{
+    readonly topics: ReadonlyArray<Topic>
+    readonly dwellMs?: number | null | undefined
+    readonly readMinutes?: number | null | undefined
+  }>,
+): LowestCompletionBeat | null {
+  const completions = new Map<Topic, number[]>()
+  for (const pair of pairs) {
+    const beat = pair.topics[0]
+    const dwellMs = pair.dwellMs
+    if (
+      beat === undefined
+      || dwellMs === null
+      || dwellMs === undefined
+      || dwellMs <= 0
+    ) {
+      continue
+    }
+    const completion = readingCompletion(dwellMs, pair.readMinutes)
+    if (completion === null) {
+      continue
+    }
+    const values = completions.get(beat)
+    if (values === undefined) {
+      completions.set(beat, [completion])
+    } else {
+      values.push(completion)
+    }
+  }
+  let lowest: LowestCompletionBeat | null = null
+  for (const [topic, values] of completions) {
+    const completion = median(values)
+    if (
+      completion !== null
+      && (lowest === null || completion < lowest.completion)
+    ) {
+      lowest = { topic, completion }
+    }
+  }
+  return lowest
+}
+
 /**
  * Tracks one ranked page returned to the reader.
  * @param snapshot - Ranked page response.
