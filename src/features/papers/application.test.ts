@@ -667,7 +667,94 @@ describe("papers application", () => {
 
     expect(snapshot.stats.windowTopicEntropy).toBeNull()
     expect(snapshot.stats.windowMedianYear).toBeNull()
+    expect(snapshot.stats.windowOlderCitations).toBeNull()
+    expect(snapshot.stats.windowNewerCitations).toBeNull()
   })
+
+  it(
+    "reports the citation skew over the reader's last 50 impressions",
+    {
+      timeout: 15_000,
+    },
+    async () => {
+      const dataDir = await mkdtemp(
+        join(tmpdir(), "academitok-window-citations-"),
+      )
+      directories.push(dataDir)
+      vi.stubGlobal("fetch", () => Promise.reject(new Error("offline")))
+      const pick = (id: string) => {
+        const paper = curatedPapers.find((candidate) => candidate.id === id)
+        if (paper === undefined) {
+          throw new Error(`missing curated paper fixture ${id}`)
+        }
+        return paper
+      }
+      // 2022/151 citations, 2023/204, 2024/76: the window median is 2023.
+      const older = pick("hal-2022-open-science-collaboration-markets")
+      const middle = pick("pmc-2023-scroll-pause-learn")
+      const newer = pick("biorxiv-2024-fast-protein-folding-signals")
+
+      const [empty, single, three, displaced] = await runFeed(
+        dataDir,
+        Effect.gen(function*() {
+          const repository = yield* ReaderStateRepository
+          yield* repository.onboard({
+            keptPaperIds: [],
+            rejectedPaperIds: [],
+            skipped: true,
+          })
+          const before = yield* getPaperFeedSnapshot(
+            requestFor("citations-a"),
+          )
+          yield* repository.track({
+            paperId: middle.id,
+            position: 0,
+            exploration: false,
+            kind: "view",
+            dwellMs: 0,
+          })
+          const one = yield* getPaperFeedSnapshot(requestFor("citations-b"))
+          for (const [position, paper] of [older, newer].entries()) {
+            yield* repository.track({
+              paperId: paper.id,
+              position: position + 1,
+              exploration: false,
+              kind: "view",
+              dwellMs: 0,
+            })
+          }
+          const mixed = yield* getPaperFeedSnapshot(
+            requestFor("citations-c"),
+          )
+          // Fifty newer impressions push the mixed three out of the §8.4 window.
+          for (let index = 0; index < 50; index += 1) {
+            yield* repository.track({
+              paperId: newer.id,
+              position: index,
+              exploration: false,
+              kind: "view",
+              dwellMs: 0,
+            })
+          }
+          return [
+            before,
+            one,
+            mixed,
+            yield* getPaperFeedSnapshot(requestFor("citations-d")),
+          ] as const
+        }),
+      )
+
+      expect(empty.stats.windowOlderCitations).toBeNull()
+      expect(empty.stats.windowNewerCitations).toBeNull()
+      expect(single.stats.windowOlderCitations).toBeNull()
+      expect(single.stats.windowNewerCitations).toBe(204)
+      expect(three.stats.windowOlderCitations).toBe(151)
+      expect(three.stats.windowNewerCitations).toBe(140)
+      expect(displaced.stats.windowOlderCitations).toBeNull()
+      expect(displaced.stats.windowNewerCitations).toBe(76)
+    },
+  )
 
   it("splits the served page by the path that filed each beat", async () => {
     const dataDir = await mkdtemp(join(tmpdir(), "academitok-beat-source-"))

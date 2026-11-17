@@ -634,6 +634,8 @@ export function App() {
   const savesPerHundred = snapshot?.stats.savesPerHundred ?? null
   const windowTopicEntropy = snapshot?.stats.windowTopicEntropy ?? null
   const windowMedianYear = snapshot?.stats.windowMedianYear ?? null
+  const windowOlderCitations = snapshot?.stats.windowOlderCitations ?? null
+  const windowNewerCitations = snapshot?.stats.windowNewerCitations ?? null
   const windowDuplicateRate = snapshot?.stats.windowDuplicateRate ?? null
   const beats = new Set(
     pagePapers.flatMap((paper) =>
@@ -696,6 +698,16 @@ export function App() {
                 label="Citations, newer half"
                 value={skew.newerCitations ?? "—"}
                 helper="median on or after the median year"
+              />
+              <StatCard
+                label="Window citations, older half"
+                value={windowOlderCitations ?? "—"}
+                helper="median behind the 50-impression window's median year"
+              />
+              <StatCard
+                label="Window citations, newer half"
+                value={windowNewerCitations ?? "—"}
+                helper="median on or after the window's median year"
               />
             </Grid>
             <CopyBlock

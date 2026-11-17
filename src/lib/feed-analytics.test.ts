@@ -322,6 +322,8 @@ const emptyStats = {
   savesPerHundred: null,
   windowTopicEntropy: null,
   windowMedianYear: null,
+  windowOlderCitations: null,
+  windowNewerCitations: null,
   windowDuplicateRate: null,
 }
 

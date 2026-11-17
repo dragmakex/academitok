@@ -70,6 +70,8 @@ describe("appendPaperPage", () => {
       savesPerHundred: null,
       windowTopicEntropy: null,
       windowMedianYear: null,
+      windowOlderCitations: null,
+      windowNewerCitations: null,
       windowDuplicateRate: null,
     },
     items: [item("a")],

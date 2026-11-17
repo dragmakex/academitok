@@ -17,6 +17,7 @@ import {
   savedPaperIds,
 } from "@/features/papers/recommendation"
 import {
+  citationAgeSkew,
   duplicateRate,
   medianCompletion,
   medianDwell,
@@ -115,6 +116,7 @@ export const getPaperFeedSnapshot = (request: FeedRequest) =>
         .reactions
         .filter((reaction) => reaction.kind === "view")
         .map((reaction) => reaction.paperId)
+      const windowSkew = citationAgeSkew(windowPapers)
       const rates = reactionRates(
         state.reactions.map((reaction) => reaction.kind),
         dwellWindow,
@@ -198,6 +200,8 @@ export const getPaperFeedSnapshot = (request: FeedRequest) =>
           windowMedianYear: medianYear(
             windowPapers.map((paper) => paper.year),
           ),
+          windowOlderCitations: windowSkew.olderCitations,
+          windowNewerCitations: windowSkew.newerCitations,
           windowDuplicateRate: duplicateRate(viewPaperIds, dwellWindow),
         },
         items: page.items,
