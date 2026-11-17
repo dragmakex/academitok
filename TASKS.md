@@ -148,7 +148,7 @@ write the conflict at the bottom instead of guessing.
       asserts the route registration, the attachment headers and the body from the real handler.
       — `1ea7eaf`
 
-- [ ] **27. Near-duplicate title collapse in the catalog.** SPEC §7's ingestion flow requires papers to
+- [x] **27. Near-duplicate title collapse in the catalog.** SPEC §7's ingestion flow requires papers to
       be upserted "by DOI, dedupe by normalised title (Jaccard > 0.9)" and §13 lists "title
       near-duplicate collapse" as an ingestion test, but `dedupeByTitle` in `src/lib/openalex.ts` keys on
       `paper.title.toLowerCase()` — exact identity only — so a DOI-less preprint and its published
@@ -164,6 +164,7 @@ write the conflict at the bottom instead of guessing.
       more than nine tenths of their tokens collapse; unrelated titles in the same beat all survive in
       input order; titles at or below the 0.9 boundary are both kept, so one-token titles never collapse
       accidentally; the helper is unit-tested on those cases.
+      — `d480596`
 
 ---
 
