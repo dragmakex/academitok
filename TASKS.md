@@ -40,6 +40,30 @@ write the conflict at the bottom instead of guessing.
       ignored instead of written; the cookie-name and id parser is unit-tested, and a repository test
       proves the two-reader separation.
 
+- [ ] **35. The 14-day seen filter and the `again` label.** SPEC §8.1 step 5 says a paper
+      impressed in the last 14 days returns "only if score is in the top 3% and the pool is
+      exhausted (labelled 'again')", but `buildFeedPage` in `src/features/papers/recommendation.ts`
+      filters only session-seen ids, so a reader who stops at nine clippings on Monday is served
+      yesterday's page on Tuesday: yesterday's papers rank on the affinity they just earned, take
+      the top slots and push unseen work off the page, and nothing marks the repeat because
+      `FeedItem` has no field for it. Add one pure exported `recentPaperIds` helper beside
+      `buildFeedItems` over the reader's `view` reactions and an injected `now`, returning the ids
+      viewed inside the 14-day window; drop those papers from the ranked candidates in
+      `getPaperFeedSnapshot`; when the fresh candidates cannot fill a page of ten, refill the
+      remaining slots from repeats inside the top 3% of the ranked list and mark them `again: true`
+      (a new `again` boolean on `FeedItem`, carried through `buildFeedItems`); let `PaperSlide`
+      print `Again` in the kicker line when it is set. No new dependency, no weight change, no RPC
+      procedure, persistence or PostHog payload change, and the one-clipping-per-viewport snap is
+      untouched.
+      Accept: a paper viewed 3 days before the injected clock is absent from the next page while an
+      unviewed paper in the same beat is present; a paper viewed 15 days before the injected clock
+      ranks as fresh with `again: false`; a six-paper fresh pool on a ten-slot page is refilled with
+      four repeats from the top 3% of the ranked list, each carrying `again: true`, and the slide
+      renders `Again`; a repeat whose score sits outside that top 3% never fills an exhausted slot;
+      the page still holds no duplicate ids and no topic above 2 of 10; the helper is unit-tested
+      with an injected clock and the filter is asserted from the real `getPaperFeedSnapshot`.
+      — queued
+
 ## P2 — breadth
 
 - [x] **2. `/saved` route.** SPEC §5: saved clippings as a static, filterable list, not a
