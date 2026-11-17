@@ -20,7 +20,7 @@ write the conflict at the bottom instead of guessing.
       even if the client passes a stale cursor; a fresh session id starts clean.
       — `41d1119`
 
-- [ ] **20. Anonymous reader cookie.** SPEC §17.1 settles `reader_id` on "anonymous cookie +
+- [x] **20. Anonymous reader cookie.** SPEC §17.1 settles `reader_id` on "anonymous cookie +
       `reader_id` in state, no login", but `src/db/reader-state-repository.ts` writes and reads the
       `reader_id` column as one module constant (`singletonId = "singleton"`, 42 uses) while the
       schema already carries `reader_id` on `impressions`, `reactions` and `feed_sessions` — so every

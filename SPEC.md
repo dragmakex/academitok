@@ -371,7 +371,10 @@ Retire the todo template in a single cleanup commit after P0 ships.
 ## 17. Open decisions
 
 1. `reader_id` source — device cookie vs. explicit account. P0: anonymous cookie + `reader_id` in
-   state, no login.
+   state, no login. Settled: an `RpcMiddleware` beside `RpcLogger` resolves the
+   `academitok_reader_id` cookie (value must match `[A-Za-z0-9-]{8,64}`) into the `ReaderId`
+   service the repository writes under; a missing or malformed cookie resolves to `singleton`, and
+   the browser writes the cookie from `crypto.randomUUID()` on first load.
 2. Topic taxonomy — fixed 9 beats (current) vs. OpenAlex concepts. P0: fixed beats, map source
    concepts onto them; revisit when P2 sources land.
 3. Citation count as a quality signal biases toward old papers — currently damped by `log10`/3 and
