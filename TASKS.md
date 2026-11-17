@@ -1025,7 +1025,7 @@ write the conflict at the bottom instead of guessing.
       for a fixed seed is identical before and after.
       — `5c63c2a`
 
-- [ ] **53. The beat the reader gives up on.** SPEC §16 P3 lists reading-time analytics and §8.4
+- [x] **53. The beat the reader gives up on.** SPEC §16 P3 lists reading-time analytics and §8.4
       sets median dwell at ≥ 8 s, and tasks 44, 47 and 50 gave the desk's Reading pace block the
       window's reading load, its dwell entropy and the beat that takes the dwell — but every one
       of those measures _time spent_, never _whether the clipping was finished_: `medianCompletion`
@@ -1060,6 +1060,7 @@ write the conflict at the bottom instead of guessing.
       reactions reports null and the desk renders an em dash, never `NaN` or `0%`; the helper is
       unit-tested and the figure reaches `getPaperFeedSnapshot` from real `ReaderState` dwell
       reactions; the ranked page for a fixed seed is identical before and after.
+      — `bdfec8b`
 
 ---
 
