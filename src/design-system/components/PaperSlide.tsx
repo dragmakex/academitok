@@ -38,6 +38,7 @@ type PaperMeta = {
 
 type DeckPaperSlideProps = PaperMeta & {
   readonly variant?: "deck" | undefined
+  readonly origin: "pool" | "live" | "seed"
   readonly rationale: ReadonlyArray<string>
   readonly liked: boolean
   readonly bookmarked: boolean
@@ -143,6 +144,7 @@ export const PaperSlide = forwardRef<HTMLElement, PaperSlideProps>(
       position,
       rationale,
       readMinutes,
+      origin,
       siteLabel,
       skeleton,
       title,
@@ -173,7 +175,9 @@ export const PaperSlide = forwardRef<HTMLElement, PaperSlideProps>(
                     AcademiTok
                   </strong>
                   <span>
-                    Evening Edition · No. {String(position).padStart(3, "0")}
+                    {origin === "seed" ? "Offline Edition" : "Evening Edition"}
+                    {" · No. "}
+                    {String(position).padStart(3, "0")}
                   </span>
                 </header>
 

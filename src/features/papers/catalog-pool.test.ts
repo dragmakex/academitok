@@ -105,6 +105,7 @@ describe("catalog pool", () => {
     )
 
     expect(fetchStub).toHaveBeenCalledTimes(1)
+    expect(page.origin).toBe("live")
     expect(
       page.items.some((item) =>
         item.paper.id.startsWith("https://openalex.org/")
@@ -138,6 +139,7 @@ describe("catalog pool", () => {
     )
 
     expect(fetchStub).not.toHaveBeenCalled()
+    expect(page.origin).toBe("pool")
     expect(page.items.length).toBeGreaterThan(0)
     expect(
       page.items.every((item) => item.paper.id.startsWith("pool-")),

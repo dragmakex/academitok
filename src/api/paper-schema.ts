@@ -129,7 +129,12 @@ export const FeedPage = Schema.Struct({
 })
 export type FeedPage = typeof FeedPage.Type
 
+/** Where a served edition came from: the stored pool, a fresh fetch or the seed file. */
+export const FeedOrigin = Schema.Literals(["pool", "live", "seed"])
+export type FeedOrigin = typeof FeedOrigin.Type
+
 export const FeedSnapshot = Schema.Struct({
+  origin: FeedOrigin,
   profile: Schema.NullOr(ReaderProfile),
   selectedTopic: TopicFilter,
   selectedSort: FeedSort,

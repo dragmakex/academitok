@@ -1,5 +1,6 @@
 import {
   type FeedItem,
+  type FeedOrigin,
   type FeedQuery,
   type Topic,
   type TopicFilter,
@@ -73,6 +74,7 @@ type VisiblePaperSlideProps = {
   readonly active: boolean
   readonly index: number
   readonly item: FeedItem
+  readonly origin: FeedOrigin
   readonly total: number
   readonly onNavigate: (index: number) => void
   readonly onVisible: (index: number) => void
@@ -85,6 +87,7 @@ type VisiblePaperSlideProps = {
  * @param root0.active - Whether full content is mounted.
  * @param root0.index - Feed index.
  * @param root0.item - Feed item.
+ * @param root0.origin - Where the edition came from.
  * @param root0.total - Mounted feed length.
  * @param root0.onNavigate - Navigation callback.
  * @param root0.onVisible - Visibility callback.
@@ -97,6 +100,7 @@ function VisiblePaperSlide({
   item,
   onNavigate,
   onVisible,
+  origin,
   registerNode,
   total,
 }: VisiblePaperSlideProps) {
@@ -229,6 +233,7 @@ function VisiblePaperSlide({
       bookmarked={item.bookmarked}
       externalUrl={item.paper.externalUrl}
       position={index + 1}
+      origin={origin}
       total={total}
       skeleton={!active}
       actions={{
@@ -777,6 +782,7 @@ export function App() {
               <VisiblePaperSlide
                 key={item.paper.id}
                 item={item}
+                origin={snapshot.origin}
                 index={index}
                 total={snapshot.items.length}
                 active={Math.abs(index - activeIndex) <= 1}

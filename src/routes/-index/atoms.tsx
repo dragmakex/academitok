@@ -173,6 +173,7 @@ export const loadNextPaperPageAtom = runtime.fn<FeedRequest>()(
     const ids = new Set(current.value.items.map((item) => item.paper.id))
     const snapshot = {
       ...page,
+      origin: current.value.origin,
       items: [
         ...current.value.items,
         ...page.items.filter((item) => !ids.has(item.paper.id)),

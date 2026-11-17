@@ -27,7 +27,7 @@ const poolPageThreshold = 10 * 3
  * Resolves live metadata with an offline fallback, preferring the stored pool.
  * @param topic - Requested beat.
  * @param sort - Requested ordering.
- * @returns Catalog resolution effect.
+ * @returns Catalog papers and the origin they were resolved from.
  */
 function resolveCatalog(
   topic: TopicFilter,
@@ -41,7 +41,7 @@ function resolveCatalog(
         (paper) => topic === "All" || paper.topics.includes(topic),
       )
       if (pooled.length >= poolPageThreshold) {
-        return pooled
+        return { papers: pooled, origin: "pool" as const }
       }
 
       return yield* Effect
@@ -51,7 +51,10 @@ function resolveCatalog(
         })
         .pipe(
           Effect.tap((papers) => repository.savePapers(papers)),
-          Effect.catch(() => Effect.succeed(curatedPapers)),
+          Effect.map((papers) => ({ papers, origin: "live" as const })),
+          Effect.catch(() =>
+            Effect.succeed({ papers: curatedPapers, origin: "seed" as const })
+          ),
         )
     })
 }
@@ -61,7 +64,7 @@ export const getPaperFeedSnapshot = (request: FeedRequest) =>
     .gen(function*() {
       const repository = yield* ReaderStateRepository
       const state = yield* repository.load
-      const papers = yield* resolveCatalog(
+      const { papers, origin } = yield* resolveCatalog(
         request.query.topic,
         request.query.sort,
       )
@@ -105,6 +108,7 @@ export const getPaperFeedSnapshot = (request: FeedRequest) =>
       }
 
       return {
+        origin,
         profile: state.profile,
         selectedTopic: request.query.topic,
         selectedSort: request.query.sort,
@@ -125,7 +129,7 @@ export const getSavedPapers = Effect
       return { items: [], nextCursor: null, exploration: 0 }
     }
 
-    const catalog = yield* resolveCatalog("All", "latest")
+    const { papers: catalog } = yield* resolveCatalog("All", "latest")
     const pooled = yield* repository.papersByIds(
       savedIds.filter((id) => !catalog.some((paper) => paper.id === id)),
     )

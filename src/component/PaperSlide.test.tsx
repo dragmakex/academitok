@@ -50,6 +50,7 @@ test("PaperSlide renders metadata and exposes accessible actions", async () => {
   await render(
     <PaperSlide
       id="paper-1"
+      origin="pool"
       title="Transparent Scientific Discovery"
       authors="Ada Lovelace, Grace Hopper"
       venue="Journal of Useful Results"
