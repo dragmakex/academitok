@@ -40,3 +40,11 @@ inside `<a>` gives a real broadsheet measure without splitting the anchor.
 Onboarding in this app is three pages of five picks and only submits on the third
 page's "Print edition" button — browser automation that clicks "Next" twice and
 stops sits forever on the gate.
+Swiss AI vision, probed with a 96x96 red/blue PNG against `/v1/chat/completions`:
+`CSCS-Inference/google/gemma-4-31B-it`, `RCP-AIaaS/zai-org/GLM-5.3-Flash`,
+`CSCS-Inference/Qwen/Qwen3.8-27B-FP8`, `CSCS-Inference/Qwen/Qwen3.8-Flash-Next-FP8` and
+`RCP-AIaaS/mistralai/Mistral-Small-3.2-24B-Instruct-2506` really see it.
+`RCP-AIaaS/deepseek-ai/DeepSeek-V4.1-Flash-1017` (the loop model) accepts the image and returns
+`content: null`; `medgemma-27b-text-it` rejects it outright. GLM-5.3-Flash puts its thinking in
+`reasoning_content` and can leave `content` empty under a small `max_tokens`, so give it >= 1400.
+Use `.pi/vision.sh` and stop re-probing.

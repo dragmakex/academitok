@@ -73,6 +73,11 @@ Feed-specific map: contracts `src/api/paper-schema.ts`, ranking
 Keep `MISTAKES.md` (my errors), `DESIRES.md` (missing context/tools), `LEARNINGS.md` (env facts)
 current — no duplicates, and read them before starting.
 
+**Looking at screenshots**: always `.pi/vision.sh "<question>" <image.png>` — it is pinned to
+`zai-org/GLM-5.3-Flash` on the Swiss AI LB, the one model that both sees images and writes long
+answers. Never `codex-lb` (quota), never DeepSeek V4.1 Flash (drops the image, returns `null`), never
+`gemma-4-31B-it` (sees, but answers in one breath).
+
 ## Definition of done
 
 Pattern satisfied · behaviour tested · docs updated where architecture shifted · history clean ·
