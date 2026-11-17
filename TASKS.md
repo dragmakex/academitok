@@ -218,6 +218,22 @@ write the conflict at the bottom instead of guessing.
       ranked page for a fixed seed is unchanged.
       — `4a5f8d9`
 
+- [ ] **19. Gazette shell metadata.** SPEC §16 P3 lists a native shell; the smallest honest slice
+      is what the shell claims about the app, and `public/manifest.json` still carries the TanStack
+      sample identity (`"name": "Create TanStack App Sample"`, black `theme_color`, sample-logo
+      icons) that no head ever links — a reader adding the deck to a home screen gets somebody
+      else's name and a gutter that fights the paper ground. Replace the manifest with the gazette
+      identity (`short_name`/`name` naming AcademiTok, `start_url: "/"`, `display: "standalone"`,
+      `background_color` = `--color-paper-deep`, `theme_color` = `--color-ink`), link it from the
+      root route head beside a matching `theme-color` meta, and delete the sample icon entries and
+      their two unused logo files until a gazette mark exists (shortcut: no install artwork yet,
+      add icons when the mark is drawn). No dependency, no route, no design-system change.
+      Accept: the manifest parses, carries the AcademiTok name, `start_url: "/"`,
+      `display: "standalone"` and no TanStack sample text; the root head links `/manifest.json`
+      with a `theme-color` equal to the manifest's; `logo192.png`/`logo512.png` are gone and nothing
+      references them; a test asserts name, start URL, display, the two colours and the head link
+      from the real files.
+
 ---
 
 ## Blocked — needs a product decision
