@@ -271,7 +271,7 @@ write the conflict at the bottom instead of guessing.
       test asserts the meta from `rootHead()` and the inset usage from the real component files.
       — `a27f7ab`
 
-- [ ] **22. Gazette mark as the tab and install icon.** SPEC §16 P3 lists a native shell; tasks 19
+- [x] **22. Gazette mark as the tab and install icon.** SPEC §16 P3 lists a native shell; tasks 19
       and 21 gave it the AcademiTok manifest and the safe-area insets, and task 19 left the icons
       out with the note "add icons when the mark is drawn". Nothing has been drawn, so the shell is
       nameless in the places a reader actually sees it: `rootHead()` links no icon, so the tab falls
@@ -290,6 +290,7 @@ write the conflict at the bottom instead of guessing.
       the manifest icon and the head link from the real files, that `public/mark.svg` exists, and
       that the three sample assets do not; the shell-metadata test stops asserting `icons` is
       undefined.
+      — `240bc03`
 
 ---
 
