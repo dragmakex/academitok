@@ -679,6 +679,32 @@ write the conflict at the bottom instead of guessing.
       is identical before and after.
       — `a28507d`
 
+- [ ] **40. Who else keeps your clippings, counted on the morgue.** SPEC §16 P3 lists
+      "multi-reader with collaborative signals" and task 37 gave the permalink the one such fact it
+      has ("Filed by N readers"), but `/saved` — the only page that shows a reader their whole
+      morgue file — still reads as if they were alone: `getSavedPapers` hands back the reader's own
+      saved set and `PaperSlide`'s compact variant prints site, citations, read time and access and
+      nothing collaborative, while the split `reader_id` rows can already answer how many _other_
+      readers filed each of those clippings. Add a batched `filedByOthers(paperIds, readerId)` read
+      to `ReaderStateRepository` (distinct `reader_id` rows in `reactions` where `paper_id` is in
+      the given ids, `kind = 'bookmark'`, `active = true` and `reader_id ≠ readerId`), implement it
+      for both the PGlite and Postgres storages, and wrap it in an exported `getSavedAudience()` in
+      `src/features/papers/application.ts` that takes the reader's saved ids from `savedPaperIds`
+      and returns a `Record<paperId, number>`. Resolve it in `/saved`'s existing `loader` through a
+      second `createServerFn` inside the same `withRequestReader` wrapper, hand the record down as
+      loader data beside the dehydrated atoms the way the permalink hands down `savedByReaders`, add
+      an optional count to `PaperSlide`'s compact variant, which prints `Also kept by 2 readers`
+      after its existing facts and omits the clause when the count is 0. Display only: no new
+      component, no ranking, `FeedPage`/`saved.list` shape, RPC contract, schema, PostHog or
+      dependency change, and the one-clipping-per-viewport snap is untouched.
+      Accept: a paper filed by two other readers and by the current reader reports 2, so the count
+      never includes the reader's own filing; a paper only the current reader filed reports 0 and
+      the row prints no clause rather than `0 readers`; an undone save by another reader
+      (`active = false`) is not counted; a saved set nobody else filed yields an empty record and
+      every row omits the clause; the counts are asserted from a real repository written under
+      three `ReaderId` values, and the rendered and omitted clause from `renderToStaticMarkup` of
+      the real compact `PaperSlide`.
+
 ---
 
 ## Blocked — needs a product decision
