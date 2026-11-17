@@ -1181,7 +1181,7 @@ write the conflict at the bottom instead of guessing.
       asserted from a real repository written under two `ReaderId` values, and the rendered and
       omitted fact from `renderToStaticMarkup` of the real `PaperPage`; the ranked page for a fixed
       seed is identical before and after; `bun run validate` is green.
-      — PENDING
+      — `ad5007b`
 
 ---
 
