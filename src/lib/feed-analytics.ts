@@ -465,6 +465,52 @@ export function dwellEntropy(
   }, 0)
 }
 
+export type TopDwellBeat = {
+  readonly topic: Topic
+  readonly share: number
+}
+
+/**
+ * The primary beat holding the largest share of the recorded dwell, so a reader
+ * can tell which beat takes the window's attention (SPEC §17.2).
+ * @param pairs - Per-clipping primary beat and the dwell it recorded.
+ * @returns Dominant beat and its 0–1 share, or null when nothing recorded a positive dwell.
+ */
+export function topDwellBeat(
+  pairs: ReadonlyArray<{
+    readonly topics: ReadonlyArray<Topic>
+    readonly dwellMs?: number | null | undefined
+  }>,
+): TopDwellBeat | null {
+  const dwells = new Map<Topic, number>()
+  for (const pair of pairs) {
+    const beat = pair.topics[0]
+    const dwellMs = pair.dwellMs
+    if (
+      beat === undefined
+      || dwellMs === null
+      || dwellMs === undefined
+      || dwellMs <= 0
+    ) {
+      continue
+    }
+    dwells.set(beat, (dwells.get(beat) ?? 0) + dwellMs)
+  }
+  const total = [...dwells.values()].reduce((sum, dwell) => sum + dwell, 0)
+  if (total === 0) {
+    return null
+  }
+  let top: TopDwellBeat | null = null
+  let best = 0
+  for (const [topic, dwell] of dwells) {
+    if (top === null || dwell > best) {
+      top = { topic, share: dwell / total }
+      best = dwell
+    }
+  }
+  return top
+}
+
 /**
  * Tracks one ranked page returned to the reader.
  * @param snapshot - Ranked page response.

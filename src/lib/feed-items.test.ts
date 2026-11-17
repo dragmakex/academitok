@@ -78,6 +78,7 @@ describe("appendPaperPage", () => {
       windowDuplicateRate: null,
       windowMedianReadMinutes: null,
       windowDwellEntropy: null,
+      windowTopDwellBeat: null,
     },
     items: [item("a")],
     nextCursor: "cursor-1",

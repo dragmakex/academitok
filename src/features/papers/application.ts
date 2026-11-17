@@ -27,6 +27,7 @@ import {
   reactionRates,
   readingCompletion,
   savesPerHundred,
+  topDwellBeat,
   topicEntropy,
 } from "@/lib/feed-analytics"
 import { fetchOpenAlexPapers } from "@/lib/openalex"
@@ -222,6 +223,7 @@ export const getPaperFeedSnapshot = (request: FeedRequest) =>
           windowDwellEntropy: windowDwells.length === 0
             ? null
             : dwellEntropy(windowDwells),
+          windowTopDwellBeat: topDwellBeat(windowDwells),
         },
         items: page.items,
         nextCursor: page.nextCursor,

@@ -19,6 +19,7 @@ import {
   reactionRates,
   readingCompletion,
   savesPerHundred,
+  topDwellBeat,
   topicEntropy,
   trackFeedHealthEvent,
   trackFeedPageEvent,
@@ -374,6 +375,7 @@ const emptyStats = {
   windowDuplicateRate: null,
   windowMedianReadMinutes: null,
   windowDwellEntropy: null,
+  windowTopDwellBeat: null,
 }
 
 const snapshotWith = (
@@ -594,6 +596,40 @@ describe("dwellEntropy", () => {
 
   it("reports no entropy for an empty set, never NaN", () => {
     expect(dwellEntropy([])).toBe(0)
+  })
+})
+
+describe("topDwellBeat", () => {
+  it("names the beat holding the largest share of recorded dwell", () => {
+    const top = topDwellBeat([
+      dwelled(["Physics"], 10_000),
+      dwelled(["Biology"], 1_000),
+      dwelled(["Biology"], 1_000),
+    ])
+    expect(top?.topic).toBe("Physics")
+    expect(top?.share).toBeCloseTo(0.83, 2)
+  })
+
+  it("breaks ties by first appearance in the window", () => {
+    const top = topDwellBeat([
+      dwelled(["Biology"], 1_000),
+      dwelled(["Physics"], 1_000),
+      dwelled(["AI"], 1_000),
+    ])
+    expect(top?.topic).toBe("Biology")
+    expect(top?.share).toBeCloseTo(0.33, 2)
+  })
+
+  it("drops pairs without a positive dwell instead of counting them as a beat", () => {
+    expect(
+      topDwellBeat([dwelled(["AI"], 5_000), dwelled(["Biology"], 0)]),
+    )
+      .toEqual({ topic: "AI", share: 1 })
+    expect(topDwellBeat([{ topics: ["AI"] }])).toBeNull()
+  })
+
+  it("reports null when nothing recorded a positive dwell, never NaN", () => {
+    expect(topDwellBeat([])).toBeNull()
   })
 })
 

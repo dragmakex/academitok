@@ -133,6 +133,9 @@ export const FeedStats = Schema.Struct({
   windowDuplicateRate: Schema.NullOr(Schema.Number),
   windowMedianReadMinutes: Schema.NullOr(Schema.Number),
   windowDwellEntropy: Schema.NullOr(Schema.Number),
+  windowTopDwellBeat: Schema.NullOr(
+    Schema.Struct({ topic: Topic, share: Schema.Number }),
+  ),
 })
 export type FeedStats = typeof FeedStats.Type
 

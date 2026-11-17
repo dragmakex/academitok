@@ -638,6 +638,7 @@ export function App() {
   const savesPerHundred = snapshot?.stats.savesPerHundred ?? null
   const windowTopicEntropy = snapshot?.stats.windowTopicEntropy ?? null
   const windowDwellEntropy = snapshot?.stats.windowDwellEntropy ?? null
+  const windowTopDwellBeat = snapshot?.stats.windowTopDwellBeat ?? null
   const windowMedianYear = snapshot?.stats.windowMedianYear ?? null
   const windowOlderCitations = snapshot?.stats.windowOlderCitations ?? null
   const windowNewerCitations = snapshot?.stats.windowNewerCitations ?? null
@@ -753,6 +754,17 @@ export function App() {
                   ? "—"
                   : windowDwellEntropy.toFixed(2)}
                 helper="nats weighted by dwell over the last 50 impressions"
+              />
+              <StatCard
+                label="Top dwell beat"
+                value={windowTopDwellBeat === null
+                  ? "—"
+                  : windowTopDwellBeat.topic}
+                helper={windowTopDwellBeat === null
+                  ? "no recorded dwell in the last 50 impressions"
+                  : `${
+                    (windowTopDwellBeat.share * 100).toFixed(0)
+                  }% of recorded dwell over the last 50 impressions`}
               />
               <StatCard
                 label="Duplicate rate"

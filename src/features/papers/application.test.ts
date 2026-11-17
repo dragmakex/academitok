@@ -779,6 +779,17 @@ describe("papers application", () => {
       expect(spread.stats.windowDwellEntropy).toBeCloseTo(Math.log(3))
       expect(weighted.stats.windowDwellEntropy).toBeCloseTo(0.5661, 3)
       expect(single.stats.windowDwellEntropy).toBe(0)
+      expect(empty.stats.windowTopDwellBeat).toBeNull()
+      expect([ai.topics[0], biology.topics[0], physics.topics[0]]).toContain(
+        spread.stats.windowTopDwellBeat?.topic,
+      )
+      expect(spread.stats.windowTopDwellBeat?.share).toBeCloseTo(1 / 3, 5)
+      expect(weighted.stats.windowTopDwellBeat?.topic).toBe(ai.topics[0])
+      expect(weighted.stats.windowTopDwellBeat?.share).toBeCloseTo(10 / 12, 5)
+      expect(single.stats.windowTopDwellBeat).toEqual({
+        topic: biology.topics[0],
+        share: 1,
+      })
     },
   )
 
