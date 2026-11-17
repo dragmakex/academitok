@@ -1274,6 +1274,33 @@ write the conflict at the bottom instead of guessing.
       before and after; `bun run validate` is green.
       — `1b32c1d`
 
+- [ ] **62. A word when a reaction never reaches the desk.** SPEC §10 promises reactions are
+      reported "never a silent divergence", and task 30 gave the deck a `Notice` for the successful
+      path — but every reaction write is fired and forgotten: `reactToPaperAtom`,
+      `removeSavedPaperAtom` and `restoreHiddenPaperAtom` in `src/routes/-index/atoms.tsx` `yield*`
+      the RPC and leave the failure in the atom result, while `app.tsx` calls them through
+      `useAtomSet` and never reads the outcome, so a like, save, hide or undo the server refuses
+      leaves the deck unchanged with no stamp, no notice and no reason — and a refused hide is the
+      worst of them, because `hideClipping` has already shown `Clipped out` with an `Undo` that will
+      also fail. Add one pure exported `reactionFailureNotice(kind)` beside
+      `trackPaperReactionEvent` in `src/lib/feed-analytics.ts` returning a label per reaction kind
+      (`like` → `Could not record the like`, `bookmark` → `Could not file the clipping`, `hide` →
+      `Could not hide the clipping`, `open-site` → `Could not record the opening`), one session atom
+      `reactionFailureAtom` in `atoms.tsx` set from those three write atoms through `Effect.catch`
+      so a failed write leaves the snapshot untouched and records the failed kind instead of
+      vanishing, and render it in `app.tsx` through the existing `Notice` with a 5 s lifetime and no
+      action, ahead of the success notice so a refused hide is never dressed as a `Clipped out` it
+      cannot undo. No new component, dependency, route, ranking, RPC contract, schema, persistence
+      or PostHog change, and the one-clipping-per-viewport snap is untouched.
+      Accept: a refused like shows `Could not record the like` and the clipping's `liked` state
+      stays false; a refused save shows `Could not file the clipping` and the morgue gains no row;
+      a refused hide shows `Could not hide the clipping` in place of `Clipped out`, leaves the
+      clipping in the deck at its index and offers no `Undo`; a successful reaction sets no failure
+      notice; the notice clears after 5 s of inaction; the label helper is unit-tested per kind and
+      the notice renders `role="status"` with the label from the real `Notice` component; the three
+      write atoms are asserted to set the failure atom from the real atom module; `bun run validate`
+      is green.
+
 ---
 
 ## Blocked — needs a product decision
