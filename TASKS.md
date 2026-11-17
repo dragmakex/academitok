@@ -1302,7 +1302,7 @@ write the conflict at the bottom instead of guessing.
       is green.
       — `36d52cf`
 
-- [ ] **63. Who else liked the clipping, on the clipping.** SPEC §16 P3 lists "multi-reader with
+- [x] **63. Who else liked the clipping, on the clipping.** SPEC §16 P3 lists "multi-reader with
       collaborative signals", and tasks 57 and 61 gave the permalink `Liked by N readers` and
       `Hidden by N readers` from the single-paper `likedByReaders`/`hiddenByReaders` reads while
       task 46 put the batched `Also kept by N readers` on the deck itself — but the deck counts
@@ -1332,6 +1332,7 @@ write the conflict at the bottom instead of guessing.
       repository written under two `ReaderId` values (temp PGlite dir, stubbed catalog) and the
       rendered and omitted clause from `renderToStaticMarkup` of the real deck-variant `PaperSlide`;
       the ranked page for a fixed seed is identical before and after.
+      — `8174b57`
 
 ---
 
