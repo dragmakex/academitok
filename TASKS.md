@@ -728,6 +728,32 @@ write the conflict at the bottom instead of guessing.
       identical before and after.
       — `7a5f960`
 
+- [ ] **42. Citation-age skew over the §8.4 impression window on the desk.** SPEC §17.3 keeps
+      citation count as a quality signal only on the condition that we "measure whether the feed
+      feels archival", and tasks 31–32 moved the desk's archival numbers onto the §8.4 window after
+      showing the page-scoped ones answer the wrong question — but the two `Citations, older half`
+      and `Citations, newer half` cards still come from `citationAgeSkew(pagePapers)` in
+      `src/routes/-index/app.tsx`, so whether the clippings this reader has been served sit on
+      their old papers is answered one page at a time, and the half of decision 3 that the
+      `log10`/3 damping exists to offset stays unreadable beside the window's median year.
+      `getPaperFeedSnapshot` already builds `windowPapers` (the last 50 `view` reactions joined to
+      the loaded catalog) for `windowMedianYear` and `windowTopicEntropy`, and `citationAgeSkew` in
+      `src/lib/feed-analytics.ts` already splits whatever it is handed on that set's median year.
+      Reuse it to report `windowOlderCitations`/`windowNewerCitations` on `FeedStats`, and render
+      them in the desk's Archival drift block beside the page pair with the existing
+      `StatCard`/`Grid` primitives, their helpers naming the 50-impression window. An impression
+      whose paper is not in the loaded catalog is dropped rather than counted as zero citations.
+      Display only: no new helper, no ranking, RPC procedure, persistence or PostHog payload
+      change, and the one-clipping-per-viewport snap is untouched.
+      Accept: a window of three clippings dated 2010/2016/2024 with 400/50/10 citations reports 400
+      for the older half and 30 for the newer, and a clipping dated exactly the window's median year
+      counts as newer; an impression older than the window's fifty does not move either figure; a
+      window of one clipping reports null older and its own citations as newer; a reader with no
+      impressions, or whose impression papers are absent from the loaded catalog, reports null for
+      both and the desk renders an em dash, never `NaN`; the figures reach `getPaperFeedSnapshot`
+      from real `ReaderState` view reactions; the ranked page for a fixed seed is identical before
+      and after.
+
 ---
 
 ## Blocked — needs a product decision
