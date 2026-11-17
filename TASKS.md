@@ -148,6 +148,23 @@ write the conflict at the bottom instead of guessing.
       asserts the route registration, the attachment headers and the body from the real handler.
       — `1ea7eaf`
 
+- [ ] **27. Near-duplicate title collapse in the catalog.** SPEC §7's ingestion flow requires papers to
+      be upserted "by DOI, dedupe by normalised title (Jaccard > 0.9)" and §13 lists "title
+      near-duplicate collapse" as an ingestion test, but `dedupeByTitle` in `src/lib/openalex.ts` keys on
+      `paper.title.toLowerCase()` — exact identity only — so a DOI-less preprint and its published
+      version, or the same work re-served with a changed subtitle, capitalisation or punctuation, both
+      land in the pool, take two of the ten page slots and pay twice into the ≤2-per-topic cap that §8.1
+      sets as a zero duplicate rate. Replace the exact-key filter with one pure exported
+      `collapseTitleDuplicates` helper (normalise a title to lowercase alphanumeric tokens, compare the
+      two token sets by Jaccard similarity, drop a paper whose title matches an already-kept title above
+      0.9) and call it where `dedupeByTitle` is called today, keeping input order and the first paper of
+      each group. No new source, dependency, ranking term, RPC contract or PostHog payload change, and
+      the frozen seed edition stays as it is.
+      Accept: titles differing only in case and punctuation collapse to the first; two titles sharing
+      more than nine tenths of their tokens collapse; unrelated titles in the same beat all survive in
+      input order; titles at or below the 0.9 boundary are both kept, so one-token titles never collapse
+      accidentally; the helper is unit-tested on those cases.
+
 ---
 
 ## P3 — optional
