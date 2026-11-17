@@ -28,6 +28,7 @@ import { Stack } from "@/design-system/primitives/Stack"
 import { formatEdition, formatEditionLink } from "@/features/papers/citation"
 import {
   archivalDrift,
+  beatSourceCounts,
   citationAgeSkew,
   topicEntropy,
   trackFeedPageEvent,
@@ -625,6 +626,7 @@ export function App() {
   const drift = archivalDrift(pagePapers.map((paper) => paper.year))
   const skew = citationAgeSkew(pagePapers)
   const entropy = topicEntropy(pagePapers)
+  const beatSources = beatSourceCounts(pagePapers)
   const medianDwellMs = snapshot?.stats.medianDwellMs ?? null
   const medianCompletion = snapshot?.stats.medianCompletion ?? null
   const hideRate = snapshot?.stats.hideRate ?? null
@@ -732,6 +734,21 @@ export function App() {
                   ? "—"
                   : `${(windowDuplicateRate * 100).toFixed(1)}%`}
                 helper="against the 0% target"
+              />
+              <StatCard
+                label="Filed by keyword"
+                value={snapshot === undefined ? "—" : beatSources.keyword}
+                helper={`of ${drift.total} loaded clippings`}
+              />
+              <StatCard
+                label="Filed by concept"
+                value={snapshot === undefined ? "—" : beatSources.concept}
+                helper="no keyword match, beat from the source concepts"
+              />
+              <StatCard
+                label="Education fallback"
+                value={snapshot === undefined ? "—" : beatSources.education}
+                helper="no keyword match and no other beat"
               />
             </Grid>
           </Stack>

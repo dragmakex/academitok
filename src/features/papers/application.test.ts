@@ -10,6 +10,7 @@ import {
   getSavedPapers,
 } from "@/features/papers/application"
 import { recordReaderReaction } from "@/features/papers/reactions"
+import { beatSourceCounts, unmatchedBeatCount } from "@/lib/feed-analytics"
 import { defaultReaderId, ReaderId } from "@/lib/reader-id"
 import * as ConfigProvider from "effect/ConfigProvider"
 import * as Effect from "effect/Effect"
@@ -666,6 +667,38 @@ describe("papers application", () => {
 
     expect(snapshot.stats.windowTopicEntropy).toBeNull()
     expect(snapshot.stats.windowMedianYear).toBeNull()
+  })
+
+  it("splits the served page by the path that filed each beat", async () => {
+    const dataDir = await mkdtemp(join(tmpdir(), "academitok-beat-source-"))
+    directories.push(dataDir)
+    vi.stubGlobal("fetch", () => Promise.reject(new Error("offline")))
+
+    const snapshot = await runFeed(
+      dataDir,
+      Effect.gen(function*() {
+        const repository = yield* ReaderStateRepository
+        yield* repository.onboard({
+          keptPaperIds: [],
+          rejectedPaperIds: [],
+          skipped: true,
+        })
+        return yield* getPaperFeedSnapshot(requestFor("beat-source"))
+      }),
+    )
+
+    // The desk's Topic mix block reads these off the same loaded page.
+    const papers = snapshot.items.map((item) => item.paper)
+    const counts = beatSourceCounts(papers)
+
+    expect(counts.keyword + counts.concept + counts.education).toBe(
+      papers.length,
+    )
+    // Keyword matches take precedence, so the split agrees with the beat-miss count.
+    expect(counts.keyword).toBe(papers.length - unmatchedBeatCount(papers))
+    // The served page mixes paths, so the block never reads a lone ten.
+    expect(counts.keyword).toBeGreaterThan(0)
+    expect(counts.concept).toBeGreaterThan(0)
   })
 
   it("files bookmarked papers in the saved list and drops them on unsave", async () => {
