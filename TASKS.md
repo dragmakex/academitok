@@ -630,6 +630,27 @@ write the conflict at the bottom instead of guessing.
       `renderToStaticMarkup` of the real `PaperPage`.
       — `7ff938c`
 
+- [ ] **38. A way out of a shared edition.** SPEC §16 P3 lists shareable "editions" and task 35 made
+      `/?edition=<ids>` reopen a pinned page, but that page is a dead end: the pinned branch of
+      `getPaperFeedSnapshot` in `src/features/papers/application.ts` serves `nextCursor: null`, the
+      deck's `navigate` clamps to the last item and `onVisible` only prefetches when a cursor exists,
+      so a reader who follows a colleague's link reads ten clippings and then cannot page, cannot
+      re-rank and cannot get back to the edition their own reading earned — the only exit is editing
+      the URL by hand, which no control offers. Have the pinned branch report `pinned: true` on
+      `FeedSnapshot` (`false` on every ranked path), carry it through `getPaperFeedSnapshot`, the
+      next-page append in `src/routes/-index/atoms.tsx` and `loadNextPaperPage`, and let `PaperSlide`
+      print a `Your edition` link to `/` in the masthead strip that already prints
+      `Evening Edition · No. 042` when the page is pinned — the plain link drops the search param, so
+      the loader ranks as usual. No new route, no new component, no ranking, RPC procedure,
+      persistence, PostHog payload or `FeedPage`/`saved.list` change, no dependency, and the
+      one-clipping-per-viewport snap is untouched.
+      Accept: a snapshot built from a request carrying `edition` reports `pinned: true` while the
+      ranked and seed paths report `false`; the pinned page's strip renders a `Your edition` link
+      whose `href` is `/`, and a ranked page's strip renders no such link; a page appended by
+      `loadNextPaperPage` keeps the first page's `pinned` flag; the flag and the strip assertion run
+      from the real `getPaperFeedSnapshot` (stubbed catalog, temp PGlite dir) and from
+      `renderToStaticMarkup` of the real `PaperSlide`.
+
 ---
 
 ## Blocked — needs a product decision
