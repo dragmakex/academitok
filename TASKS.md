@@ -80,6 +80,17 @@ write the conflict at the bottom instead of guessing.
       the helper and the fallback order are unit-tested.
       — `39596ac`
 
+- [ ] **14. Impression retention sweep.** SPEC §6 sets retention at 90 days for impressions and
+      forever for reactions, but the only TTL in the repository is `sweepFeedSessions` — impressions
+      are deleted only by the one-off `reader_state` migration, so a row per armed slide accumulates
+      without bound and the 14-day seen-filter keeps walking rows nobody may read again. Add a pure
+      `impressionCutoff` helper beside `feedSessionTtlMs` returning the 90-day boundary, and delete
+      impressions older than it in the same sweep the feed request already runs, leaving reactions
+      untouched. No ranking, RPC contract, schema or PostHog change. Accept: an impression shown 91
+      days before the injected clock is gone after a sweep while one shown 89 days before survives;
+      reactions of any age survive; two sweeps in a row delete nothing the second time; the cutoff
+      helper is unit-tested.
+
 ---
 
 ## P3 — optional
