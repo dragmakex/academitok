@@ -11,7 +11,7 @@
 ## 2026-06-13 — a flex child centred with `justify-center` loses its head
 
 `justify-content: center` inside a scroll container pushes overflowing content
-past the *top* edge, where it cannot be scrolled back into view. A long abstract
+past the _top_ edge, where it cannot be scrolled back into view. A long abstract
 in the deck silently lost its first lines. `margin: auto` on the child centres
 when it fits and keeps the whole block reachable when it does not.
 
@@ -19,8 +19,8 @@ when it fits and keeps the whole block reachable when it does not.
 
 `xai-org/x-algorithm` (`home-mixer/params/param.rs`) publishes like 0.708,
 open-link 0.2, dwell 0.05, continuous dwell 0.0075/s, click-dwell 0.385/s,
-not-dwelled −0.02 and not-interested −53.07. Those multiply *predicted
-probabilities*; a feed that multiplies observed signal strength can only borrow
+not-dwelled −0.02 and not-interested −53.07. Those multiply _predicted
+probabilities_; a feed that multiplies observed signal strength can only borrow
 the ordering. Also worth knowing before copying them: X lets a 30-second dwell
 (0.05 + 0.225) outrank a link click (0.2), which is the opposite of what a reader
 asked for here — so the ladder caps passive dwell below the price of opening the

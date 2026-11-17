@@ -4,7 +4,6 @@ import {
   buildContentCentroid,
   buildFeedItems,
   buildFeedPage,
-  buildFeedStats,
   recentPaperIds,
   savedPaperIds,
 } from "@/features/papers/recommendation"
@@ -241,13 +240,6 @@ describe("paper recommendation", () => {
     })
 
     expect(ids).toEqual(["paper-2", "paper-3"])
-  })
-
-  it("reports accessible paper counts", () => {
-    const items = buildFeedItems(baseState, curatedPapers, "All", "recommended")
-    const stats = buildFeedStats(items)
-    expect(stats.total).toBe(items.length)
-    expect(stats.institutionAccess).toBeGreaterThan(0)
   })
 
   it("boosts papers with deeper engagement signals", () => {

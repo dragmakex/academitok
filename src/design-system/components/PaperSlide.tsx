@@ -174,7 +174,7 @@ export const PaperSlide = forwardRef<HTMLElement, PaperSlideProps>(
       <article
         ref={ref}
         aria-labelledby={headlineId}
-        className="relative flex h-[100dvh] min-h-[100dvh] snap-start snap-always flex-col bg-paper text-ink"
+        className="relative flex h-full min-h-full snap-start snap-always flex-col bg-paper text-ink"
         onDoubleClick={actions.onLike}
       >
         {skeleton
@@ -210,12 +210,12 @@ export const PaperSlide = forwardRef<HTMLElement, PaperSlideProps>(
 
                   <h2
                     id={headlineId}
-                    className="mt-m max-w-[24ch] overflow-wrap-anywhere m-0 text-balance font-display text-[clamp(2.1rem,5.6vw,4.2rem)] font-bold leading-[0.95] tracking-[-0.035em]"
+                    className="mt-xs max-w-[24ch] overflow-wrap-anywhere m-0 text-balance font-display text-[clamp(2.1rem,5.6vw,4.2rem)] font-bold leading-[0.95] tracking-[-0.035em]"
                   >
                     {title}
                   </h2>
 
-                  <p className="mt-l max-w-[58ch] hyphens-auto text-left font-body text-[clamp(1.05rem,1.7vw,1.35rem)] leading-[1.5] m-0">
+                  <p className="mt-m max-w-[58ch] hyphens-auto text-left font-body text-[clamp(1.05rem,1.7vw,1.35rem)] leading-[1.5] m-0">
                     {abstract}
                   </p>
 
@@ -225,50 +225,52 @@ export const PaperSlide = forwardRef<HTMLElement, PaperSlideProps>(
                 </div>
               </a>
 
-              <div className="flex items-end justify-between border-t border-rule-soft px-[clamp(1.25rem,7vw,8rem)] pb-[env(safe-area-inset-bottom)]">
-                <div
-                  role="group"
-                  aria-label="Paper actions"
-                  className="flex items-stretch"
-                >
-                  <button
-                    className={barButtonClass}
-                    type="button"
-                    onClick={actions.onLike}
-                    aria-label={liked ? "Unlike paper" : "Like paper"}
-                    aria-pressed={liked}
+              <div className="border-t border-rule-soft px-[clamp(1.25rem,7vw,8rem)] pb-[max(0.5rem,env(safe-area-inset-bottom))]">
+                <div className="mx-auto flex w-full max-w-[52rem] items-end justify-between">
+                  <div
+                    role="group"
+                    aria-label="Paper actions"
+                    className="flex items-stretch"
                   >
-                    {liked ? "Liked" : "Like"}
-                  </button>
-                  <button
-                    className={barButtonClass}
-                    type="button"
-                    onClick={actions.onBookmark}
-                    aria-label={bookmarked
-                      ? "Remove saved paper"
-                      : "Save paper"}
-                    aria-pressed={bookmarked}
-                  >
-                    {bookmarked ? "Saved" : "Save"}
-                  </button>
-                </div>
-                <div className="flex items-stretch">
-                  <button
-                    className={pagerButtonClass}
-                    type="button"
-                    onClick={actions.onPrevious}
-                    aria-label="Previous paper"
-                  >
-                    ↑
-                  </button>
-                  <button
-                    className={pagerButtonClass}
-                    type="button"
-                    onClick={actions.onNext}
-                    aria-label="Next paper"
-                  >
-                    ↓
-                  </button>
+                    <button
+                      className={barButtonClass}
+                      type="button"
+                      onClick={actions.onLike}
+                      aria-label={liked ? "Unlike paper" : "Like paper"}
+                      aria-pressed={liked}
+                    >
+                      {liked ? "Liked" : "Like"}
+                    </button>
+                    <button
+                      className={barButtonClass}
+                      type="button"
+                      onClick={actions.onBookmark}
+                      aria-label={bookmarked
+                        ? "Remove saved paper"
+                        : "Save paper"}
+                      aria-pressed={bookmarked}
+                    >
+                      {bookmarked ? "Saved" : "Save"}
+                    </button>
+                  </div>
+                  <div className="flex items-stretch">
+                    <button
+                      className={pagerButtonClass}
+                      type="button"
+                      onClick={actions.onPrevious}
+                      aria-label="Previous paper"
+                    >
+                      ↑
+                    </button>
+                    <button
+                      className={pagerButtonClass}
+                      type="button"
+                      onClick={actions.onNext}
+                      aria-label="Next paper"
+                    >
+                      ↓
+                    </button>
+                  </div>
                 </div>
               </div>
             </>

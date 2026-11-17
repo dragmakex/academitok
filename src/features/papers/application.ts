@@ -12,25 +12,9 @@ import { formatBibtex } from "@/features/papers/citation"
 import {
   buildFeedItems,
   buildFeedPage,
-  buildFeedStats,
   recentPaperIds,
   savedPaperIds,
 } from "@/features/papers/recommendation"
-import {
-  citationAgeSkew,
-  duplicateRate,
-  dwellEntropy,
-  lowestCompletionBeat,
-  medianCompletion,
-  medianDwell,
-  medianReadMinutes,
-  medianYear,
-  reactionRates,
-  readingCompletion,
-  savesPerHundred,
-  topDwellBeat,
-  topicEntropy,
-} from "@/lib/feed-analytics"
 import { fetchOpenAlexPapers } from "@/lib/openalex"
 import { ReaderId } from "@/lib/reader-id"
 import * as Clock from "effect/Clock"
@@ -39,9 +23,6 @@ import * as Layer from "effect/Layer"
 
 /** Pool coverage needed before a page is served without an upstream request. */
 const poolPageThreshold = 10 * 3
-
-/** Impressions behind the dwell and topic-entropy windows (SPEC §8.4). */
-const dwellWindow = 50
 
 /**
  * Resolves live metadata with an offline fallback, preferring the stored pool.
@@ -97,49 +78,6 @@ export const getPaperFeedSnapshot = (request: FeedRequest) =>
         request.query.sort,
       )
       const onboarding = state.profile === null
-      const dwells = state
-        .reactions
-        .filter((reaction) =>
-          reaction.kind === "dwell" && reaction.dwellMs !== undefined
-        )
-        .slice(0, dwellWindow)
-      const readMinutes = new Map(
-        papers.map((paper) => [paper.id, paper.readMinutes] as const),
-      )
-      const papersById = new Map(
-        papers.map((paper) => [paper.id, paper] as const),
-      )
-      const windowPapers = state
-        .reactions
-        .filter((reaction) => reaction.kind === "view")
-        .slice(0, dwellWindow)
-        .flatMap((reaction) => {
-          const paper = papersById.get(reaction.paperId)
-          return paper === undefined ? [] : [paper]
-        })
-      const viewPaperIds = state
-        .reactions
-        .filter((reaction) => reaction.kind === "view")
-        .map((reaction) => reaction.paperId)
-      const windowSkew = citationAgeSkew(windowPapers)
-      const windowCompletions = dwells.flatMap((reaction) => {
-        const paper = papersById.get(reaction.paperId)
-        return paper === undefined
-          ? []
-          : [{
-            topics: paper.topics,
-            dwellMs: reaction.dwellMs,
-            readMinutes: paper.readMinutes,
-          }]
-      })
-      const rates = reactionRates(
-        state.reactions.map((reaction) => reaction.kind),
-        dwellWindow,
-      )
-      const saves = savesPerHundred(
-        state.reactions.map((reaction) => reaction.kind),
-        dwellWindow,
-      )
       const sessionSeen: ReadonlyArray<string> = request.sessionId === undefined
         ? []
         : yield* repository.loadFeedSession(request.sessionId)
@@ -199,38 +137,6 @@ export const getPaperFeedSnapshot = (request: FeedRequest) =>
         profile: state.profile,
         selectedTopic: request.query.topic,
         selectedSort: request.query.sort,
-        stats: {
-          ...buildFeedStats(ranked),
-          medianDwellMs: medianDwell(
-            dwells.map((reaction) => reaction.dwellMs ?? 0),
-          ),
-          medianCompletion: medianCompletion(
-            dwells.map((reaction) =>
-              readingCompletion(
-                reaction.dwellMs ?? 0,
-                readMinutes.get(reaction.paperId),
-              )
-            ),
-          ),
-          hideRate: rates.hideRate,
-          openSourceRate: rates.openSourceRate,
-          savesPerHundred: saves,
-          windowTopicEntropy: windowPapers.length === 0
-            ? null
-            : topicEntropy(windowPapers),
-          windowMedianYear: medianYear(
-            windowPapers.map((paper) => paper.year),
-          ),
-          windowOlderCitations: windowSkew.olderCitations,
-          windowNewerCitations: windowSkew.newerCitations,
-          windowDuplicateRate: duplicateRate(viewPaperIds, dwellWindow),
-          windowMedianReadMinutes: medianReadMinutes(windowPapers),
-          windowDwellEntropy: windowCompletions.length === 0
-            ? null
-            : dwellEntropy(windowCompletions),
-          windowTopDwellBeat: topDwellBeat(windowCompletions),
-          windowLowestCompletionBeat: lowestCompletionBeat(windowCompletions),
-        },
         items: page.items,
         nextCursor: page.nextCursor,
         exploration: page.items.filter((item) => item.exploration).length,

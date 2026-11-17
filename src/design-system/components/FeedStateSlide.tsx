@@ -12,7 +12,7 @@ type FeedStateSlideProps = {
  */
 export function FeedStateSlide({ children }: FeedStateSlideProps) {
   return (
-    <section className="flex h-[100dvh] min-h-[100dvh] snap-start items-center justify-center-safe overflow-y-auto p-l">
+    <section className="flex h-full min-h-full snap-start items-center justify-center-safe overflow-y-auto p-l">
       {children}
     </section>
   )

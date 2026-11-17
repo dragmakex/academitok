@@ -13,11 +13,11 @@ import { EmptyState } from "@/design-system/components/EmptyState"
 import { ErrorState } from "@/design-system/components/ErrorState"
 import { FeedDeck } from "@/design-system/components/FeedDeck"
 import { FeedStateSlide } from "@/design-system/components/FeedStateSlide"
+import { LinkButton } from "@/design-system/components/LinkButton"
 import { Notice, type NoticeAction } from "@/design-system/components/Notice"
 import { Page } from "@/design-system/components/Page"
 import { PaperSlide } from "@/design-system/components/PaperSlide"
 import { ShortcutSheet } from "@/design-system/components/ShortcutSheet"
-import { StatCard } from "@/design-system/components/StatCard"
 import { Tabs } from "@/design-system/components/Tabs"
 import { Text } from "@/design-system/components/Text"
 import { TextField } from "@/design-system/components/TextField"
@@ -25,24 +25,13 @@ import { Grid } from "@/design-system/primitives/Grid"
 import { Inline } from "@/design-system/primitives/Inline"
 import { Stack } from "@/design-system/primitives/Stack"
 import { formatEdition, formatEditionLink } from "@/features/papers/citation"
-import {
-  archivalDrift,
-  beatSourceCounts,
-  citationAgeSkew,
-  coldFeedRate,
-  conceptOnlyBeats,
-  explorationShare,
-  multiBeatCount,
-  reactionFailureNotice,
-  topicEntropy,
-  trackFeedPageEvent,
-} from "@/lib/feed-analytics"
+import { reactionFailureNotice, trackFeedPageEvent } from "@/lib/feed-analytics"
+import { shareTargets } from "@/lib/share"
 import { deckAction, shortcutRows } from "@/lib/shortcuts"
 import { useAtomSet, useAtomValue } from "@effect/atom-react"
 import { useCallback, useEffect, useRef, useState } from "react"
 import {
   dashboardSnapshotAtom,
-  editionOriginsAtom,
   loadNextPaperPageAtom,
   loadPaperFeedAtom,
   onboardReaderAtom,
@@ -82,17 +71,6 @@ const institutions = [
   "Stanford",
   "Max Planck",
 ] as const
-
-/**
- * Renders a rate as a percentage, dropping a trailing `.0` (2.0% and 12%).
- * @param rate - Share of the measurement window.
- * @returns Percentage label.
- */
-const formatRate = (rate: number): string =>
-  `${(rate * 100).toFixed(1).replace(/\.0$/, "")}%`
-
-const formatColdFeed = (rate: number): string =>
-  rate === 1 ? "100%" : `${(rate * 100).toFixed(1)}%`
 
 type VisiblePaperSlideProps = {
   readonly active: boolean
@@ -447,7 +425,6 @@ export function App() {
   const snapshot = snapshotAsync._tag === "Success"
     ? snapshotAsync.value
     : undefined
-  const editionOrigins = useAtomValue(editionOriginsAtom)
   const reactionFailure = useAtomValue(reactionFailureAtom)
   const setReactionFailure = useAtomSet(reactionFailureAtom)
   const sessionAsync = useAtomValue(sessionAtom)
@@ -487,6 +464,10 @@ export function App() {
 
   useEffect(() => {
     setOrigin(window.location.origin)
+  }, [])
+
+  useEffect(() => {
+    setCanShare(typeof navigator.share === "function")
   }, [])
 
   useEffect(() => {
@@ -665,38 +646,6 @@ export function App() {
       activeIndex + 1
     } of ${snapshot?.items.length ?? 0}`
   const pagePapers = (snapshot?.items ?? []).map((item) => item.paper)
-  const drift = archivalDrift(pagePapers.map((paper) => paper.year))
-  const skew = citationAgeSkew(pagePapers)
-  const entropy = topicEntropy(pagePapers)
-  const beatSources = beatSourceCounts(pagePapers)
-  const conceptOnly = conceptOnlyBeats(pagePapers)
-  const multiBeat = multiBeatCount(pagePapers)
-  const exploration = snapshot === undefined
-    ? null
-    : explorationShare(snapshot.exploration, snapshot.items.length)
-  const medianDwellMs = snapshot?.stats.medianDwellMs ?? null
-  const medianCompletion = snapshot?.stats.medianCompletion ?? null
-  const hideRate = snapshot?.stats.hideRate ?? null
-  const openSourceRate = snapshot?.stats.openSourceRate ?? null
-  const savesPerHundred = snapshot?.stats.savesPerHundred ?? null
-  const windowTopicEntropy = snapshot?.stats.windowTopicEntropy ?? null
-  const windowDwellEntropy = snapshot?.stats.windowDwellEntropy ?? null
-  const windowTopDwellBeat = snapshot?.stats.windowTopDwellBeat ?? null
-  const windowLowestCompletionBeat = snapshot?.stats.windowLowestCompletionBeat
-    ?? null
-  const windowMedianYear = snapshot?.stats.windowMedianYear ?? null
-  const windowOlderCitations = snapshot?.stats.windowOlderCitations ?? null
-  const windowNewerCitations = snapshot?.stats.windowNewerCitations ?? null
-  const windowDuplicateRate = snapshot?.stats.windowDuplicateRate ?? null
-  const windowMedianReadMinutes = snapshot?.stats.windowMedianReadMinutes
-    ?? null
-  const coldFeed = coldFeedRate(editionOrigins)
-  const beats = new Set(
-    pagePapers.flatMap((paper) =>
-      paper.topics[0] === undefined ? [] : [paper.topics[0]]
-    ),
-  )
-    .size
   const editionNotice = formatEdition(
     (snapshot?.items ?? []).map((item) => item.paper),
     "Evening Edition",
@@ -707,6 +656,26 @@ export function App() {
   const editionText = editionLink === ""
     ? editionNotice
     : `${editionNotice}\n\n${editionLink}`
+  const editionTitle = "AcademiTok · Evening Edition"
+  const editionSummary = pagePapers.length === 0
+    ? "No papers on the page yet."
+    : `${pagePapers.length} papers with beats, authors, years and source links.`
+  const [canShare, setCanShare] = useState(false)
+
+  const shareEdition = useCallback(() => {
+    navigator
+      .share({
+        title: editionTitle,
+        text: editionNotice,
+        url: editionLink === "" ? origin : editionLink,
+      })
+      .catch(() =>
+        navigator.clipboard.writeText(editionText).then(
+          () => setNotice({ label: "Edition copied" }),
+          () => undefined,
+        )
+      )
+  }, [editionLink, editionNotice, editionText, origin])
 
   return (
     <Page fullBleed>
@@ -721,207 +690,10 @@ export function App() {
         }
       >
         <Stack gap="l">
-          <Stack gap="m">
-            <Text tone="label" as="span">
-              Archival drift
-            </Text>
-            <Grid layout="stats">
-              <StatCard
-                label="Median year"
-                value={drift.medianYear ?? "—"}
-                helper={`of ${drift.total} loaded clippings`}
-              />
-              <StatCard
-                label="Last 50 impressions"
-                value={windowMedianYear ?? "—"}
-                helper="median year of the 50-impression window"
-              />
-              <StatCard
-                label="A decade behind"
-                value={drift.olderThanDecade}
-                helper={drift.newestYear === null
-                  ? "no publication years on the page"
-                  : `older than ${drift.newestYear}, the newest`}
-              />
-              <StatCard
-                label="Citations, older half"
-                value={skew.olderCitations ?? "—"}
-                helper="median behind the page's median year"
-              />
-              <StatCard
-                label="Citations, newer half"
-                value={skew.newerCitations ?? "—"}
-                helper="median on or after the median year"
-              />
-              <StatCard
-                label="Window citations, older half"
-                value={windowOlderCitations ?? "—"}
-                helper="median behind the 50-impression window's median year"
-              />
-              <StatCard
-                label="Window citations, newer half"
-                value={windowNewerCitations ?? "—"}
-                helper="median on or after the window's median year"
-              />
-            </Grid>
-            <CopyBlock
-              actionLabel="Copy edition"
-              announcement="Edition copied to the clipboard"
-              label="Share this edition"
-              text={editionText}
-            />
-          </Stack>
-
-          <Stack gap="m">
-            <Text tone="label" as="span">
-              Topic mix
-            </Text>
-            <Grid layout="stats">
-              <StatCard
-                label="Entropy"
-                value={snapshot === undefined ? "—" : entropy.toFixed(2)}
-                helper="nats across the page's primary beats"
-              />
-              <StatCard
-                label="Exploration share"
-                value={exploration === null
-                  ? "—"
-                  : `${(exploration * 100).toFixed(0)}%`}
-                helper="of the loaded page against the 15% reserve"
-              />
-              <StatCard
-                label="Beats on the page"
-                value={snapshot === undefined ? "—" : beats}
-                helper={`of ${drift.total} loaded clippings`}
-              />
-              <StatCard
-                label="Clippings with several beats"
-                value={snapshot === undefined ? "—" : multiBeat}
-                helper={`of ${drift.total} loaded clippings`}
-              />
-              <StatCard
-                label="Last 50 impressions"
-                value={windowTopicEntropy === null
-                  ? "—"
-                  : windowTopicEntropy.toFixed(2)}
-                helper="nats against the 1.6 floor"
-              />
-              <StatCard
-                label="Dwell entropy"
-                value={windowDwellEntropy === null
-                  ? "—"
-                  : windowDwellEntropy.toFixed(2)}
-                helper="nats weighted by dwell over the last 50 impressions"
-              />
-              <StatCard
-                label="Top dwell beat"
-                value={windowTopDwellBeat === null
-                  ? "—"
-                  : windowTopDwellBeat.topic}
-                helper={windowTopDwellBeat === null
-                  ? "no recorded dwell in the last 50 impressions"
-                  : `${
-                    (windowTopDwellBeat.share * 100).toFixed(0)
-                  }% of recorded dwell over the last 50 impressions`}
-              />
-              <StatCard
-                label="Duplicate rate"
-                value={windowDuplicateRate === null
-                  ? "—"
-                  : `${(windowDuplicateRate * 100).toFixed(1)}%`}
-                helper="against the 0% target"
-              />
-              <StatCard
-                label="Filed by keyword"
-                value={snapshot === undefined ? "—" : beatSources.keyword}
-                helper={`of ${drift.total} loaded clippings`}
-              />
-              <StatCard
-                label="Filed by concept"
-                value={snapshot === undefined ? "—" : beatSources.concept}
-                helper="no keyword match, beat from the source concepts"
-              />
-              <StatCard
-                label="Education fallback"
-                value={snapshot === undefined ? "—" : beatSources.education}
-                helper="no keyword match and no other beat"
-              />
-              <StatCard
-                label="Beats named without keywords"
-                value={conceptOnly.length === 0 ? "—" : conceptOnly.join(",")}
-                helper="primary beats the keyword table could not reach"
-              />
-            </Grid>
-          </Stack>
-
-          <Stack gap="m">
-            <Text tone="label" as="span">
-              Reading pace
-            </Text>
-            <Grid layout="stats">
-              <StatCard
-                label="Median dwell"
-                value={medianDwellMs === null
-                  ? "—"
-                  : `${(medianDwellMs / 1000).toFixed(1)} s`}
-                helper="against the 8 s target"
-              />
-              <StatCard
-                label="Median reading load"
-                value={windowMedianReadMinutes === null
-                  ? "—"
-                  : `${windowMedianReadMinutes.toFixed(1)} min`}
-                helper="over the last 50 impressions"
-              />
-              <StatCard
-                label="Median completion"
-                value={medianCompletion === null
-                  ? "—"
-                  : `${Math.round(medianCompletion * 100)}%`}
-                helper="against the 100% target"
-              />
-              <StatCard
-                label="Lowest completion beat"
-                value={windowLowestCompletionBeat === null
-                  ? "—"
-                  : windowLowestCompletionBeat.topic}
-                helper={windowLowestCompletionBeat === null
-                  ? "no measured completion in the last 50 impressions"
-                  : `${
-                    Math.round(windowLowestCompletionBeat.completion * 100)
-                  }% completed over the last 50 impressions`}
-              />
-              <StatCard
-                label="Hide rate"
-                value={hideRate === null ? "—" : formatRate(hideRate)}
-                helper="against the 3% ceiling"
-              />
-              <StatCard
-                label="Open-source rate"
-                value={openSourceRate === null
-                  ? "—"
-                  : formatRate(openSourceRate)}
-                helper="against the 12% floor"
-              />
-              <StatCard
-                label="Saves per 100 impressions"
-                value={savesPerHundred === null
-                  ? "—"
-                  : savesPerHundred.toFixed(1)}
-                helper="against the 1.0 target"
-              />
-              <StatCard
-                label="Cold-feed share"
-                value={coldFeed === null ? "—" : formatColdFeed(coldFeed)}
-                helper="of the last 200 editions this session loaded, against the 0.5% ceiling"
-              />
-            </Grid>
-          </Stack>
-
           <Card tone="subtle">
             <Stack gap="m">
               <Text tone="label" as="span">
-                Academic profile
+                Profile
               </Text>
               <TextField
                 label="Reader name"
@@ -1014,7 +786,47 @@ export function App() {
           <Card>
             <Stack gap="m">
               <Text tone="label" as="span">
-                Your desk
+                Share this edition
+              </Text>
+              <Text tone="muted">
+                {editionSummary}
+              </Text>
+              <Inline gap="xs" wrap>
+                {canShare
+                  ? (
+                    <Button variant="secondary" onClick={shareEdition}>
+                      Share…
+                    </Button>
+                  )
+                  : null}
+                {shareTargets({
+                  text: editionNotice,
+                  title: editionTitle,
+                  url: editionLink === "" ? origin : editionLink,
+                })
+                  .map((target) => (
+                    <LinkButton
+                      key={target.label}
+                      variant="secondary"
+                      href={target.href}
+                    >
+                      {target.label}
+                    </LinkButton>
+                  ))}
+              </Inline>
+              <CopyBlock
+                actionLabel="Copy"
+                announcement="Edition copied to the clipboard"
+                label="Plain text with metadata"
+                text={editionText}
+              />
+            </Stack>
+          </Card>
+
+          <Card>
+            <Stack gap="m">
+              <Text tone="label" as="span">
+                Account
               </Text>
               {email === null
                 ? (

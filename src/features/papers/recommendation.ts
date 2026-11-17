@@ -716,18 +716,3 @@ export function buildFeedPage(
       : null,
   }
 }
-
-/**
- * Summarizes ranked candidates.
- * @param items - Ranked items.
- * @returns Desk statistics.
- */
-export function buildFeedStats(items: ReadonlyArray<FeedItem>) {
-  return {
-    total: items.length,
-    openAccess: items.filter((item) => item.paper.access === "open").length,
-    institutionAccess: items.filter((item) => item.accessible).length,
-    liked: items.filter((item) => item.liked).length,
-    bookmarked: items.filter((item) => item.bookmarked).length,
-  }
-}

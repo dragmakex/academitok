@@ -114,33 +114,6 @@ export type FeedItem = typeof FeedItem.Type
 export const FeedCursor = Schema.String
 export type FeedCursor = typeof FeedCursor.Type
 
-export const FeedStats = Schema.Struct({
-  total: Schema.Number,
-  openAccess: Schema.Number,
-  institutionAccess: Schema.Number,
-  liked: Schema.Number,
-  bookmarked: Schema.Number,
-  medianDwellMs: Schema.NullOr(Schema.Number),
-  medianCompletion: Schema.NullOr(Schema.Number),
-  hideRate: Schema.NullOr(Schema.Number),
-  openSourceRate: Schema.NullOr(Schema.Number),
-  savesPerHundred: Schema.NullOr(Schema.Number),
-  windowTopicEntropy: Schema.NullOr(Schema.Number),
-  windowMedianYear: Schema.NullOr(Schema.Number),
-  windowOlderCitations: Schema.NullOr(Schema.Number),
-  windowNewerCitations: Schema.NullOr(Schema.Number),
-  windowDuplicateRate: Schema.NullOr(Schema.Number),
-  windowMedianReadMinutes: Schema.NullOr(Schema.Number),
-  windowDwellEntropy: Schema.NullOr(Schema.Number),
-  windowTopDwellBeat: Schema.NullOr(
-    Schema.Struct({ topic: Topic, share: Schema.Number }),
-  ),
-  windowLowestCompletionBeat: Schema.NullOr(
-    Schema.Struct({ topic: Topic, completion: Schema.Number }),
-  ),
-})
-export type FeedStats = typeof FeedStats.Type
-
 export const FeedPage = Schema.Struct({
   items: Schema.Array(FeedItem),
   nextCursor: Schema.NullOr(FeedCursor),
@@ -163,7 +136,6 @@ export const FeedSnapshot = Schema.Struct({
   profile: Schema.NullOr(ReaderProfile),
   selectedTopic: TopicFilter,
   selectedSort: FeedSort,
-  stats: FeedStats,
   items: Schema.Array(FeedItem),
   nextCursor: Schema.NullOr(FeedCursor),
   exploration: Schema.Number,

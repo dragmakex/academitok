@@ -1,39 +1,15 @@
 // @vitest-environment node
 
-import type { FeedOrigin, FeedSnapshot, Topic } from "@/api/paper-schema"
+import type { FeedSnapshot } from "@/api/paper-schema"
 import { curatedPapers } from "@/data/papers"
-import * as EffectArray from "effect/Array"
-import { readFileSync } from "node:fs"
-import { join } from "node:path"
 import { afterEach, describe, expect, it, vi } from "vitest"
 import {
-  archivalDrift,
-  beatSourceCounts,
-  citationAgeSkew,
-  coldFeedRate,
-  conceptOnlyBeats,
-  duplicateRate,
-  dwellEntropy,
-  explorationShare,
   hashReaderId,
-  lowestCompletionBeat,
-  medianCompletion,
-  medianDwell,
-  medianReadMinutes,
-  medianYear,
-  multiBeatCount,
-  pageReadMinutes,
   reactionFailureNotice,
-  reactionRates,
   readingCompletion,
-  recordEdition,
-  savesPerHundred,
-  topDwellBeat,
-  topicEntropy,
   trackFeedHealthEvent,
   trackFeedPageEvent,
   trackPaperViewEvent,
-  unmatchedBeatCount,
 } from "./feed-analytics"
 
 const { capture } = vi.hoisted(() => ({ capture: vi.fn() }))
@@ -51,6 +27,37 @@ afterEach(() => {
   vi.unstubAllEnvs()
   vi.unstubAllGlobals()
   capture.mockClear()
+})
+
+/**
+ * Builds a snapshot carrying only the fields the page event reads.
+ * @param origin - Catalogue path the page was served from.
+ * @param papers - Papers on the page.
+ * @returns Snapshot fixture.
+ */
+const snapshotWith = (
+  origin: FeedSnapshot["origin"],
+  papers: ReadonlyArray<FeedSnapshot["items"][number]["paper"]>,
+): FeedSnapshot => ({
+  origin,
+  pinned: false,
+  alsoKeptBy: {},
+  alsoLikedBy: {},
+  profile: null,
+  selectedTopic: "All",
+  selectedSort: "recommended",
+  items: papers.map((paper) => ({
+    paper,
+    score: 0,
+    accessible: true,
+    liked: false,
+    bookmarked: false,
+    hidden: false,
+    exploration: false,
+    again: false,
+  })),
+  nextCursor: null,
+  exploration: 0,
 })
 
 describe("feed analytics", () => {
@@ -119,103 +126,6 @@ describe("readingCompletion", () => {
   })
 })
 
-describe("medianDwell", () => {
-  it("reports the middle dwell of an odd-sized sample", () => {
-    expect(medianDwell([4_000, 6_000, 20_000])).toBe(6_000)
-  })
-
-  it("averages the two middle dwells of an even-sized sample", () => {
-    expect(medianDwell([4_000, 6_000, 20_000, 30_000])).toBe(13_000)
-  })
-
-  it("reports no median when nothing was recorded", () => {
-    expect(medianDwell([])).toBeNull()
-  })
-})
-
-const readTime = (readMinutes: number | null | undefined) => ({ readMinutes })
-
-describe("medianReadMinutes", () => {
-  it("reports the middle reading time", () => {
-    expect(medianReadMinutes([readTime(2), readTime(4), readTime(6)]))
-      .toBe(4)
-  })
-
-  it("averages the middle pair on an even-sized window", () => {
-    expect(
-      medianReadMinutes([readTime(2), readTime(4), readTime(6), readTime(8)]),
-    )
-      .toBe(5)
-  })
-
-  it("drops a clipping without a usable estimate rather than counting it as zero", () => {
-    expect(medianReadMinutes([readTime(4), readTime(0), readTime(null)]))
-      .toBe(4)
-    expect(medianReadMinutes([readTime(4), { readMinutes: undefined }])).toBe(4)
-  })
-
-  it("reports null when nothing carries an estimate", () => {
-    expect(medianReadMinutes([readTime(0), readTime(null)])).toBeNull()
-    expect(medianReadMinutes([])).toBeNull()
-  })
-})
-
-describe("pageReadMinutes", () => {
-  it("sums the reading time the page asks for", () => {
-    expect(pageReadMinutes([readTime(2), readTime(4), readTime(6)])).toBe(12)
-  })
-
-  it("ignores a clipping without a usable estimate", () => {
-    expect(pageReadMinutes([readTime(2), readTime(0), readTime(null)]))
-      .toBe(2)
-    expect(pageReadMinutes([readTime(2), { readMinutes: undefined }])).toBe(2)
-  })
-
-  it("reports null when no clipping carries an estimate", () => {
-    expect(pageReadMinutes([readTime(0), readTime(null)])).toBeNull()
-    expect(pageReadMinutes([])).toBeNull()
-  })
-})
-
-const windowKinds = (hides: number, opens: number) =>
-  [
-    ...Array<"hide">(hides).fill("hide"),
-    ...Array<"open-site">(opens).fill("open-site"),
-    ...Array<"view">(50).fill("view"),
-  ] as const
-
-describe("reactionRates", () => {
-  it("reports the hide and open-source shares of the view window", () => {
-    expect(reactionRates(windowKinds(1, 6), 50)).toEqual({
-      hideRate: 0.02,
-      openSourceRate: 0.12,
-    })
-  })
-
-  it("ignores reactions older than the view window", () => {
-    const kinds = [
-      ...Array<"view">(50).fill("view"),
-      "hide",
-      "open-site",
-    ] as const
-    expect(reactionRates(kinds, 50)).toEqual({
-      hideRate: 0,
-      openSourceRate: 0,
-    })
-  })
-
-  it("reports no rate when the window holds no impression", () => {
-    expect(reactionRates([], 50)).toEqual({
-      hideRate: null,
-      openSourceRate: null,
-    })
-    expect(reactionRates(["hide", "open-site"], 50)).toEqual({
-      hideRate: null,
-      openSourceRate: null,
-    })
-  })
-})
-
 describe("reactionFailureNotice", () => {
   it("names the reaction the desk refused", () => {
     expect(reactionFailureNotice("like")).toBe("Could not record the like")
@@ -229,375 +139,6 @@ describe("reactionFailureNotice", () => {
       "Could not record the opening",
     )
   })
-})
-
-describe("savesPerHundred", () => {
-  it("reports the saves per hundred impressions of the view window", () => {
-    const kinds = [
-      ...Array<"bookmark">(2).fill("bookmark"),
-      ...Array<"view">(50).fill("view"),
-    ] as const
-    expect(savesPerHundred(kinds, 50)).toBeCloseTo(4, 5)
-  })
-
-  it("reports zero when the window holds views but no save", () => {
-    expect(savesPerHundred(Array<"view">(50).fill("view"), 50)).toBe(0)
-  })
-
-  it("ignores saves older than the view window", () => {
-    const kinds = [
-      ...Array<"view">(50).fill("view"),
-      "bookmark",
-    ] as const
-    expect(savesPerHundred(kinds, 50)).toBe(0)
-  })
-
-  it("reports no rate when the window holds no impression", () => {
-    expect(savesPerHundred([], 50)).toBeNull()
-    expect(savesPerHundred(["bookmark"], 50)).toBeNull()
-  })
-})
-
-describe("duplicateRate", () => {
-  it("reports the repeat share of the view window", () => {
-    const ids = [
-      ...Array<number>(48).fill(0).map((_, index) => `paper-${index}`),
-      "paper-0",
-      "paper-1",
-    ]
-    expect(duplicateRate(ids, 50)).toBeCloseTo(0.04, 5)
-  })
-
-  it("reports zero when the window holds only distinct clippings", () => {
-    const ids = Array<number>(50).fill(0).map((_, index) => `paper-${index}`)
-    expect(duplicateRate(ids, 50)).toBe(0)
-  })
-
-  it("ignores repeats older than the view window", () => {
-    const ids = [
-      ...Array<number>(50).fill(0).map((_, index) => `paper-${index}`),
-      "paper-0",
-    ]
-    expect(duplicateRate(ids, 50)).toBe(0)
-  })
-
-  it("reports no rate when the window holds no impression", () => {
-    expect(duplicateRate([], 50)).toBeNull()
-  })
-})
-
-describe("explorationShare", () => {
-  it("reports the reserve's share of the page the reader got", () => {
-    expect(explorationShare(2, 10)).toBeCloseTo(0.2, 5)
-    expect(explorationShare(1, 5)).toBeCloseTo(0.2, 5)
-    expect(explorationShare(3, 10)).toBeCloseTo(0.3, 5)
-  })
-
-  it("reports the whole page for a skipped reader's cold start", () => {
-    expect(explorationShare(10, 10)).toBe(1)
-  })
-
-  it("reports no share for an empty page", () => {
-    expect(explorationShare(0, 0)).toBeNull()
-  })
-})
-
-describe("recordEdition", () => {
-  it("appends the served origin to the session tally", () => {
-    expect(recordEdition(["pool", "live"], "seed")).toEqual([
-      "pool",
-      "live",
-      "seed",
-    ])
-  })
-
-  it("keeps only the most recent 200 loaded pages", () => {
-    const loaded: ReadonlyArray<FeedOrigin> = [
-      "seed",
-      ...Array<FeedOrigin>(200).fill("pool"),
-    ]
-    const tally = recordEdition(loaded, "seed")
-
-    expect(tally).toHaveLength(200)
-    expect(tally[198]).toBe("pool")
-    expect(tally[199]).toBe("seed")
-  })
-})
-
-describe("coldFeedRate", () => {
-  it("reports the seed share of the session's loaded pages", () => {
-    expect(
-      coldFeedRate([...Array<FeedOrigin>(198).fill("pool"), "seed", "seed"]),
-    )
-      .toBeCloseTo(0.01, 5)
-  })
-
-  it("reports the whole session when every page was the offline edition", () => {
-    expect(coldFeedRate(["seed", "seed"])).toBe(1)
-  })
-
-  it("reports none of the session when every page came from the pool or a fetch", () => {
-    expect(coldFeedRate(["pool", "live"])).toBe(0)
-  })
-
-  it("reports no rate for a session that loaded no page", () => {
-    expect(coldFeedRate([])).toBeNull()
-  })
-})
-
-describe("session edition tally", () => {
-  const atoms = readFileSync(
-    join(process.cwd(), "src/routes/-index/atoms.tsx"),
-    "utf8",
-  )
-
-  /**
-   * The cold-feed rate is only honest if every path that writes a snapshot to
-   * the deck also records where that edition came from (SPEC §8.4).
-   * @param name - Exported atom to slice out of the module.
-   * @returns Source of that atom, up to the next export.
-   */
-  const atomSource = (name: string): string => {
-    const start = atoms.indexOf(`export const ${name} =`)
-    const end = atoms.indexOf("\nexport const ", start + 1)
-    return atoms.slice(start, end === -1 ? undefined : end)
-  }
-
-  for (
-    const name of [
-      "loadPaperFeedAtom",
-      "loadNextPaperPageAtom",
-      "saveReaderProfileAtom",
-      "onboardReaderAtom",
-    ] as const
-  ) {
-    it(`records where the edition came from in ${name}`, () => {
-      expect(atomSource(name)).toContain("recordEditionOrigin(get, ")
-    })
-  }
-
-  it("renders the cold-feed share in the desk's reading pace block", () => {
-    expect(
-      readFileSync(join(process.cwd(), "src/routes/-index/app.tsx"), "utf8"),
-    )
-      .toContain("label=\"Cold-feed share\"")
-  })
-})
-
-describe("medianCompletion", () => {
-  it("reports the middle completion of a measurable sample", () => {
-    expect(medianCompletion([0.5, 1, 0.25])).toBe(0.5)
-  })
-
-  it("drops clippings without a usable estimate instead of counting them as zero", () => {
-    expect(medianCompletion([0.5, null, 0.5])).toBe(0.5)
-  })
-
-  it("reports no completion when nothing was measurable", () => {
-    expect(medianCompletion([])).toBeNull()
-    expect(medianCompletion([null, null])).toBeNull()
-  })
-})
-
-describe("medianYear", () => {
-  it("reports the middle year of an odd-sized page", () => {
-    expect(medianYear([2024, 2019, 2022])).toBe(2022)
-  })
-
-  it("averages the two middle years of an even-sized page", () => {
-    expect(medianYear([2019, 2024, 2022, 2020])).toBe(2021)
-  })
-
-  it("reports no median for an empty page", () => {
-    expect(medianYear([])).toBeNull()
-  })
-})
-
-const clipping = (title: string, abstract: string) => ({ title, abstract })
-const filed = (
-  title: string,
-  abstract: string,
-  topics: ReadonlyArray<Topic>,
-) => ({ title, abstract, topics })
-
-describe("unmatchedBeatCount", () => {
-  it("counts the clippings that matched no beat", () => {
-    expect(
-      unmatchedBeatCount([
-        clipping("Potsherd stratigraphy", "Field notes from a dig."),
-        clipping("Quantum sensors", "A material study."),
-        clipping("Parish registers", "A list of names."),
-      ]),
-    )
-      .toBe(2)
-  })
-
-  it("reports none when every clipping matched a beat", () => {
-    expect(
-      unmatchedBeatCount([
-        clipping("Quantum sensors", "A material study."),
-        clipping("Clinical medicine", "A patient study."),
-      ]),
-    )
-      .toBe(0)
-  })
-
-  it("reports none for an empty page", () => {
-    expect(unmatchedBeatCount([])).toBe(0)
-  })
-})
-
-describe("beatSourceCounts", () => {
-  it("splits the page by the path detectTopics took to each beat", () => {
-    const counts = beatSourceCounts([
-      filed("Quantum sensors", "A material study.", ["Physics"]),
-      filed("Potsherd stratigraphy", "Field notes from a dig.", ["Physics"]),
-      filed("Parish registers", "A list of names.", ["Education"]),
-    ])
-    expect(counts).toEqual({ keyword: 1, concept: 1, education: 1 })
-    expect(counts.keyword + counts.concept + counts.education).toBe(3)
-  })
-
-  it("reports no fallback paths when every clipping names its beat in text", () => {
-    expect(
-      beatSourceCounts([
-        filed("Quantum sensors", "A material study.", ["Physics"]),
-        filed("Clinical medicine", "A patient study.", ["Health"]),
-      ]),
-    )
-      .toEqual({ keyword: 2, concept: 0, education: 0 })
-  })
-
-  it("reports zeroes for an empty page", () => {
-    const counts = beatSourceCounts([])
-    expect(counts).toEqual({ keyword: 0, concept: 0, education: 0 })
-    expect(counts.concept).not.toBeNaN()
-    expect(counts.education).not.toBeNaN()
-  })
-
-  it("files a clipping with no keyword match and no stored topic as education", () => {
-    const counts = beatSourceCounts([
-      filed("Potsherd stratigraphy", "Field notes from a dig.", []),
-    ])
-    expect(counts).toEqual({ keyword: 0, concept: 0, education: 1 })
-  })
-})
-
-describe("conceptOnlyBeats", () => {
-  it("names the beats the keyword table could not reach, never a beat it could", () => {
-    expect(
-      conceptOnlyBeats([
-        filed("Quantum sensors", "A material study.", ["Physics"]),
-        filed("Potsherd stratigraphy", "Field notes from a dig.", ["Physics"]),
-        filed("Parish registers", "A list of names.", ["Education"]),
-      ]),
-    )
-      .toEqual(["Education"])
-  })
-
-  it("names no beat when every clipping names its beat in text", () => {
-    expect(
-      conceptOnlyBeats([
-        filed("Quantum sensors", "A material study.", ["Physics"]),
-        filed("Clinical medicine", "A patient study.", ["Health"]),
-      ]),
-    )
-      .toEqual([])
-  })
-
-  it("names a concept-filed beat once, in page order", () => {
-    expect(
-      conceptOnlyBeats([
-        filed("Potsherd stratigraphy", "Field notes from a dig.", ["Biology"]),
-        filed("Parish registers", "A list of names.", ["Biology"]),
-        filed("Monsoon records", "An ice-core study.", ["Climate"]),
-      ]),
-    )
-      .toEqual(["Biology", "Climate"])
-  })
-
-  it("reports nothing for an empty page", () => {
-    expect(conceptOnlyBeats([])).toEqual([])
-  })
-})
-
-describe("multiBeatCount", () => {
-  it("counts the clippings the grain cannot name as one thing", () => {
-    expect(
-      multiBeatCount([
-        { topics: ["Physics"] },
-        { topics: ["Health", "Psychology"] },
-        { topics: ["Education"] },
-      ]),
-    )
-      .toBe(1)
-  })
-
-  it("reports none when every clipping names a single beat", () => {
-    expect(multiBeatCount([{ topics: ["Physics"] }, { topics: ["Health"] }]))
-      .toBe(0)
-  })
-
-  it("counts a clipping with three beats once", () => {
-    expect(multiBeatCount([{ topics: ["Physics", "Climate", "Biology"] }]))
-      .toBe(1)
-  })
-
-  it("never inflates the count with a clipping carrying no beat", () => {
-    expect(multiBeatCount([{ topics: [] }, { topics: ["Physics"] }])).toBe(0)
-  })
-
-  it("reports zero for an empty page", () => {
-    expect(multiBeatCount([])).toBe(0)
-  })
-})
-
-const emptyStats = {
-  total: 0,
-  openAccess: 0,
-  institutionAccess: 0,
-  liked: 0,
-  bookmarked: 0,
-  medianDwellMs: null,
-  medianCompletion: null,
-  hideRate: null,
-  openSourceRate: null,
-  savesPerHundred: null,
-  windowTopicEntropy: null,
-  windowMedianYear: null,
-  windowOlderCitations: null,
-  windowNewerCitations: null,
-  windowDuplicateRate: null,
-  windowMedianReadMinutes: null,
-  windowDwellEntropy: null,
-  windowTopDwellBeat: null,
-  windowLowestCompletionBeat: null,
-}
-
-const snapshotWith = (
-  origin: FeedSnapshot["origin"],
-  papers: ReadonlyArray<(typeof curatedPapers)[number]>,
-): FeedSnapshot => ({
-  origin,
-  pinned: false,
-  alsoKeptBy: {},
-  alsoLikedBy: {},
-  profile: null,
-  selectedTopic: "All",
-  selectedSort: "recommended",
-  stats: emptyStats,
-  items: papers.map((paper) => ({
-    paper,
-    score: 1,
-    accessible: true,
-    liked: false,
-    bookmarked: false,
-    hidden: false,
-    exploration: false,
-    again: false,
-  })),
-  nextCursor: null,
-  exploration: 0,
 })
 
 describe("trackFeedPageEvent", () => {
@@ -616,62 +157,6 @@ describe("trackFeedPageEvent", () => {
     ])
   })
 
-  it("sends the beat source counts on every page", async () => {
-    vi.stubEnv("VITE_POSTHOG_KEY", "test-key")
-    vi.stubGlobal("window", {})
-
-    trackFeedPageEvent(
-      snapshotWith("pool", [
-        {
-          ...curatedPapers[0],
-          title: "Quantum sensors",
-          abstract: "A material study.",
-          topics: ["Physics"],
-        },
-        {
-          ...curatedPapers[1],
-          title: "Potsherd stratigraphy",
-          abstract: "Field notes from a dig.",
-          topics: ["Physics"],
-        },
-        {
-          ...curatedPapers[2],
-          title: "Parish registers",
-          abstract: "A list of names.",
-          topics: ["Education"],
-        },
-      ]),
-      null,
-    )
-    await vi.waitFor(() => expect(capture).toHaveBeenCalledTimes(1))
-    expect(capture).toHaveBeenCalledWith(
-      "feed.next",
-      expect.objectContaining({
-        concept_beat_count: 1,
-        education_beat_count: 1,
-      }),
-    )
-  })
-
-  it("sends how many clippings the grain names as more than one beat", async () => {
-    vi.stubEnv("VITE_POSTHOG_KEY", "test-key")
-    vi.stubGlobal("window", {})
-
-    trackFeedPageEvent(
-      snapshotWith("pool", [
-        { ...curatedPapers[0], topics: ["Physics"] },
-        { ...curatedPapers[1], topics: ["Health", "Psychology"] },
-        { ...curatedPapers[2], topics: ["Education"] },
-      ]),
-      null,
-    )
-    await vi.waitFor(() => expect(capture).toHaveBeenCalledTimes(1))
-    expect(capture).toHaveBeenCalledWith(
-      "feed.next",
-      expect.objectContaining({ multi_beat_count: 1 }),
-    )
-  })
-
   it("still sends the origin for an empty page", async () => {
     vi.stubEnv("VITE_POSTHOG_KEY", "test-key")
     vi.stubGlobal("window", {})
@@ -684,27 +169,8 @@ describe("trackFeedPageEvent", () => {
         origin: "seed",
         cursor: "cursor-1",
         item_count: 0,
-        page_read_minutes: null,
+        cold_start: true,
       }),
-    )
-  })
-
-  it("sends the reading load of the page on every page", async () => {
-    vi.stubEnv("VITE_POSTHOG_KEY", "test-key")
-    vi.stubGlobal("window", {})
-
-    trackFeedPageEvent(
-      snapshotWith("pool", [
-        { ...curatedPapers[0], readMinutes: 2 },
-        { ...curatedPapers[1], readMinutes: 4 },
-        { ...curatedPapers[2], readMinutes: 6 },
-      ]),
-      null,
-    )
-    await vi.waitFor(() => expect(capture).toHaveBeenCalledTimes(1))
-    expect(capture).toHaveBeenCalledWith(
-      "feed.next",
-      expect.objectContaining({ page_read_minutes: 12 }),
     )
   })
 
@@ -714,209 +180,5 @@ describe("trackFeedPageEvent", () => {
     trackFeedPageEvent(snapshotWith("seed", []), null)
     await new Promise((resolve) => setTimeout(resolve, 0))
     expect(capture).not.toHaveBeenCalled()
-  })
-})
-
-const dated = (year: number, citations: number) => ({ year, citations })
-
-describe("citationAgeSkew", () => {
-  it("splits the page on its median year and reports both medians", () => {
-    expect(
-      citationAgeSkew([dated(2010, 400), dated(2016, 50), dated(2024, 10)]),
-    )
-      .toEqual({ olderCitations: 400, newerCitations: 30 })
-  })
-
-  it("counts a clipping dated exactly the median year as newer", () => {
-    expect(citationAgeSkew([dated(2010, 400), dated(2020, 7)])).toEqual({
-      olderCitations: 400,
-      newerCitations: 7,
-    })
-  })
-
-  it("reports null for an empty page and for the empty side of one clipping", () => {
-    expect(citationAgeSkew([])).toEqual({
-      olderCitations: null,
-      newerCitations: null,
-    })
-    expect(citationAgeSkew([dated(2020, 12)])).toEqual({
-      olderCitations: null,
-      newerCitations: 12,
-    })
-  })
-})
-
-const beat = (topics: ReadonlyArray<Topic>) => ({ topics })
-
-describe("topicEntropy", () => {
-  it("reports natural-log entropy for a page spread across beats", () => {
-    expect(
-      topicEntropy([beat(["AI"]), beat(["Biology"]), beat(["Physics"])]),
-    )
-      .toBeCloseTo(Math.log(3))
-  })
-
-  it("reports no entropy when every clipping shares one beat", () => {
-    expect(topicEntropy(EffectArray.replicate(beat(["AI"]), 10)))
-      .toBe(0)
-  })
-
-  it("reports no entropy for an empty page", () => {
-    expect(topicEntropy([])).toBe(0)
-  })
-})
-
-const dwelled = (topics: ReadonlyArray<Topic>, dwellMs: number) => ({
-  topics,
-  dwellMs,
-})
-
-const completed = (
-  topics: ReadonlyArray<Topic>,
-  dwellMs: number | undefined,
-  readMinutes: number | undefined,
-) => ({ topics, dwellMs, readMinutes })
-
-describe("dwellEntropy", () => {
-  it("reports natural-log entropy for dwell spread evenly across beats", () => {
-    expect(
-      dwellEntropy([
-        dwelled(["AI"], 1_000),
-        dwelled(["Biology"], 1_000),
-        dwelled(["Physics"], 1_000),
-      ]),
-    )
-      .toBeCloseTo(Math.log(3))
-  })
-
-  it("weights beats by reading time, not clipping count", () => {
-    expect(
-      dwellEntropy([
-        dwelled(["AI"], 10_000),
-        dwelled(["Biology"], 1_000),
-        dwelled(["Physics"], 1_000),
-      ]),
-    )
-      .toBeCloseTo(0.5661, 3)
-  })
-
-  it("reports no entropy when every dwell lands on one beat", () => {
-    expect(
-      dwellEntropy(
-        EffectArray.replicate(dwelled(["AI"], 4_000), 10),
-      ),
-    )
-      .toBe(0)
-  })
-
-  it("drops pairs without a positive dwell instead of counting them as a beat", () => {
-    expect(dwellEntropy([dwelled(["AI"], 5_000), dwelled(["Biology"], 0)]))
-      .toBe(0)
-    expect(dwellEntropy([{ topics: ["AI"] }])).toBe(0)
-  })
-
-  it("reports no entropy for an empty set, never NaN", () => {
-    expect(dwellEntropy([])).toBe(0)
-  })
-})
-
-describe("topDwellBeat", () => {
-  it("names the beat holding the largest share of recorded dwell", () => {
-    const top = topDwellBeat([
-      dwelled(["Physics"], 10_000),
-      dwelled(["Biology"], 1_000),
-      dwelled(["Biology"], 1_000),
-    ])
-    expect(top?.topic).toBe("Physics")
-    expect(top?.share).toBeCloseTo(0.83, 2)
-  })
-
-  it("breaks ties by first appearance in the window", () => {
-    const top = topDwellBeat([
-      dwelled(["Biology"], 1_000),
-      dwelled(["Physics"], 1_000),
-      dwelled(["AI"], 1_000),
-    ])
-    expect(top?.topic).toBe("Biology")
-    expect(top?.share).toBeCloseTo(0.33, 2)
-  })
-
-  it("drops pairs without a positive dwell instead of counting them as a beat", () => {
-    expect(
-      topDwellBeat([dwelled(["AI"], 5_000), dwelled(["Biology"], 0)]),
-    )
-      .toEqual({ topic: "AI", share: 1 })
-    expect(topDwellBeat([{ topics: ["AI"] }])).toBeNull()
-  })
-
-  it("reports null when nothing recorded a positive dwell, never NaN", () => {
-    expect(topDwellBeat([])).toBeNull()
-  })
-})
-
-describe("lowestCompletionBeat", () => {
-  it("names the beat whose median completion is lowest, not its single worst", () => {
-    const lowest = lowestCompletionBeat([
-      completed(["Physics"], 3_000, 1),
-      completed(["Physics"], 60_000, 1),
-      completed(["Biology"], 6_000, 1),
-    ])
-    expect(lowest?.topic).toBe("Biology")
-    expect(lowest?.completion).toBeCloseTo(0.1, 5)
-  })
-
-  it("drops unmeasured reactions instead of counting them as unfinished", () => {
-    expect(
-      lowestCompletionBeat([
-        completed(["AI"], 30_000, 1),
-        completed(["Biology"], 0, 1),
-        completed(["Physics"], 30_000, 0),
-        completed(["Climate"], undefined, 1),
-      ]),
-    )
-      .toEqual({ topic: "AI", completion: 0.5 })
-  })
-
-  it("breaks ties by first appearance in the window", () => {
-    expect(
-      lowestCompletionBeat([
-        completed(["Climate"], 30_000, 1),
-        completed(["Physics"], 30_000, 1),
-      ])
-        ?.topic,
-    )
-      .toBe("Climate")
-  })
-
-  it("reports null when no beat was measurable, never NaN", () => {
-    expect(lowestCompletionBeat([])).toBeNull()
-    expect(lowestCompletionBeat([completed(["AI"], 0, 1)])).toBeNull()
-  })
-})
-
-describe("archivalDrift", () => {
-  it("reports the median and the clippings a decade behind the newest", () => {
-    expect(archivalDrift([2010, 2016, 2024])).toEqual({
-      medianYear: 2016,
-      newestYear: 2024,
-      olderThanDecade: 1,
-      total: 3,
-    })
-  })
-
-  it("does not count a clipping exactly ten years older", () => {
-    expect(archivalDrift([2014, 2024])).toMatchObject({
-      newestYear: 2024,
-      olderThanDecade: 0,
-    })
-  })
-
-  it("reports no year when the page has none", () => {
-    expect(archivalDrift([])).toEqual({
-      medianYear: null,
-      newestYear: null,
-      olderThanDecade: 0,
-      total: 0,
-    })
   })
 })
