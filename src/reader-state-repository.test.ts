@@ -113,7 +113,8 @@ describe("ReaderStateRepository", () => {
     )
     expect(skipped.profile).not.toBeNull()
     expect(skipped.reactions).toEqual([])
-  })
+    // Three PGlite boots; under coverage instrumentation they outrun the 5s default.
+  }, 15_000)
 
   it("migrates the JSON source once and preserves normalized events across restarts", async () => {
     const dataDir = await mkdtemp(join(tmpdir(), "academitok-reader-state-"))
