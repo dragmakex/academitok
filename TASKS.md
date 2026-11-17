@@ -1152,6 +1152,36 @@ write the conflict at the bottom instead of guessing.
 
       — `4937126`
 
+- [ ] **57. Who else liked the clipping, on the permalink.** SPEC §16 P3 lists "multi-reader with
+      collaborative signals", and tasks 37 and 55 gave the permalink the two cross-reader facts the
+      split `reader_id` rows can answer — `Filed by` from `savedByReaders` (`kind = 'bookmark'`) and
+      `Opened by` from `openedByReaders` (`kind = 'open-site'`) — but the rail's heart, the one
+      reaction a reader is most likely to press, is never counted across readers: the three reads in
+      `ReaderStateRepository` cover bookmark and open-site only, so a permalink shows a clipping a
+      dozen colleagues liked exactly like one nobody ever did, and the only collaborative signal the
+      deck's own rail produces stays invisible on the page built to be handed around. Add a
+      `likedByReaders(paperId)` read to `ReaderStateRepository` counting distinct `reader_id` rows
+      in `reactions` where `paper_id` matches, `kind = 'like'` and `active = true` — deliberately
+      not reader-scoped — implement it for both the PGlite and Postgres storages by reading the
+      same `{ readerId, active }` rows through the existing `activeFilers` count that
+      `savedByReaders` already uses, so a reader who likes twice counts once and an undone like
+      drops out, wrap it in an exported `getPaperLikedBy(id)` in
+      `src/features/papers/application.ts`, resolve it beside the paper and its two counts through
+      a fourth `createServerFn` in the permalink route's existing `loader`, and render it as one
+      more fact in `PaperPage`'s `<dl>` below `Opened by` (`Liked by` → `3 readers`), omitted
+      rather than printed as `0 readers` when nobody has. Display only: no ranking, `ReaderState`,
+      RPC procedure, schema, contract or PostHog change, no new dependency, no new component,
+      `savedByReaders`/`filedByOthers`/`openedByReaders` stay as they are, and the
+      one-clipping-per-viewport snap is untouched.
+      Accept: two readers liking the same clipping report 2 and the permalink renders `Liked by`
+      with `2 readers`; one reader liking it twice reports 1, so the count is by reader and not by
+      press, and an undone like (`active = false`) leaves it at 0, so the fact is omitted rather
+      than printed as `0 readers`; the count is visible to a reader who never liked it, so it is
+      not reader-scoped; an unknown permalink id still returns the not-found notice; the count is
+      asserted from a real repository written under two `ReaderId` values, and the rendered and
+      omitted fact from `renderToStaticMarkup` of the real `PaperPage`; the ranked page for a fixed
+      seed is identical before and after; `bun run validate` is green.
+
 ---
 
 ## Blocked — needs a product decision
