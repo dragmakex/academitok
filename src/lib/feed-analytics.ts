@@ -371,6 +371,7 @@ export function trackFeedPageEvent(
   const skew = citationAgeSkew(papers)
   void trackFeedHealthEvent("feed.next", {
     cursor: cursor ?? "first",
+    origin: snapshot.origin,
     item_count: ids.length,
     duplicate_count: ids.length - new Set(ids).size,
     exploration_count: snapshot.exploration,

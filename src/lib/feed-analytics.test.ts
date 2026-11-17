@@ -1,6 +1,7 @@
 // @vitest-environment node
 
-import type { Topic } from "@/api/paper-schema"
+import type { FeedSnapshot, Topic } from "@/api/paper-schema"
+import { curatedPapers } from "@/data/papers"
 import * as EffectArray from "effect/Array"
 import { afterEach, describe, expect, it, vi } from "vitest"
 import {
@@ -16,6 +17,7 @@ import {
   savesPerHundred,
   topicEntropy,
   trackFeedHealthEvent,
+  trackFeedPageEvent,
   trackPaperViewEvent,
   unmatchedBeatCount,
 } from "./feed-analytics"
@@ -262,6 +264,86 @@ describe("unmatchedBeatCount", () => {
 
   it("reports none for an empty page", () => {
     expect(unmatchedBeatCount([])).toBe(0)
+  })
+})
+
+const emptyStats = {
+  total: 0,
+  openAccess: 0,
+  institutionAccess: 0,
+  liked: 0,
+  bookmarked: 0,
+  medianDwellMs: null,
+  medianCompletion: null,
+  hideRate: null,
+  openSourceRate: null,
+  savesPerHundred: null,
+  windowTopicEntropy: null,
+  windowMedianYear: null,
+  windowDuplicateRate: null,
+}
+
+const snapshotWith = (
+  origin: FeedSnapshot["origin"],
+  papers: ReadonlyArray<(typeof curatedPapers)[number]>,
+): FeedSnapshot => ({
+  origin,
+  profile: null,
+  selectedTopic: "All",
+  selectedSort: "recommended",
+  stats: emptyStats,
+  items: papers.map((paper) => ({
+    paper,
+    score: 1,
+    rationale: ["fresh"],
+    accessible: true,
+    liked: false,
+    bookmarked: false,
+    hidden: false,
+    exploration: false,
+  })),
+  nextCursor: null,
+  exploration: 0,
+})
+
+describe("trackFeedPageEvent", () => {
+  it("sends the edition the page was served from", async () => {
+    vi.stubEnv("VITE_POSTHOG_KEY", "test-key")
+    vi.stubGlobal("window", {})
+
+    for (const origin of ["pool", "live", "seed"] as const) {
+      trackFeedPageEvent(snapshotWith(origin, curatedPapers.slice(0, 2)), null)
+    }
+    await vi.waitFor(() => expect(capture).toHaveBeenCalledTimes(3))
+    expect(capture.mock.calls.map((call) => call[1])).toEqual([
+      expect.objectContaining({ origin: "pool" }),
+      expect.objectContaining({ origin: "live" }),
+      expect.objectContaining({ origin: "seed" }),
+    ])
+  })
+
+  it("still sends the origin for an empty page", async () => {
+    vi.stubEnv("VITE_POSTHOG_KEY", "test-key")
+    vi.stubGlobal("window", {})
+
+    trackFeedPageEvent(snapshotWith("seed", []), "cursor-1")
+    await vi.waitFor(() => expect(capture).toHaveBeenCalledTimes(1))
+    expect(capture).toHaveBeenCalledWith(
+      "feed.next",
+      expect.objectContaining({
+        origin: "seed",
+        cursor: "cursor-1",
+        item_count: 0,
+      }),
+    )
+  })
+
+  it("sends nothing while PostHog stays unconfigured", async () => {
+    vi.stubGlobal("window", {})
+
+    trackFeedPageEvent(snapshotWith("seed", []), null)
+    await new Promise((resolve) => setTimeout(resolve, 0))
+    expect(capture).not.toHaveBeenCalled()
   })
 })
 
