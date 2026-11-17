@@ -5,9 +5,12 @@ import {
   poolCutoff,
   ReaderStateRepository,
 } from "@/db/reader-state-repository"
+import { savedPaperIds } from "@/features/papers/recommendation"
+import { defaultReaderId, ReaderId } from "@/lib/reader-id"
 import { PGlite } from "@electric-sql/pglite"
 import * as ConfigProvider from "effect/ConfigProvider"
 import * as Effect from "effect/Effect"
+import * as Layer from "effect/Layer"
 import { mkdtemp, rm } from "node:fs/promises"
 import { tmpdir } from "node:os"
 import { join } from "node:path"
@@ -17,11 +20,14 @@ const directories: Array<string> = []
 
 const runWithDatabase = <A>(
   dataDir: string,
-  effect: Effect.Effect<A, never, ReaderStateRepository>,
+  effect: Effect.Effect<A, never, ReaderStateRepository | ReaderId>,
 ) =>
   Effect.runPromise(
     effect.pipe(
-      Effect.provide(ReaderStateRepository.layer),
+      Effect.provide([
+        ReaderStateRepository.layer,
+        Layer.succeed(ReaderId, defaultReaderId),
+      ]),
       Effect.provide(
         ConfigProvider.layer(
           ConfigProvider.fromEnv({
@@ -256,6 +262,57 @@ describe("ReaderStateRepository", () => {
 
     expect(sessions.saved).toEqual(["paper-1", "paper-2"])
     expect(sessions.fresh).toEqual([])
+  })
+
+  it("keeps two readers' saves and feed sessions apart", async () => {
+    const dataDir = await mkdtemp(join(tmpdir(), "academitok-readers-"))
+    directories.push(dataDir)
+
+    const readerA = "0f8c7f4e-1c3e-4f22-9a1a-9b4b1c0a1d11"
+    const readerB = "7b2c9d10-4a55-4f8e-8c1f-2d6e3a5b7c99"
+    const asReader = <A, E, R>(
+      readerId: string,
+      effect: Effect.Effect<A, E, ReaderId | R>,
+    ): Effect.Effect<A, E, R> =>
+      Effect.provideService(effect, ReaderId, readerId)
+
+    const result = await runWithDatabase(
+      dataDir,
+      Effect.gen(function*() {
+        const repository = yield* ReaderStateRepository
+
+        yield* asReader(
+          readerA,
+          repository.react({ paperId: "paper-1", kind: "bookmark" }),
+        )
+        yield* asReader(
+          readerA,
+          repository.saveFeedSession("shared", ["paper-1"], null),
+        )
+        yield* asReader(
+          readerB,
+          repository.react({ paperId: "paper-2", kind: "bookmark" }),
+        )
+
+        return {
+          a: savedPaperIds(yield* asReader(readerA, repository.load)),
+          b: savedPaperIds(yield* asReader(readerB, repository.load)),
+          aSession: yield* asReader(
+            readerA,
+            repository.loadFeedSession("shared"),
+          ),
+          bSession: yield* asReader(
+            readerB,
+            repository.loadFeedSession("shared"),
+          ),
+        }
+      }),
+    )
+
+    expect(result.a).toEqual(["paper-1"])
+    expect(result.b).toEqual(["paper-2"])
+    expect(result.aSession).toEqual(["paper-1"])
+    expect(result.bSession).toEqual([])
   })
 
   it("puts the impression retention boundary 90 days before now", () => {

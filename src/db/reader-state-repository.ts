@@ -16,6 +16,7 @@ import {
   readerProfilesTable,
   readerStateTable,
 } from "@/db/schema"
+import { ReaderId } from "@/lib/reader-id"
 import { PGlite } from "@electric-sql/pglite"
 import { and, desc, eq, gte, inArray, isNull, lt } from "drizzle-orm"
 import { drizzle as drizzlePglite } from "drizzle-orm/pglite"
@@ -42,19 +43,27 @@ type RepositoryDatabaseConfig =
   }
 
 type ReaderStateRepositoryShape = {
-  readonly load: Effect.Effect<typeof ReaderState.Type>
-  readonly saveProfile: (profile: SaveProfileInput) => Effect.Effect<void>
-  readonly onboard: (input: OnboardProfileInput) => Effect.Effect<void>
-  readonly react: (input: ReactToPaperInput) => Effect.Effect<boolean>
-  readonly track: (input: TrackPaperViewInput) => Effect.Effect<void>
+  readonly load: Effect.Effect<typeof ReaderState.Type, never, ReaderId>
+  readonly saveProfile: (
+    profile: SaveProfileInput,
+  ) => Effect.Effect<void, never, ReaderId>
+  readonly onboard: (
+    input: OnboardProfileInput,
+  ) => Effect.Effect<void, never, ReaderId>
+  readonly react: (
+    input: ReactToPaperInput,
+  ) => Effect.Effect<boolean, never, ReaderId>
+  readonly track: (
+    input: TrackPaperViewInput,
+  ) => Effect.Effect<void, never, ReaderId>
   readonly loadFeedSession: (
     sessionId: string,
-  ) => Effect.Effect<ReadonlyArray<string>>
+  ) => Effect.Effect<ReadonlyArray<string>, never, ReaderId>
   readonly saveFeedSession: (
     sessionId: string,
     seenPaperIds: ReadonlyArray<string>,
     cursor: string | null,
-  ) => Effect.Effect<void>
+  ) => Effect.Effect<void, never, ReaderId>
   readonly savePapers: (papers: ReadonlyArray<Paper>) => Effect.Effect<void>
   readonly papersByIds: (
     ids: ReadonlyArray<string>,
@@ -72,30 +81,41 @@ type StoredState = {
 }
 
 type StateStorage = {
-  readonly load: () => Promise<StoredState>
-  readonly migrate: (state: typeof ReaderState.Type) => Promise<void>
-  readonly saveProfile: (profile: ReaderProfile) => Promise<void>
+  readonly load: (readerId: string) => Promise<StoredState>
+  readonly migrate: (
+    state: typeof ReaderState.Type,
+    readerId: string,
+  ) => Promise<void>
+  readonly saveProfile: (
+    profile: ReaderProfile,
+    readerId: string,
+  ) => Promise<void>
   readonly onboard: (
     input: OnboardProfileInput,
     createdAt: Date,
+    readerId: string,
   ) => Promise<void>
   readonly react: (
     input: ReactToPaperInput,
     createdAt: Date,
+    readerId: string,
   ) => Promise<boolean>
   readonly track: (
     input: TrackPaperViewInput,
     shownAt: Date,
+    readerId: string,
   ) => Promise<void>
   readonly loadFeedSession: (
     sessionId: string,
     now: Date,
+    readerId: string,
   ) => Promise<ReadonlyArray<string>>
   readonly saveFeedSession: (
     sessionId: string,
     seenPaperIds: ReadonlyArray<string>,
     cursor: string | null,
     now: Date,
+    readerId: string,
   ) => Promise<void>
   readonly savePapers: (
     papers: ReadonlyArray<Paper>,
@@ -108,7 +128,7 @@ type StateStorage = {
 }
 
 const decodeReaderState = Schema.decodeUnknownSync(ReaderState)
-const singletonId = "singleton"
+const defaultReaderId = "singleton"
 /** Sessions idle for longer than this are swept on the next feed request. */
 const feedSessionTtlMs = 24 * 60 * 60 * 1000
 /** Impressions are retained this long (SPEC §6); reactions are kept forever. */
@@ -258,9 +278,13 @@ function normalizeProfileInput(input: SaveProfileInput): ReaderProfile {
 /**
  * Converts legacy state events into normalized inserts.
  * @param state - Decoded legacy reader state.
+ * @param readerId - Reader that owns the migrated rows.
  * @returns Reaction and impression rows for migration.
  */
-function stateRows(state: typeof ReaderState.Type) {
+function stateRows(
+  state: typeof ReaderState.Type,
+  readerId: string,
+) {
   const reactions: Array<typeof reactionsTable.$inferInsert> = []
   const impressions: Array<typeof impressionsTable.$inferInsert> = []
 
@@ -268,7 +292,7 @@ function stateRows(state: typeof ReaderState.Type) {
     if (reaction.kind === "view") {
       impressions.push({
         id: randomUUID(),
-        readerId: singletonId,
+        readerId,
         paperId: reaction.paperId,
         shownAt: new Date(reaction.timestamp),
         dwellMs: null,
@@ -295,7 +319,7 @@ function stateRows(state: typeof ReaderState.Type) {
       } else {
         impressions.push({
           id: randomUUID(),
-          readerId: singletonId,
+          readerId,
           paperId: reaction.paperId,
           shownAt: new Date(reaction.timestamp),
           dwellMs: reaction.dwellMs ?? 0,
@@ -308,7 +332,7 @@ function stateRows(state: typeof ReaderState.Type) {
 
     reactions.push({
       id: randomUUID(),
-      readerId: singletonId,
+      readerId,
       paperId: reaction.paperId,
       kind: reaction.kind,
       active: reaction.active,
@@ -368,16 +392,21 @@ function storedStateToReaderState(stored: StoredState) {
  * Converts onboarding picks into persisted affinity signals.
  * @param input - Validated onboarding decision.
  * @param createdAt - Shared signal timestamp.
+ * @param readerId - Reader that owns the signals.
  * @returns Reaction rows for kept and rejected papers.
  */
-function onboardingRows(input: OnboardProfileInput, createdAt: Date) {
+function onboardingRows(
+  input: OnboardProfileInput,
+  createdAt: Date,
+  readerId: string,
+) {
   if (input.skipped) {
     return []
   }
   return [
     ...input.keptPaperIds.map((paperId) => ({
       id: randomUUID(),
-      readerId: singletonId,
+      readerId,
       paperId,
       kind: "onboard-keep",
       active: true,
@@ -385,7 +414,7 @@ function onboardingRows(input: OnboardProfileInput, createdAt: Date) {
     })),
     ...input.rejectedPaperIds.map((paperId) => ({
       id: randomUUID(),
-      readerId: singletonId,
+      readerId,
       paperId,
       kind: "onboard-reject",
       active: true,
@@ -454,63 +483,61 @@ function storedPaper(row: typeof papersTable.$inferSelect): Paper {
 function makeRepositoryService(storage: StateStorage) {
   let ready: Promise<void> | undefined
 
-  const ensureMigrated = () => {
+  const ensureMigrated = (readerId: string = defaultReaderId) => {
     ready ??= (async () => {
-      const stored = await storage.load()
+      const stored = await storage.load(readerId)
       const hasNormalizedState = stored.profile !== undefined
         || stored.reactions.length > 0
         || stored.impressions.length > 0
 
       if (stored.sourceJson !== undefined) {
-        await storage.migrate(parseSourceState(stored.sourceJson))
+        await storage.migrate(parseSourceState(stored.sourceJson), readerId)
       } else if (!hasNormalizedState) {
-        await storage.migrate(defaultReaderState)
+        await storage.migrate(defaultReaderState, readerId)
       }
     })()
     return ready
   }
 
+  // Every reader-scoped operation resolves the request's identity first.
+  const withReader = <A>(
+    run: (readerId: string) => Promise<A>,
+  ): Effect.Effect<A, never, ReaderId> =>
+    Effect.gen(function*() {
+      const readerId = yield* ReaderId
+      yield* Effect.promise(() => ensureMigrated(readerId))
+      return yield* Effect.promise(() => run(readerId))
+    })
+
   return ReaderStateRepository.of(
     {
-      load: Effect.promise(async () => {
-        await ensureMigrated()
-        return storedStateToReaderState(await storage.load())
-      }),
+      load: withReader(async (readerId) =>
+        storedStateToReaderState(await storage.load(readerId))
+      ),
       saveProfile: (input) =>
-        Effect.promise(async () => {
-          await ensureMigrated()
-          await storage.saveProfile(normalizeProfileInput(input))
-        }),
+        withReader((readerId) =>
+          storage.saveProfile(normalizeProfileInput(input), readerId)
+        ),
       onboard: (input) =>
-        Effect.promise(async () => {
-          await ensureMigrated()
-          await storage.onboard(input, new Date())
-        }),
+        withReader((readerId) => storage.onboard(input, new Date(), readerId)),
       react: (input) =>
-        Effect.promise(async () => {
-          await ensureMigrated()
-          return storage.react(input, new Date())
-        }),
+        withReader((readerId) => storage.react(input, new Date(), readerId)),
       track: (input) =>
-        Effect.promise(async () => {
-          await ensureMigrated()
-          await storage.track(input, new Date())
-        }),
+        withReader((readerId) => storage.track(input, new Date(), readerId)),
       loadFeedSession: (sessionId) =>
-        Effect.promise(async () => {
-          await ensureMigrated()
-          return storage.loadFeedSession(sessionId, new Date())
-        }),
+        withReader((readerId) =>
+          storage.loadFeedSession(sessionId, new Date(), readerId)
+        ),
       saveFeedSession: (sessionId, seenPaperIds, cursor) =>
-        Effect.promise(async () => {
-          await ensureMigrated()
-          await storage.saveFeedSession(
+        withReader((readerId) =>
+          storage.saveFeedSession(
             sessionId,
             seenPaperIds,
             cursor,
             new Date(),
+            readerId,
           )
-        }),
+        ),
       savePapers: (papers) =>
         Effect.promise(async () => {
           await ensureMigrated()
@@ -585,29 +612,38 @@ function makePostgresRepository(databaseUrl: string) {
         StateStorage,
         "loadFeedSession" | "saveFeedSession"
       > = {
-        loadFeedSession: async (sessionId, now) => {
+        loadFeedSession: async (sessionId, now, readerId) => {
           await sweepExpired(now)
           const row = await db
             .select()
             .from(feedSessionsTable)
-            .where(eq(feedSessionsTable.id, sessionId))
+            .where(and(
+              eq(feedSessionsTable.id, sessionId),
+              eq(feedSessionsTable.readerId, readerId),
+            ))
             .limit(1)
             .then(([found]) => found)
           return row?.seenPaperIds ?? []
         },
-        saveFeedSession: async (sessionId, seenPaperIds, cursor, now) => {
+        saveFeedSession: async (
+          sessionId,
+          seenPaperIds,
+          cursor,
+          now,
+          readerId,
+        ) => {
           await db
             .insert(feedSessionsTable)
             .values({
               id: sessionId,
-              readerId: singletonId,
+              readerId,
               seenPaperIds,
               cursor,
               updatedAt: now,
             })
             .onConflictDoUpdate({
               target: feedSessionsTable.id,
-              set: { seenPaperIds, cursor, updatedAt: now },
+              set: { readerId, seenPaperIds, cursor, updatedAt: now },
             })
           await sweepExpired(now)
         },
@@ -644,12 +680,12 @@ function makePostgresRepository(databaseUrl: string) {
             .where(gte(papersTable.fetchedAt, since))
           return rows.map(storedPaper)
         },
-        onboard: async (input, createdAt) => {
+        onboard: async (input, createdAt, readerId) => {
           await db.transaction(async (tx) => {
             await tx
               .insert(readerProfilesTable)
               .values({
-                id: singletonId,
+                id: readerId,
                 name: "Guest Reader",
                 institution: "Guest",
                 beats: [],
@@ -660,40 +696,40 @@ function makePostgresRepository(databaseUrl: string) {
                 set: { onboardedAt: createdAt },
               })
             await tx.delete(reactionsTable).where(and(
-              eq(reactionsTable.readerId, singletonId),
+              eq(reactionsTable.readerId, readerId),
               inArray(reactionsTable.kind, [
                 "onboard-keep",
                 "onboard-reject",
               ]),
             ))
-            const rows = onboardingRows(input, createdAt)
+            const rows = onboardingRows(input, createdAt, readerId)
             if (rows.length > 0) {
               await tx.insert(reactionsTable).values(rows)
             }
           })
         },
-        load: async () => {
+        load: async (readerId) => {
           const source = await db
             .select()
             .from(readerStateTable)
-            .where(eq(readerStateTable.id, singletonId))
+            .where(eq(readerStateTable.id, defaultReaderId))
             .limit(1)
             .then(([row]) => row)
           const profile = await db
             .select()
             .from(readerProfilesTable)
-            .where(eq(readerProfilesTable.id, singletonId))
+            .where(eq(readerProfilesTable.id, readerId))
             .limit(1)
             .then(([row]) => row)
           const reactions = await db
             .select()
             .from(reactionsTable)
-            .where(eq(reactionsTable.readerId, singletonId))
+            .where(eq(reactionsTable.readerId, readerId))
             .orderBy(desc(reactionsTable.createdAt))
           const impressions = await db
             .select()
             .from(impressionsTable)
-            .where(eq(impressionsTable.readerId, singletonId))
+            .where(eq(impressionsTable.readerId, readerId))
             .orderBy(desc(impressionsTable.shownAt))
           return {
             sourceJson: source?.stateJson,
@@ -702,21 +738,21 @@ function makePostgresRepository(databaseUrl: string) {
             impressions,
           }
         },
-        migrate: async (state) => {
-          const rows = stateRows(state)
+        migrate: async (state, readerId) => {
+          const rows = stateRows(state, readerId)
           await db.transaction(async (tx) => {
             await tx.delete(reactionsTable).where(
-              eq(reactionsTable.readerId, singletonId),
+              eq(reactionsTable.readerId, readerId),
             )
             await tx.delete(impressionsTable).where(
-              eq(impressionsTable.readerId, singletonId),
+              eq(impressionsTable.readerId, readerId),
             )
             await tx.delete(readerProfilesTable).where(
-              eq(readerProfilesTable.id, singletonId),
+              eq(readerProfilesTable.id, readerId),
             )
             if (state.profile !== null) {
               await tx.insert(readerProfilesTable).values({
-                id: singletonId,
+                id: readerId,
                 name: state.profile.name,
                 institution: state.profile.institution,
                 beats: state.profile.interests,
@@ -730,15 +766,15 @@ function makePostgresRepository(databaseUrl: string) {
               await tx.insert(impressionsTable).values(rows.impressions)
             }
             await tx.delete(readerStateTable).where(
-              eq(readerStateTable.id, singletonId),
+              eq(readerStateTable.id, defaultReaderId),
             )
           })
         },
-        saveProfile: async (profile) => {
+        saveProfile: async (profile, readerId) => {
           await db
             .insert(readerProfilesTable)
             .values({
-              id: singletonId,
+              id: readerId,
               name: profile.name,
               institution: profile.institution,
               beats: profile.interests,
@@ -753,14 +789,14 @@ function makePostgresRepository(databaseUrl: string) {
               },
             })
         },
-        react: async (input, createdAt) => {
+        react: async (input, createdAt, readerId) => {
           const current = input.kind === "open-site"
             ? undefined
             : await db
               .select()
               .from(reactionsTable)
               .where(and(
-                eq(reactionsTable.readerId, singletonId),
+                eq(reactionsTable.readerId, readerId),
                 eq(reactionsTable.paperId, input.paperId),
                 eq(reactionsTable.kind, input.kind),
               ))
@@ -770,7 +806,7 @@ function makePostgresRepository(databaseUrl: string) {
           const active = input.kind === "open-site" || current?.active !== true
           await db.insert(reactionsTable).values({
             id: randomUUID(),
-            readerId: singletonId,
+            readerId,
             paperId: input.paperId,
             kind: input.kind,
             active,
@@ -778,11 +814,11 @@ function makePostgresRepository(databaseUrl: string) {
           })
           return active
         },
-        track: async (input, shownAt) => {
+        track: async (input, shownAt, readerId) => {
           if (input.kind === "view") {
             await db.insert(impressionsTable).values({
               id: randomUUID(),
-              readerId: singletonId,
+              readerId,
               paperId: input.paperId,
               shownAt,
               dwellMs: null,
@@ -795,7 +831,7 @@ function makePostgresRepository(databaseUrl: string) {
             .select()
             .from(impressionsTable)
             .where(and(
-              eq(impressionsTable.readerId, singletonId),
+              eq(impressionsTable.readerId, readerId),
               eq(impressionsTable.paperId, input.paperId),
               isNull(impressionsTable.dwellMs),
             ))
@@ -805,7 +841,7 @@ function makePostgresRepository(databaseUrl: string) {
           if (impression === undefined) {
             await db.insert(impressionsTable).values({
               id: randomUUID(),
-              readerId: singletonId,
+              readerId,
               paperId: input.paperId,
               shownAt,
               dwellMs: input.dwellMs,
@@ -880,29 +916,38 @@ function makePgliteRepository(dataDir: string | undefined) {
         StateStorage,
         "loadFeedSession" | "saveFeedSession"
       > = {
-        loadFeedSession: async (sessionId, now) => {
+        loadFeedSession: async (sessionId, now, readerId) => {
           await sweepExpired(now)
           const row = await db
             .select()
             .from(feedSessionsTable)
-            .where(eq(feedSessionsTable.id, sessionId))
+            .where(and(
+              eq(feedSessionsTable.id, sessionId),
+              eq(feedSessionsTable.readerId, readerId),
+            ))
             .limit(1)
             .then(([found]) => found)
           return row?.seenPaperIds ?? []
         },
-        saveFeedSession: async (sessionId, seenPaperIds, cursor, now) => {
+        saveFeedSession: async (
+          sessionId,
+          seenPaperIds,
+          cursor,
+          now,
+          readerId,
+        ) => {
           await db
             .insert(feedSessionsTable)
             .values({
               id: sessionId,
-              readerId: singletonId,
+              readerId,
               seenPaperIds,
               cursor,
               updatedAt: now,
             })
             .onConflictDoUpdate({
               target: feedSessionsTable.id,
-              set: { seenPaperIds, cursor, updatedAt: now },
+              set: { readerId, seenPaperIds, cursor, updatedAt: now },
             })
           await sweepExpired(now)
         },
@@ -939,12 +984,12 @@ function makePgliteRepository(dataDir: string | undefined) {
             .where(gte(papersTable.fetchedAt, since))
           return rows.map(storedPaper)
         },
-        onboard: async (input, createdAt) => {
+        onboard: async (input, createdAt, readerId) => {
           await db.transaction(async (tx) => {
             await tx
               .insert(readerProfilesTable)
               .values({
-                id: singletonId,
+                id: readerId,
                 name: "Guest Reader",
                 institution: "Guest",
                 beats: [],
@@ -955,40 +1000,40 @@ function makePgliteRepository(dataDir: string | undefined) {
                 set: { onboardedAt: createdAt },
               })
             await tx.delete(reactionsTable).where(and(
-              eq(reactionsTable.readerId, singletonId),
+              eq(reactionsTable.readerId, readerId),
               inArray(reactionsTable.kind, [
                 "onboard-keep",
                 "onboard-reject",
               ]),
             ))
-            const rows = onboardingRows(input, createdAt)
+            const rows = onboardingRows(input, createdAt, readerId)
             if (rows.length > 0) {
               await tx.insert(reactionsTable).values(rows)
             }
           })
         },
-        load: async () => {
+        load: async (readerId) => {
           const source = await db
             .select()
             .from(readerStateTable)
-            .where(eq(readerStateTable.id, singletonId))
+            .where(eq(readerStateTable.id, defaultReaderId))
             .limit(1)
             .then(([row]) => row)
           const profile = await db
             .select()
             .from(readerProfilesTable)
-            .where(eq(readerProfilesTable.id, singletonId))
+            .where(eq(readerProfilesTable.id, readerId))
             .limit(1)
             .then(([row]) => row)
           const reactions = await db
             .select()
             .from(reactionsTable)
-            .where(eq(reactionsTable.readerId, singletonId))
+            .where(eq(reactionsTable.readerId, readerId))
             .orderBy(desc(reactionsTable.createdAt))
           const impressions = await db
             .select()
             .from(impressionsTable)
-            .where(eq(impressionsTable.readerId, singletonId))
+            .where(eq(impressionsTable.readerId, readerId))
             .orderBy(desc(impressionsTable.shownAt))
           return {
             sourceJson: source?.stateJson,
@@ -997,21 +1042,21 @@ function makePgliteRepository(dataDir: string | undefined) {
             impressions,
           }
         },
-        migrate: async (state) => {
-          const rows = stateRows(state)
+        migrate: async (state, readerId) => {
+          const rows = stateRows(state, readerId)
           await db.transaction(async (tx) => {
             await tx.delete(reactionsTable).where(
-              eq(reactionsTable.readerId, singletonId),
+              eq(reactionsTable.readerId, readerId),
             )
             await tx.delete(impressionsTable).where(
-              eq(impressionsTable.readerId, singletonId),
+              eq(impressionsTable.readerId, readerId),
             )
             await tx.delete(readerProfilesTable).where(
-              eq(readerProfilesTable.id, singletonId),
+              eq(readerProfilesTable.id, readerId),
             )
             if (state.profile !== null) {
               await tx.insert(readerProfilesTable).values({
-                id: singletonId,
+                id: readerId,
                 name: state.profile.name,
                 institution: state.profile.institution,
                 beats: state.profile.interests,
@@ -1025,15 +1070,15 @@ function makePgliteRepository(dataDir: string | undefined) {
               await tx.insert(impressionsTable).values(rows.impressions)
             }
             await tx.delete(readerStateTable).where(
-              eq(readerStateTable.id, singletonId),
+              eq(readerStateTable.id, defaultReaderId),
             )
           })
         },
-        saveProfile: async (profile) => {
+        saveProfile: async (profile, readerId) => {
           await db
             .insert(readerProfilesTable)
             .values({
-              id: singletonId,
+              id: readerId,
               name: profile.name,
               institution: profile.institution,
               beats: profile.interests,
@@ -1048,14 +1093,14 @@ function makePgliteRepository(dataDir: string | undefined) {
               },
             })
         },
-        react: async (input, createdAt) => {
+        react: async (input, createdAt, readerId) => {
           const current = input.kind === "open-site"
             ? undefined
             : await db
               .select()
               .from(reactionsTable)
               .where(and(
-                eq(reactionsTable.readerId, singletonId),
+                eq(reactionsTable.readerId, readerId),
                 eq(reactionsTable.paperId, input.paperId),
                 eq(reactionsTable.kind, input.kind),
               ))
@@ -1065,7 +1110,7 @@ function makePgliteRepository(dataDir: string | undefined) {
           const active = input.kind === "open-site" || current?.active !== true
           await db.insert(reactionsTable).values({
             id: randomUUID(),
-            readerId: singletonId,
+            readerId,
             paperId: input.paperId,
             kind: input.kind,
             active,
@@ -1073,11 +1118,11 @@ function makePgliteRepository(dataDir: string | undefined) {
           })
           return active
         },
-        track: async (input, shownAt) => {
+        track: async (input, shownAt, readerId) => {
           if (input.kind === "view") {
             await db.insert(impressionsTable).values({
               id: randomUUID(),
-              readerId: singletonId,
+              readerId,
               paperId: input.paperId,
               shownAt,
               dwellMs: null,
@@ -1090,7 +1135,7 @@ function makePgliteRepository(dataDir: string | undefined) {
             .select()
             .from(impressionsTable)
             .where(and(
-              eq(impressionsTable.readerId, singletonId),
+              eq(impressionsTable.readerId, readerId),
               eq(impressionsTable.paperId, input.paperId),
               isNull(impressionsTable.dwellMs),
             ))
@@ -1100,7 +1145,7 @@ function makePgliteRepository(dataDir: string | undefined) {
           if (impression === undefined) {
             await db.insert(impressionsTable).values({
               id: randomUUID(),
-              readerId: singletonId,
+              readerId,
               paperId: input.paperId,
               shownAt,
               dwellMs: input.dwellMs,
