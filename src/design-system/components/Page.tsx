@@ -17,11 +17,11 @@ type PageProps = {
  */
 export function Page({ children, fullBleed = false }: PageProps) {
   return (
-    <main className="min-h-screen bg-bg-canvas">
+    <main className="min-h-screen bg-paper">
       {fullBleed
         ? children
         : (
-          <div className="mx-auto max-w-[80rem] px-l py-2xl">
+          <div className="mx-auto max-w-[66rem] px-m py-xl sm:px-l">
             {children}
           </div>
         )}

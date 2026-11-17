@@ -1,36 +1,55 @@
 @import "tailwindcss";
 
-@theme {
-  --color-ink: oklch(0.18 0.012 60);
-  --color-ink-muted: oklch(0.44 0.014 60);
-  --color-paper: oklch(0.972 0.014 92);
-  --color-paper-deep: oklch(0.945 0.018 88);
-  --color-rule: oklch(0.82 0.012 80);
-  --color-stamp: oklch(0.52 0.19 28);
-  --font-display: Georgia, "Iowan Old Style", "Times New Roman", serif;
-  --font-body: Georgia, "Iowan Old Style", "Times New Roman", serif;
-  --font-label: ui-monospace, "SFMono-Regular", monospace;
+/*
+ * Broadsheet print tokens.
+ *
+ * The interface is an ink-on-white newspaper: no colour, no tints, no
+ * gradients, no radii, no shadows. Depth comes from rule weight only —
+ * 1px hairline inside a module, 2px at module boundaries.
+ */
 
-  --color-bg-canvas: var(--color-paper-deep);
-  --color-bg-surface: oklch(0.992 0.008 95);
-  --color-bg-subtle: oklch(0.963 0.012 95);
-  --color-bg-accent: oklch(0.95 0.03 75);
-  --color-bg-danger: oklch(0.975 0.018 20);
-  --color-bg-success: oklch(0.973 0.02 150);
-  --color-text-primary: oklch(0.22 0.02 65);
-  --color-text-secondary: oklch(0.36 0.018 65);
-  --color-text-muted: oklch(0.5 0.014 65);
-  --color-text-on-accent: oklch(0.28 0.04 252);
-  --color-border-default: oklch(0.9 0.008 258);
-  --color-border-strong: oklch(0.82 0.015 258);
-  --color-border-danger: oklch(0.86 0.03 20);
-  --color-accent-solid: var(--color-stamp);
-  --color-danger-solid: oklch(0.6 0.22 20);
-  --color-success-solid: oklch(0.62 0.16 150);
-  --color-accent-wash: color-mix(in srgb, oklch(0.56 0.18 252) 18%, white);
-  --color-success-wash: color-mix(in srgb, oklch(0.62 0.16 150) 18%, white);
-  --color-danger-wash: color-mix(in srgb, oklch(0.6 0.22 20) 18%, white);
-  --color-focus-ring: color-mix(in srgb, oklch(0.56 0.18 252) 55%, white);
+@font-face {
+  font-family: "Chomsky";
+  src: url("/fonts/chomsky.woff2") format("woff2");
+  font-display: swap;
+  font-weight: 400;
+}
+
+@theme {
+  --color-ink: #0b0b0b;
+  --color-ink-muted: #4f4f4f;
+  --color-paper: #ffffff;
+  --color-paper-deep: #ffffff;
+  --color-rule: #0b0b0b;
+  --color-rule-soft: #6b6b6b;
+  --color-stamp: #0b0b0b;
+  --font-display:
+    "Times New Roman", Times, "Iowan Old Style", "Liberation Serif", serif;
+  --font-body:
+    "Times New Roman", Times, "Iowan Old Style", "Liberation Serif", serif;
+  --font-label: "Times New Roman", Times, "Iowan Old Style", serif;
+  --font-masthead: "Chomsky", "Times New Roman", Times, serif;
+
+  --color-bg-canvas: var(--color-paper);
+  --color-bg-surface: var(--color-paper);
+  --color-bg-subtle: var(--color-paper);
+  --color-bg-accent: var(--color-paper);
+  --color-bg-danger: var(--color-paper);
+  --color-bg-success: var(--color-paper);
+  --color-text-primary: var(--color-ink);
+  --color-text-secondary: var(--color-ink);
+  --color-text-muted: var(--color-ink-muted);
+  --color-text-on-accent: var(--color-paper);
+  --color-border-default: var(--color-rule-soft);
+  --color-border-strong: var(--color-ink);
+  --color-border-danger: var(--color-ink);
+  --color-accent-solid: var(--color-ink);
+  --color-danger-solid: var(--color-ink);
+  --color-success-solid: var(--color-ink);
+  --color-accent-wash: var(--color-rule-soft);
+  --color-success-wash: var(--color-rule-soft);
+  --color-danger-wash: var(--color-rule-soft);
+  --color-focus-ring: var(--color-ink);
 
   --spacing-2xs: 0.25rem;
   --spacing-xs: 0.5rem;
@@ -40,80 +59,20 @@
   --spacing-xl: 2rem;
   --spacing-2xl: 3rem;
 
-  --radius-sm: 0.5rem;
-  --radius-md: 0.875rem;
-  --radius-lg: 1.25rem;
+  --radius-sm: 0rem;
+  --radius-md: 0rem;
+  --radius-lg: 0rem;
 
-  --shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.06);
-  --shadow-md: 0 12px 32px rgba(15, 23, 42, 0.08);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --color-ink: oklch(0.91 0.018 88);
-    --color-ink-muted: oklch(0.72 0.018 88);
-    --color-paper: oklch(0.2 0.012 60);
-    --color-paper-deep: oklch(0.16 0.012 60);
-    --color-rule: oklch(0.38 0.014 70);
-    --color-stamp: oklch(0.68 0.18 28);
-    --color-bg-canvas: var(--color-paper-deep);
-    --color-bg-surface: oklch(0.24 0.02 258);
-    --color-bg-subtle: oklch(0.28 0.02 258);
-    --color-bg-accent: oklch(0.3 0.05 252);
-    --color-bg-danger: oklch(0.28 0.05 20);
-    --color-bg-success: oklch(0.28 0.04 150);
-    --color-text-primary: oklch(0.95 0.01 258);
-    --color-text-secondary: oklch(0.82 0.012 258);
-    --color-text-muted: oklch(0.72 0.012 258);
-    --color-text-on-accent: oklch(0.94 0.02 252);
-    --color-border-default: oklch(0.34 0.015 258);
-    --color-border-strong: oklch(0.45 0.02 258);
-    --color-border-danger: oklch(0.48 0.04 20);
-    --color-accent-solid: oklch(0.68 0.16 252);
-    --color-danger-solid: oklch(0.68 0.18 20);
-    --color-success-solid: oklch(0.7 0.14 150);
-    --color-accent-wash: color-mix(
-      in srgb,
-      oklch(0.68 0.16 252) 18%,
-      transparent
-    );
-    --color-success-wash: color-mix(
-      in srgb,
-      oklch(0.7 0.14 150) 18%,
-      transparent
-    );
-    --color-danger-wash: color-mix(
-      in srgb,
-      oklch(0.68 0.18 20) 18%,
-      transparent
-    );
-    --color-focus-ring: color-mix(
-      in srgb,
-      oklch(0.68 0.16 252) 55%,
-      transparent
-    );
-    --shadow-sm: 0 1px 2px rgba(2, 6, 23, 0.32);
-    --shadow-md: 0 16px 40px rgba(2, 6, 23, 0.34);
-  }
+  --shadow-sm: none;
+  --shadow-md: none;
 }
 
 @layer base {
   body {
     margin: 0;
     min-height: 100vh;
-    background-color: var(--color-bg-canvas);
-    background-image:
-      repeating-linear-gradient(
-        0deg,
-        transparent 0 3px,
-        color-mix(in oklch, var(--color-ink) 2%, transparent) 3px 4px
-      ),
-      repeating-linear-gradient(
-      90deg,
-      transparent 0 7px,
-      color-mix(in oklch, var(--color-ink) 1.5%, transparent) 7px 8px
-    );
-    color: var(--color-text-primary);
+    background-color: var(--color-paper);
+    color: var(--color-ink);
     font-family: var(--font-body);
     font-variant-numeric: oldstyle-nums;
     -webkit-font-smoothing: antialiased;
@@ -127,6 +86,12 @@
   button,
   input {
     font: inherit;
+  }
+
+  h1,
+  h2,
+  h3 {
+    text-wrap: balance;
   }
 
   [aria-label="Academic paper feed"] {

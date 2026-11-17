@@ -2,11 +2,11 @@ import type { HTMLAttributes, ReactNode } from "react"
 
 const toneClass = {
   page:
-    "m-0 text-text-primary text-[clamp(2rem,4vw,2.75rem)] font-bold leading-[1.05]",
+    "m-0 text-ink font-display text-[clamp(2rem,4vw,3rem)] font-bold leading-[1.02] tracking-[-0.02em]",
   display:
-    "m-0 text-text-primary text-[clamp(1.75rem,3vw,2.25rem)] font-bold leading-[1.1]",
-  section: "m-0 text-text-primary text-[1.125rem] font-[650] leading-[1.25]",
-  card: "m-0 text-text-primary text-[1rem] font-[650] leading-[1.25]",
+    "m-0 text-ink font-display text-[clamp(1.5rem,2.6vw,2rem)] font-bold leading-[1.05] tracking-[-0.01em]",
+  section: "m-0 text-ink font-display text-[1.0625rem] font-bold leading-[1.2]",
+  card: "m-0 text-ink font-display text-[1rem] font-bold leading-[1.2]",
 } as const
 
 type HeadingProps =

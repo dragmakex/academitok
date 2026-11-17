@@ -2,13 +2,17 @@ import { cx } from "@/design-system/foundation/classes"
 import type { ButtonHTMLAttributes, ReactNode } from "react"
 
 const baseClass =
-  "inline-flex items-center justify-center gap-xs min-h-11 px-m border border-transparent rounded-md text-[0.95rem] font-semibold cursor-pointer transition-all duration-160 ease-in-out hover:not-disabled:-translate-y-px disabled:cursor-not-allowed disabled:opacity-60 focus-visible:outline-2 focus-visible:outline-focus-ring focus-visible:outline-offset-2"
+  "inline-flex items-center justify-center gap-xs min-h-9 px-s border font-label text-[0.72rem] font-bold uppercase tracking-[0.14em] cursor-pointer transition-colors duration-100 disabled:cursor-not-allowed disabled:opacity-40 focus-visible:outline-2 focus-visible:outline-ink focus-visible:outline-offset-2"
 
 const variantClass = {
-  primary: "bg-accent-solid text-white",
-  secondary: "border-border-default bg-bg-surface text-text-primary",
-  ghost: "bg-transparent text-text-secondary",
-  danger: "bg-danger-solid text-white",
+  primary:
+    "border-ink bg-ink text-paper hover:not-disabled:bg-paper hover:not-disabled:text-ink",
+  secondary:
+    "border-ink bg-paper text-ink hover:not-disabled:bg-ink hover:not-disabled:text-paper",
+  ghost:
+    "border-transparent bg-transparent px-0 text-ink underline underline-offset-4 hover:not-disabled:text-ink-muted",
+  danger:
+    "border-ink bg-paper text-ink hover:not-disabled:bg-ink hover:not-disabled:text-paper",
 } as const
 
 type ButtonProps =
@@ -47,7 +51,7 @@ export function Button(
       disabled={disabled || loading}
       className={cx(baseClass, variantClass[variant])}
     >
-      {loading ? "Working…" : children}
+      {loading ? "Working" : children}
     </button>
   )
 }

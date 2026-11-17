@@ -115,7 +115,7 @@ export function EdgeDrawer(
             type="button"
             aria-label={open ? "Close filters" : "Open filters"}
             aria-pressed={open}
-            className="pointer-events-auto rounded-r-lg border border-l-0 border-border-default bg-bg-surface px-s py-m text-xs font-semibold tracking-[0.16em] uppercase shadow-sm"
+            className="pointer-events-auto border border-ink bg-paper px-2xs py-m font-label text-[0.62rem] font-bold uppercase tracking-[0.16em] text-ink cursor-pointer [writing-mode:vertical-rl] hover:bg-ink hover:text-paper focus-visible:outline-2 focus-visible:outline-ink focus-visible:outline-offset-[-2px]"
             onClick={() => onOpenChange(!open)}
           >
             Desk
@@ -128,7 +128,7 @@ export function EdgeDrawer(
           <button
             type="button"
             aria-label="Close filters"
-            className="absolute inset-0 bg-black/30"
+            className="absolute inset-0 bg-ink/25"
             onClick={() => onOpenChange(false)}
           />
 
@@ -137,9 +137,9 @@ export function EdgeDrawer(
             aria-label={title}
             aria-modal="true"
             role="dialog"
-            className="absolute inset-y-0 left-0 flex w-[min(24rem,88vw)] flex-col border-r border-border-default bg-bg-canvas shadow-md"
+            className="absolute inset-y-0 left-0 flex w-[min(24rem,88vw)] flex-col border-r-2 border-ink bg-paper"
           >
-            <div className="border-b border-border-default px-l py-l">
+            <div className="border-b border-rule-soft px-m py-m">
               <div className="flex items-start justify-between gap-m">
                 <Stack gap="xs">
                   <Heading as="h2" tone="section">
@@ -154,11 +154,11 @@ export function EdgeDrawer(
               </div>
             </div>
 
-            <div className="flex-1 overflow-y-auto px-l py-l">
+            <div className="flex-1 overflow-y-auto px-m py-m">
               {children}
             </div>
 
-            <div className="border-t border-border-default px-l py-m">
+            <div className="border-t border-rule-soft px-m py-m">
               <Text tone="caption">
                 Swipe in from the left edge to open this desk.
               </Text>

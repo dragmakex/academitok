@@ -2,13 +2,13 @@ import { cx } from "@/design-system/foundation/classes"
 import type { ReactNode } from "react"
 
 const badgeBaseClass =
-  "inline-flex items-center justify-center min-w-7 min-h-6 px-xs border rounded-full text-[0.8rem] font-bold text-text-primary"
+  "inline-flex items-center justify-center px-2xs border border-ink font-label text-[0.62rem] font-bold uppercase tracking-[0.12em] text-ink"
 
 const toneClass = {
-  neutral: "border-border-default bg-bg-surface",
-  accent: "border-accent-wash bg-bg-accent",
-  success: "border-success-wash bg-bg-success",
-  danger: "border-danger-wash bg-bg-danger",
+  neutral: "bg-paper",
+  accent: "bg-ink text-paper",
+  success: "bg-paper",
+  danger: "bg-paper",
 } as const
 
 type BadgeProps = {

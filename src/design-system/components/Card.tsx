@@ -17,7 +17,7 @@ type CardProps = {
 export function Card({ children, tone = "default" }: CardProps) {
   return (
     <Surface tone={tone}>
-      <div className="p-l">
+      <div className="px-0 py-m">
         {children}
       </div>
     </Surface>

@@ -1,7 +1,6 @@
 import { Card } from "@/design-system/components/Card"
 import { Heading } from "@/design-system/components/Heading"
 import { Text } from "@/design-system/components/Text"
-import { Stack } from "@/design-system/primitives/Stack"
 
 type StatCardProps = {
   readonly label: string
@@ -11,7 +10,7 @@ type StatCardProps = {
 }
 
 /**
- * Renders a compact dashboard summary statistic card.
+ * Renders one ruled readout row: label on the left, figure on the right.
  *
  * @param props - Stat card props.
  * @param props.label - Metric label.
@@ -24,22 +23,22 @@ export function StatCard(
   { helper, label, tone = "default", value }: StatCardProps,
 ) {
   return (
-    <Card tone={tone === "default" ? "default" : tone}>
-      <div className="min-w-0">
-        <Stack gap="2xs">
-          <Text tone="label" as="span">
-            {label}
-          </Text>
-          <Heading as="h3" tone="display">
-            {value}
-          </Heading>
-          {helper && (
-            <Text tone="caption">
-              {helper}
-            </Text>
-          )}
-        </Stack>
+    <Card tone={tone === "default" ? "subtle" : tone}>
+      <div className="flex items-baseline justify-between gap-s">
+        <Text tone="label" as="span">
+          {label}
+        </Text>
+        <Heading as="h3" tone="display">
+          {value}
+        </Heading>
       </div>
+      {helper && (
+        <div className="mt-2xs">
+          <Text tone="caption">
+            {helper}
+          </Text>
+        </div>
+      )}
     </Card>
   )
 }

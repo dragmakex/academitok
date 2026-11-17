@@ -44,7 +44,7 @@ export function ShortcutSheet(
       <button
         type="button"
         aria-label={`Close ${title}`}
-        className="absolute inset-0 bg-black/30"
+        className="absolute inset-0 bg-ink/25"
         onClick={() => onOpenChange(false)}
       />
 
@@ -53,7 +53,7 @@ export function ShortcutSheet(
         aria-label={title}
         aria-modal="true"
         role="dialog"
-        className="absolute top-1/2 left-1/2 w-[min(30rem,92vw)] -translate-x-1/2 -translate-y-1/2 border border-border-default bg-bg-canvas px-l py-l shadow-md"
+        className="absolute top-1/2 left-1/2 w-[min(30rem,92vw)] -translate-x-1/2 -translate-y-1/2 border-2 border-ink bg-paper px-m py-m"
       >
         <Stack gap="m">
           <Inline align="between" gap="m">
@@ -70,7 +70,7 @@ export function ShortcutSheet(
             {items.map((item) => (
               <li
                 key={item.description}
-                className="border-t border-border-default py-s"
+                className="border-t border-rule-soft py-s"
               >
                 <Inline align="between" gap="m">
                   <Text tone="label" as="span">

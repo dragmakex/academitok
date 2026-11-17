@@ -26,11 +26,11 @@ export function EmptyState({ action, description, title }: EmptyStateProps) {
   return (
     <Card tone="subtle">
       <div role="status">
-        <Stack gap="s" align="center">
+        <Stack gap="s" align="start">
           <Heading as="h2" tone="section">
             {title}
           </Heading>
-          <Text tone="muted" align="center">
+          <Text tone="muted">
             {description}
           </Text>
           {action}

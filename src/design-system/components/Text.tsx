@@ -2,12 +2,12 @@ import { cx } from "@/design-system/foundation/classes"
 import type { HTMLAttributes, ReactNode } from "react"
 
 const toneClass = {
-  body: "text-text-secondary text-[0.95rem] leading-[1.5]",
-  muted: "text-text-muted text-[0.95rem] leading-[1.5]",
+  body: "text-ink font-body text-[1rem] leading-[1.45]",
+  muted: "text-ink-muted font-body text-[0.95rem] leading-[1.45]",
   label:
-    "text-text-secondary text-[0.8rem] font-semibold tracking-[0.02em] uppercase",
-  caption: "text-text-muted text-[0.85rem] leading-[1.4]",
-  danger: "text-danger-solid text-[0.85rem] leading-[1.4]",
+    "text-ink font-label text-[0.7rem] font-bold tracking-[0.16em] uppercase",
+  caption: "text-ink-muted font-body text-[0.85rem] italic leading-[1.35]",
+  danger: "text-ink font-body text-[0.85rem] italic leading-[1.35]",
 } as const
 
 const alignClass = {

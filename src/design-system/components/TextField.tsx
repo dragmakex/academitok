@@ -37,7 +37,7 @@ export function TextField(
       <input
         {...props}
         id={fieldId}
-        className="w-full min-h-11 border border-border-default rounded-md bg-bg-surface text-text-primary px-m box-border focus:outline-2 focus:outline-focus-ring focus:outline-offset-2"
+        className="w-full min-h-9 border-0 border-b border-ink bg-paper px-0 py-2xs font-body text-[1rem] text-ink box-border focus:border-b-2 focus:outline-none disabled:text-ink-muted"
       />
       {(hint || error) && (
         <Inline gap="xs" align="start" wrap>

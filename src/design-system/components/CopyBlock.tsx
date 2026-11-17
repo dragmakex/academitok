@@ -32,15 +32,15 @@ export function CopyBlock(
   }
 
   return (
-    <div className="border border-rule px-s py-m">
+    <div className="border border-ink px-s py-s">
       <p className={labelClass}>
         {label}
       </p>
-      <p className="mt-xs m-0 whitespace-pre-line break-words font-body text-[0.82rem] leading-[1.45]">
+      <p className="mt-2xs m-0 whitespace-pre-line break-words font-body text-[0.82rem] leading-[1.45]">
         {text}
       </p>
       <button
-        className="mt-s min-h-11 w-full border border-stamp bg-transparent px-s py-xs font-label text-[0.62rem] uppercase tracking-[0.14em] text-stamp cursor-pointer hover:bg-stamp hover:text-paper disabled:cursor-not-allowed disabled:border-rule disabled:text-ink-muted disabled:hover:bg-transparent focus-visible:outline-2 focus-visible:outline-focus-ring"
+        className="mt-s min-h-9 w-full border border-ink bg-paper px-s py-xs font-label text-[0.68rem] font-bold uppercase tracking-[0.14em] text-ink cursor-pointer hover:bg-ink hover:text-paper disabled:cursor-not-allowed disabled:border-rule-soft disabled:text-ink-muted disabled:hover:bg-paper focus-visible:outline-2 focus-visible:outline-ink"
         type="button"
         disabled={text === ""}
         onClick={copy}

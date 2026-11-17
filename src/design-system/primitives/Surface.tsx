@@ -1,10 +1,10 @@
 import type { ReactNode } from "react"
 
 const toneClass = {
-  default: "border border-border-default rounded-lg bg-bg-surface shadow-sm",
-  subtle: "border border-border-default rounded-lg bg-bg-subtle shadow-sm",
-  accent: "border border-accent-wash rounded-lg bg-bg-accent shadow-sm",
-  danger: "border border-border-danger rounded-lg bg-bg-danger shadow-sm",
+  default: "border-t-2 border-ink bg-paper",
+  subtle: "border-t border-rule-soft bg-paper",
+  accent: "border-2 border-ink bg-paper",
+  danger: "border-t-2 border-ink bg-paper",
 } as const
 
 type SurfaceProps = {
