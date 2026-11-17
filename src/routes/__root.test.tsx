@@ -1,3 +1,5 @@
+import { readFileSync } from "node:fs"
+import { join } from "node:path"
 import { describe, expect, it, vi } from "vitest"
 
 /**
@@ -44,5 +46,35 @@ describe("__root route", () => {
     // Route is the object returned by createRootRoute
     expect(Route).toHaveProperty("head")
     expect(Route).toHaveProperty("shellComponent")
+  })
+})
+
+describe("gazette shell metadata", () => {
+  const manifest = JSON.parse(
+    readFileSync(join(process.cwd(), "public/manifest.json"), "utf8"),
+  ) as Record<string, unknown>
+
+  it("claims the AcademiTok identity with the paper palette", () => {
+    expect(manifest.name).toContain("AcademiTok")
+    expect(manifest.short_name).toBe("AcademiTok")
+    expect(manifest.start_url).toBe("/")
+    expect(manifest.display).toBe("standalone")
+    expect(manifest.theme_color).toBe("oklch(0.18 0.012 60)")
+    expect(manifest.background_color).toBe("oklch(0.945 0.018 88)")
+    expect(JSON.stringify(manifest)).not.toContain("TanStack")
+    expect(manifest.icons).toBeUndefined()
+  })
+
+  it("links the manifest from the root head", async () => {
+    const { rootHead } = await import("./__root")
+    const head = rootHead()
+    expect(head.links).toContainEqual({
+      rel: "manifest",
+      href: "/manifest.json",
+    })
+    expect(head.meta).toContainEqual({
+      name: "theme-color",
+      content: manifest.theme_color,
+    })
   })
 })

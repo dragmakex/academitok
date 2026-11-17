@@ -8,27 +8,37 @@ import { useEffect } from "react"
 import * as React from "react"
 import appCss from "../styles.css?url"
 
+export const rootHead = () => ({
+  meta: [
+    {
+      charSet: "utf-8",
+    },
+    {
+      name: "viewport",
+      content: "width=device-width, initial-scale=1",
+    },
+    {
+      title: "AcademiTok Gazette",
+    },
+    {
+      name: "theme-color",
+      content: "oklch(0.18 0.012 60)",
+    },
+  ],
+  links: [
+    {
+      rel: "manifest",
+      href: "/manifest.json",
+    },
+    {
+      rel: "stylesheet",
+      href: appCss,
+    },
+  ],
+})
+
 export const Route = createRootRoute({
-  head: () => ({
-    meta: [
-      {
-        charSet: "utf-8",
-      },
-      {
-        name: "viewport",
-        content: "width=device-width, initial-scale=1",
-      },
-      {
-        title: "AcademiTok Gazette",
-      },
-    ],
-    links: [
-      {
-        rel: "stylesheet",
-        href: appCss,
-      },
-    ],
-  }),
+  head: rootHead,
 
   shellComponent: RootDocument,
 })
