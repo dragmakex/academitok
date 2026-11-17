@@ -517,6 +517,22 @@ write the conflict at the bottom instead of guessing.
       page for a fixed seed is identical before and after.
       — `ab9e1f9`
 
+- [ ] **34. Cold-feed failure rate on `feed.next`.** SPEC §8.4 sets cold-feed failure at < 0.5% and
+      it is the last row of the metric table nothing reports: `trackFeedPageEvent` in
+      `src/lib/feed-analytics.ts` sends `item_count`, `duplicate_count`, `median_year`,
+      `unmatched_beat_count`, `topic_entropy` and both citation medians, but not where the page came
+      from — task 24 added `origin` to `FeedSnapshot` and `PaperSlide` prints it, while the analytics
+      event still cannot tell a served pool page from the frozen seed edition, so the share of pages
+      the reader never really received has no numerator. Add `origin` to the existing `feed.next`
+      payload from `snapshot.origin` (`"pool"`, `"live"` or `"seed"`), so the per-page share of
+      `seed` is the §8.4 rate. Measurement only: no ranking, RPC contract, schema, desk or widget
+      change, and the frozen seed edition stays as it is.
+      Accept: a snapshot with `origin: "seed"` sends `origin: "seed"`, and pool and live snapshots
+      send their own origin; the field is sent on every page, including an empty one; the ranked page
+      for a fixed seed is identical before and after; the payload is asserted from a real
+      `trackFeedPageEvent` call with the PostHog client mocked, and PostHog staying unconfigured
+      changes nothing.
+
 ---
 
 ## Blocked — needs a product decision
