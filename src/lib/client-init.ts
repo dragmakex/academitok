@@ -109,6 +109,13 @@ const reportErrorToSentry = async (
   })
 }
 
+const registerServiceWorker = (): void => {
+  if (!import.meta.env.PROD || !("serviceWorker" in navigator)) {
+    return
+  }
+  void navigator.serviceWorker.register("/sw.js").catch(() => undefined)
+}
+
 /**
  * Initialize client-side observability (Sentry error tracking + PostHog analytics).
  * Safe to call multiple times and in SSR contexts (no-ops gracefully).
@@ -119,6 +126,8 @@ export function initClient(): Promise<void> {
   if (typeof window === "undefined") {
     return Promise.resolve()
   }
+
+  registerServiceWorker()
 
   if (clientInitPromise) {
     return clientInitPromise

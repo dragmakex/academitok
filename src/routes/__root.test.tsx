@@ -109,8 +109,36 @@ describe("gazette shell metadata", () => {
     expect(manifest.background_color).toBe("oklch(0.945 0.018 88)")
     expect(JSON.stringify(manifest)).not.toContain("TanStack")
     expect(manifest.icons).toEqual([
+      {
+        src: "/icon-192.png",
+        sizes: "192x192",
+        type: "image/png",
+        purpose: "any",
+      },
+      {
+        src: "/icon-512.png",
+        sizes: "512x512",
+        type: "image/png",
+        purpose: "any",
+      },
+      {
+        src: "/icon-512.png",
+        sizes: "512x512",
+        type: "image/png",
+        purpose: "maskable",
+      },
       { src: "/mark.svg", sizes: "any", type: "image/svg+xml" },
     ])
+    expect(manifest.scope).toBe("/")
+    expect(manifest.display).toBe("standalone")
+  })
+
+  it("ships a service worker that never replays an rpc or a sign-in link", () => {
+    const worker = readFileSync(join(process.cwd(), "public/sw.js"), "utf8")
+    expect(worker).toContain("cacheName = \"academitok-shell-v1\"")
+    expect(worker).toContain("startsWith(\"/api/\")")
+    expect(worker).toContain("startsWith(\"/auth/\")")
+    expect(worker).toContain("request.mode === \"navigate\"")
   })
 
   it("links the manifest from the root head", async () => {
@@ -166,7 +194,8 @@ describe("gazette shell metadata", () => {
     expect(mark).toContain("<svg")
     expect(mark).toContain("oklch(0.18 0.012 60)")
     expect(mark).toContain("oklch(0.972 0.014 92)")
-    expect(mark).toContain("oklch(0.52 0.19 28)")
+    // Ink on paper only: the sample mark's red accent was retired with the palette.
+    expect(mark).not.toContain("oklch(0.52 0.19 28)")
     for (
       const asset of [
         "favicon.ico",
@@ -233,9 +262,38 @@ describe("gazette shell metadata", () => {
     const raster = inflateSync(Buffer.concat(data))
     const row = width * 3 + 1
     expect(raster.length).toBe(height * row)
+    // Undo the per-row filters: rsvg writes Sub/Up/Paeth, not raw rows.
+    const flat = Buffer.alloc(height * row)
+    for (let y = 0; y < height; y++) {
+      const filter = raster[y * row] ?? 0
+      for (let x = 0; x < row - 1; x++) {
+        const raw = raster[y * row + 1 + x] ?? 0
+        const left = x >= 3 ? flat[y * row + 1 + x - 3] ?? 0 : 0
+        const up = y > 0 ? flat[(y - 1) * row + 1 + x] ?? 0 : 0
+        const upLeft = y > 0 && x >= 3
+          ? flat[(y - 1) * row + 1 + x - 3] ?? 0
+          : 0
+        const paeth = [left, up, upLeft].reduce((best, candidate) =>
+          Math.abs(candidate - (left + up - upLeft))
+              < Math.abs(best - (left + up - upLeft))
+            ? candidate
+            : best
+        )
+        const value = filter === 0
+          ? raw
+          : filter === 1
+          ? raw + left
+          : filter === 2
+          ? raw + up
+          : filter === 3
+          ? raw + Math.floor((left + up) / 2)
+          : raw + paeth
+        flat[y * row + 1 + x] = value % 256
+      }
+    }
     const pixel = (x: number, y: number) => {
       const at = y * row + 1 + x * 3
-      return [...raster.subarray(at, at + 3)]
+      return [...flat.subarray(at, at + 3)]
     }
     // The ink ground is full-bleed: every corner is ink, not padding.
     expect(pixel(0, 0)).toEqual([22, 16, 12])
