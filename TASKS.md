@@ -1183,6 +1183,35 @@ write the conflict at the bottom instead of guessing.
       seed is identical before and after; `bun run validate` is green.
       — `ad5007b`
 
+- [ ] **58. How many beats one clipping needs, on `feed.next` and the desk.** SPEC §17.2 keeps
+      the fixed nine beats only until someone can tell whether they cover what the sources serve,
+      and open decision 2 says to revisit the taxonomy on evidence — tasks 39, 41 and 52 counted
+      the path each clipping took (`keyword`, `concept`, `education`) and `topicEntropy` measures
+      how evenly a page spreads across beats, but nothing says whether a single clipping can be
+      named by one beat at all: `detectTopics` returns up to three beats and `Paper.topics` stores
+      them, so all fifteen seed clippings carry two or three beats and the figure a split of the
+      taxonomy would need — how much of the page the grain cannot name as one thing — is invisible
+      on the one surface built to revisit it. Add one pure exported `multiBeatCount` helper beside
+      `conceptOnlyBeats` in `src/lib/feed-analytics.ts` over the same `Pick<Paper, "topics">`
+      shape, returning how many page clippings name more than one beat, with an empty topic list
+      counted as not split, and report it as `multi_beat_count` on the existing `feed.next`
+      feed-health event beside `concept_beat_count`. Render it in the desk's Topic mix block with
+      the existing `StatCard`/`Grid` primitives beside the `Beats on the page` card, its helper
+      giving the count against the loaded page's clipping total, reading an em dash when the
+      snapshot is unloaded. Measurement and display only: no `FeedStats` field, no ranking, RPC
+      procedure, schema, ingestion, persistence or dependency change beyond that one event field,
+      and the one-clipping-per-viewport snap is untouched.
+      Accept: a loaded page of three clippings — one filed under `Physics` alone, one under
+      `Health` and `Psychology`, one under `Education` alone — reports 1 and the desk renders `1`;
+      a page whose clippings all name a single beat reports 0 and the desk renders `0`, never an
+      em dash; a clipping naming three beats counts once, so the figure is per clipping and not
+      per beat; a clipping with an empty `topics` list counts as not split, so it never inflates
+      the count; an empty page reports 0, never `NaN`, and an unloaded snapshot renders an em
+      dash; the helper is unit-tested, the payload is asserted from a real
+      `trackFeedPageEvent` call with the PostHog client mocked, and the count is asserted through
+      the helper over the papers of a real `getPaperFeedSnapshot` (stubbed catalog, temp PGlite
+      dir); the ranked page for a fixed seed is identical before and after.
+
 ---
 
 ## Blocked — needs a product decision
