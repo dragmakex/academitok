@@ -332,6 +332,23 @@ write the conflict at the bottom instead of guessing.
       (stubbed fetch, temp PGlite dir) and from `renderToStaticMarkup` of the component.
       — `6bbdb0d`
 
+- [ ] **25. Median dwell readout on the desk.** SPEC §8.4 sets median dwell at ≥ 8s and §16 P3
+      lists reading-time analytics, but the number is unread: `dwell` carries a per-clip `dwell_ms`
+      to PostHog (task 7) and `ReaderState.impressions` already holds `dwellMs`, while the desk
+      drawer shows archival drift (task 8), citation skew (task 15) and topic mix (task 17) and
+      never how long the reader actually stays. `FeedStats` in `src/api/paper-schema.ts` carries
+      five page counts and no dwell figure. Add a pure `medianDwell` helper beside `median` in
+      `src/lib/feed-analytics.ts` over the dwells with a recorded value, report it as
+      `medianDwellMs` on `FeedStats` from the reader's last 50 impressions (the §8.4 window task 16
+      already uses), and render it in the desk's stats block with the existing `StatCard`/`Grid`
+      primitives in seconds beside its 8s target. Display only: no ranking, RPC procedure,
+      persistence or PostHog payload change, and the one-clipping-per-viewport snap is untouched.
+      Accept: dwells of 4s/6s/20s report 6000 ms and the desk renders `6.0 s`; an even sample
+      averages the middle pair; a reader with no recorded dwell reports null and the desk renders an
+      em dash, never `NaN` or `0`; the helper is unit-tested and reaches `getPaperFeedSnapshot` from
+      the real `ReaderState.impressions`; the ranked page for a fixed seed is identical before and
+      after.
+
 ---
 
 ## Blocked — needs a product decision
