@@ -255,6 +255,21 @@ write the conflict at the bottom instead of guessing.
       from the real files.
       — `6460591`
 
+- [ ] **21. Installed-shell safe areas.** SPEC §16 P3 lists a native shell and task 19 gave the
+      manifest the gazette identity with `display: "standalone"`, but the root viewport meta is
+      `width=device-width, initial-scale=1` with no `viewport-fit=cover`, and no component reads
+      `env(safe-area-inset-*)` — so in the installed window the masthead strip slides under the
+      status bar and the rail and folio under the home indicator, while the same page in a browser
+      tab looks correct. The deck is deliberately edge-to-edge (§5.1), so the insets belong in the
+      design-system components (`FeedDeck` and `PaperSlide`'s masthead/footer strip and rail), not
+      in route or feature code. Add `viewport-fit=cover` to the viewport meta and pad those edges
+      by the four insets, leaving the paper ground, the type measure and the one-clipping-per-
+      viewport snap untouched. No dependency, route, ranking, RPC contract or PostHog change.
+      Accept: the root head's viewport meta carries `viewport-fit=cover`; the deck and the clipping
+      strip read `env(safe-area-inset-top|right|bottom|left)`; with zero insets (a browser tab) the
+      deck still shows exactly one clipping with the masthead strip fully inside the viewport; a
+      test asserts the meta from `rootHead()` and the inset usage from the real component files.
+
 ---
 
 ## Blocked — needs a product decision
