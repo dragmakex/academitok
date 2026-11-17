@@ -997,6 +997,33 @@ write the conflict at the bottom instead of guessing.
       line prints; `bun run validate` is green.
       — `869bc83`
 
+- [ ] **52. The beat the keyword table cannot name, on the desk.** SPEC §17.2 keeps the fixed nine
+      beats only until someone can tell whether they cover what the sources serve, and open
+      decision 2 says to revisit the taxonomy on evidence — task 41 put the page's keyword /
+      concept / education split on the desk, but that split is a page total: it says how many
+      clippings the keyword table missed and never which beat those clippings are filed under, so a
+      page where one beat is reached only through the concept map and a page where one clipping in
+      every beat fell back to `Education` render the same three numbers, and the beat a split would
+      actually help — the one whose keyword table is too thin to name anything — stays invisible.
+      Add one pure exported `conceptOnlyBeats` helper beside `beatSourceCounts` in
+      `src/lib/feed-analytics.ts` over the same `Pick<Paper, "title" | "abstract" | "topics">`
+      shape, returning the primary beats whose clippings on the page all arrived without a keyword
+      match (the `concept` and `education` paths of `beatSourceCounts`), in first-appearance order
+      and without duplicates, and `[]` for a page with no clippings. Render it in the desk's Topic
+      mix block with the existing `StatCard`/`Grid` primitives beside the `Filed by concept` and
+      `Education fallback` cards, joining the beats with `,` and reading an em dash when the list
+      is empty. Display only: no new `FeedStats` field, ranking, RPC procedure, persistence or
+      PostHog payload change, and the one-clipping-per-viewport snap is untouched.
+      Accept: a loaded page of three clippings — one whose text names Physics, one stored under
+      Physics with no keyword match, one stored under `Education` with no keyword match — reports
+      `["Education"]` and the desk renders `Education`, never `Physics`; a page whose clippings all
+      name their beat in text reports `[]` and the desk renders an em dash, never a blank or `NaN`;
+      two concept-filed Biology clippings report `Biology` once, not twice, and a page filing
+      Biology then Climate without keyword matches reports them in that page order; an unloaded
+      snapshot renders an em dash; the beats are asserted through `conceptOnlyBeats` over the
+      papers of a real `getPaperFeedSnapshot` (stubbed catalog, temp PGlite dir); the ranked page
+      for a fixed seed is identical before and after.
+
 ---
 
 ## Blocked — needs a product decision
