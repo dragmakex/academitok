@@ -173,7 +173,7 @@ write the conflict at the bottom instead of guessing.
       unloaded snapshot renders an em dash, never `NaN`; no ranking output changes.
       — `667e0a0`
 
-- [ ] **16. Topic entropy on `feed.next`.** SPEC §8.4 lists Shannon topic entropy at ≥ 1.6 nats per
+- [x] **16. Topic entropy on `feed.next`.** SPEC §8.4 lists Shannon topic entropy at ≥ 1.6 nats per
       50 impressions and open decision 2 keeps the fixed nine beats only until someone can tell
       whether those beats are too coarse — `feed.next` reports `median_year`,
       `unmatched_beat_count` and both citation medians, but nothing reports how evenly a page spreads
@@ -186,6 +186,7 @@ write the conflict at the bottom instead of guessing.
       Accept: three clippings on three distinct beats report ln 3 ≈ 1.099; ten clippings all on one
       beat report 0; an empty page reports 0, never `NaN`; the helper is unit-tested; the ranked page
       for a fixed seed is identical before and after.
+      — `06d08de`
 
 ---
 
