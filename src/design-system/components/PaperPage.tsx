@@ -1,9 +1,11 @@
 import { CopyBlock } from "./CopyBlock"
+import { LinkButton } from "./LinkButton"
 
 type PaperPageProps = {
   readonly abstract: string
   readonly accessLabel: string
   readonly authors: ReadonlyArray<string>
+  readonly bibtexHref: string
   readonly citation: string
   readonly citations: number
   readonly externalUrl: string | undefined
@@ -23,6 +25,7 @@ const factLabelClass =
  * Renders the canonical broadsheet clipping for one paper.
  * @param props - Paper metadata and the prepared citation.
  * @param props.citation - Plain-text citation copied to the clipboard.
+ * @param props.bibtexHref - Download URL for the clipping's BibTeX entry.
  * @returns Full clipping with metadata and citation.
  */
 export function PaperPage(props: PaperPageProps) {
@@ -130,6 +133,16 @@ export function PaperPage(props: PaperPageProps) {
               label="Cite this"
               text={props.citation}
             />
+            <div className="mt-s">
+              <LinkButton
+                href={props.bibtexHref}
+                target="_self"
+                variant="primary"
+                download="academitok-clipping.bib"
+              >
+                Export BibTeX
+              </LinkButton>
+            </div>
           </div>
 
           <div className="mt-l flex flex-col gap-xs">

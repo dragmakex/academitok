@@ -288,6 +288,14 @@ export const getPaperById = (id: string) =>
     })
     .pipe(Effect.withSpan("paper.byId"))
 
+export const getPaperBibtex = (id: string) =>
+  Effect
+    .gen(function*() {
+      const paper = yield* getPaperById(id)
+      return paper === null ? "" : formatBibtex([paper])
+    })
+    .pipe(Effect.withSpan("paper.bibtex"))
+
 export const getPaperAudience = (id: string) =>
   Effect
     .gen(function*() {

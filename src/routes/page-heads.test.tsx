@@ -130,6 +130,14 @@ describe("route heads", () => {
     })
   })
 
+  it("percent-encodes the clipping id in its BibTeX download", async () => {
+    const { paperBibtexHref } = await import("./paper/$id")
+
+    expect(paperBibtexHref("10.1000/a b")).toBe(
+      "/api/paper.bib?id=10.1000%2Fa%20b",
+    )
+  })
+
   it("gives no surface the bare gazette title", async () => {
     const [{ deckHead }, { morgueHead }, { permalinkHead }, { rootHead }] =
       await Promise.all([

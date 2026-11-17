@@ -4,6 +4,7 @@ import {
   getPaperFeedSnapshot,
   PapersApplicationLive,
 } from "@/features/papers/application"
+import { formatBibtex } from "@/features/papers/citation"
 import { defaultReaderId, ReaderId, readerIdCookieName } from "@/lib/reader-id"
 import { expect, it } from "@effect/vitest"
 import * as ConfigProvider from "effect/ConfigProvider"
@@ -19,6 +20,8 @@ import {
   AllRoutes,
   createRpcLoggerHandler,
   HealthRoute,
+  paperBibtexFilename,
+  PaperBibtexRoute,
   Route,
   RpcLogger,
   RpcLoggerLive,
@@ -91,6 +94,11 @@ it.effect("AllRoutes - layer is defined", () =>
 it.effect("SavedBibtexRoute - layer is defined", () =>
   Effect.sync(() => {
     expect(SavedBibtexRoute).toBeDefined()
+  }))
+
+it.effect("PaperBibtexRoute - layer is defined", () =>
+  Effect.sync(() => {
+    expect(PaperBibtexRoute).toBeDefined()
   }))
 
 it.effect("Route - is defined with handlers", () =>
@@ -197,6 +205,76 @@ it("serves the saved collection as a BibTeX attachment", {
     expect(anonymous.status).toBe(200)
     expect(await anonymous.text()).toBe("")
     expect(defaultReaderId).toBe("singleton")
+  } finally {
+    vi.unstubAllGlobals()
+    await files.dispose()
+    await rm(dataDir, { recursive: true, force: true })
+  }
+})
+
+/**
+ * Boots the single-clipping BibTeX route on a temporary reader database.
+ * @param dataDir - PGlite directory for the reader state.
+ * @returns Web request handler for the route layer.
+ */
+const paperBibHandler = (dataDir: string) =>
+  HttpRouter.toWebHandler(
+    PaperBibtexRoute.pipe(
+      Layer.provideMerge(PapersApplicationLive),
+      Layer.provide(
+        ConfigProvider.layer(
+          ConfigProvider.fromEnv({
+            env: { PGLITE_READER_STATE_DIR: dataDir },
+          }),
+        ),
+      ),
+    ),
+  )
+
+it("serves one clipping as a BibTeX attachment", {
+  timeout: 15_000,
+}, async () => {
+  const dataDir = await mkdtemp(join(tmpdir(), "academitok-paper-bib-"))
+  vi.stubGlobal("fetch", () => Promise.reject(new Error("offline")))
+  const paper = curatedPapers[0]
+  if (paper === undefined) {
+    throw new Error("missing curated paper fixture")
+  }
+  const files = paperBibHandler(dataDir)
+  const query = encodeURIComponent(paper.id)
+  const entry = formatBibtex([paper])
+
+  try {
+    const request = (search: string, cookie?: string) =>
+      files.handler(
+        new Request(`http://localhost/api/paper.bib${search}`, {
+          headers: cookie === undefined ? {} : { cookie },
+        }),
+      )
+
+    const ok = await request(`?id=${query}`)
+    expect(ok.status).toBe(200)
+    expect(ok.headers.get("content-type")).toBe(
+      "application/x-bibtex; charset=utf-8",
+    )
+    expect(ok.headers.get("content-disposition")).toBe(
+      `attachment; filename="${paperBibtexFilename}"`,
+    )
+    expect(await ok.text()).toBe(entry)
+
+    const otherReader = await request(
+      `?id=${query}`,
+      `${readerIdCookieName}=other-reader-0001`,
+    )
+    expect(await otherReader.text()).toBe(entry)
+
+    const missing = await request("")
+    expect(missing.status).toBe(404)
+    expect(await missing.text()).toBe("")
+
+    const unknown = await request("?id=not-a-paper")
+    expect(unknown.status).toBe(404)
+    expect(await unknown.text()).toBe("")
   } finally {
     vi.unstubAllGlobals()
     await files.dispose()

@@ -26,6 +26,14 @@ const getPermalinkAudience = createServerFn({ method: "GET" })
   .handler(({ data }) => serverRuntime.runPromise(getPaperAudience(data.id)))
 
 /**
+ * Download URL for one clipping's BibTeX entry (SPEC §14).
+ * @param id - Paper id, percent-encoded so DOIs keep neither space nor slash.
+ * @returns The `paper.bib` route URL.
+ */
+export const paperBibtexHref = (id: string) =>
+  `/api/paper.bib?id=${encodeURIComponent(id)}`
+
+/**
  * Head entries for a clipping permalink.
  * @param paper - Loaded paper, absent when the id is unknown.
  * @returns The paper title and abstract preview, or the not-found notice.
@@ -75,6 +83,7 @@ function PaperPermalinkRoute() {
           ? "Open access"
           : "Institution access"}
         authors={paper.authors}
+        bibtexHref={paperBibtexHref(paper.id)}
         citation={formatCitation(paper)}
         citations={paper.citations}
         externalUrl={paper.externalUrl}

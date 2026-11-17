@@ -7,6 +7,7 @@
 
 import { DomainRpc } from "@/api/domain-rpc"
 import {
+  getPaperBibtex,
   getSavedBibtex,
   PapersApplicationLive,
 } from "@/features/papers/application"
@@ -218,6 +219,46 @@ export const SavedBibtexRoute = HttpRouter.add(
   savedBibtexHandler,
 )
 
+/** Attachment name for a single clipping's BibTeX export (SPEC §14). */
+export const paperBibtexFilename = "academitok-clipping.bib"
+
+/**
+ * Answers one clipping as a BibTeX attachment, whichever reader asks.
+ * @param request - Incoming HTTP request carrying the `id` search parameter.
+ * @returns BibTeX attachment response; 404 with an empty body when unknown.
+ */
+export const paperBibtexHandler = (
+  request: HttpServerRequest.HttpServerRequest,
+) => {
+  const id = Option.match(HttpServerRequest.toURL(request), {
+    onNone: () => null,
+    onSome: (url) => url.searchParams.get("id"),
+  })
+  if (id === null || id === "") {
+    return Effect.succeed(HttpServerResponse.empty({ status: 404 }))
+  }
+
+  return getPaperBibtex(id).pipe(
+    Effect.map((bib) =>
+      bib === ""
+        ? HttpServerResponse.empty({ status: 404 })
+        : HttpServerResponse.text(bib, {
+          contentType: "application/x-bibtex; charset=utf-8",
+          headers: {
+            "content-disposition":
+              `attachment; filename="${paperBibtexFilename}"`,
+          },
+        })
+    ),
+  )
+}
+
+export const PaperBibtexRoute = HttpRouter.add(
+  "GET",
+  "/api/paper.bib",
+  paperBibtexHandler,
+)
+
 /**
  * Sentry integration test routes.
  *
@@ -276,6 +317,7 @@ export const AllRoutes = Layer
     RpcRouter,
     HealthRoute,
     SavedBibtexRoute,
+    PaperBibtexRoute,
     SentryTestGet,
     SentryTestPost,
   )

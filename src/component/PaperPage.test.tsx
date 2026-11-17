@@ -17,6 +17,7 @@ test("renders the clipping and copies its citation", async () => {
       abstract="A full abstract supplied by the metadata source."
       accessLabel="Open access"
       authors={["Ada Lovelace"]}
+      bibtexHref="/api/paper.bib?id=10.1000%2Fa%20b"
       citation={citation}
       citations={12}
       externalUrl="https://example.com/notes"
@@ -46,6 +47,10 @@ test("renders the clipping and copies its citation", async () => {
   await expect
     .element(page.getByRole("button", { name: "Copied" }))
     .toBeVisible()
+
+  await expect
+    .element(page.getByRole("link", { name: "Export BibTeX" }))
+    .toHaveAttribute("href", "/api/paper.bib?id=10.1000%2Fa%20b")
 })
 
 const markupFor = (savedByReaders: number) =>
@@ -54,6 +59,7 @@ const markupFor = (savedByReaders: number) =>
       abstract="A full abstract supplied by the metadata source."
       accessLabel="Open access"
       authors={["Ada Lovelace"]}
+      bibtexHref="/api/paper.bib?id=10.1000%2Fa%20b"
       citation={citation}
       citations={12}
       externalUrl="https://example.com/notes"
@@ -76,4 +82,13 @@ test("prints who filed the clipping", () => {
 
 test("omits the filing fact when nobody filed it", () => {
   expect(markupFor(0)).not.toContain("Filed by")
+})
+
+test("exports the clipping beside the citation control", () => {
+  const markup = markupFor(0)
+
+  expect(markup.match(/Export BibTeX/g)).toHaveLength(1)
+  expect(markup).toContain("href=\"/api/paper.bib?id=10.1000%2Fa%20b\"")
+  expect(markup).toContain("download=\"academitok-clipping.bib\"")
+  expect(markup).toContain("Copy citation")
 })
