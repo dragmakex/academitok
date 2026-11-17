@@ -706,6 +706,27 @@ write the conflict at the bottom instead of guessing.
       the real compact `PaperSlide`.
       — `a912220`
 
+- [ ] **41. Which path filed the beats, on the desk.** SPEC §17.2 keeps the fixed nine beats only
+      until someone can tell whether they cover what the sources serve, and task 39 now classifies
+      every page clipping as `keyword`, `concept` or `education` in `beatSourceCounts` and sends the
+      split to PostHog — but the desk's Topic mix block (tasks 17, 31) renders entropy, beats on the
+      page, the 50-impression window and the duplicate rate and never the split, so a reader can see
+      how evenly a page spreads across beats and not how much of it the keyword table actually
+      caught versus the concept map or the `Education` fallback: open decision 2's question stays
+      unreadable on the one surface built for revisiting decisions. Render the loaded page's three
+      counts in that block with the existing `StatCard`/`Grid` primitives, reusing `beatSourceCounts`
+      over the same `pagePapers` the block already reads. Display only: no new helper, ranking, RPC
+      procedure, persistence or PostHog payload change, and the one-clipping-per-viewport snap is
+      untouched.
+      Accept: a loaded page of three clippings — one whose text names Physics, one with no keyword
+      match whose stored beat is Physics, one whose stored beat is `Education` — renders 1, 1 and 1;
+      a page whose clippings all name their beat in text renders keyword 10 with the concept and
+      education cards reading `0`, never an em dash; an unloaded snapshot renders an em dash on all
+      three, never `NaN` or `0`; the three counts sum to the block's `drift.total` on every page;
+      the counts are asserted through `beatSourceCounts` over the papers of a real
+      `getPaperFeedSnapshot` (stubbed catalog, temp PGlite dir); the ranked page for a fixed seed is
+      identical before and after.
+
 ---
 
 ## Blocked — needs a product decision
