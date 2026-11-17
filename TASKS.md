@@ -494,6 +494,28 @@ write the conflict at the bottom instead of guessing.
       `ReaderState` view reactions; the ranked page for a fixed seed is identical before and after.
       — `80327d9`
 
+- [ ] **33. Duplicate rate over the §8.4 impression window on the desk.** SPEC §8.4 sets duplicate
+      rate per page at exactly 0 and AGENTS.md calls rotation a bug, but nothing measures it: the
+      desk shows the other six feed-health numbers while `reactionWindow` in
+      `src/lib/feed-analytics.ts` counts views, hides, opens and saves from the reaction kinds alone
+      and never looks at which papers they name, so a session that is served the same clipping twice
+      (a stale cursor, a pool refetch, a session-dedupe miss) looks identical to a clean one. Add one
+      pure `duplicateRate` helper beside `savesPerHundred` over the paper ids of the reader's last 50
+      `view` reactions, the §8.4 window, returning the share of views whose paper already appeared
+      earlier in that window and `null` when the window holds no view. Report it as
+      `windowDuplicateRate` on `FeedStats` from the view reactions' `paperId`s in
+      `getPaperFeedSnapshot` — collected from the reactions themselves, not from `windowPapers`, so a
+      repeat of a paper missing from the loaded catalog still counts — and render it in the desk's
+      Topic mix block with the existing `StatCard`/`Grid` primitives as a percentage beside its 0%
+      target. Display only: no ranking, RPC procedure, persistence or PostHog payload change, and the
+      one-clipping-per-viewport snap is untouched.
+      Accept: a 50-view window whose 48 distinct papers carry 2 repeats reports 0.04 and the desk
+      renders `4.0%`; a window of 50 distinct papers reports 0 and renders `0.0%`, never an em dash;
+      a repeat older than the window's fifty does not move the figure; a reader with no view
+      reactions reports null and the desk renders an em dash, never `NaN`; the helper is unit-tested
+      and its count reaches `getPaperFeedSnapshot` from real `ReaderState` view reactions; the ranked
+      page for a fixed seed is identical before and after.
+
 ---
 
 ## Blocked — needs a product decision
