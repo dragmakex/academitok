@@ -173,6 +173,20 @@ write the conflict at the bottom instead of guessing.
       unloaded snapshot renders an em dash, never `NaN`; no ranking output changes.
       — `667e0a0`
 
+- [ ] **16. Topic entropy on `feed.next`.** SPEC §8.4 lists Shannon topic entropy at ≥ 1.6 nats per
+      50 impressions and open decision 2 keeps the fixed nine beats only until someone can tell
+      whether those beats are too coarse — `feed.next` reports `median_year`,
+      `unmatched_beat_count` and both citation medians, but nothing reports how evenly a page spreads
+      across beats, so a page of ten near-identical topics looks the same as a well-mixed one. Add a
+      pure `topicEntropy` helper beside `medianYear` in `src/lib/feed-analytics.ts` returning the
+      Shannon entropy in nats of the page's primary beat per clipping, and report `topic_entropy` on
+      the existing `feed.next` feed-health event beside `median_year` (ten clippings per page, so
+      five consecutive page events are the §8.4 per-50-impressions window). Measurement only: no
+      ranking, RPC contract, persistence or desk change, and the ≤2-per-topic cap stays as it is.
+      Accept: three clippings on three distinct beats report ln 3 ≈ 1.099; ten clippings all on one
+      beat report 0; an empty page reports 0, never `NaN`; the helper is unit-tested; the ranked page
+      for a fixed seed is identical before and after.
+
 ---
 
 ## Blocked — needs a product decision
