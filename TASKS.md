@@ -494,7 +494,7 @@ write the conflict at the bottom instead of guessing.
       `ReaderState` view reactions; the ranked page for a fixed seed is identical before and after.
       — `80327d9`
 
-- [ ] **33. Duplicate rate over the §8.4 impression window on the desk.** SPEC §8.4 sets duplicate
+- [x] **33. Duplicate rate over the §8.4 impression window on the desk.** SPEC §8.4 sets duplicate
       rate per page at exactly 0 and AGENTS.md calls rotation a bug, but nothing measures it: the
       desk shows the other six feed-health numbers while `reactionWindow` in
       `src/lib/feed-analytics.ts` counts views, hides, opens and saves from the reaction kinds alone
@@ -515,6 +515,7 @@ write the conflict at the bottom instead of guessing.
       reactions reports null and the desk renders an em dash, never `NaN`; the helper is unit-tested
       and its count reaches `getPaperFeedSnapshot` from real `ReaderState` view reactions; the ranked
       page for a fixed seed is identical before and after.
+      — `ab9e1f9`
 
 ---
 
