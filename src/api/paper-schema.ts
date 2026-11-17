@@ -121,6 +121,8 @@ export const FeedStats = Schema.Struct({
   bookmarked: Schema.Number,
   medianDwellMs: Schema.NullOr(Schema.Number),
   medianCompletion: Schema.NullOr(Schema.Number),
+  hideRate: Schema.NullOr(Schema.Number),
+  openSourceRate: Schema.NullOr(Schema.Number),
 })
 export type FeedStats = typeof FeedStats.Type
 

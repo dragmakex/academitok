@@ -1,6 +1,7 @@
 import type {
   FeedSnapshot,
   Paper,
+  ReactionKind,
   ReactToPaperInput,
   Topic,
   TrackPaperViewInput,
@@ -146,6 +147,38 @@ export function medianDwell(
   dwells: ReadonlyArray<number>,
 ): number | null {
   return median(dwells)
+}
+
+export type ReactionRates = {
+  readonly hideRate: number | null
+  readonly openSourceRate: number | null
+}
+
+/**
+ * Hide and open-source shares of the reader's most recent impressions (SPEC §8.4).
+ * @param kinds - Reaction kinds, newest first.
+ * @param window - Impressions in the measurement window.
+ * @returns Shares of the window; both null when it holds no impression.
+ */
+export function reactionRates(
+  kinds: ReadonlyArray<ReactionKind>,
+  window: number,
+): ReactionRates {
+  const counts = { view: 0, hide: 0, "open-site": 0 }
+  for (const kind of kinds) {
+    if (counts.view >= window) {
+      break
+    }
+    if (kind === "view" || kind === "hide" || kind === "open-site") {
+      counts[kind] += 1
+    }
+  }
+  return {
+    hideRate: counts.view === 0 ? null : counts.hide / counts.view,
+    openSourceRate: counts.view === 0
+      ? null
+      : counts["open-site"] / counts.view,
+  }
 }
 
 /**

@@ -238,6 +238,53 @@ describe("papers application", () => {
     expect(recorded.stats.medianCompletion).toBe(0.5)
   })
 
+  it("reports the reader's hide and open-source rates on the feed snapshot", {
+    timeout: 15_000,
+  }, async () => {
+    const dataDir = await mkdtemp(join(tmpdir(), "academitok-reaction-rates-"))
+    directories.push(dataDir)
+    vi.stubGlobal("fetch", () => Promise.reject(new Error("offline")))
+    const target = curatedPapers[0]
+    if (target === undefined) {
+      throw new Error("missing curated paper fixture")
+    }
+
+    const [empty, recorded] = await runFeed(
+      dataDir,
+      Effect.gen(function*() {
+        const repository = yield* ReaderStateRepository
+        yield* repository.onboard({
+          keptPaperIds: [],
+          rejectedPaperIds: [],
+          skipped: true,
+        })
+        const before = yield* getPaperFeedSnapshot(requestFor("rates-a"))
+        for (let index = 0; index < 50; index += 1) {
+          yield* repository.track({
+            paperId: target.id,
+            position: index,
+            exploration: false,
+            kind: "view",
+            dwellMs: 0,
+          })
+        }
+        yield* repository.react({ paperId: target.id, kind: "hide" })
+        for (let index = 0; index < 6; index += 1) {
+          yield* repository.react({ paperId: target.id, kind: "open-site" })
+        }
+        return [
+          before,
+          yield* getPaperFeedSnapshot(requestFor("rates-b")),
+        ] as const
+      }),
+    )
+
+    expect(empty.stats.hideRate).toBeNull()
+    expect(empty.stats.openSourceRate).toBeNull()
+    expect(recorded.stats.hideRate).toBeCloseTo(0.02, 5)
+    expect(recorded.stats.openSourceRate).toBeCloseTo(0.12, 5)
+  })
+
   it("files bookmarked papers in the saved list and drops them on unsave", async () => {
     const dataDir = await mkdtemp(join(tmpdir(), "academitok-saved-"))
     directories.push(dataDir)

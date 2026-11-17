@@ -70,6 +70,14 @@ const institutions = [
   "Max Planck",
 ] as const
 
+/**
+ * Renders a rate as a percentage, dropping a trailing `.0` (2.0% and 12%).
+ * @param rate - Share of the measurement window.
+ * @returns Percentage label.
+ */
+const formatRate = (rate: number): string =>
+  `${(rate * 100).toFixed(1).replace(/\.0$/, "")}%`
+
 type VisiblePaperSlideProps = {
   readonly active: boolean
   readonly index: number
@@ -555,6 +563,8 @@ export function App() {
   const entropy = topicEntropy(pagePapers)
   const medianDwellMs = snapshot?.stats.medianDwellMs ?? null
   const medianCompletion = snapshot?.stats.medianCompletion ?? null
+  const hideRate = snapshot?.stats.hideRate ?? null
+  const openSourceRate = snapshot?.stats.openSourceRate ?? null
   const beats = new Set(
     pagePapers.flatMap((paper) =>
       paper.topics[0] === undefined ? [] : [paper.topics[0]]
@@ -651,6 +661,18 @@ export function App() {
                   ? "—"
                   : `${Math.round(medianCompletion * 100)}%`}
                 helper="against the 100% target"
+              />
+              <StatCard
+                label="Hide rate"
+                value={hideRate === null ? "—" : formatRate(hideRate)}
+                helper="against the 3% ceiling"
+              />
+              <StatCard
+                label="Open-source rate"
+                value={openSourceRate === null
+                  ? "—"
+                  : formatRate(openSourceRate)}
+                helper="against the 12% floor"
               />
             </Grid>
           </Stack>

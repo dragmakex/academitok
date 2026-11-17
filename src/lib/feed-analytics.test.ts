@@ -10,6 +10,7 @@ import {
   medianCompletion,
   medianDwell,
   medianYear,
+  reactionRates,
   readingCompletion,
   topicEntropy,
   trackFeedHealthEvent,
@@ -107,6 +108,45 @@ describe("medianDwell", () => {
 
   it("reports no median when nothing was recorded", () => {
     expect(medianDwell([])).toBeNull()
+  })
+})
+
+const windowKinds = (hides: number, opens: number) =>
+  [
+    ...Array<"hide">(hides).fill("hide"),
+    ...Array<"open-site">(opens).fill("open-site"),
+    ...Array<"view">(50).fill("view"),
+  ] as const
+
+describe("reactionRates", () => {
+  it("reports the hide and open-source shares of the view window", () => {
+    expect(reactionRates(windowKinds(1, 6), 50)).toEqual({
+      hideRate: 0.02,
+      openSourceRate: 0.12,
+    })
+  })
+
+  it("ignores reactions older than the view window", () => {
+    const kinds = [
+      ...Array<"view">(50).fill("view"),
+      "hide",
+      "open-site",
+    ] as const
+    expect(reactionRates(kinds, 50)).toEqual({
+      hideRate: 0,
+      openSourceRate: 0,
+    })
+  })
+
+  it("reports no rate when the window holds no impression", () => {
+    expect(reactionRates([], 50)).toEqual({
+      hideRate: null,
+      openSourceRate: null,
+    })
+    expect(reactionRates(["hide", "open-site"], 50)).toEqual({
+      hideRate: null,
+      openSourceRate: null,
+    })
   })
 })
 
