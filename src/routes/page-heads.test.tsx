@@ -66,6 +66,7 @@ vi.mock("@/features/papers/application", () => ({
   getSavedPapers: vi.fn(),
   getPaperById: vi.fn(),
   getPaperAudience: vi.fn(),
+  getPaperOpenedBy: vi.fn(),
 }))
 
 describe("route heads", () => {

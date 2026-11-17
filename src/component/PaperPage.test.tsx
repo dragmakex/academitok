@@ -21,6 +21,7 @@ test("renders the clipping and copies its citation", async () => {
       citation={citation}
       citations={12}
       externalUrl="https://example.com/notes"
+      openedByReaders={2}
       readMinutes={6}
       savedByReaders={2}
       siteLabel="OpenAlex"
@@ -53,7 +54,7 @@ test("renders the clipping and copies its citation", async () => {
     .toHaveAttribute("href", "/api/paper.bib?id=10.1000%2Fa%20b")
 })
 
-const markupFor = (savedByReaders: number) =>
+const markupFor = (savedByReaders: number, openedByReaders = 0) =>
   renderToStaticMarkup(
     <PaperPage
       abstract="A full abstract supplied by the metadata source."
@@ -63,6 +64,7 @@ const markupFor = (savedByReaders: number) =>
       citation={citation}
       citations={12}
       externalUrl="https://example.com/notes"
+      openedByReaders={openedByReaders}
       readMinutes={6}
       savedByReaders={savedByReaders}
       siteLabel="OpenAlex"
@@ -82,6 +84,17 @@ test("prints who filed the clipping", () => {
 
 test("omits the filing fact when nobody filed it", () => {
   expect(markupFor(0)).not.toContain("Filed by")
+})
+
+test("prints who opened the clipping's source", () => {
+  const markup = markupFor(0, 3)
+
+  expect(markup).toContain("Opened by")
+  expect(markup).toContain("3 readers")
+})
+
+test("omits the open-source fact when nobody opened it", () => {
+  expect(markupFor(0, 0)).not.toContain("Opened by")
 })
 
 test("exports the clipping beside the citation control", () => {

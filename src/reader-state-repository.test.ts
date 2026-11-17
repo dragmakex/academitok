@@ -356,6 +356,48 @@ describe("ReaderStateRepository", () => {
     expect(counts.unfiled).toBe(0)
   })
 
+  it("counts the readers who opened a clipping's source, once each", async () => {
+    const dataDir = await mkdtemp(join(tmpdir(), "academitok-opened-"))
+    directories.push(dataDir)
+    const readerA = "21b6c8d4-3e2f-4a77-9b55-8c1d0e2f4a66"
+    const readerB = "5a3f1e70-9c48-4d26-b8e1-7f0a2c6d9e33"
+    const readerC = "c47e2b91-0a63-4f58-9d14-6e8b3a0f7d22"
+    const asReader = <A, E, R>(
+      readerId: string,
+      effect: Effect.Effect<A, E, ReaderId | R>,
+    ): Effect.Effect<A, E, R> =>
+      Effect.provideService(effect, ReaderId, readerId)
+
+    const counts = await runWithDatabase(
+      dataDir,
+      Effect.gen(function*() {
+        const repository = yield* ReaderStateRepository
+        const open = (readerId: string, paperId: string) =>
+          asReader(readerId, repository.react({ paperId, kind: "open-site" }))
+
+        yield* open(readerA, "paper-1")
+        yield* open(readerB, "paper-1")
+        yield* open(readerA, "paper-1")
+
+        return {
+          twoReaders: yield* repository.openedByReaders("paper-1"),
+          strangerSees: yield* asReader(
+            readerC,
+            repository.openedByReaders("paper-1"),
+          ),
+          unopened: yield* asReader(
+            readerC,
+            repository.openedByReaders("paper-2"),
+          ),
+        }
+      }),
+    )
+
+    expect(counts.twoReaders).toBe(2)
+    expect(counts.strangerSees).toBe(2)
+    expect(counts.unopened).toBe(0)
+  })
+
   it("puts the impression retention boundary 90 days before now", () => {
     const now = new Date("2026-05-01T12:00:00.000Z")
     expect(now.getTime() - impressionCutoff(now).getTime()).toBe(

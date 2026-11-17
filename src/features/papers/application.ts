@@ -304,6 +304,14 @@ export const getPaperAudience = (id: string) =>
     })
     .pipe(Effect.withSpan("paper.audience"))
 
+export const getPaperOpenedBy = (id: string) =>
+  Effect
+    .gen(function*() {
+      const repository = yield* ReaderStateRepository
+      return yield* repository.openedByReaders(id)
+    })
+    .pipe(Effect.withSpan("paper.opened-by"))
+
 export const getSavedAudience: Effect.Effect<
   Record<string, number>,
   never,

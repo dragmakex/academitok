@@ -72,6 +72,7 @@ type ReaderStateRepositoryShape = {
     now: Date,
   ) => Effect.Effect<ReadonlyArray<Paper>>
   readonly savedByReaders: (paperId: string) => Effect.Effect<number>
+  readonly openedByReaders: (paperId: string) => Effect.Effect<number>
   readonly filedByOthers: (
     paperIds: ReadonlyArray<string>,
     readerId: string,
@@ -131,6 +132,7 @@ type StateStorage = {
   ) => Promise<ReadonlyArray<Paper>>
   readonly recentPapers: (since: Date) => Promise<ReadonlyArray<Paper>>
   readonly savedByReaders: (paperId: string) => Promise<number>
+  readonly openedByReaders: (paperId: string) => Promise<number>
   readonly filedByOthers: (
     paperIds: ReadonlyArray<string>,
     readerId: string,
@@ -623,6 +625,12 @@ function makeRepositoryService(storage: StateStorage) {
           await ensureMigrated()
           return storage.savedByReaders(paperId)
         }),
+      // Deliberately not reader-scoped: the count spans every reader's opens.
+      openedByReaders: (paperId) =>
+        Effect.promise(async () => {
+          await ensureMigrated()
+          return storage.openedByReaders(paperId)
+        }),
       filedByOthers: (paperIds, readerId) =>
         Effect.promise(async () => {
           await ensureMigrated()
@@ -964,6 +972,20 @@ function makePostgresRepository(databaseUrl: string) {
               .orderBy(desc(reactionsTable.createdAt)),
           )
         },
+        openedByReaders: async (paperId) =>
+          activeFilers(
+            await db
+              .select({
+                readerId: reactionsTable.readerId,
+                active: reactionsTable.active,
+              })
+              .from(reactionsTable)
+              .where(and(
+                eq(reactionsTable.paperId, paperId),
+                eq(reactionsTable.kind, "open-site"),
+              ))
+              .orderBy(desc(reactionsTable.createdAt)),
+          ),
       }
 
       return makeRepositoryService(postgresStorage)
@@ -1302,6 +1324,20 @@ function makePgliteRepository(dataDir: string | undefined) {
               .orderBy(desc(reactionsTable.createdAt)),
           )
         },
+        openedByReaders: async (paperId) =>
+          activeFilers(
+            await db
+              .select({
+                readerId: reactionsTable.readerId,
+                active: reactionsTable.active,
+              })
+              .from(reactionsTable)
+              .where(and(
+                eq(reactionsTable.paperId, paperId),
+                eq(reactionsTable.kind, "open-site"),
+              ))
+              .orderBy(desc(reactionsTable.createdAt)),
+          ),
       }
 
       return makeRepositoryService(storage)

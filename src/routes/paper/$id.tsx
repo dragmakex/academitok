@@ -3,7 +3,11 @@ import { EmptyState } from "@/design-system/components/EmptyState"
 import { LinkButton } from "@/design-system/components/LinkButton"
 import { Page } from "@/design-system/components/Page"
 import { PaperPage } from "@/design-system/components/PaperPage"
-import { getPaperAudience, getPaperById } from "@/features/papers/application"
+import {
+  getPaperAudience,
+  getPaperById,
+  getPaperOpenedBy,
+} from "@/features/papers/application"
 import { formatCitation } from "@/features/papers/citation"
 import { createFileRoute, notFound } from "@tanstack/react-router"
 import { createServerFn } from "@tanstack/react-start"
@@ -24,6 +28,12 @@ const getPermalinkAudience = createServerFn({ method: "GET" })
     Schema.decodeUnknownSync(paperPermalinkInput)(input)
   )
   .handler(({ data }) => serverRuntime.runPromise(getPaperAudience(data.id)))
+
+const getPermalinkOpenedBy = createServerFn({ method: "GET" })
+  .inputValidator((input: unknown) =>
+    Schema.decodeUnknownSync(paperPermalinkInput)(input)
+  )
+  .handler(({ data }) => serverRuntime.runPromise(getPaperOpenedBy(data.id)))
 
 /**
  * Download URL for one clipping's BibTeX entry (SPEC §14).
@@ -52,15 +62,16 @@ export const permalinkHead = (paper: Paper | undefined) =>
 
 export const Route = createFileRoute("/paper/$id")({
   loader: async ({ params }) => {
-    const [paper, savedByReaders] = await Promise.all([
+    const [paper, savedByReaders, openedByReaders] = await Promise.all([
       getPaperPermalink({ data: { id: params.id } }),
       getPermalinkAudience({ data: { id: params.id } }),
+      getPermalinkOpenedBy({ data: { id: params.id } }),
     ])
     if (paper === null) {
       throw notFound()
     }
 
-    return { paper, savedByReaders }
+    return { paper, openedByReaders, savedByReaders }
   },
   head: ({ loaderData }) =>
     permalinkHead(loaderData === undefined ? undefined : loaderData.paper),
@@ -73,7 +84,7 @@ export const Route = createFileRoute("/paper/$id")({
  * @returns The permalink page.
  */
 function PaperPermalinkRoute() {
-  const { paper, savedByReaders } = Route.useLoaderData()
+  const { paper, openedByReaders, savedByReaders } = Route.useLoaderData()
 
   return (
     <Page>
@@ -87,6 +98,7 @@ function PaperPermalinkRoute() {
         citation={formatCitation(paper)}
         citations={paper.citations}
         externalUrl={paper.externalUrl}
+        openedByReaders={openedByReaders}
         readMinutes={paper.readMinutes}
         savedByReaders={savedByReaders}
         siteLabel={paper.site}
