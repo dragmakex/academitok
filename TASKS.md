@@ -1062,6 +1062,36 @@ write the conflict at the bottom instead of guessing.
       reactions; the ranked page for a fixed seed is identical before and after.
       — `bdfec8b`
 
+- [ ] **54. A BibTeX entry for the clipping in front of you.** SPEC §16 P2 pairs the permalink with a
+      "copyable citation" and §14 keeps BibTeX generation in the server layer, and task 23 gave
+      `/saved` a `GET /api/saved.bib` attachment — but the reader who wants to cite the one clipping
+      they are reading has no such export: `/paper/$id` copies `formatCitation`'s plain text and
+      nothing else, so citing a single paper means saving it first and taking the whole morgue file,
+      and the generator that already renders one `@article` per paper is never asked for one paper.
+      Add one exported `getPaperBibtex(id)` in `src/features/papers/application.ts` returning
+      `formatBibtex([paper])` for the paper `getPaperById` resolves and an empty string when the id
+      is unknown; add a `GET /api/paper.bib?id=<id>` HTTP route beside `/api/saved.bib` in
+      `src/routes/api/$.ts` answering `application/x-bibtex; charset=utf-8` with an attachment named
+      `academitok-clipping.bib`, and 404 with an empty body for a missing or unknown id; and render
+      it in `PaperPage`'s sidebar as a `LinkButton` (`Export BibTeX`, `target="_self"`, `download`
+      the same name) under the existing `Cite this` `CopyBlock`, taking the href as a new
+      `bibtexHref` prop the permalink route builds as
+      `/api/paper.bib?id=${encodeURIComponent(paper.id)}`. Additive only: no new component,
+      dependency, ranking, RPC procedure, schema, persistence, desk, PostHog or design-language
+      change, `formatBibtex`, `formatCitation` and `/api/saved.bib` stay as they are, and the
+      one-clipping-per-viewport snap is untouched.
+      Accept: `GET /api/paper.bib?id=<id>` for a seeded clipping answers 200 with exactly
+      `formatBibtex([paper])` as its body, `application/x-bibtex; charset=utf-8` as its content type
+      and `attachment; filename="academitok-clipping.bib"` as its disposition; a missing or unknown
+      id answers 404 with an empty body, never a 500 and never a page of HTML; the entry for a
+      clipping the reader never saved equals the entry for one they did, so the export is not
+      reader-scoped; the permalink renders exactly one `Export BibTeX` link whose href is
+      `/api/paper.bib?id=<percent-encoded id>`, so a DOI id `10.1000/a b` carries neither a raw
+      space nor a raw slash, beside the existing `Copy citation` control; the route is asserted from
+      a real handler call over a temp PGlite dir with the catalog stubbed the way `$.test.ts`
+      already does it, and the href from `renderToStaticMarkup` of the real `PaperPage`; the ranked
+      page for a fixed seed is identical before and after; `bun run validate` is green.
+
 ---
 
 ## Blocked — needs a product decision
