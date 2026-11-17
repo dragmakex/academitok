@@ -390,6 +390,25 @@ write the conflict at the bottom instead of guessing.
       seed is identical before and after.
       — `37c6cf5`
 
+- [ ] **28. Hide rate and open-source rate on the desk.** SPEC §8.4 sets hide rate at ≤ 3% and
+      open-source rate at ≥ 12%, and the rail records both as `hide` and `open-site` reactions the
+      desk never counts: it shows archival drift (task 8), citation skew (task 15), topic mix
+      (task 17), median dwell (task 25) and median completion (task 26), while the two numbers the
+      feed is judged on exist only as per-event PostHog properties with no rate over the reader's
+      window, so nobody can tell a page of clippings read and opened from a page of clippings
+      dismissed. Add one pure `reactionRates` helper beside `medianDwell` in
+      `src/lib/feed-analytics.ts` over the reaction kinds and the §8.4 window of the reader's last
+      50 `view` reactions: hide rate and open-site rate, each `null` when the window holds no view.
+      Report both as `hideRate`/`openSourceRate` on `FeedStats`, and render them in the desk's
+      Reading pace block with the existing `StatCard`/`Grid` primitives as percentages beside
+      their 3% and 12% targets. Display only: no ranking, RPC procedure, persistence or PostHog
+      payload change, and the one-clipping-per-viewport snap is untouched.
+      Accept: a 50-view window with 1 hide and 6 open-site reactions reports 0.02 and 0.12
+      and the desk renders `2.0%` and `12%`; a reader with no view reactions reports null for both
+      and the desk renders an em dash, never `NaN` or `0%`; the helper is unit-tested and its
+      counts reach `getPaperFeedSnapshot` from the real `ReaderState` view/hide/open-site
+      reactions; the ranked page for a fixed seed is identical before and after.
+
 ---
 
 ## Blocked — needs a product decision
