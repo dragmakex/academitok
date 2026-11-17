@@ -210,19 +210,56 @@ function mapWorkToPaper(work: OpenAlexWork): Paper | null {
   }
 }
 
+/** Jaccard similarity above which two titles are the same work. */
+const titleCollapseThreshold = 0.9
+
 /**
- * Removes exact title duplicates.
+ * Normalises a title into lowercase alphanumeric tokens.
+ * @param title - Paper title.
+ * @returns The title's token set.
+ */
+function titleTokens(title: string): Set<string> {
+  return new Set(title.toLowerCase().match(/[a-z0-9]+/g) ?? [])
+}
+
+/**
+ * Jaccard similarity of two token sets.
+ * @param left - First token set.
+ * @param right - Second token set.
+ * @returns Similarity, or 0 when either set is empty.
+ */
+function jaccard(left: Set<string>, right: Set<string>): number {
+  if (left.size === 0 || right.size === 0) {
+    return 0
+  }
+  let shared = 0
+  for (const token of left) {
+    if (right.has(token)) {
+      shared += 1
+    }
+  }
+  return shared / (left.size + right.size - shared)
+}
+
+/**
+ * Collapses near-duplicate titles, keeping input order and the first of each group.
  * @param papers - Candidate papers.
  * @returns Deduplicated papers.
  */
-function dedupeByTitle(papers: ReadonlyArray<Paper>): ReadonlyArray<Paper> {
-  const seen = new Set<string>()
+export function collapseTitleDuplicates(
+  papers: ReadonlyArray<Paper>,
+): ReadonlyArray<Paper> {
+  const kept: Array<Set<string>> = []
   return papers.filter((paper) => {
-    const key = paper.title.toLowerCase()
-    if (seen.has(key)) {
+    const tokens = titleTokens(paper.title)
+    if (
+      kept.some((existing) =>
+        jaccard(existing, tokens) > titleCollapseThreshold
+      )
+    ) {
       return false
     }
-    seen.add(key)
+    kept.push(tokens)
     return true
   })
 }
@@ -275,7 +312,7 @@ async function requestOpenAlexPapers(
     .map(mapWorkToPaper)
     .filter((paper): paper is Paper => paper !== null)
 
-  return dedupeByTitle([...mapped, ...curatedPapers]).slice(0, 58)
+  return collapseTitleDuplicates([...mapped, ...curatedPapers]).slice(0, 58)
 }
 
 /**
