@@ -679,7 +679,7 @@ write the conflict at the bottom instead of guessing.
       is identical before and after.
       — `a28507d`
 
-- [ ] **40. Who else keeps your clippings, counted on the morgue.** SPEC §16 P3 lists
+- [x] **40. Who else keeps your clippings, counted on the morgue.** SPEC §16 P3 lists
       "multi-reader with collaborative signals" and task 37 gave the permalink the one such fact it
       has ("Filed by N readers"), but `/saved` — the only page that shows a reader their whole
       morgue file — still reads as if they were alone: `getSavedPapers` hands back the reader's own
@@ -704,6 +704,7 @@ write the conflict at the bottom instead of guessing.
       every row omits the clause; the counts are asserted from a real repository written under
       three `ReaderId` values, and the rendered and omitted clause from `renderToStaticMarkup` of
       the real compact `PaperSlide`.
+      — `a912220`
 
 ---
 
