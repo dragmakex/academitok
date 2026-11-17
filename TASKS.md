@@ -857,6 +857,35 @@ write the conflict at the bottom instead of guessing.
       seed is identical before and after.
       — `2b99a5f`
 
+- [ ] **47. Reading time per beat on the desk.** SPEC §17.2 keeps the fixed nine beats only until
+      someone can tell whether they cover what the sources serve, and open decision 2 says to
+      revisit the taxonomy on evidence — but every behavioural figure the desk shows is averaged
+      across all beats at once: `windowTopicEntropy` (task 31) counts clippings per beat, the beat
+      source split (task 41) counts the ingestion path per clipping, and median dwell (task 25),
+      reading load (task 44) and completion (task 26) are all read over the window as one corpus,
+      so a window evenly mixed by count but where one beat is read to the end and another is
+      abandoned in three seconds scores exactly like a window of equal attention, and the beats
+      have no evidence for or against their grain. Add one pure exported `dwellEntropy` helper
+      beside `topicEntropy` in `src/lib/feed-analytics.ts` over `{ topics, dwellMs }` pairs — the
+      Shannon entropy in nats of each primary beat's share of the recorded dwell, weighting beats
+      by reading time instead of clipping count, dropping pairs whose dwell is missing or not
+      positive and returning 0 for an empty set or a single beat, never `NaN`. Report it as
+      `windowDwellEntropy` on `FeedStats` from the `dwell` reactions in the §8.4 window joined to
+      the loaded catalog the way `medianCompletion` joins them — a dwell reaction whose paper is
+      not loaded is dropped rather than counted as a beat — and render it in the desk's Topic mix
+      block with the existing `StatCard`/`Grid` primitives beside the count-weighted window
+      figure, its helper naming the 50-impression window. Display only: no ranking, RPC
+      procedure, persistence or PostHog payload change, and the one-clipping-per-viewport snap is
+      untouched.
+      Accept: three dwell reactions of 1 s each on three distinct beats report ln 3 ≈ 1.10, and
+      the same three beats dwelled 10 s, 1 s and 1 s report ≈ 0.57 so the desk separates an evenly
+      mixed window from an evenly served one; every dwell on one beat reports 0, never an em dash;
+      a dwell reaction with a missing or zero `dwellMs`, or whose paper is absent from the loaded
+      catalog, is dropped rather than counted as a beat; a reader with no dwell reactions reports
+      null and the desk renders an em dash, never `NaN`; the helper is unit-tested and the figure
+      reaches `getPaperFeedSnapshot` from real `ReaderState` dwell reactions; the ranked page for a
+      fixed seed is identical before and after.
+
 ---
 
 ## Blocked — needs a product decision
