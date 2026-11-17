@@ -16,6 +16,7 @@ import {
   savedPaperIds,
 } from "@/features/papers/recommendation"
 import {
+  duplicateRate,
   medianCompletion,
   medianDwell,
   medianYear,
@@ -107,6 +108,10 @@ export const getPaperFeedSnapshot = (request: FeedRequest) =>
           const paper = papersById.get(reaction.paperId)
           return paper === undefined ? [] : [paper]
         })
+      const viewPaperIds = state
+        .reactions
+        .filter((reaction) => reaction.kind === "view")
+        .map((reaction) => reaction.paperId)
       const rates = reactionRates(
         state.reactions.map((reaction) => reaction.kind),
         dwellWindow,
@@ -174,6 +179,7 @@ export const getPaperFeedSnapshot = (request: FeedRequest) =>
           windowMedianYear: medianYear(
             windowPapers.map((paper) => paper.year),
           ),
+          windowDuplicateRate: duplicateRate(viewPaperIds, dwellWindow),
         },
         items: page.items,
         nextCursor: page.nextCursor,

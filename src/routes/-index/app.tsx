@@ -622,6 +622,7 @@ export function App() {
   const savesPerHundred = snapshot?.stats.savesPerHundred ?? null
   const windowTopicEntropy = snapshot?.stats.windowTopicEntropy ?? null
   const windowMedianYear = snapshot?.stats.windowMedianYear ?? null
+  const windowDuplicateRate = snapshot?.stats.windowDuplicateRate ?? null
   const beats = new Set(
     pagePapers.flatMap((paper) =>
       paper.topics[0] === undefined ? [] : [paper.topics[0]]
@@ -708,6 +709,13 @@ export function App() {
                   ? "—"
                   : windowTopicEntropy.toFixed(2)}
                 helper="nats against the 1.6 floor"
+              />
+              <StatCard
+                label="Duplicate rate"
+                value={windowDuplicateRate === null
+                  ? "—"
+                  : `${(windowDuplicateRate * 100).toFixed(1)}%`}
+                helper="against the 0% target"
               />
             </Grid>
           </Stack>

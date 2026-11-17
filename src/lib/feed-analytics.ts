@@ -226,6 +226,23 @@ export function savesPerHundred(
 }
 
 /**
+ * Share of the reader's recent impressions that repeat a clipping already served
+ * earlier in the same window (SPEC §8.4).
+ * @param paperIds - Viewed paper ids, newest first.
+ * @param window - Impressions in the measurement window.
+ * @returns Repeat share of the window, or null when the window holds no impression.
+ */
+export function duplicateRate(
+  paperIds: ReadonlyArray<string>,
+  window: number,
+): number | null {
+  const viewed = paperIds.slice(0, window)
+  return viewed.length === 0
+    ? null
+    : (viewed.length - new Set(viewed).size) / viewed.length
+}
+
+/**
  * Median reading completion of the clippings that could be measured (SPEC §16 P3).
  * @param values - Per-clip ratios; null marks a clipping without a usable estimate.
  * @returns Median ratio, or null when nothing was measurable.

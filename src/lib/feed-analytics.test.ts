@@ -6,6 +6,7 @@ import { afterEach, describe, expect, it, vi } from "vitest"
 import {
   archivalDrift,
   citationAgeSkew,
+  duplicateRate,
   hashReaderId,
   medianCompletion,
   medianDwell,
@@ -175,6 +176,34 @@ describe("savesPerHundred", () => {
   it("reports no rate when the window holds no impression", () => {
     expect(savesPerHundred([], 50)).toBeNull()
     expect(savesPerHundred(["bookmark"], 50)).toBeNull()
+  })
+})
+
+describe("duplicateRate", () => {
+  it("reports the repeat share of the view window", () => {
+    const ids = [
+      ...Array<number>(48).fill(0).map((_, index) => `paper-${index}`),
+      "paper-0",
+      "paper-1",
+    ]
+    expect(duplicateRate(ids, 50)).toBeCloseTo(0.04, 5)
+  })
+
+  it("reports zero when the window holds only distinct clippings", () => {
+    const ids = Array<number>(50).fill(0).map((_, index) => `paper-${index}`)
+    expect(duplicateRate(ids, 50)).toBe(0)
+  })
+
+  it("ignores repeats older than the view window", () => {
+    const ids = [
+      ...Array<number>(50).fill(0).map((_, index) => `paper-${index}`),
+      "paper-0",
+    ]
+    expect(duplicateRate(ids, 50)).toBe(0)
+  })
+
+  it("reports no rate when the window holds no impression", () => {
+    expect(duplicateRate([], 50)).toBeNull()
   })
 })
 

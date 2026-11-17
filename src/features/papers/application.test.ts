@@ -338,6 +338,70 @@ describe("papers application", () => {
   )
 
   it(
+    "reports the duplicate rate over the reader's last 50 impressions",
+    {
+      timeout: 15_000,
+    },
+    async () => {
+      const dataDir = await mkdtemp(
+        join(tmpdir(), "academitok-duplicate-rate-"),
+      )
+      directories.push(dataDir)
+      vi.stubGlobal("fetch", () => Promise.reject(new Error("offline")))
+      const distinct = Array<number>(48)
+        .fill(0)
+        .map((_, index) => `viewed-paper-${index}`)
+
+      const [empty, repeated, displaced] = await runFeed(
+        dataDir,
+        Effect.gen(function*() {
+          const repository = yield* ReaderStateRepository
+          yield* repository.onboard({
+            keptPaperIds: [],
+            rejectedPaperIds: [],
+            skipped: true,
+          })
+          const before = yield* getPaperFeedSnapshot(
+            requestFor("duplicates-a"),
+          )
+          const viewed = [...distinct, distinct[0], distinct[1]]
+          for (const [position, paperId] of viewed.entries()) {
+            yield* repository.track({
+              paperId: paperId ?? "",
+              position,
+              exploration: false,
+              kind: "view",
+              dwellMs: 0,
+            })
+          }
+          const windowed = yield* getPaperFeedSnapshot(
+            requestFor("duplicates-b"),
+          )
+          // Fifty newer distinct impressions push the repeats out of the window.
+          for (let index = 0; index < 50; index += 1) {
+            yield* repository.track({
+              paperId: `newer-paper-${index}`,
+              position: index,
+              exploration: false,
+              kind: "view",
+              dwellMs: 0,
+            })
+          }
+          return [
+            before,
+            windowed,
+            yield* getPaperFeedSnapshot(requestFor("duplicates-c")),
+          ] as const
+        }),
+      )
+
+      expect(empty.stats.windowDuplicateRate).toBeNull()
+      expect(repeated.stats.windowDuplicateRate).toBeCloseTo(0.04, 5)
+      expect(displaced.stats.windowDuplicateRate).toBe(0)
+    },
+  )
+
+  it(
     "reports topic entropy over the reader's last 50 impressions",
     {
       timeout: 15_000,
