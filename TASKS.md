@@ -802,7 +802,7 @@ write the conflict at the bottom instead of guessing.
       helper is unit-tested and the figure reaches `getPaperFeedSnapshot` from real
       `ReaderState` view reactions; the ranked page for a fixed seed is identical before and
       after.
-      — `PLACEHOLDER`
+      — `3b2e8c7`
 
 ---
 
