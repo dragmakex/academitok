@@ -583,6 +583,29 @@ write the conflict at the bottom instead of guessing.
       fixed-seed page is identical; the helper is unit-tested and `bun run validate` is green.
       — `4bf1b6a`
 
+- [ ] **36. A name and a description for every surface.** SPEC §16 P3's native shell and the P2
+      permalink exist so a clipping can leave the deck, but no surface answers "what is this link":
+      `rootHead()` in `src/routes/__root.tsx` carries one static `AcademiTok Gazette` title and no
+      `description`, `src/routes/index.tsx` and `src/routes/saved.tsx` set no `head` at all, and
+      `src/routes/paper/$id.tsx` sets a title only — so the deck, the morgue and a shared clipping
+      all present as the same untitled gazette in the tab, in the installed window's title bar, and
+      in the preview a colleague sees when the permalink is pasted into a chat. Add one pure
+      `pageHead({ title, description })` helper beside `rootHead` returning the title plus
+      `description`/`og:title`/`og:description` entries clamped to 160 characters on a word boundary,
+      and hang it on the three surfaces: the deck (`AcademiTok — the reading deck`), the morgue
+      (`Clippings · AcademiTok`) and the permalink (the paper's title and its abstract excerpt).
+      Leave the root's manifest, icon, theme-colour and viewport entries untouched; no image, route,
+      component, ranking, RPC contract or PostHog change.
+      Accept: the helper returns a title and a long description as exactly one `title`, one
+      `description`, one `og:title` and one `og:description` entry, each text clamped to 160
+      characters on a word boundary; a description already inside the limit passes through unchanged
+      and a missing one is omitted rather than rendered empty; the deck and morgue route options each
+      carry their own title and a description, both differing from the root's; the permalink's head
+      carries the paper title and its abstract excerpt; no surface falls back to the bare
+      `AcademiTok Gazette` title; the helper is unit-tested and the three route heads are asserted
+      from the route modules with router and server modules mocked the way `__root.test.tsx` already
+      mocks them.
+
 ---
 
 ## Blocked — needs a product decision
