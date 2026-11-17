@@ -1183,7 +1183,7 @@ write the conflict at the bottom instead of guessing.
       seed is identical before and after; `bun run validate` is green.
       — `ad5007b`
 
-- [ ] **58. How many beats one clipping needs, on `feed.next` and the desk.** SPEC §17.2 keeps
+- [x] **58. How many beats one clipping needs, on `feed.next` and the desk.** SPEC §17.2 keeps
       the fixed nine beats only until someone can tell whether they cover what the sources serve,
       and open decision 2 says to revisit the taxonomy on evidence — tasks 39, 41 and 52 counted
       the path each clipping took (`keyword`, `concept`, `education`) and `topicEntropy` measures
@@ -1211,6 +1211,7 @@ write the conflict at the bottom instead of guessing.
       `trackFeedPageEvent` call with the PostHog client mocked, and the count is asserted through
       the helper over the papers of a real `getPaperFeedSnapshot` (stubbed catalog, temp PGlite
       dir); the ranked page for a fixed seed is identical before and after.
+      — `21d85dc`
 
 ---
 
