@@ -776,6 +776,33 @@ write the conflict at the bottom instead of guessing.
       changes nothing; the ranked page for a fixed seed is identical before and after.
       — `a4ed11e`
 
+- [ ] **44. Reading load the dwell is measured against, on the desk.** SPEC §16 P3 lists
+      reading-time analytics and SPEC §8.4 sets median dwell at ≥ 8s; task 43 added
+      `page_read_minutes` to PostHog precisely because "the §8.4 `Median dwell ≥ 8s` floor is
+      compared across pages of incomparable length and the reading-time half of the decision has
+      no denominator" — but that denominator now lives only in PostHog, while the desk's Reading
+      pace block renders median dwell (task 25), median completion (task 26), hide rate and
+      open-source rate (task 28) and saves per 100 impressions (task 29) and never how long the
+      clippings behind those dwells ask to be read, so 8 s still reads as a floor on a page of
+      letters and a page of reviews alike. Add a pure `medianReadMinutes` helper beside
+      `medianDwell` in `src/lib/feed-analytics.ts` over the clippings' `readMinutes`, dropping
+      clippings whose estimate is missing or zero, report it as `windowMedianReadMinutes` on
+      `FeedStats` from the same `windowPapers` (the last 50 `view` reactions joined to the loaded
+      catalog) that `windowMedianYear` and `windowTopicEntropy` already use, and render it in the
+      desk's Reading pace block beside median dwell with the existing `StatCard`/`Grid`
+      primitives in minutes, its helper naming the 50-impression window. An impression whose
+      paper is not in the loaded catalog is dropped rather than counted as zero minutes. Display
+      only: no ranking, RPC procedure, persistence or PostHog payload change, and the
+      one-clipping-per-viewport snap is untouched.
+      Accept: clippings of 2, 4 and 6 minutes report 4 and the desk renders `4.0 min`; an
+      even-sized window averages the middle pair; a clipping with a zero or missing estimate is
+      dropped from the median, never counted as 0; an impression older than the window's fifty
+      does not move the figure; a reader with no impressions, or whose impression papers carry no
+      estimate, reports null and the desk renders an em dash, never `NaN` or `0.0 min`; the
+      helper is unit-tested and the figure reaches `getPaperFeedSnapshot` from real
+      `ReaderState` view reactions; the ranked page for a fixed seed is identical before and
+      after.
+
 ---
 
 ## Blocked — needs a product decision
