@@ -60,6 +60,11 @@ is what is wrong, and it is ~3 files.
 The desk stays an **edge drawer** (swipe in from the left, `Esc` closes) so the feed never loses
 its full-screen contract.
 
+The app is also installable: `public/manifest.json` declares scope, standalone display and
+portrait orientation, and a hand-rolled `public/sw.js` precaches the shell. The worker skips `/api/`
+and `/auth/` by construction — an RPC answer or a one-shot sign-in link must never be replayed from
+cache — and registration is gated on `import.meta.env.PROD` so no dev server can serve a stale shell.
+
 ## 5. Interaction spec
 
 ### 5.1 Deck contract
@@ -89,50 +94,61 @@ Rail sits in the right margin, outside the text measure, as a vertical column of
 ### 5.3 Slide anatomy (the clipping)
 
 ```
-┌─────────────────────────────────────────────────┐
-│ ACADEMITOK              EVENING EDITION  No. 042│ masthead strip, hairline under
+┌─────────────────────────────────────────────────┐ full-bleed nameplate band
+│                  AcademiTok                     │ blackletter, over blurred newsprint
+├─────────────────────────────────────────────────┤ 3px ink rule + hairline
+│  ┌───────────────────────────────────────────┐  │
+│  │ ARTIFICIAL INTELLIGENCE · 412 CIT · 6 MIN │  │ kicker, caps, 0.2em tracking
+│  │                                           │  │
+│  │ Scaling Sparse Mixture-of-Experts         │  │ display serif, ≤26ch, one screen
+│  │ Routing Without Token Collapse            │  │
+│  │                                           │  │
+│  │ abstract, set in two newspaper columns    │  │ body, 1.5 leading
+│  │                                           │  │
+│  │ Read the paper →                          │  │ the whole sheet is one link
+│  │ ♥  ▢  ↑                                   │  │ 44px ink stamps: like, save, share
+│  └───────────────────────────────────────────┘  │ sheet: paper on the field
 ├─────────────────────────────────────────────────┤
-│ ARTIFICIAL INTELLIGENCE                         │ kicker: caps, 0.18em tracking
-│                                                 │
-│  Scaling Sparse Mixture-of-Experts   ▐          │ display serif, 2 lines max
-│  Routing Without Token Collapse      ▐          │
-│                                                 │
-│  A routing prior cuts expert load imbalance by   │ dek = first 2 abstract
-│  forty percent on three benchmarks while …       │ sentences, 60ch measure
-│                                                 │
-│  R. Aydin, M. Okonkwo, L. Feng · Preprint, 2025  │ byline + dateline
-│  arXiv · 412 citations · 6 min          [OPEN]   │ footer facts + access badge
-│                                                 │
-│  ┌ WHY THIS ────────────┐                       │ "editor's note" stamp,
-│  │ Matches AI, Robotics │                       │ replaces opaque AI magic
-│  │ Held your attention  │                       │
-│  └──────────────────────┘                       │
+│                     ↑ │ ↓                       │ pager band, mirrors the nameplate
 └─────────────────────────────────────────────────┘
 ```
 
-Rules: headline ≤ 2 lines at 100dvh × 390px; dek ≤ 240 characters; stamps use the single accent
-ink; every fact comes from real metadata, never invented.
+Rules: one paper per screen, nothing scrolls out of the sheet; headline ≤ 3 lines at
+100dvh × 390px; no byline, venue, year, access badge, rationale or record rail; every fact comes
+from real metadata, never invented. Nothing is a readout: the order of the deck is the only
+explanation of why a paper is here.
+
+### 5.3a The field the deck is printed on
+
+The viewport is a window cut into **one** drawn broadsheet page (`public/newsprint.svg`), rendered
+`bg-cover` + `bg-no-repeat` and lightly defocused, so swiping a paper feels like moving a clipping
+across a page. Never tile it: a wall of repeated newspapers is wallpaper, not a newspaper. The sheet
+carries its own paper ground; the nameplate band and the pager band are the same stock and the same
+double rule as each other, full width, so the deck is framed top and bottom by editorial furniture.
+
+Type scales on `vmin` as well as `vw` and the sheet widens to 84rem, so a 4K panel gets a ~96px
+headline on a ~1344px sheet instead of a postage stamp.
 
 ### 5.4 Newspaper identity (design tokens)
 
 Extend `src/styles.css` `@theme`; never hardcode colour in components.
 
-| Token                | Value                                                  | Use                            |
-| -------------------- | ------------------------------------------------------ | ------------------------------ |
-| `--color-ink`        | `oklch(0.18 0.012 60)`                                 | headline + body                |
-| `--color-ink-muted`  | `oklch(0.44 0.014 60)`                                 | byline, folio                  |
-| `--color-paper`      | `oklch(0.972 0.014 92)`                                | clipping ground                |
-| `--color-paper-deep` | `oklch(0.945 0.018 88)`                                | outer gutter                   |
-| `--color-rule`       | `oklch(0.82 0.012 80)`                                 | hairlines                      |
-| `--color-stamp`      | `oklch(0.52 0.19 28)`                                  | stamps, like state, hide state |
-| `--font-display`     | `Georgia, "Iowan Old Style", "Times New Roman", serif` | headlines                      |
-| `--font-body`        | same stack, `font-variant-numeric: oldstyle-nums`      | body, bylines                  |
-| `--font-label`       | `ui-monospace, "SFMono-Regular", monospace`            | kickers, folio, rail labels    |
+| Token                | Value     | Use                            |
+| -------------------- | --------- | ------------------------------ |
+| `--color-ink`        | `#0b0b0b` | headline, body, stamps         |
+| `--color-ink-muted`  | `#4f4f4f` | kicker tail, secondary lines   |
+| `--color-paper`      | `#ffffff` | sheet ground, nameplate, pager |
+| `--color-paper-deep` | `#ffffff` | the ground under the field     |
+| `--color-rule`       | `#0b0b0b` | heavy rules                    |
+| `--color-rule-soft`  | `#6b6b6b` | hairlines inside a sheet       |
+| `--color-stamp`      | `#0b0b0b` | alias of ink; no second colour |
+| `--radius-*`         | `0rem`    | squares only                   |
+| `--shadow-*`         | `none`    | depth comes from rule weight   |
 
-Texture: paper grain via layered `repeating-linear-gradient` at ≤3% opacity — no image assets.
-Dark mode is a **night edition**: deep ink ground, bone text, same accent.
-Type scale (rem): folio 0.68, kicker 0.75, dek 1.0–1.125, byline 0.85, headline clamp(2.0 → 3.4).
-Measure: 58–62ch. Leading: 1.45 body, 1.02 headline. Never centre body copy.
+Monochrome is absolute: **no accent colour exists**. The retired `--color-stamp` red stays retired.
+There is no dark mode; the paper is printed once. `--font-masthead` is Chomsky (SIL OFL) and is used
+for the nameplate and nothing else; `--font-display`/`--font-body` are Times New Roman; `--font-label`
+is the system serif set in caps for kickers.
 
 ### 5.5 Motion
 
