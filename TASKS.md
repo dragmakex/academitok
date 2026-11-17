@@ -452,7 +452,7 @@ write the conflict at the bottom instead of guessing.
       optional action.
       — `c77c005`
 
-- [ ] **31. Topic entropy over the §8.4 impression window on the desk.** SPEC §8.4 sets Shannon
+- [x] **31. Topic entropy over the §8.4 impression window on the desk.** SPEC §8.4 sets Shannon
       topic entropy at ≥ 1.6 nats per 50 impressions and open decision 2 keeps the fixed nine beats
       only until someone can tell whether those beats are too coarse — but the desk's Topic mix
       block (task 17) renders `topicEntropy` over the loaded page's ten clippings, the wrong window
@@ -471,6 +471,7 @@ write the conflict at the bottom instead of guessing.
       from the loaded catalog, reports null and the desk renders an em dash, never `NaN` or `0`; the
       figure reaches `getPaperFeedSnapshot` from real `ReaderState.impressions`; the ranked page for
       a fixed seed is identical before and after.
+      — `beeb177`
 
 ---
 
