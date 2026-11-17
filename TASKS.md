@@ -728,7 +728,7 @@ write the conflict at the bottom instead of guessing.
       identical before and after.
       — `7a5f960`
 
-- [ ] **42. Citation-age skew over the §8.4 impression window on the desk.** SPEC §17.3 keeps
+- [x] **42. Citation-age skew over the §8.4 impression window on the desk.** SPEC §17.3 keeps
       citation count as a quality signal only on the condition that we "measure whether the feed
       feels archival", and tasks 31–32 moved the desk's archival numbers onto the §8.4 window after
       showing the page-scoped ones answer the wrong question — but the two `Citations, older half`
@@ -753,6 +753,7 @@ write the conflict at the bottom instead of guessing.
       both and the desk renders an em dash, never `NaN`; the figures reach `getPaperFeedSnapshot`
       from real `ReaderState` view reactions; the ranked page for a fixed seed is identical before
       and after.
+      — `e3d2f75`
 
 ---
 
