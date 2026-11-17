@@ -908,6 +908,37 @@ write the conflict at the bottom instead of guessing.
       and the row from the real `SavedPage`.
       — `06a2561`
 
+- [ ] **49. A home-screen icon iOS will actually draw.** SPEC §16 P3 lists a native shell and
+      tasks 19, 21, 22 and 45 gave it the gazette manifest, the safe-area insets, `/mark.svg` as
+      the favicon and manifest icon, and the three `apple-mobile-web-app-*` metas that opt an
+      iPhone home-screen app into standalone mode — so iOS now installs the deck as an app, and
+      `rootHead()` says in a committed `shortcut:` comment what it then does for the icon: "the
+      mark is SVG and iOS cannot use it, so iOS falls back to a screenshot for the home-screen
+      icon". A reader who adds the deck to their home screen therefore gets a squircle of whatever
+      clipping happened to be on screen — headline, stamp and rail — while the manifest, the
+      favicon and the tab all carry the drawn mark, and the one thing this section of the spec
+      asks for is the one asset missing. Rasterise the existing mark once into
+      `public/apple-touch-icon.png` at 180×180 with its own geometry and colours (ink ground
+      `oklch(0.18 0.012 60)`, paper serif `A`, one vermilion hairline `oklch(0.52 0.19 28)`),
+      full-bleed with no transparent pixels since iOS rounds the corners itself, link it from
+      `rootHead()` as `rel="apple-touch-icon"` with `href="/apple-touch-icon.png"` and
+      `sizes="180x180"`, and delete the shortcut comment the asset retires. The PNG is committed
+      as a static asset: no build step, no runtime rasteriser, no dependency. Leave `/mark.svg` as
+      the `rel="icon"` favicon and the manifest's single `image/svg+xml` icon, and leave `theme-color`,
+      the `viewport-fit=cover` viewport meta, the `/manifest.json` link and all three
+      `apple-mobile-web-app-*` metas exactly as they are; no route, component, design-language,
+      ranking, RPC contract, schema, persistence or PostHog change.
+      Accept: `public/apple-touch-icon.png` exists, starts with the PNG signature, and its `IHDR`
+      chunk reports 180×180 and 8-bit RGB or RGBA; it carries no fully transparent pixel, so the
+      ink ground reaches every edge; `rootHead()` carries exactly one `rel="apple-touch-icon"` link
+      with `href` `/apple-touch-icon.png` and `sizes` `180x180`; the `/mark.svg` icon link, the
+      `/manifest.json` link, the manifest's single SVG icon, `theme-color`, the
+      `viewport-fit=cover` viewport meta and the three apple metas are unchanged; the shortcut
+      comment in `src/routes/__root.tsx` is gone and nothing in `src/` still claims iOS falls back
+      to a screenshot; the link is asserted from the real `rootHead()` and the signature, dimensions
+      and opaque ground from `readFileSync` of the real file, beside the shell-metadata assertions
+      `__root.test.tsx` already makes; `bun run validate` is green.
+
 ---
 
 ## Blocked — needs a product decision
