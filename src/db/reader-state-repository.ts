@@ -17,7 +17,7 @@ import {
   readerStateTable,
 } from "@/db/schema"
 import { PGlite } from "@electric-sql/pglite"
-import { and, desc, eq, inArray, isNull, lt } from "drizzle-orm"
+import { and, desc, eq, gte, inArray, isNull, lt } from "drizzle-orm"
 import { drizzle as drizzlePglite } from "drizzle-orm/pglite"
 import { drizzle as drizzlePostgres } from "drizzle-orm/postgres-js"
 import * as Config from "effect/Config"
@@ -58,6 +58,9 @@ type ReaderStateRepositoryShape = {
   readonly savePapers: (papers: ReadonlyArray<Paper>) => Effect.Effect<void>
   readonly papersByIds: (
     ids: ReadonlyArray<string>,
+  ) => Effect.Effect<ReadonlyArray<Paper>>
+  readonly recentPapers: (
+    now: Date,
   ) => Effect.Effect<ReadonlyArray<Paper>>
 }
 
@@ -101,6 +104,7 @@ type StateStorage = {
   readonly papersByIds: (
     ids: ReadonlyArray<string>,
   ) => Promise<ReadonlyArray<Paper>>
+  readonly recentPapers: (since: Date) => Promise<ReadonlyArray<Paper>>
 }
 
 const decodeReaderState = Schema.decodeUnknownSync(ReaderState)
@@ -109,6 +113,8 @@ const singletonId = "singleton"
 const feedSessionTtlMs = 24 * 60 * 60 * 1000
 /** Impressions are retained this long (SPEC §6); reactions are kept forever. */
 const impressionTtlMs = 90 * 24 * 60 * 60 * 1000
+/** Pool rows older than this are refreshed from the source (SPEC §6). */
+const poolTtlMs = 24 * 60 * 60 * 1000
 
 /**
  * Retention boundary for impressions.
@@ -117,6 +123,14 @@ const impressionTtlMs = 90 * 24 * 60 * 60 * 1000
  */
 export const impressionCutoff = (now: Date): Date =>
   new Date(now.getTime() - impressionTtlMs)
+
+/**
+ * Freshness boundary for the stored paper pool.
+ * @param now - Current time.
+ * @returns Earliest fetch instant a pooled paper is still fresh enough.
+ */
+export const poolCutoff = (now: Date): Date =>
+  new Date(now.getTime() - poolTtlMs)
 
 const createReaderStateTablesSql = `
   CREATE TABLE IF NOT EXISTS reader_state (
@@ -507,6 +521,11 @@ function makeRepositoryService(storage: StateStorage) {
           await ensureMigrated()
           return storage.papersByIds(ids)
         }),
+      recentPapers: (now) =>
+        Effect.promise(async () => {
+          await ensureMigrated()
+          return storage.recentPapers(poolCutoff(now))
+        }),
     } satisfies ReaderStateRepositoryShape,
   )
 }
@@ -600,10 +619,13 @@ function makePostgresRepository(databaseUrl: string) {
           if (papers.length === 0) {
             return
           }
-          await db
-            .insert(papersTable)
-            .values(paperRows(papers, fetchedAt))
-            .onConflictDoNothing()
+          const rows = paperRows(papers, fetchedAt)
+          await db.transaction(async (tx) => {
+            await tx
+              .delete(papersTable)
+              .where(inArray(papersTable.id, rows.map((row) => row.id)))
+            await tx.insert(papersTable).values(rows)
+          })
         },
         papersByIds: async (ids) => {
           if (ids.length === 0) {
@@ -613,6 +635,13 @@ function makePostgresRepository(databaseUrl: string) {
             .select()
             .from(papersTable)
             .where(inArray(papersTable.id, ids))
+          return rows.map(storedPaper)
+        },
+        recentPapers: async (since) => {
+          const rows = await db
+            .select()
+            .from(papersTable)
+            .where(gte(papersTable.fetchedAt, since))
           return rows.map(storedPaper)
         },
         onboard: async (input, createdAt) => {
@@ -885,10 +914,13 @@ function makePgliteRepository(dataDir: string | undefined) {
           if (papers.length === 0) {
             return
           }
-          await db
-            .insert(papersTable)
-            .values(paperRows(papers, fetchedAt))
-            .onConflictDoNothing()
+          const rows = paperRows(papers, fetchedAt)
+          await db.transaction(async (tx) => {
+            await tx
+              .delete(papersTable)
+              .where(inArray(papersTable.id, rows.map((row) => row.id)))
+            await tx.insert(papersTable).values(rows)
+          })
         },
         papersByIds: async (ids) => {
           if (ids.length === 0) {
@@ -898,6 +930,13 @@ function makePgliteRepository(dataDir: string | undefined) {
             .select()
             .from(papersTable)
             .where(inArray(papersTable.id, ids))
+          return rows.map(storedPaper)
+        },
+        recentPapers: async (since) => {
+          const rows = await db
+            .select()
+            .from(papersTable)
+            .where(gte(papersTable.fetchedAt, since))
           return rows.map(storedPaper)
         },
         onboard: async (input, createdAt) => {

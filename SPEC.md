@@ -342,8 +342,6 @@ primary-topic and author caps, deterministic exploration, keyboard/button/swipe 
 reader-state migration source and affect subsequent ranking. The OpenAlex request runs only for feed
 pages and falls back to the frozen seed edition; reactions no longer refetch the catalog.
 
-Remaining P1 work: persist the OpenAlex catalog in `papers` instead of refetching per page.
-
 **P1 — the algo actually learns**
 Reaction/impression tables, ε-greedy exploration, MMR + topic cap, tf-idf content affinity,
 onboarding picks, `WHY THIS` from real terms, feed-health metrics wired to PostHog.
@@ -351,6 +349,12 @@ onboarding picks, `WHY THIS` from real terms, feed-health metrics wired to PostH
 A feed page carries a session id that the server owns: `feed_sessions` stores the papers already
 emitted for that session plus the last cursor, so a stale client cursor cannot reintroduce a paper.
 Sessions idle for 24 hours are swept on the next feed request.
+
+The catalog pool lives in `papers`: a feed page ranks the stored rows when at least three pages
+(30 papers) exist for the requested beat and they were fetched within 24 hours. Otherwise the
+request fetches OpenAlex, stores the result and only then ranks it, so ten swipes are one upstream
+request rather than ten. The frozen seed edition remains the fallback when the pool is empty and
+the source fails, and it is never written to the pool.
 
 **P2 — breadth**
 arXiv/bioRxiv/Crossref sources, `/saved`, `/paper/$id` permalink with copyable citation, LLM dek

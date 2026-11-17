@@ -20,8 +20,11 @@ import * as Clock from "effect/Clock"
 import * as Effect from "effect/Effect"
 import * as Layer from "effect/Layer"
 
+/** Pool coverage needed before a page is served without an upstream request. */
+const poolPageThreshold = 10 * 3
+
 /**
- * Resolves live metadata with an offline fallback.
+ * Resolves live metadata with an offline fallback, preferring the stored pool.
  * @param topic - Requested beat.
  * @param sort - Requested ordering.
  * @returns Catalog resolution effect.
@@ -32,13 +35,25 @@ function resolveCatalog(
 ) {
   return Effect
     .gen(function*() {
+      const repository = yield* ReaderStateRepository
       const now = yield* Clock.currentTimeMillis
-      return yield* Effect.tryPromise({
-        try: () => fetchOpenAlexPapers(topic, sort, now),
-        catch: () => new Error("OpenAlex catalog request failed"),
-      })
+      const pooled = (yield* repository.recentPapers(new Date(now))).filter(
+        (paper) => topic === "All" || paper.topics.includes(topic),
+      )
+      if (pooled.length >= poolPageThreshold) {
+        return pooled
+      }
+
+      return yield* Effect
+        .tryPromise({
+          try: () => fetchOpenAlexPapers(topic, sort, now),
+          catch: () => new Error("OpenAlex catalog request failed"),
+        })
+        .pipe(
+          Effect.tap((papers) => repository.savePapers(papers)),
+          Effect.catch(() => Effect.succeed(curatedPapers)),
+        )
     })
-    .pipe(Effect.catch(() => Effect.succeed(curatedPapers)))
 }
 
 export const getPaperFeedSnapshot = (request: FeedRequest) =>
@@ -50,8 +65,6 @@ export const getPaperFeedSnapshot = (request: FeedRequest) =>
         request.query.topic,
         request.query.sort,
       )
-      // The pool is what lets /saved and permalinks resolve papers seen earlier.
-      yield* repository.savePapers(papers)
       const ranked = buildFeedItems(
         state,
         papers,

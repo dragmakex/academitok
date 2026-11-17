@@ -2,6 +2,7 @@
 
 import {
   impressionCutoff,
+  poolCutoff,
   ReaderStateRepository,
 } from "@/db/reader-state-repository"
 import { PGlite } from "@electric-sql/pglite"
@@ -264,6 +265,13 @@ describe("ReaderStateRepository", () => {
     )
   })
 
+  it("puts the pool freshness boundary 24 hours before now", () => {
+    const now = new Date("2026-05-01T12:00:00.000Z")
+    expect(now.getTime() - poolCutoff(now).getTime()).toBe(
+      24 * 60 * 60 * 1000,
+    )
+  })
+
   it("sweeps impressions older than 90 days and keeps reactions", async () => {
     const dataDir = await mkdtemp(join(tmpdir(), "academitok-retention-"))
     directories.push(dataDir)
@@ -355,6 +363,10 @@ describe("ReaderStateRepository", () => {
           single: yield* repository.papersByIds(["pool-paper-1"]),
           missing: yield* repository.papersByIds(["nope"]),
           none: yield* repository.papersByIds([]),
+          fresh: yield* repository.recentPapers(new Date()),
+          expired: yield* repository.recentPapers(
+            new Date(Date.now() + 2 * 24 * 60 * 60 * 1000),
+          ),
         }
       }),
     )
@@ -362,5 +374,7 @@ describe("ReaderStateRepository", () => {
     expect(pooled.single).toEqual([paper])
     expect(pooled.missing).toEqual([])
     expect(pooled.none).toEqual([])
+    expect(pooled.fresh).toEqual([paper])
+    expect(pooled.expired).toEqual([])
   })
 })
