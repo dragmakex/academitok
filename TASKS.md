@@ -429,6 +429,28 @@ write the conflict at the bottom instead of guessing.
       view/bookmark reactions; the ranked page for a fixed seed is identical before and after.
       — `75ee75a`
 
+- [ ] **30. Undo a hide from the notice line.** SPEC §5.2 promises `h` hides with "undo via
+      toast (5s)" and §10 promises a failed reaction is "never a silent divergence", but no notice
+      surface exists anywhere in `src/` — `reactToPaperAtom` filters a hidden paper straight out of
+      the deck and `app.tsx` jumps to the next clipping, so a mistyped `h` permanently drops the
+      paper from the feed and writes a −5 topic-affinity signal with no way back, and `s` files a
+      clipping with no confirmation at all. Add one `Notice` component to the design-system
+      components (fixed above the bottom safe-area inset, paper ground, hairline rule, mono caps
+      label, optional single action, `role="status"`) and register it in `registry.ts`; render it
+      from `app.tsx` with a 5s lifetime: hiding shows `Clipped out` with an `Undo` action that
+      restores the clipping at its previous index and toggles the `hide` reaction back off, saving
+      shows `Filed in clippings` with no action. Wire the removal through one pure exported helper
+      (`removeItemAt` returning the item and its index, plus `restoreItem` putting it back) so the
+      restore is testable without a browser. No new dependency, no route, no ranking, RPC contract,
+      schema or PostHog change, and the one-clipping-per-viewport snap is untouched.
+      Accept: `h` removes the clipping, shows `Clipped out` and restores it at its previous index
+      when `Undo` is activated by pointer or keyboard, with the `hide` reaction inactive
+      afterwards; the notice disappears after 5s of inaction and the clipping stays removed; `s`
+      shows `Filed in clippings` with no action; `Esc` dismisses the notice without moving deck
+      focus; `removeItemAt`/`restoreItem` round-trip a three-item page and are unit-tested, and a
+      test renders the notice from the real component for the label, the status role and the
+      optional action.
+
 ---
 
 ## Blocked — needs a product decision
