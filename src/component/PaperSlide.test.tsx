@@ -114,7 +114,8 @@ test("PaperSlide renders metadata and exposes accessible actions", async () => {
   await expect
     .element(page.getByText("Matches AI · Cited 42 times"))
     .toBeVisible()
-  await expect.element(page.getByText(/6 min abstract/)).toBeVisible()
+  await expect.element(page.getByText("The record")).toBeVisible()
+  await expect.element(page.getByText("6 min")).toBeVisible()
   await expect
     .element(page.getByRole("button", { name: "Like paper" }))
     .toHaveAttribute(

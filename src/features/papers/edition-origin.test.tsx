@@ -126,9 +126,9 @@ describe("edition origin", () => {
   }, 20_000)
 
   it("prints the offline edition strip for seed clippings only", () => {
-    expect(renderDeckSlide("seed")).toContain("Offline Edition · No. 002")
-    expect(renderDeckSlide("pool")).toContain("Evening Edition · No. 002")
-    expect(renderDeckSlide("live")).toContain("Evening Edition · No. 002")
+    expect(renderDeckSlide("seed")).toContain("Offline edition · No. 002")
+    expect(renderDeckSlide("pool")).toContain("Evening edition · No. 002")
+    expect(renderDeckSlide("live")).toContain("Evening edition · No. 002")
   })
 
   it("offers the way back only on a pinned edition", () => {

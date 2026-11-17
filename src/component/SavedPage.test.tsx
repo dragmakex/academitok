@@ -60,11 +60,11 @@ test("a morgue row links its headline to the clipping's permalink", async () => 
     .toBeVisible()
 })
 
-test("the morgue file offers the BibTeX export when clippings exist", async () => {
+test("the morgue file offers the BibTeX export in its nameplate", async () => {
   store.saved = savedPage([clipping])
   await render(<SavedPage />)
 
-  const exportLink = page.getByRole("link", { name: "Export BibTeX" })
+  const exportLink = page.getByRole("link", { name: "BibTeX" })
   await expect.element(exportLink).toBeVisible()
   await expect
     .element(exportLink)
@@ -81,7 +81,7 @@ test("an empty morgue file hides the BibTeX export", async () => {
   await expect
     .element(page.getByRole("heading", { name: "No clippings saved yet" }))
     .toBeVisible()
-  expect(page.getByRole("link", { name: "Export BibTeX" }).elements())
+  expect(page.getByRole("link", { name: "BibTeX" }).elements())
     .toHaveLength(
       0,
     )

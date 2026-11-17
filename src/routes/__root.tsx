@@ -148,7 +148,7 @@ function RootDocument({ children }: { children: React.ReactNode }) {
             {children}
           </RegistryProvider>
         </SentryErrorBoundary>
-        {isClient && (
+        {isClient && import.meta.env.DEV && (
           <TanStackDevtools
             config={{
               position: "bottom-right",

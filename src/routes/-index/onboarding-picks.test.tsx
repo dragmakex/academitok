@@ -30,25 +30,25 @@ test("onboarding collects three pages and requires five keeps", async () => {
       })
       .click()
   }
-  await page.getByRole("button", { name: "Next five" }).click()
+  await page.getByRole("button", { name: "Next" }).click()
 
   for (const candidate of candidates.slice(5, 10)) {
     await page
       .getByRole("button", {
-        name: `Discard ${candidate.paper.title}`,
+        name: `Skip ${candidate.paper.title}`,
       })
       .click()
   }
-  await page.getByRole("button", { name: "Next five" }).click()
+  await page.getByRole("button", { name: "Next" }).click()
 
   for (const candidate of candidates.slice(10)) {
     await page
       .getByRole("button", {
-        name: `Discard ${candidate.paper.title}`,
+        name: `Skip ${candidate.paper.title}`,
       })
       .click()
   }
-  await page.getByRole("button", { name: "Print my edition" }).click()
+  await page.getByRole("button", { name: "Print edition" }).click()
 
   expect(onSubmit).toHaveBeenCalledWith({
     keptPaperIds: candidates.slice(0, 5).map((item) => item.paper.id),

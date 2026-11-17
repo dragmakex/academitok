@@ -3,7 +3,7 @@ import { expect, test } from "vitest"
 import { render } from "vitest-browser-react"
 import { page } from "vitest/browser"
 
-test("Badge uses the high-contrast neutral contract", async () => {
+test("Badge uses the monochrome print contract", async () => {
   await render(
     <Badge>
       Due 26. März 2026
@@ -13,12 +13,12 @@ test("Badge uses the high-contrast neutral contract", async () => {
   const badge = page.getByText("Due 26. März 2026")
 
   await expect.element(badge).toBeVisible()
-  await expect.element(badge).toHaveClass(/bg-bg-surface/)
-  await expect.element(badge).toHaveClass(/text-text-primary/)
-  await expect.element(badge).toHaveClass(/border-border-default/)
+  await expect.element(badge).toHaveClass(/bg-paper/)
+  await expect.element(badge).toHaveClass(/text-ink/)
+  await expect.element(badge).toHaveClass(/border-ink/)
 })
 
-test("Badge keeps semantic tones while using primary text for contrast", async () => {
+test("Badge inverts ink for the accent tone and stays monochrome", async () => {
   await render(
     <>
       <Badge tone="accent">
@@ -33,18 +33,8 @@ test("Badge keeps semantic tones while using primary text for contrast", async (
     </>,
   )
 
-  await expect.element(page.getByText("Accent")).toHaveClass(/bg-bg-accent/)
-  await expect.element(page.getByText("Accent")).toHaveClass(
-    /text-text-primary/,
-  )
-
-  await expect.element(page.getByText("Success")).toHaveClass(/bg-bg-success/)
-  await expect.element(page.getByText("Success")).toHaveClass(
-    /text-text-primary/,
-  )
-
-  await expect.element(page.getByText("Danger")).toHaveClass(/bg-bg-danger/)
-  await expect.element(page.getByText("Danger")).toHaveClass(
-    /text-text-primary/,
-  )
+  await expect.element(page.getByText("Accent")).toHaveClass(/bg-ink/)
+  await expect.element(page.getByText("Accent")).toHaveClass(/text-paper/)
+  await expect.element(page.getByText("Success")).toHaveClass(/bg-paper/)
+  await expect.element(page.getByText("Danger")).toHaveClass(/bg-paper/)
 })
