@@ -6,6 +6,7 @@ import { PaperPage } from "@/design-system/components/PaperPage"
 import {
   getPaperAudience,
   getPaperById,
+  getPaperLikedBy,
   getPaperOpenedBy,
 } from "@/features/papers/application"
 import { formatCitation } from "@/features/papers/citation"
@@ -35,6 +36,12 @@ const getPermalinkOpenedBy = createServerFn({ method: "GET" })
   )
   .handler(({ data }) => serverRuntime.runPromise(getPaperOpenedBy(data.id)))
 
+const getPermalinkLikedBy = createServerFn({ method: "GET" })
+  .inputValidator((input: unknown) =>
+    Schema.decodeUnknownSync(paperPermalinkInput)(input)
+  )
+  .handler(({ data }) => serverRuntime.runPromise(getPaperLikedBy(data.id)))
+
 /**
  * Download URL for one clipping's BibTeX entry (SPEC §14).
  * @param id - Paper id, percent-encoded so DOIs keep neither space nor slash.
@@ -62,16 +69,18 @@ export const permalinkHead = (paper: Paper | undefined) =>
 
 export const Route = createFileRoute("/paper/$id")({
   loader: async ({ params }) => {
-    const [paper, savedByReaders, openedByReaders] = await Promise.all([
-      getPaperPermalink({ data: { id: params.id } }),
-      getPermalinkAudience({ data: { id: params.id } }),
-      getPermalinkOpenedBy({ data: { id: params.id } }),
-    ])
+    const [paper, savedByReaders, openedByReaders, likedByReaders] =
+      await Promise.all([
+        getPaperPermalink({ data: { id: params.id } }),
+        getPermalinkAudience({ data: { id: params.id } }),
+        getPermalinkOpenedBy({ data: { id: params.id } }),
+        getPermalinkLikedBy({ data: { id: params.id } }),
+      ])
     if (paper === null) {
       throw notFound()
     }
 
-    return { paper, openedByReaders, savedByReaders }
+    return { likedByReaders, openedByReaders, paper, savedByReaders }
   },
   head: ({ loaderData }) =>
     permalinkHead(loaderData === undefined ? undefined : loaderData.paper),
@@ -84,7 +93,8 @@ export const Route = createFileRoute("/paper/$id")({
  * @returns The permalink page.
  */
 function PaperPermalinkRoute() {
-  const { paper, openedByReaders, savedByReaders } = Route.useLoaderData()
+  const { likedByReaders, paper, openedByReaders, savedByReaders } = Route
+    .useLoaderData()
 
   return (
     <Page>
@@ -98,6 +108,7 @@ function PaperPermalinkRoute() {
         citation={formatCitation(paper)}
         citations={paper.citations}
         externalUrl={paper.externalUrl}
+        likedByReaders={likedByReaders}
         openedByReaders={openedByReaders}
         readMinutes={paper.readMinutes}
         savedByReaders={savedByReaders}

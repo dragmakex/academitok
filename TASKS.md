@@ -1152,7 +1152,7 @@ write the conflict at the bottom instead of guessing.
 
       — `4937126`
 
-- [ ] **57. Who else liked the clipping, on the permalink.** SPEC §16 P3 lists "multi-reader with
+- [x] **57. Who else liked the clipping, on the permalink.** SPEC §16 P3 lists "multi-reader with
       collaborative signals", and tasks 37 and 55 gave the permalink the two cross-reader facts the
       split `reader_id` rows can answer — `Filed by` from `savedByReaders` (`kind = 'bookmark'`) and
       `Opened by` from `openedByReaders` (`kind = 'open-site'`) — but the rail's heart, the one
@@ -1181,6 +1181,7 @@ write the conflict at the bottom instead of guessing.
       asserted from a real repository written under two `ReaderId` values, and the rendered and
       omitted fact from `renderToStaticMarkup` of the real `PaperPage`; the ranked page for a fixed
       seed is identical before and after; `bun run validate` is green.
+      — PENDING
 
 ---
 

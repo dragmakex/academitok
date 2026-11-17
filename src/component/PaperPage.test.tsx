@@ -21,6 +21,7 @@ test("renders the clipping and copies its citation", async () => {
       citation={citation}
       citations={12}
       externalUrl="https://example.com/notes"
+      likedByReaders={2}
       openedByReaders={2}
       readMinutes={6}
       savedByReaders={2}
@@ -54,7 +55,11 @@ test("renders the clipping and copies its citation", async () => {
     .toHaveAttribute("href", "/api/paper.bib?id=10.1000%2Fa%20b")
 })
 
-const markupFor = (savedByReaders: number, openedByReaders = 0) =>
+const markupFor = (
+  savedByReaders: number,
+  openedByReaders = 0,
+  likedByReaders = 0,
+) =>
   renderToStaticMarkup(
     <PaperPage
       abstract="A full abstract supplied by the metadata source."
@@ -64,6 +69,7 @@ const markupFor = (savedByReaders: number, openedByReaders = 0) =>
       citation={citation}
       citations={12}
       externalUrl="https://example.com/notes"
+      likedByReaders={likedByReaders}
       openedByReaders={openedByReaders}
       readMinutes={6}
       savedByReaders={savedByReaders}
@@ -95,6 +101,17 @@ test("prints who opened the clipping's source", () => {
 
 test("omits the open-source fact when nobody opened it", () => {
   expect(markupFor(0, 0)).not.toContain("Opened by")
+})
+
+test("prints who liked the clipping", () => {
+  const markup = markupFor(0, 0, 3)
+
+  expect(markup).toContain("Liked by")
+  expect(markup).toContain("3 readers")
+})
+
+test("omits the like fact when nobody liked it", () => {
+  expect(markupFor(0, 0, 0)).not.toContain("Liked by")
 })
 
 test("exports the clipping beside the citation control", () => {
