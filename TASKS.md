@@ -350,6 +350,27 @@ write the conflict at the bottom instead of guessing.
       after.
       — `0cde77a`
 
+- [ ] **26. Median reading completion on the desk.** SPEC §16 P3 lists reading-time analytics and
+      task 7 already computes a per-clip `completion` ratio (measured dwell over estimated read
+      time, clamped to 1) for the PostHog `dwell` event, but nothing aggregates it: the desk shows
+      median dwell beside its 8 s target (task 25) and never whether the clippings are read to the
+      end, so a page of 4-second bounces and a page of abstracts read twice over look identical.
+      Add a pure `medianCompletion` helper beside `medianDwell` in `src/lib/feed-analytics.ts` over
+      values produced by the existing `readingCompletion` (drop clippings whose estimate is missing
+      or zero, then take the median of the rest), report it as `medianCompletion` on `FeedStats`
+      from the reader's last 50 dwell reactions joined to their paper's `readMinutes` in the loaded
+      catalog, and render it in the desk's Reading pace block with the existing `StatCard`/`Grid`
+      primitives as a percentage beside the 100% target. A clipping whose paper is not in the
+      loaded catalog is dropped rather than counted as zero. Display only: no ranking, RPC
+      procedure, persistence or PostHog payload change, and the one-clipping-per-viewport snap is
+      untouched.
+      Accept: a 2-minute clipping dwelled 60 s and a 4-minute clipping dwelled 120 s both report
+      0.5 and the desk renders `50%`; an over-read reports 1 and a clipping with no estimate is
+      dropped from the median, never counted as 0; a reader with no recorded completion reports null
+      and the desk renders an em dash, never `NaN` or `0%`; the helper is unit-tested and reaches
+      `getPaperFeedSnapshot` from real `ReaderState` dwell reactions; the ranked page for a fixed
+      seed is identical before and after.
+
 ---
 
 ## Blocked — needs a product decision
