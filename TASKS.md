@@ -706,7 +706,7 @@ write the conflict at the bottom instead of guessing.
       the real compact `PaperSlide`.
       — `a912220`
 
-- [ ] **41. Which path filed the beats, on the desk.** SPEC §17.2 keeps the fixed nine beats only
+- [x] **41. Which path filed the beats, on the desk.** SPEC §17.2 keeps the fixed nine beats only
       until someone can tell whether they cover what the sources serve, and task 39 now classifies
       every page clipping as `keyword`, `concept` or `education` in `beatSourceCounts` and sends the
       split to PostHog — but the desk's Topic mix block (tasks 17, 31) renders entropy, beats on the
@@ -726,6 +726,7 @@ write the conflict at the bottom instead of guessing.
       the counts are asserted through `beatSourceCounts` over the papers of a real
       `getPaperFeedSnapshot` (stubbed catalog, temp PGlite dir); the ranked page for a fixed seed is
       identical before and after.
+      — `7a5f960`
 
 ---
 
