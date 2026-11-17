@@ -37,14 +37,17 @@ export const rootHead = () => ({
       name: "apple-mobile-web-app-title",
       content: "AcademiTok",
     },
-    // shortcut: the mark is SVG and iOS cannot use it, so iOS falls back to a
-    // screenshot for the home-screen icon; add a PNG when the mark is redrawn.
   ],
   links: [
     {
       rel: "icon",
       href: "/mark.svg",
       type: "image/svg+xml",
+    },
+    {
+      rel: "apple-touch-icon",
+      href: "/apple-touch-icon.png",
+      sizes: "180x180",
     },
     {
       rel: "manifest",

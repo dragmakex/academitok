@@ -1,5 +1,6 @@
 import { existsSync, readFileSync } from "node:fs"
 import { join } from "node:path"
+import { inflateSync } from "node:zlib"
 import { describe, expect, it, vi } from "vitest"
 
 /**
@@ -175,5 +176,71 @@ describe("gazette shell metadata", () => {
     ) {
       expect(existsSync(join(process.cwd(), "public", asset))).toBe(false)
     }
+  })
+
+  it("links a rasterised 180px home-screen icon iOS can draw", async () => {
+    const { rootHead } = await import("./__root")
+    const touchIcons = (rootHead().links ?? []).filter((link) =>
+      link.rel === "apple-touch-icon"
+    )
+
+    expect(touchIcons).toEqual([
+      {
+        rel: "apple-touch-icon",
+        href: "/apple-touch-icon.png",
+        sizes: "180x180",
+      },
+    ])
+  })
+
+  it("ships an opaque 180x180 PNG the mark was rasterised into", () => {
+    const png = readFileSync(join(process.cwd(), "public/apple-touch-icon.png"))
+    expect([...png.subarray(0, 8)]).toEqual([
+      0x89,
+      0x50,
+      0x4e,
+      0x47,
+      0x0d,
+      0x0a,
+      0x1a,
+      0x0a,
+    ])
+
+    let offset = 8
+    const data: Array<Buffer> = []
+    let header: Buffer | undefined
+    while (offset < png.length) {
+      const length = png.readUInt32BE(offset)
+      const type = png.toString("ascii", offset + 4, offset + 8)
+      const body = png.subarray(offset + 8, offset + 8 + length)
+      if (type === "IHDR") {
+        header = body
+      }
+      if (type === "IDAT") {
+        data.push(body)
+      }
+      offset += 12 + length
+    }
+
+    expect(header).toBeDefined()
+    const width = header?.readUInt32BE(0) ?? 0
+    const height = header?.readUInt32BE(4) ?? 0
+    expect([width, height]).toEqual([180, 180])
+    expect(header?.[8]).toBe(8)
+    // Truecolour without an alpha channel, so no pixel can come out transparent.
+    expect(header?.[9]).toBe(2)
+
+    const raster = inflateSync(Buffer.concat(data))
+    const row = width * 3 + 1
+    expect(raster.length).toBe(height * row)
+    const pixel = (x: number, y: number) => {
+      const at = y * row + 1 + x * 3
+      return [...raster.subarray(at, at + 3)]
+    }
+    // The ink ground is full-bleed: every corner is ink, not padding.
+    expect(pixel(0, 0)).toEqual([22, 16, 12])
+    expect(pixel(width - 1, 0)).toEqual([22, 16, 12])
+    expect(pixel(0, height - 1)).toEqual([22, 16, 12])
+    expect(pixel(width - 1, height - 1)).toEqual([22, 16, 12])
   })
 })
