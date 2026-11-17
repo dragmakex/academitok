@@ -255,7 +255,7 @@ write the conflict at the bottom instead of guessing.
       from the real files.
       — `6460591`
 
-- [ ] **21. Installed-shell safe areas.** SPEC §16 P3 lists a native shell and task 19 gave the
+- [x] **21. Installed-shell safe areas.** SPEC §16 P3 lists a native shell and task 19 gave the
       manifest the gazette identity with `display: "standalone"`, but the root viewport meta is
       `width=device-width, initial-scale=1` with no `viewport-fit=cover`, and no component reads
       `env(safe-area-inset-*)` — so in the installed window the masthead strip slides under the
@@ -269,6 +269,7 @@ write the conflict at the bottom instead of guessing.
       strip read `env(safe-area-inset-top|right|bottom|left)`; with zero insets (a browser tab) the
       deck still shows exactly one clipping with the masthead strip fully inside the viewport; a
       test asserts the meta from `rootHead()` and the inset usage from the real component files.
+      — `a27f7ab`
 
 ---
 
