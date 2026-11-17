@@ -829,7 +829,7 @@ write the conflict at the bottom instead of guessing.
       when the mark is redrawn).
       — `236e986`
 
-- [ ] **46. Who else keeps the clipping, on the clipping.** SPEC §16 P3 lists "multi-reader with
+- [x] **46. Who else keeps the clipping, on the clipping.** SPEC §16 P3 lists "multi-reader with
       collaborative signals": task 37 gave the permalink `Filed by N readers` and task 40 gave the
       morgue's rows `Also kept by N readers`, but the deck — the surface every reader actually
       reads — still sets one clipping as if they were the only person in the morgue, and
@@ -855,6 +855,7 @@ write the conflict at the bottom instead of guessing.
       PGlite dir, stubbed catalog) and the rendered and omitted clause from
       `renderToStaticMarkup` of the real deck-variant `PaperSlide`; the ranked page for a fixed
       seed is identical before and after.
+      — `2b99a5f`
 
 ---
 
