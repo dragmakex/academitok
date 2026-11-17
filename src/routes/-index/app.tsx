@@ -14,6 +14,7 @@ import { EmptyState } from "@/design-system/components/EmptyState"
 import { ErrorState } from "@/design-system/components/ErrorState"
 import { FeedDeck } from "@/design-system/components/FeedDeck"
 import { FeedStateSlide } from "@/design-system/components/FeedStateSlide"
+import { Notice, type NoticeAction } from "@/design-system/components/Notice"
 import { Page } from "@/design-system/components/Page"
 import { PaperSlide } from "@/design-system/components/PaperSlide"
 import { ShortcutSheet } from "@/design-system/components/ShortcutSheet"
@@ -40,6 +41,7 @@ import {
   loadPaperFeedAtom,
   onboardReaderAtom,
   reactToPaperAtom,
+  restoreHiddenPaperAtom,
   saveReaderProfileAtom,
   trackPaperViewAtom,
 } from "./atoms"
@@ -84,6 +86,8 @@ type VisiblePaperSlideProps = {
   readonly item: FeedItem
   readonly origin: FeedOrigin
   readonly total: number
+  readonly onBookmark: () => void
+  readonly onHide: () => void
   readonly onNavigate: (index: number) => void
   readonly onVisible: (index: number) => void
   readonly registerNode: (index: number, node: HTMLElement | null) => void
@@ -97,6 +101,8 @@ type VisiblePaperSlideProps = {
  * @param root0.item - Feed item.
  * @param root0.origin - Where the edition came from.
  * @param root0.total - Mounted feed length.
+ * @param root0.onBookmark - Save reaction callback.
+ * @param root0.onHide - Hide reaction callback.
  * @param root0.onNavigate - Navigation callback.
  * @param root0.onVisible - Visibility callback.
  * @param root0.registerNode - Slide registration callback.
@@ -106,6 +112,8 @@ function VisiblePaperSlide({
   active,
   index,
   item,
+  onBookmark,
+  onHide,
   onNavigate,
   onVisible,
   origin,
@@ -211,7 +219,7 @@ function VisiblePaperSlide({
     trackView,
   ])
 
-  const react = (kind: "like" | "bookmark" | "hide" | "open-site") => {
+  const react = (kind: "like" | "open-site") => {
     reactToPaper({ kind, paperId: item.paper.id })
   }
 
@@ -246,11 +254,8 @@ function VisiblePaperSlide({
       skeleton={!active}
       actions={{
         onLike: () => react("like"),
-        onBookmark: () => react("bookmark"),
-        onHide: () => {
-          onNavigate(index + 1)
-          react("hide")
-        },
+        onBookmark,
+        onHide,
         onOpenSite: () => react("open-site"),
         onPrevious: () => onNavigate(index - 1),
         onNext: () => onNavigate(index + 1),
@@ -417,6 +422,12 @@ export function App() {
 
   const [drawerOpen, setDrawerOpen] = useState(false)
   const [sheetOpen, setSheetOpen] = useState(false)
+  const [notice, setNotice] = useState<
+    {
+      readonly label: string
+      readonly action?: NoticeAction | undefined
+    } | null
+  >(null)
   const [activeIndex, setActiveIndex] = useState(0)
   const [query, setQuery] = useState<FeedQuery>({
     topic: snapshot?.selectedTopic ?? "All",
@@ -484,10 +495,47 @@ export function App() {
   }, [loadNextPage, query, snapshot?.items.length, snapshot?.nextCursor])
 
   const reactToPaper = useAtomSet(reactToPaperAtom)
+  const restorePaper = useAtomSet(restoreHiddenPaperAtom)
+
+  useEffect(() => {
+    if (notice === null) {
+      return
+    }
+    const timer = window.setTimeout(() => setNotice(null), 5000)
+    return () => window.clearTimeout(timer)
+  }, [notice])
+
+  const hideClipping = useCallback((index: number) => {
+    const item = snapshot?.items[index]
+    if (item === undefined) {
+      return
+    }
+    navigate(index + 1)
+    reactToPaper({ kind: "hide", paperId: item.paper.id })
+    setNotice({
+      label: "Clipped out",
+      action: {
+        label: "Undo",
+        onAction: () => {
+          setNotice(null)
+          restorePaper({ item, index })
+          navigate(index)
+        },
+      },
+    })
+  }, [navigate, reactToPaper, restorePaper, snapshot?.items])
+
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
       const target = event.target
       if (event.metaKey || event.ctrlKey || event.altKey) {
+        return
+      }
+
+      if (event.key === "Escape") {
+        if (notice !== null && !drawerOpen && !sheetOpen) {
+          setNotice(null)
+        }
         return
       }
 
@@ -533,9 +581,13 @@ export function App() {
             window.open(item.paper.externalUrl, "_blank", "noopener,noreferrer")
           }
           if (action === "hide") {
-            navigate(activeIndex + 1)
+            hideClipping(activeIndex)
+            return
           }
           reactToPaper({ kind: action, paperId: item.paper.id })
+          if (action === "bookmark") {
+            setNotice({ label: "Filed in clippings" })
+          }
       }
     }
     window.addEventListener("keydown", onKeyDown)
@@ -543,7 +595,9 @@ export function App() {
   }, [
     activeIndex,
     drawerOpen,
+    hideClipping,
     navigate,
+    notice,
     reactToPaper,
     sheetOpen,
     snapshot?.items,
@@ -787,6 +841,10 @@ export function App() {
         items={shortcutRows}
       />
 
+      {notice === null
+        ? null
+        : <Notice label={notice.label} action={notice.action} />}
+
       {error !== null
         ? (
           <FeedDeck>
@@ -840,6 +898,11 @@ export function App() {
                 index={index}
                 total={snapshot.items.length}
                 active={Math.abs(index - activeIndex) <= 1}
+                onBookmark={() => {
+                  reactToPaper({ kind: "bookmark", paperId: item.paper.id })
+                  setNotice({ label: "Filed in clippings" })
+                }}
+                onHide={() => hideClipping(index)}
                 onNavigate={navigate}
                 onVisible={onVisible}
                 registerNode={registerNode}

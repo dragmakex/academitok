@@ -1,5 +1,6 @@
 import { ApiClient } from "@/api/api-client"
 import {
+  type FeedItem,
   FeedPage as FeedPageSchema,
   type FeedQuery,
   type FeedRequest,
@@ -16,6 +17,7 @@ import {
   trackPaperReactionEvent,
   trackPaperViewEvent,
 } from "@/lib/feed-analytics"
+import { type RemovedItem, removeItemAt, restoreItem } from "@/lib/feed-items"
 import * as Context from "effect/Context"
 import * as Effect from "effect/Effect"
 import * as Layer from "effect/Layer"
@@ -218,27 +220,42 @@ export const reactToPaperAtom = runtime.fn<ReactToPaperInput>()(
       return result
     }
 
-    const snapshot = {
+    const items = current.value.items.map((item) =>
+      item.paper.id !== result.paperId
+        ? item
+        : result.kind === "like"
+        ? { ...item, liked: result.active }
+        : result.kind === "bookmark"
+        ? { ...item, bookmarked: result.active }
+        : item
+    )
+    const hiddenIndex = result.kind === "hide" && result.active
+      ? items.findIndex((item) => item.paper.id === result.paperId)
+      : -1
+
+    replaceDashboardSnapshot(get, {
       ...current.value,
-      items: current
-        .value
-        .items
-        .map((item) =>
-          item.paper.id !== result.paperId
-            ? item
-            : result.kind === "like"
-            ? { ...item, liked: result.active }
-            : result.kind === "bookmark"
-            ? { ...item, bookmarked: result.active }
-            : item
-        )
-        .filter((item) =>
-          result.kind !== "hide"
-          || !result.active
-          || item.paper.id !== result.paperId
-        ),
+      items: hiddenIndex < 0 ? items : removeItemAt(items, hiddenIndex).items,
+    })
+    return result
+  }),
+)
+
+export const restoreHiddenPaperAtom = runtime.fn<RemovedItem<FeedItem>>()(
+  Effect.fnUntraced(function*(removed, get) {
+    const api = yield* Api
+    const input = { kind: "hide", paperId: removed.item.paper.id } as const
+    const result = yield* api.react(input)
+    trackPaperReactionEvent(input, result.active)
+    const current = get(dashboardSnapshotAtom)
+    if (current._tag !== "Success") {
+      return result
     }
-    replaceDashboardSnapshot(get, snapshot)
+
+    replaceDashboardSnapshot(get, {
+      ...current.value,
+      items: restoreItem(current.value.items, removed),
+    })
     return result
   }),
 )
