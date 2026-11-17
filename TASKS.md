@@ -311,7 +311,7 @@ write the conflict at the bottom instead of guessing.
       undefined.
       — `240bc03`
 
-- [ ] **24. Name the offline edition.** SPEC §7 promises the frozen seed file is served "with a
+- [x] **24. Name the offline edition.** SPEC §7 promises the frozen seed file is served "with a
       visible 'offline edition' notice. Never an empty screen", and §16 P3's native shell makes
       the promise load-bearing: in an installed deck with no network the reader is handed the seed
       clippings dressed as the live edition. `resolveCatalog` in
@@ -330,6 +330,7 @@ write the conflict at the bottom instead of guessing.
       strip still reading `Evening Edition`; a page appended by `loadNextPaperPage` keeps the first
       page's origin; the origin and strip assertions run from the real `getPaperFeedSnapshot`
       (stubbed fetch, temp PGlite dir) and from `renderToStaticMarkup` of the component.
+      — `6bbdb0d`
 
 ---
 
