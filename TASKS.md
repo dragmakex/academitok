@@ -92,7 +92,7 @@ write the conflict at the bottom instead of guessing.
       helper is unit-tested.
       — `f284725`
 
-- [ ] **18. Serve the feed from the stored catalog pool.** SPEC §16 names this as the remaining P1
+- [x] **18. Serve the feed from the stored catalog pool.** SPEC §16 names this as the remaining P1
       work: "persist the OpenAlex catalog in `papers` instead of refetching per page". `savePapers`
       already writes the pool, but `resolveCatalog` in `src/features/papers/application.ts` still
       calls OpenAlex on every `feed.next` and never reads the rows back — so ten swipes are ten
@@ -107,6 +107,7 @@ write the conflict at the bottom instead of guessing.
       before the injected clock makes a fresh one; a pool with fewer than 30 papers for the requested
       beat still refreshes; an empty pool plus a failing upstream still serves the offline edition;
       the TTL boundary helper is unit-tested.
+      — `cb77936`
 
 ---
 
