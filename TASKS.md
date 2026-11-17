@@ -332,7 +332,7 @@ write the conflict at the bottom instead of guessing.
       (stubbed fetch, temp PGlite dir) and from `renderToStaticMarkup` of the component.
       — `6bbdb0d`
 
-- [ ] **25. Median dwell readout on the desk.** SPEC §8.4 sets median dwell at ≥ 8s and §16 P3
+- [x] **25. Median dwell readout on the desk.** SPEC §8.4 sets median dwell at ≥ 8s and §16 P3
       lists reading-time analytics, but the number is unread: `dwell` carries a per-clip `dwell_ms`
       to PostHog (task 7) and `ReaderState.impressions` already holds `dwellMs`, while the desk
       drawer shows archival drift (task 8), citation skew (task 15) and topic mix (task 17) and
@@ -348,6 +348,7 @@ write the conflict at the bottom instead of guessing.
       em dash, never `NaN` or `0`; the helper is unit-tested and reaches `getPaperFeedSnapshot` from
       the real `ReaderState.impressions`; the ranked page for a fixed seed is identical before and
       after.
+      — `0cde77a`
 
 ---
 
