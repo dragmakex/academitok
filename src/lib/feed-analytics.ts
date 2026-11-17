@@ -124,6 +124,27 @@ export function trackPaperReactionEvent(
 }
 
 /**
+ * Labels the notice shown when a reaction write is refused, so a reaction never
+ * diverges silently (SPEC §10).
+ * @param kind - Reaction kind the server refused.
+ * @returns Notice label naming the reaction that was lost.
+ */
+export function reactionFailureNotice(
+  kind: ReactToPaperInput["kind"],
+): string {
+  switch (kind) {
+    case "like":
+      return "Could not record the like"
+    case "bookmark":
+      return "Could not file the clipping"
+    case "hide":
+      return "Could not hide the clipping"
+    case "open-site":
+      return "Could not record the opening"
+  }
+}
+
+/**
  * Median of a numeric sample.
  * @param values - Sample values.
  * @returns Median, averaging the middle pair on even-sized samples, or null when empty.

@@ -23,6 +23,7 @@ import {
   medianYear,
   multiBeatCount,
   pageReadMinutes,
+  reactionFailureNotice,
   reactionRates,
   readingCompletion,
   recordEdition,
@@ -208,6 +209,21 @@ describe("reactionRates", () => {
       hideRate: null,
       openSourceRate: null,
     })
+  })
+})
+
+describe("reactionFailureNotice", () => {
+  it("names the reaction the desk refused", () => {
+    expect(reactionFailureNotice("like")).toBe("Could not record the like")
+    expect(reactionFailureNotice("bookmark")).toBe(
+      "Could not file the clipping",
+    )
+    expect(reactionFailureNotice("hide")).toBe(
+      "Could not hide the clipping",
+    )
+    expect(reactionFailureNotice("open-site")).toBe(
+      "Could not record the opening",
+    )
   })
 })
 

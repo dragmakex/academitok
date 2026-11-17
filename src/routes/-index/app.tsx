@@ -34,6 +34,7 @@ import {
   conceptOnlyBeats,
   explorationShare,
   multiBeatCount,
+  reactionFailureNotice,
   topicEntropy,
   trackFeedPageEvent,
 } from "@/lib/feed-analytics"
@@ -46,6 +47,7 @@ import {
   loadNextPaperPageAtom,
   loadPaperFeedAtom,
   onboardReaderAtom,
+  reactionFailureAtom,
   reactToPaperAtom,
   restoreHiddenPaperAtom,
   saveReaderProfileAtom,
@@ -438,6 +440,8 @@ export function App() {
     ? snapshotAsync.value
     : undefined
   const editionOrigins = useAtomValue(editionOriginsAtom)
+  const reactionFailure = useAtomValue(reactionFailureAtom)
+  const setReactionFailure = useAtomSet(reactionFailureAtom)
 
   const [drawerOpen, setDrawerOpen] = useState(false)
   const [sheetOpen, setSheetOpen] = useState(false)
@@ -528,6 +532,15 @@ export function App() {
     const timer = window.setTimeout(() => setNotice(null), 5000)
     return () => window.clearTimeout(timer)
   }, [notice])
+
+  useEffect(() => {
+    if (reactionFailure === null) {
+      return
+    }
+    setNotice(null)
+    const timer = window.setTimeout(() => setReactionFailure(null), 5000)
+    return () => window.clearTimeout(timer)
+  }, [reactionFailure, setReactionFailure])
 
   const hideClipping = useCallback((index: number) => {
     const item = snapshot?.items[index]
@@ -991,9 +1004,11 @@ export function App() {
         items={shortcutRows}
       />
 
-      {notice === null
-        ? null
-        : <Notice label={notice.label} action={notice.action} />}
+      {reactionFailure === null
+        ? notice === null
+          ? null
+          : <Notice label={notice.label} action={notice.action} />
+        : <Notice label={reactionFailureNotice(reactionFailure)} />}
 
       {error !== null
         ? (

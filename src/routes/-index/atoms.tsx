@@ -50,6 +50,29 @@ const feedSessionId = globalThis.crypto.randomUUID()
 /** Origins of the pages this session loaded, so the desk can read the cold-feed rate. */
 export const editionOriginsAtom = Atom.make<ReadonlyArray<FeedOrigin>>([])
 
+/** Reaction the server refused, so the deck can say the write never reached the desk. */
+export const reactionFailureAtom = Atom.make<
+  ReactToPaperInput["kind"] | null
+>(null)
+
+/**
+ * Records a refused reaction while leaving the write's failure in the atom result.
+ * @param effect - Reaction write.
+ * @param kind - Reaction kind the write carries.
+ * @param get - Atom write context.
+ * @returns The write, with the refused kind recorded on failure.
+ */
+const recordReactionFailure = <A, E>(
+  effect: Effect.Effect<A, E>,
+  kind: ReactToPaperInput["kind"],
+  get: Atom.FnContext,
+): Effect.Effect<A, E> =>
+  effect.pipe(
+    Effect.tapError(() =>
+      Effect.sync(() => get.set(reactionFailureAtom, kind))
+    ),
+  )
+
 /**
  * Adds a served page's origin to the session's edition tally.
  * @param get - Atom write context.
@@ -155,8 +178,13 @@ export const savedPageAtom = Object.assign(
 export const removeSavedPaperAtom = runtime.fn<string>()(
   Effect.fnUntraced(function*(paperId, get) {
     const api = yield* Api
-    const result = yield* api.react({ kind: "bookmark", paperId })
-    trackPaperReactionEvent({ kind: "bookmark", paperId }, result.active)
+    const input = { kind: "bookmark", paperId } as const
+    const result = yield* recordReactionFailure(
+      api.react(input),
+      input.kind,
+      get,
+    )
+    trackPaperReactionEvent(input, result.active)
     const page = yield* api.savedList()
     get.set(savedPageAtom, { _tag: "Replace", value: page })
     return page
@@ -228,7 +256,11 @@ export const onboardReaderAtom = runtime.fn<OnboardProfileInput>()(
 export const reactToPaperAtom = runtime.fn<ReactToPaperInput>()(
   Effect.fnUntraced(function*(input, get) {
     const api = yield* Api
-    const result = yield* api.react(input)
+    const result = yield* recordReactionFailure(
+      api.react(input),
+      input.kind,
+      get,
+    )
     trackPaperReactionEvent(input, result.active)
     const current = get(dashboardSnapshotAtom)
     if (current._tag !== "Success") {
@@ -260,7 +292,11 @@ export const restoreHiddenPaperAtom = runtime.fn<RemovedItem<FeedItem>>()(
   Effect.fnUntraced(function*(removed, get) {
     const api = yield* Api
     const input = { kind: "hide", paperId: removed.item.paper.id } as const
-    const result = yield* api.react(input)
+    const result = yield* recordReactionFailure(
+      api.react(input),
+      input.kind,
+      get,
+    )
     trackPaperReactionEvent(input, result.active)
     const current = get(dashboardSnapshotAtom)
     if (current._tag !== "Success") {
