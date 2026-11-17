@@ -390,7 +390,7 @@ write the conflict at the bottom instead of guessing.
       seed is identical before and after.
       — `37c6cf5`
 
-- [ ] **28. Hide rate and open-source rate on the desk.** SPEC §8.4 sets hide rate at ≤ 3% and
+- [x] **28. Hide rate and open-source rate on the desk.** SPEC §8.4 sets hide rate at ≤ 3% and
       open-source rate at ≥ 12%, and the rail records both as `hide` and `open-site` reactions the
       desk never counts: it shows archival drift (task 8), citation skew (task 15), topic mix
       (task 17), median dwell (task 25) and median completion (task 26), while the two numbers the
@@ -408,6 +408,7 @@ write the conflict at the bottom instead of guessing.
       and the desk renders an em dash, never `NaN` or `0%`; the helper is unit-tested and its
       counts reach `getPaperFeedSnapshot` from the real `ReaderState` view/hide/open-site
       reactions; the ranked page for a fixed seed is identical before and after.
+      — `3c48da4`
 
 ---
 
