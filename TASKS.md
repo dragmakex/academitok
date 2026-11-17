@@ -66,7 +66,7 @@ write the conflict at the bottom instead of guessing.
       without a fetch, and a single success resets the streak; an upstream failure still falls back
       to the frozen seed edition; the guard is unit-tested with injected clock and fake request.
       — `aca77a9`
-- [ ] **12. Map source concepts onto the beats.** SPEC §17.2 keeps the fixed nine beats only on the
+- [x] **12. Map source concepts onto the beats.** SPEC §17.2 keeps the fixed nine beats only on the
       condition that source concepts are mapped onto them, but `detectTopics` reads title and
       abstract keywords alone and files every miss under `Education`, while OpenAlex already ships
       concept metadata the mapper throws away — so a quantum-mechanics paper with no beat keyword
@@ -78,6 +78,7 @@ write the conflict at the bottom instead of guessing.
       concepts naming "Quantum mechanics" files under `Physics`; a keyword beat plus a conflicting
       concept keeps the keyword beat; text and concepts matching nothing still reports `Education`;
       the helper and the fallback order are unit-tested.
+      — `39596ac`
 
 ---
 
