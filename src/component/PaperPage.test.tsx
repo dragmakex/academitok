@@ -1,4 +1,5 @@
 import { PaperPage } from "@/design-system/components/PaperPage"
+import { renderToStaticMarkup } from "react-dom/server"
 import { expect, test, vi } from "vitest"
 import { render } from "vitest-browser-react"
 import { page } from "vitest/browser"
@@ -20,6 +21,7 @@ test("renders the clipping and copies its citation", async () => {
       citations={12}
       externalUrl="https://example.com/notes"
       readMinutes={6}
+      savedByReaders={2}
       siteLabel="OpenAlex"
       title="Notes on the Analytical Engine"
       topics={["AI"]}
@@ -44,4 +46,34 @@ test("renders the clipping and copies its citation", async () => {
   await expect
     .element(page.getByRole("button", { name: "Copied" }))
     .toBeVisible()
+})
+
+const markupFor = (savedByReaders: number) =>
+  renderToStaticMarkup(
+    <PaperPage
+      abstract="A full abstract supplied by the metadata source."
+      accessLabel="Open access"
+      authors={["Ada Lovelace"]}
+      citation={citation}
+      citations={12}
+      externalUrl="https://example.com/notes"
+      readMinutes={6}
+      savedByReaders={savedByReaders}
+      siteLabel="OpenAlex"
+      title="Notes on the Analytical Engine"
+      topics={["AI"]}
+      venue="Scientific Memoirs"
+      year={1843}
+    />,
+  )
+
+test("prints who filed the clipping", () => {
+  const markup = markupFor(3)
+
+  expect(markup).toContain("Filed by")
+  expect(markup).toContain("3 readers")
+})
+
+test("omits the filing fact when nobody filed it", () => {
+  expect(markupFor(0)).not.toContain("Filed by")
 })

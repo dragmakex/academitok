@@ -315,6 +315,46 @@ describe("ReaderStateRepository", () => {
     expect(result.bSession).toEqual([])
   })
 
+  it("counts the readers who filed a clipping and skips undone saves", async () => {
+    const dataDir = await mkdtemp(join(tmpdir(), "academitok-audience-"))
+    directories.push(dataDir)
+    const readerA = "0f8c7f4e-1c3e-4f22-9a1a-9b4b1c0a1d11"
+    const readerB = "7b2c9d10-4a55-4f8e-8c1f-2d6e3a5b7c99"
+    const readerC = "9d4e5f60-7b88-4c99-8d1e-3f2a4b5c6d77"
+    const asReader = <A, E, R>(
+      readerId: string,
+      effect: Effect.Effect<A, E, ReaderId | R>,
+    ): Effect.Effect<A, E, R> =>
+      Effect.provideService(effect, ReaderId, readerId)
+
+    const counts = await runWithDatabase(
+      dataDir,
+      Effect.gen(function*() {
+        const repository = yield* ReaderStateRepository
+        const file = (readerId: string, paperId: string) =>
+          asReader(readerId, repository.react({ paperId, kind: "bookmark" }))
+
+        yield* file(readerA, "paper-1")
+        yield* file(readerB, "paper-1")
+        const twoReaders = yield* repository.savedByReaders("paper-1")
+        yield* file(readerC, "paper-2")
+        // The log orders filings by `createdAt`, so the undo must land later.
+        yield* Effect.sleep("2 millis")
+        yield* file(readerC, "paper-2")
+
+        return {
+          twoReaders,
+          undone: yield* repository.savedByReaders("paper-2"),
+          unfiled: yield* repository.savedByReaders("paper-3"),
+        }
+      }),
+    )
+
+    expect(counts.twoReaders).toBe(2)
+    expect(counts.undone).toBe(0)
+    expect(counts.unfiled).toBe(0)
+  })
+
   it("puts the impression retention boundary 90 days before now", () => {
     const now = new Date("2026-05-01T12:00:00.000Z")
     expect(now.getTime() - impressionCutoff(now).getTime()).toBe(

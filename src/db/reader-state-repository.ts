@@ -71,6 +71,7 @@ type ReaderStateRepositoryShape = {
   readonly recentPapers: (
     now: Date,
   ) => Effect.Effect<ReadonlyArray<Paper>>
+  readonly savedByReaders: (paperId: string) => Effect.Effect<number>
 }
 
 type StoredState = {
@@ -125,6 +126,7 @@ type StateStorage = {
     ids: ReadonlyArray<string>,
   ) => Promise<ReadonlyArray<Paper>>
   readonly recentPapers: (since: Date) => Promise<ReadonlyArray<Paper>>
+  readonly savedByReaders: (paperId: string) => Promise<number>
 }
 
 const decodeReaderState = Schema.decodeUnknownSync(ReaderState)
@@ -476,6 +478,28 @@ function storedPaper(row: typeof papersTable.$inferSelect): Paper {
 }
 
 /**
+ * Counts readers whose newest filing of a paper is still active.
+ * @param rows - Bookmark rows for one paper, newest first.
+ * @returns Number of readers holding an active filing.
+ */
+// shortcut: newest wins by createdAt; a same-millisecond undo is ambiguous until a
+// sequence column exists.
+const activeFilers = (
+  rows: ReadonlyArray<{
+    readonly readerId: string
+    readonly active: boolean
+  }>,
+): number => {
+  const latest = new Map<string, boolean>()
+  for (const row of rows) {
+    if (!latest.has(row.readerId)) {
+      latest.set(row.readerId, row.active)
+    }
+  }
+  return [...latest.values()].filter((active) => active).length
+}
+
+/**
  * Builds the repository service over adapter-specific storage.
  * @param storage - Database adapter operations.
  * @returns Reader-state repository service.
@@ -552,6 +576,12 @@ function makeRepositoryService(storage: StateStorage) {
         Effect.promise(async () => {
           await ensureMigrated()
           return storage.recentPapers(poolCutoff(now))
+        }),
+      // Deliberately not reader-scoped: the count spans every reader's filings.
+      savedByReaders: (paperId) =>
+        Effect.promise(async () => {
+          await ensureMigrated()
+          return storage.savedByReaders(paperId)
         }),
     } satisfies ReaderStateRepositoryShape,
   )
@@ -855,6 +885,20 @@ function makePostgresRepository(databaseUrl: string) {
               .where(eq(impressionsTable.id, impression.id))
           }
         },
+        savedByReaders: async (paperId) =>
+          activeFilers(
+            await db
+              .select({
+                readerId: reactionsTable.readerId,
+                active: reactionsTable.active,
+              })
+              .from(reactionsTable)
+              .where(and(
+                eq(reactionsTable.paperId, paperId),
+                eq(reactionsTable.kind, "bookmark"),
+              ))
+              .orderBy(desc(reactionsTable.createdAt)),
+          ),
       }
 
       return makeRepositoryService(postgresStorage)
@@ -1159,6 +1203,20 @@ function makePgliteRepository(dataDir: string | undefined) {
               .where(eq(impressionsTable.id, impression.id))
           }
         },
+        savedByReaders: async (paperId) =>
+          activeFilers(
+            await db
+              .select({
+                readerId: reactionsTable.readerId,
+                active: reactionsTable.active,
+              })
+              .from(reactionsTable)
+              .where(and(
+                eq(reactionsTable.paperId, paperId),
+                eq(reactionsTable.kind, "bookmark"),
+              ))
+              .orderBy(desc(reactionsTable.createdAt)),
+          ),
       }
 
       return makeRepositoryService(storage)

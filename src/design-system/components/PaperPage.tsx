@@ -8,6 +8,7 @@ type PaperPageProps = {
   readonly citations: number
   readonly externalUrl: string | undefined
   readonly readMinutes: number
+  readonly savedByReaders: number
   readonly siteLabel: string
   readonly title: string
   readonly topics: ReadonlyArray<string>
@@ -92,6 +93,18 @@ export function PaperPage(props: PaperPageProps) {
                 {props.citations}
               </dd>
             </div>
+            {props.savedByReaders === 0 ? null : (
+              <div>
+                <dt className={factLabelClass}>
+                  Filed by
+                </dt>
+                <dd className="m-0 font-body text-[0.85rem] leading-tight">
+                  {`${props.savedByReaders} ${
+                    props.savedByReaders === 1 ? "reader" : "readers"
+                  }`}
+                </dd>
+              </div>
+            )}
             <div>
               <dt className={factLabelClass}>
                 Reading time

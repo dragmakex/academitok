@@ -255,6 +255,14 @@ export const getPaperById = (id: string) =>
     })
     .pipe(Effect.withSpan("paper.byId"))
 
+export const getPaperAudience = (id: string) =>
+  Effect
+    .gen(function*() {
+      const repository = yield* ReaderStateRepository
+      return yield* repository.savedByReaders(id)
+    })
+    .pipe(Effect.withSpan("paper.audience"))
+
 export const saveReaderProfile = (
   input: SaveProfileInput,
   request: FeedRequest,
