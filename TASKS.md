@@ -40,7 +40,7 @@ write the conflict at the bottom instead of guessing.
       ignored instead of written; the cookie-name and id parser is unit-tested, and a repository test
       proves the two-reader separation.
 
-- [ ] **35. The 14-day seen filter and the `again` label.** SPEC §8.1 step 5 says a paper
+- [x] **35. The 14-day seen filter and the `again` label.** SPEC §8.1 step 5 says a paper
       impressed in the last 14 days returns "only if score is in the top 3% and the pool is
       exhausted (labelled 'again')", but `buildFeedPage` in `src/features/papers/recommendation.ts`
       filters only session-seen ids, so a reader who stops at nine clippings on Monday is served
@@ -62,7 +62,7 @@ write the conflict at the bottom instead of guessing.
       renders `Again`; a repeat whose score sits outside that top 3% never fills an exhausted slot;
       the page still holds no duplicate ids and no topic above 2 of 10; the helper is unit-tested
       with an injected clock and the filter is asserted from the real `getPaperFeedSnapshot`.
-      — queued
+      — `dbe2ecd`
 
 ## P2 — breadth
 
