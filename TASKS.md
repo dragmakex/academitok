@@ -134,7 +134,7 @@ write the conflict at the bottom instead of guessing.
       for a fixed seed is identical before and after.
       — `d7e214f`
 
-- [ ] **13. Citation-age skew on `feed.next`.** SPEC §17.3 keeps citation count as a quality
+- [x] **13. Citation-age skew on `feed.next`.** SPEC §17.3 keeps citation count as a quality
       signal on the condition that we measure the archival bias it introduces; `feed.next` reports
       `median_year` (how old the page feels) but nothing reports the half of the decision the
       damping is meant to offset — whether the page's citations sit on its old clippings. Add a pure
@@ -147,6 +147,7 @@ write the conflict at the bottom instead of guessing.
       no years reports null for both, never `NaN`; a one-paper page reports null older and its own
       citations as newer; the helper is unit-tested; the ranked page for a fixed seed
       is identical before and after.
+      — `ed2ea39`
 
 ---
 
