@@ -1241,7 +1241,7 @@ write the conflict at the bottom instead of guessing.
       the ranked page for a fixed seed is identical before and after.
       — `924742f`
 
-- [ ] **61. Who else gave up on the clipping, on the permalink.** SPEC §16 P3 lists "multi-reader
+- [x] **61. Who else gave up on the clipping, on the permalink.** SPEC §16 P3 lists "multi-reader
       with collaborative signals" and §15 says opaque judgement is not acceptable — opaque feeds
       least of all — but tasks 37, 55 and 57 gave the permalink the three cross-reader facts the
       split `reader_id` rows can answer (`Filed by` from `savedByReaders` on `bookmark`, `Opened by`
@@ -1272,6 +1272,7 @@ write the conflict at the bottom instead of guessing.
       under two `ReaderId` values, and the rendered and omitted fact from
       `renderToStaticMarkup` of the real `PaperPage`; the ranked page for a fixed seed is identical
       before and after; `bun run validate` is green.
+      — `1b32c1d`
 
 ---
 
