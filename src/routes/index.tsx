@@ -9,6 +9,7 @@ import * as AsyncResult from "effect/unstable/reactivity/AsyncResult"
 import { App } from "./-index/app"
 import { dashboardSnapshotAtom } from "./-index/atoms"
 import { withRequestReader } from "./-lib/request-reader"
+import { pageHead } from "./__root"
 import { serverRuntime } from "./api/$"
 
 const editionInput = Schema.Struct({
@@ -62,7 +63,19 @@ const getPaperFeed = createServerFn({ method: "GET" })
     ]
   })
 
+/**
+ * Head entries for the reading deck.
+ * @returns The deck title and preview copy.
+ */
+export const deckHead = () =>
+  pageHead({
+    title: "AcademiTok — the reading deck",
+    description:
+      "A full-screen reading deck of open-access papers, set like a broadsheet and tuned by what you read.",
+  })
+
 export const Route = createFileRoute("/")({
+  head: deckHead,
   validateSearch: validateEditionSearch,
   loaderDeps: ({ search }) => ({ edition: parseEdition(search.edition) }),
   loader: ({ deps }) => getPaperFeed({ data: deps }),

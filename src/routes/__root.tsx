@@ -43,6 +43,53 @@ export const rootHead = () => ({
   ],
 })
 
+/** Longest preview copy a search engine or chat client prints. */
+const headCopyLimit = 160
+
+/**
+ * Clamps preview copy, cutting on a word boundary.
+ * @param text - Raw title or description.
+ * @returns Single-line copy no longer than {@link headCopyLimit} characters.
+ */
+function clampHeadCopy(text: string): string {
+  const collapsed = text.replaceAll(/\s+/g, " ").trim()
+  if (collapsed.length <= headCopyLimit) {
+    return collapsed
+  }
+  const cut = collapsed.slice(0, headCopyLimit)
+  const boundary = cut.lastIndexOf(" ")
+  return (boundary > 0 ? cut.slice(0, boundary) : cut).trimEnd()
+}
+
+/**
+ * Builds the title and preview entries for one surface.
+ * @param options - Copy for the surface.
+ * @param options.title - Page title.
+ * @param options.description - Preview copy; omitted when the surface has none.
+ * @returns Head meta carrying the title, description and their Open Graph twins.
+ */
+export function pageHead(
+  { title, description }: { title: string; description?: string },
+) {
+  const headline = clampHeadCopy(title)
+  const summary = description === undefined
+    ? undefined
+    : clampHeadCopy(description)
+
+  return {
+    meta: [
+      { title: headline },
+      ...(summary === undefined
+        ? []
+        : [{ name: "description", content: summary }]),
+      { property: "og:title", content: headline },
+      ...(summary === undefined
+        ? []
+        : [{ property: "og:description", content: summary }]),
+    ],
+  }
+}
+
 export const Route = createRootRoute({
   head: rootHead,
 

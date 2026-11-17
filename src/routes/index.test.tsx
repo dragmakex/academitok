@@ -19,6 +19,7 @@ vi.mock("@/lib/atom-hydration", () => ({
 }))
 
 vi.mock("@tanstack/react-router", () => ({
+  createRootRoute: vi.fn((config) => config),
   createFileRoute: vi.fn(
     (path: string) => (config: Record<string, unknown>) => ({
       path,
@@ -29,9 +30,13 @@ vi.mock("@tanstack/react-router", () => ({
 }))
 
 vi.mock("@tanstack/react-start", () => ({
-  createServerFn: vi.fn(() => ({
-    handler: vi.fn((fn) => fn),
-  })),
+  createServerFn: vi.fn(() => {
+    const chain = {
+      handler: vi.fn((fn) => fn),
+      inputValidator: () => chain,
+    }
+    return chain
+  }),
 }))
 
 vi.mock("./-index/atoms", () => ({

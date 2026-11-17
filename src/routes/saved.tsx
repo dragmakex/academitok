@@ -7,6 +7,7 @@ import * as AsyncResult from "effect/unstable/reactivity/AsyncResult"
 import { savedPageAtom } from "./-index/atoms"
 import { withRequestReader } from "./-lib/request-reader"
 import { SavedPage } from "./-saved/saved"
+import { pageHead } from "./__root"
 import { serverRuntime } from "./api/$"
 
 const getSavedClippings = createServerFn({ method: "GET" }).handler(
@@ -20,7 +21,19 @@ const getSavedClippings = createServerFn({ method: "GET" }).handler(
   },
 )
 
+/**
+ * Head entries for the morgue.
+ * @returns The morgue title and preview copy.
+ */
+export const morgueHead = () =>
+  pageHead({
+    title: "Clippings · AcademiTok",
+    description:
+      "The clippings you filed from the AcademiTok reading deck, kept as a broadsheet list you can export as BibTeX.",
+  })
+
 export const Route = createFileRoute("/saved")({
+  head: morgueHead,
   loader: () => getSavedClippings(),
   component: SavedRoute,
 })

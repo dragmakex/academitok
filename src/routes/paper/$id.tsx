@@ -1,3 +1,4 @@
+import type { Paper } from "@/api/paper-schema"
 import { EmptyState } from "@/design-system/components/EmptyState"
 import { LinkButton } from "@/design-system/components/LinkButton"
 import { Page } from "@/design-system/components/Page"
@@ -7,6 +8,7 @@ import { formatCitation } from "@/features/papers/citation"
 import { createFileRoute, notFound } from "@tanstack/react-router"
 import { createServerFn } from "@tanstack/react-start"
 import * as Schema from "effect/Schema"
+import { pageHead } from "../__root"
 import { serverRuntime } from "../api/$"
 
 const paperPermalinkInput = Schema.Struct({ id: Schema.NonEmptyString })
@@ -17,6 +19,23 @@ const getPaperPermalink = createServerFn({ method: "GET" })
   )
   .handler(({ data }) => serverRuntime.runPromise(getPaperById(data.id)))
 
+/**
+ * Head entries for a clipping permalink.
+ * @param paper - Loaded paper, absent when the id is unknown.
+ * @returns The paper title and abstract preview, or the not-found notice.
+ */
+export const permalinkHead = (paper: Paper | undefined) =>
+  paper === undefined
+    ? pageHead({
+      title: "Clipping not found · AcademiTok",
+      description:
+        "This permalink points at a paper the edition has not printed.",
+    })
+    : pageHead({
+      title: `${paper.title} · AcademiTok`,
+      description: paper.abstract,
+    })
+
 export const Route = createFileRoute("/paper/$id")({
   loader: async ({ params }) => {
     const paper = await getPaperPermalink({ data: { id: params.id } })
@@ -26,13 +45,7 @@ export const Route = createFileRoute("/paper/$id")({
 
     return paper
   },
-  head: ({ loaderData }) => ({
-    meta: [{
-      title: loaderData === undefined
-        ? "Clipping not found · AcademiTok"
-        : `${loaderData.title} · AcademiTok`,
-    }],
-  }),
+  head: ({ loaderData }) => permalinkHead(loaderData),
   component: PaperPermalinkRoute,
   notFoundComponent: PaperNotFound,
 })

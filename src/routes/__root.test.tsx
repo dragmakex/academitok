@@ -49,6 +49,51 @@ describe("__root route", () => {
   })
 })
 
+describe("pageHead", () => {
+  it("returns one title and one description with their Open Graph twins", async () => {
+    const { pageHead } = await import("./__root")
+    const head = pageHead({
+      title: "Clippings · AcademiTok",
+      description: "Saved clippings.",
+    })
+
+    expect(head.meta).toEqual([
+      { title: "Clippings · AcademiTok" },
+      { name: "description", content: "Saved clippings." },
+      { property: "og:title", content: "Clippings · AcademiTok" },
+      { property: "og:description", content: "Saved clippings." },
+    ])
+  })
+
+  it("clamps long copy to 160 characters on a word boundary", async () => {
+    const { pageHead } = await import("./__root")
+    const description = "clippings ".repeat(60).trim()
+    const head = pageHead({ title: "Deck", description })
+    const summary = head.meta.find((entry) =>
+      "name" in entry && entry.name === "description"
+    )
+
+    expect(summary).toBeDefined()
+    const content = summary !== undefined && "content" in summary
+      ? summary.content
+      : ""
+    expect(content.length).toBeLessThanOrEqual(160)
+    expect(content.endsWith("clippings")).toBe(true)
+    expect(description.startsWith(content)).toBe(true)
+    expect(head.meta).toContainEqual({ property: "og:description", content })
+  })
+
+  it("omits a missing description instead of rendering it empty", async () => {
+    const { pageHead } = await import("./__root")
+    const head = pageHead({ title: "Deck" })
+
+    expect(head.meta).toEqual([
+      { title: "Deck" },
+      { property: "og:title", content: "Deck" },
+    ])
+  })
+})
+
 describe("gazette shell metadata", () => {
   const manifest = JSON.parse(
     readFileSync(join(process.cwd(), "public/manifest.json"), "utf8"),
