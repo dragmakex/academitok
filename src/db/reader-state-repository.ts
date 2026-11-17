@@ -107,6 +107,16 @@ const decodeReaderState = Schema.decodeUnknownSync(ReaderState)
 const singletonId = "singleton"
 /** Sessions idle for longer than this are swept on the next feed request. */
 const feedSessionTtlMs = 24 * 60 * 60 * 1000
+/** Impressions are retained this long (SPEC §6); reactions are kept forever. */
+const impressionTtlMs = 90 * 24 * 60 * 60 * 1000
+
+/**
+ * Retention boundary for impressions.
+ * @param now - Current time.
+ * @returns Earliest instant an impression is still worth keeping.
+ */
+export const impressionCutoff = (now: Date): Date =>
+  new Date(now.getTime() - impressionTtlMs)
 
 const createReaderStateTablesSql = `
   CREATE TABLE IF NOT EXISTS reader_state (
@@ -534,12 +544,12 @@ function makePostgresRepository(databaseUrl: string) {
       yield* Effect.addFinalizer(() => Effect.promise(() => client.end()))
 
       /**
-       * Sweeps expired sessions so the write path owns the TTL.
+       * Sweeps expired sessions and impressions; reactions are never swept.
        * @param now - Current time.
        * @returns Sweep completion.
        */
-      const sweepFeedSessions = (now: Date) =>
-        db
+      const sweepExpired = async (now: Date) => {
+        await db
           .delete(feedSessionsTable)
           .where(
             lt(
@@ -547,13 +557,17 @@ function makePostgresRepository(databaseUrl: string) {
               new Date(now.getTime() - feedSessionTtlMs),
             ),
           )
+        await db
+          .delete(impressionsTable)
+          .where(lt(impressionsTable.shownAt, impressionCutoff(now)))
+      }
 
       const feedSessionStorage: Pick<
         StateStorage,
         "loadFeedSession" | "saveFeedSession"
       > = {
         loadFeedSession: async (sessionId, now) => {
-          await sweepFeedSessions(now)
+          await sweepExpired(now)
           const row = await db
             .select()
             .from(feedSessionsTable)
@@ -576,7 +590,7 @@ function makePostgresRepository(databaseUrl: string) {
               target: feedSessionsTable.id,
               set: { seenPaperIds, cursor, updatedAt: now },
             })
-          await sweepFeedSessions(now)
+          await sweepExpired(now)
         },
       }
 
@@ -815,12 +829,12 @@ function makePgliteRepository(dataDir: string | undefined) {
       yield* Effect.addFinalizer(() => Effect.promise(() => client.close()))
 
       /**
-       * Sweeps expired sessions so the write path owns the TTL.
+       * Sweeps expired sessions and impressions; reactions are never swept.
        * @param now - Current time.
        * @returns Sweep completion.
        */
-      const sweepFeedSessions = (now: Date) =>
-        db
+      const sweepExpired = async (now: Date) => {
+        await db
           .delete(feedSessionsTable)
           .where(
             lt(
@@ -828,13 +842,17 @@ function makePgliteRepository(dataDir: string | undefined) {
               new Date(now.getTime() - feedSessionTtlMs),
             ),
           )
+        await db
+          .delete(impressionsTable)
+          .where(lt(impressionsTable.shownAt, impressionCutoff(now)))
+      }
 
       const feedSessionStorage: Pick<
         StateStorage,
         "loadFeedSession" | "saveFeedSession"
       > = {
         loadFeedSession: async (sessionId, now) => {
-          await sweepFeedSessions(now)
+          await sweepExpired(now)
           const row = await db
             .select()
             .from(feedSessionsTable)
@@ -857,7 +875,7 @@ function makePgliteRepository(dataDir: string | undefined) {
               target: feedSessionsTable.id,
               set: { seenPaperIds, cursor, updatedAt: now },
             })
-          await sweepFeedSessions(now)
+          await sweepExpired(now)
         },
       }
 

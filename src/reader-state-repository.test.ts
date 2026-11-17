@@ -1,6 +1,9 @@
 // @vitest-environment node
 
-import { ReaderStateRepository } from "@/db/reader-state-repository"
+import {
+  impressionCutoff,
+  ReaderStateRepository,
+} from "@/db/reader-state-repository"
 import { PGlite } from "@electric-sql/pglite"
 import * as ConfigProvider from "effect/ConfigProvider"
 import * as Effect from "effect/Effect"
@@ -36,6 +39,21 @@ afterEach(async () => {
     ),
   )
 })
+
+const inspectRetention = async (dataDir: string) => {
+  const inspection = new PGlite(dataDir)
+  const impressions = await inspection.query<{ id: string }>(
+    "SELECT id FROM impressions ORDER BY id",
+  )
+  const reactions = await inspection.query<{ id: string }>(
+    "SELECT id FROM reactions ORDER BY id",
+  )
+  await inspection.close()
+  return {
+    impressions: impressions.rows.map((row) => row.id),
+    reactions: reactions.rows.map((row) => row.id),
+  }
+}
 
 describe("ReaderStateRepository", () => {
   it("persists onboarding picks and accepts an explicit skip", async () => {
@@ -237,6 +255,66 @@ describe("ReaderStateRepository", () => {
 
     expect(sessions.saved).toEqual(["paper-1", "paper-2"])
     expect(sessions.fresh).toEqual([])
+  })
+
+  it("puts the impression retention boundary 90 days before now", () => {
+    const now = new Date("2026-05-01T12:00:00.000Z")
+    expect(now.getTime() - impressionCutoff(now).getTime()).toBe(
+      90 * 24 * 60 * 60 * 1000,
+    )
+  })
+
+  it("sweeps impressions older than 90 days and keeps reactions", async () => {
+    const dataDir = await mkdtemp(join(tmpdir(), "academitok-retention-"))
+    directories.push(dataDir)
+
+    // First pass creates the tables the seed below writes into.
+    await runWithDatabase(
+      dataDir,
+      Effect.gen(function*() {
+        const repository = yield* ReaderStateRepository
+        yield* repository.saveFeedSession("seed-session", [], null)
+      }),
+    )
+
+    const seeding = new PGlite(dataDir)
+    await seeding.exec(`
+      INSERT INTO reader_profiles (id, name, institution, beats, onboarded_at)
+      VALUES ('singleton', 'Guest Reader', 'Guest', '[]'::jsonb, now());
+      INSERT INTO impressions
+        (id, reader_id, paper_id, shown_at, dwell_ms, position, exploration)
+      VALUES
+        ('old-impression', 'singleton', 'paper-old',
+          now() - interval '91 days', 4000, 0, false),
+        ('recent-impression', 'singleton', 'paper-recent',
+          now() - interval '89 days', 5000, 1, false);
+      INSERT INTO reactions
+        (id, reader_id, paper_id, kind, active, created_at)
+      VALUES ('old-reaction', 'singleton', 'paper-old', 'like', true,
+        now() - interval '400 days');
+    `)
+    await seeding.close()
+
+    const sweep = () =>
+      runWithDatabase(
+        dataDir,
+        Effect.gen(function*() {
+          const repository = yield* ReaderStateRepository
+          yield* repository.loadFeedSession("sweep-session")
+        }),
+      )
+
+    await sweep()
+    const afterFirst = await inspectRetention(dataDir)
+    await sweep()
+    const afterSecond = await inspectRetention(dataDir)
+
+    const kept = {
+      impressions: ["recent-impression"],
+      reactions: ["old-reaction"],
+    }
+    expect(afterFirst).toEqual(kept)
+    expect(afterSecond).toEqual(kept)
   })
 
   it("keeps a local paper pool so saved papers resolve by id", async () => {
