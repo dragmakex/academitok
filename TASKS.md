@@ -1062,7 +1062,7 @@ write the conflict at the bottom instead of guessing.
       reactions; the ranked page for a fixed seed is identical before and after.
       — `bdfec8b`
 
-- [ ] **54. A BibTeX entry for the clipping in front of you.** SPEC §16 P2 pairs the permalink with a
+- [x] **54. A BibTeX entry for the clipping in front of you.** SPEC §16 P2 pairs the permalink with a
       "copyable citation" and §14 keeps BibTeX generation in the server layer, and task 23 gave
       `/saved` a `GET /api/saved.bib` attachment — but the reader who wants to cite the one clipping
       they are reading has no such export: `/paper/$id` copies `formatCitation`'s plain text and
@@ -1091,6 +1091,7 @@ write the conflict at the bottom instead of guessing.
       a real handler call over a temp PGlite dir with the catalog stubbed the way `$.test.ts`
       already does it, and the href from `renderToStaticMarkup` of the real `PaperPage`; the ranked
       page for a fixed seed is identical before and after; `bun run validate` is green.
+      — `01cfeec`
 
 ---
 
