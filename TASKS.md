@@ -558,6 +558,30 @@ write the conflict at the bottom instead of guessing.
       changes nothing.
       — `606cdc9`
 
+- [ ] **35. An edition link the reader can hand to somebody.** SPEC §16 P3 lists shareable
+      "editions" and the desk's `CopyBlock` ("Share this edition", `app.tsx`) already copies
+      `formatEdition`'s plain text, but text is not a link: whoever receives it cannot open the same
+      ten clippings, and `feed.next` has no way to serve a named page — `getPaperFeedSnapshot`
+      always ranks, so a shared list would come back as a different order on a different reader.
+      Make the notice copyable _and_ openable: add a pure `formatEditionLink(papers, baseUrl)` in
+      `src/features/papers/citation.ts` returning `<baseUrl>/?edition=<ids>`, ids in page order,
+      empty string for an empty page; add `edition: Schema.optional(Schema.Array(Schema.String))`
+      to `FeedRequest` (≤ 10 ids, `paper-schema.ts`); in `getPaperFeedSnapshot` serve a pinned page
+      when the field is present — the catalog items named by the ids, in the given order, missing
+      ids dropped, `nextCursor: null`, no ranking, diversity, seen-filter or session write — and
+      leave every other request path untouched; read the param through `validateSearch` on `/`
+      so the loader passes it into the request; and append the link to the copied text in the desk
+      `CopyBlock` so the plain notice and the link travel together. No new route, no persistence
+      column, no RPC procedure, no PostHog payload and no change to the ranked page for a fixed
+      seed.
+      Accept: `formatEditionLink` of a three-paper page renders `/?edition=<first>,<second>,<third>`
+      in page order and an empty page renders `""`; a `feed.next` request with those ids returns
+      exactly those papers in that order with a null cursor and works the same for a reader who has
+      never seen them; an unknown id is dropped instead of failing the page, and eleven ids are
+      rejected by the schema; opening `/?edition=…` for a fixed set renders the same first clipping
+      as the page it was copied from; a request without `edition` ranks exactly as before, so the
+      fixed-seed page is identical; the helper is unit-tested and `bun run validate` is green.
+
 ---
 
 ## Blocked — needs a product decision
