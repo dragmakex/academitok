@@ -7,6 +7,7 @@ import {
   archivalDrift,
   citationAgeSkew,
   hashReaderId,
+  medianDwell,
   medianYear,
   readingCompletion,
   topicEntropy,
@@ -91,6 +92,20 @@ describe("readingCompletion", () => {
     )
     expect(capture.mock.calls[1]?.[0]).toBe("impression")
     expect(capture.mock.calls[1]?.[1]).not.toHaveProperty("read_minutes")
+  })
+})
+
+describe("medianDwell", () => {
+  it("reports the middle dwell of an odd-sized sample", () => {
+    expect(medianDwell([4_000, 6_000, 20_000])).toBe(6_000)
+  })
+
+  it("averages the two middle dwells of an even-sized sample", () => {
+    expect(medianDwell([4_000, 6_000, 20_000, 30_000])).toBe(13_000)
+  })
+
+  it("reports no median when nothing was recorded", () => {
+    expect(medianDwell([])).toBeNull()
   })
 })
 

@@ -15,6 +15,7 @@ import {
   buildFeedStats,
   savedPaperIds,
 } from "@/features/papers/recommendation"
+import { medianDwell } from "@/lib/feed-analytics"
 import { fetchOpenAlexPapers } from "@/lib/openalex"
 import * as Clock from "effect/Clock"
 import * as Effect from "effect/Effect"
@@ -22,6 +23,9 @@ import * as Layer from "effect/Layer"
 
 /** Pool coverage needed before a page is served without an upstream request. */
 const poolPageThreshold = 10 * 3
+
+/** Impressions behind the median dwell, the §8.4 measurement window. */
+const dwellWindow = 50
 
 /**
  * Resolves live metadata with an offline fallback, preferring the stored pool.
@@ -112,7 +116,18 @@ export const getPaperFeedSnapshot = (request: FeedRequest) =>
         profile: state.profile,
         selectedTopic: request.query.topic,
         selectedSort: request.query.sort,
-        stats: buildFeedStats(ranked),
+        stats: {
+          ...buildFeedStats(ranked),
+          medianDwellMs: medianDwell(
+            state
+              .reactions
+              .filter((reaction) =>
+                reaction.kind === "dwell" && reaction.dwellMs !== undefined
+              )
+              .slice(0, dwellWindow)
+              .map((reaction) => reaction.dwellMs ?? 0),
+          ),
+        },
         items: page.items,
         nextCursor: page.nextCursor,
         exploration: page.items.filter((item) => item.exploration).length,

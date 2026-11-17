@@ -553,6 +553,7 @@ export function App() {
   const drift = archivalDrift(pagePapers.map((paper) => paper.year))
   const skew = citationAgeSkew(pagePapers)
   const entropy = topicEntropy(pagePapers)
+  const medianDwellMs = snapshot?.stats.medianDwellMs ?? null
   const beats = new Set(
     pagePapers.flatMap((paper) =>
       paper.topics[0] === undefined ? [] : [paper.topics[0]]
@@ -627,6 +628,21 @@ export function App() {
                 label="Beats on the page"
                 value={snapshot === undefined ? "—" : beats}
                 helper={`of ${drift.total} loaded clippings`}
+              />
+            </Grid>
+          </Stack>
+
+          <Stack gap="m">
+            <Text tone="label" as="span">
+              Reading pace
+            </Text>
+            <Grid layout="stats">
+              <StatCard
+                label="Median dwell"
+                value={medianDwellMs === null
+                  ? "—"
+                  : `${(medianDwellMs / 1000).toFixed(1)} s`}
+                helper="against the 8 s target"
               />
             </Grid>
           </Stack>

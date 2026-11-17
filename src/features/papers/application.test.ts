@@ -149,6 +149,43 @@ describe("papers application", () => {
       .toBe(true)
   })
 
+  it("reports the reader's median dwell on the feed snapshot", {
+    timeout: 15_000,
+  }, async () => {
+    const dataDir = await mkdtemp(join(tmpdir(), "academitok-median-dwell-"))
+    directories.push(dataDir)
+    vi.stubGlobal("fetch", () => Promise.reject(new Error("offline")))
+
+    const [empty, recorded] = await runFeed(
+      dataDir,
+      Effect.gen(function*() {
+        const repository = yield* ReaderStateRepository
+        yield* repository.onboard({
+          keptPaperIds: [],
+          rejectedPaperIds: [],
+          skipped: true,
+        })
+        const before = yield* getPaperFeedSnapshot(requestFor("dwell-a"))
+        for (const [index, dwellMs] of [4_000, 6_000, 20_000].entries()) {
+          const input = {
+            paperId: `dwell-${index}`,
+            position: index,
+            exploration: false,
+          }
+          yield* repository.track({ ...input, kind: "view", dwellMs: 0 })
+          yield* repository.track({ ...input, kind: "dwell", dwellMs })
+        }
+        return [
+          before,
+          yield* getPaperFeedSnapshot(requestFor("dwell-b")),
+        ] as const
+      }),
+    )
+
+    expect(empty.stats.medianDwellMs).toBeNull()
+    expect(recorded.stats.medianDwellMs).toBe(6_000)
+  })
+
   it("files bookmarked papers in the saved list and drops them on unsave", async () => {
     const dataDir = await mkdtemp(join(tmpdir(), "academitok-saved-"))
     directories.push(dataDir)

@@ -138,6 +138,17 @@ function median(values: ReadonlyArray<number>): number | null {
 }
 
 /**
+ * Median dwell of the impressions that recorded one (SPEC §8.4).
+ * @param dwells - Recorded dwells in milliseconds.
+ * @returns Median dwell in milliseconds, or null when nothing was recorded.
+ */
+export function medianDwell(
+  dwells: ReadonlyArray<number>,
+): number | null {
+  return median(dwells)
+}
+
+/**
  * Median publication year of a page, the archival-drift signal (SPEC §17.3).
  * @param years - Page publication years.
  * @returns Median year, averaging the middle pair on even-sized pages, or null when empty.
