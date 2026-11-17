@@ -54,6 +54,9 @@ describe("appendPaperPage", () => {
   const snapshot = {
     origin: "seed",
     pinned: true,
+    alsoKeptBy: {
+      a: 1,
+    } as Record<string, number>,
     profile: null,
     selectedTopic: "All",
     selectedSort: "recommended",
@@ -91,6 +94,17 @@ describe("appendPaperPage", () => {
     expect(next.origin).toBe("seed")
     expect(next.pinned).toBe(true)
     expect(next.items.map((entry) => entry.paper.id)).toEqual(["a", "b"])
+  })
+
+  it("merges the filing counts of both pages", () => {
+    const next = appendPaperPage(snapshot, {
+      ...snapshot,
+      alsoKeptBy: { b: 2 },
+      items: [item("b")],
+      nextCursor: null,
+    })
+
+    expect(next.alsoKeptBy).toEqual({ a: 1, b: 2 })
   })
 
   it("does not repeat a clipping already on the deck", () => {

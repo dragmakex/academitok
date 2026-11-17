@@ -150,6 +150,8 @@ export const FeedSnapshot = Schema.Struct({
   origin: FeedOrigin,
   /** True when the page was served from a shared `edition`, not ranked. */
   pinned: Schema.Boolean,
+  /** Other readers who filed each clipping on the page, by paper id. */
+  alsoKeptBy: Schema.Record(Schema.String, Schema.Number),
   profile: Schema.NullOr(ReaderProfile),
   selectedTopic: TopicFilter,
   selectedSort: FeedSort,

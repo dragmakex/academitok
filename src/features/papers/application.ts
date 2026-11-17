@@ -80,6 +80,7 @@ export const getPaperFeedSnapshot = (request: FeedRequest) =>
   Effect
     .gen(function*() {
       const repository = yield* ReaderStateRepository
+      const readerId = yield* ReaderId
       const state = yield* repository.load
       const now = yield* Clock.currentTimeMillis
       const { papers, origin } = yield* resolveCatalog(
@@ -173,9 +174,15 @@ export const getPaperFeedSnapshot = (request: FeedRequest) =>
         )
       }
 
+      const alsoKeptBy = yield* repository.filedByOthers(
+        page.items.map((item) => item.paper.id),
+        readerId,
+      )
+
       return {
         origin,
         pinned: edition !== undefined,
+        alsoKeptBy,
         profile: state.profile,
         selectedTopic: request.query.topic,
         selectedSort: request.query.sort,

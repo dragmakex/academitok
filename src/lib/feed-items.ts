@@ -56,6 +56,7 @@ export function appendPaperPage(
     ...page,
     origin: current.origin,
     pinned: current.pinned,
+    alsoKeptBy: { ...current.alsoKeptBy, ...page.alsoKeptBy },
     items: [
       ...current.items,
       ...page.items.filter((item) => !ids.has(item.paper.id)),

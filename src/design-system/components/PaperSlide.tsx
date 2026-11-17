@@ -40,6 +40,7 @@ type DeckPaperSlideProps = PaperMeta & {
   readonly variant?: "deck" | undefined
   readonly origin: "pool" | "live" | "seed"
   readonly pinned: boolean
+  readonly alsoKeptBy?: number | undefined
   readonly again: boolean
   readonly rationale: ReadonlyArray<string>
   readonly liked: boolean
@@ -149,6 +150,7 @@ export const PaperSlide = forwardRef<HTMLElement, PaperSlideProps>(
       accessLabel,
       actions,
       again,
+      alsoKeptBy,
       authors,
       bookmarked,
       citations,
@@ -230,6 +232,15 @@ export const PaperSlide = forwardRef<HTMLElement, PaperSlideProps>(
                       {" "}
                       {readMinutes} min
                     </p>
+                    {alsoKeptBy === undefined || alsoKeptBy === 0
+                      ? null
+                      : (
+                        <p className="mt-xs font-label text-[0.68rem] uppercase tracking-[0.08em] text-stamp">
+                          {`Also kept by ${alsoKeptBy} ${
+                            alsoKeptBy === 1 ? "reader" : "readers"
+                          }`}
+                        </p>
+                      )}
                   </div>
 
                   <div className="mt-l flex items-end justify-between gap-m">

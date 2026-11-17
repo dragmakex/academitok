@@ -380,6 +380,7 @@ const snapshotWith = (
 ): FeedSnapshot => ({
   origin,
   pinned: false,
+  alsoKeptBy: {},
   profile: null,
   selectedTopic: "All",
   selectedSort: "recommended",
