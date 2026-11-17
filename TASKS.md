@@ -410,6 +410,24 @@ write the conflict at the bottom instead of guessing.
       reactions; the ranked page for a fixed seed is identical before and after.
       — `3c48da4`
 
+- [ ] **29. Saves per 100 impressions on the desk.** SPEC §8.4 sets saves at ≥ 1.0 per 100
+      impressions and the rail records a save as a `bookmark` reaction, but the desk's Reading pace
+      block shows median dwell (task 25), median completion (task 26), hide rate and open-source
+      rate (task 28) and never the number the feed is judged on for keeping value — so a window of
+      clippings read and kept looks the same as a window of clippings read and discarded. Add one
+      pure `savesPerHundred` helper beside `reactionRates` in `src/lib/feed-analytics.ts` over the
+      same §8.4 window of the reader's last 50 `view` reactions, counting the `bookmark` reactions
+      in that window and returning `null` when the window holds no view. Report it as
+      `savesPerHundred` on `FeedStats`, and render it in the desk's Reading pace block with the
+      existing `StatCard`/`Grid` primitives beside its 1.0 target. Display only: no ranking, RPC
+      procedure, persistence or PostHog payload change, and the one-clipping-per-viewport snap is
+      untouched.
+      Accept: a 50-view window with 2 `bookmark` reactions reports 4 and the desk renders `4.0`; a
+      window of views with no bookmark reports 0 and renders `0.0`, never an em dash; a reader with
+      no view reactions reports null and the desk renders an em dash, never `NaN`; the helper is
+      unit-tested and its counts reach `getPaperFeedSnapshot` from the real `ReaderState`
+      view/bookmark reactions; the ranked page for a fixed seed is identical before and after.
+
 ---
 
 ## Blocked — needs a product decision
