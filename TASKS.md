@@ -804,7 +804,7 @@ write the conflict at the bottom instead of guessing.
       after.
       — `3b2e8c7`
 
-- [ ] **45. A home-screen deck iOS will actually install as one.** SPEC §16 P3 lists a native
+- [x] **45. A home-screen deck iOS will actually install as one.** SPEC §16 P3 lists a native
       shell; tasks 19, 21 and 22 gave it the gazette manifest, the safe-area insets and the mark,
       but every one of those rides on the web manifest, and Safari does not read
       `display: "standalone"` from it — a reader who adds the deck to an iPhone home screen gets
@@ -827,6 +827,7 @@ write the conflict at the bottom instead of guessing.
       against the manifest file; no `apple-touch-icon` is invented, since the mark is SVG and iOS
       cannot use it (shortcut: iOS falls back to a screenshot for the home-screen icon, add a PNG
       when the mark is redrawn).
+      — `236e986`
 
 ---
 
