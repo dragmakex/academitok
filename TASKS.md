@@ -968,6 +968,34 @@ write the conflict at the bottom instead of guessing.
       `ReaderState` dwell reactions; the ranked page for a fixed seed is identical before and after.
       — `81e5ab6`
 
+- [ ] **51. The term decision 3 worries about, named in `Why this`.** SPEC §17.3 keeps citation
+      count as a quality signal only on the condition that we "measure whether the feed feels
+      archival", and §8.3 requires every item's `rationale` to be "derived from the actual scoring
+      terms that fired" — but `rankPapers` in `src/features/papers/recommendation.ts` adds
+      `citationBoost(paper.citations)` to the score and leaves it out of the `rationaleForPaper`
+      term list, so the archival signal worth up to 7.2 — the largest single non-personalised term,
+      several times any affinity term — can decide a clipping's place in the deck and never appear
+      under `Why this`: `recommendation.test.ts` even asserts that a fresh reader sees a
+      500-citation paper explained as `"Climate"` alone, and the desk's Archival drift block
+      (tasks 32, 42) can report the years and the citations of what was served but never that
+      citations had a hand in choosing it, so decision 3's "keep, measure, revisit" has no reading
+      on the surface the ranker explains itself on. Add the same `citationBoost(paper.citations)`
+      value to that term list, explained as `Cited <n> times` from the count the clipping's facts
+      line already prints, so a clipping whose citation boost is one of the two strongest positive
+      terms names it in its `Why this` stamp instead of being explained by affinity alone.
+      Explainability only: `score`, the ranked order, diversity, exploration, cursor, contracts,
+      desk, ingestion, persistence and PostHog payload stay as they are, and the
+      one-clipping-per-viewport snap is untouched. Existing expectations that change because the
+      line now fires are updated, not deleted.
+      Accept: a cold-start paper carrying 500 citations reports `Cited 500 times` as its first
+      rationale line instead of its bare beat, and the deck renders it under `Why this`; a paper
+      with zero citations never gains the line, so a cold-start page of uncited papers still
+      explains each by its beat; a paper whose citation boost is weaker than two already-firing
+      terms keeps the same two `rationale` lines as before; every candidate's `score` and the
+      served page for a fixed seed are identical before and after, asserted from a real
+      `buildFeedItems` call over the same fixtures; the label carries the same count the facts
+      line prints; `bun run validate` is green.
+
 ---
 
 ## Blocked — needs a product decision
