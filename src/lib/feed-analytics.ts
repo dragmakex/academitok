@@ -405,6 +405,29 @@ export function beatSourceCounts(
 }
 
 /**
+ * Primary beats whose every clipping on the page arrived without a keyword
+ * match, so the keyword table alone could not name that beat (SPEC §17.2).
+ * @param papers - Page clippings, with the beat they were stored under.
+ * @returns Beats in first-appearance order, no duplicates; empty for an empty page.
+ */
+export function conceptOnlyBeats(
+  papers: ReadonlyArray<Pick<Paper, "title" | "abstract" | "topics">>,
+): ReadonlyArray<Topic> {
+  const keywordOnly = new Map<Topic, boolean>()
+  for (const paper of papers) {
+    const beat = paper.topics[0]
+    if (beat === undefined) {
+      continue
+    }
+    const keyword = matchedTopics(paper.title, paper.abstract).length > 0
+    keywordOnly.set(beat, (keywordOnly.get(beat) ?? true) && !keyword)
+  }
+  return [...keywordOnly]
+    .filter(([, conceptOnly]) => conceptOnly)
+    .map(([beat]) => beat)
+}
+
+/**
  * Shannon entropy in nats of a page's primary beat per clipping (SPEC §8.4).
  * @param papers - Page clippings.
  * @returns Entropy; 0 for an empty page or a page sharing one beat.

@@ -10,7 +10,11 @@ import {
   getSavedPapers,
 } from "@/features/papers/application"
 import { recordReaderReaction } from "@/features/papers/reactions"
-import { beatSourceCounts, unmatchedBeatCount } from "@/lib/feed-analytics"
+import {
+  beatSourceCounts,
+  conceptOnlyBeats,
+  unmatchedBeatCount,
+} from "@/lib/feed-analytics"
 import { defaultReaderId, ReaderId } from "@/lib/reader-id"
 import * as ConfigProvider from "effect/ConfigProvider"
 import * as Effect from "effect/Effect"
@@ -942,6 +946,23 @@ describe("papers application", () => {
     // The served page mixes paths, so the block never reads a lone ten.
     expect(counts.keyword).toBeGreaterThan(0)
     expect(counts.concept).toBeGreaterThan(0)
+
+    // The desk names beats a split would help: those no clipping reached by keyword.
+    const beats = papers.flatMap((paper) =>
+      paper.topics[0] === undefined ? [] : [paper.topics[0]]
+    )
+    const keywordBeats = new Set(
+      papers
+        .filter((paper) => unmatchedBeatCount([paper]) === 0)
+        .flatMap((paper) =>
+          paper.topics[0] === undefined ? [] : [paper.topics[0]]
+        ),
+    )
+    const conceptOnly = conceptOnlyBeats(papers)
+    expect(conceptOnly).toEqual(
+      [...new Set(beats)].filter((beat) => !keywordBeats.has(beat)),
+    )
+    expect(new Set(conceptOnly).size).toBe(conceptOnly.length)
   })
 
   it("files bookmarked papers in the saved list and drops them on unsave", async () => {

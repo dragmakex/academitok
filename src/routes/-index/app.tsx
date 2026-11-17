@@ -30,6 +30,7 @@ import {
   archivalDrift,
   beatSourceCounts,
   citationAgeSkew,
+  conceptOnlyBeats,
   topicEntropy,
   trackFeedPageEvent,
 } from "@/lib/feed-analytics"
@@ -631,6 +632,7 @@ export function App() {
   const skew = citationAgeSkew(pagePapers)
   const entropy = topicEntropy(pagePapers)
   const beatSources = beatSourceCounts(pagePapers)
+  const conceptOnly = conceptOnlyBeats(pagePapers)
   const medianDwellMs = snapshot?.stats.medianDwellMs ?? null
   const medianCompletion = snapshot?.stats.medianCompletion ?? null
   const hideRate = snapshot?.stats.hideRate ?? null
@@ -787,6 +789,11 @@ export function App() {
                 label="Education fallback"
                 value={snapshot === undefined ? "—" : beatSources.education}
                 helper="no keyword match and no other beat"
+              />
+              <StatCard
+                label="Beats named without keywords"
+                value={conceptOnly.length === 0 ? "—" : conceptOnly.join(",")}
+                helper="primary beats the keyword table could not reach"
               />
             </Grid>
           </Stack>

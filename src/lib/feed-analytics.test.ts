@@ -8,6 +8,7 @@ import {
   archivalDrift,
   beatSourceCounts,
   citationAgeSkew,
+  conceptOnlyBeats,
   duplicateRate,
   dwellEntropy,
   hashReaderId,
@@ -354,6 +355,44 @@ describe("beatSourceCounts", () => {
       filed("Potsherd stratigraphy", "Field notes from a dig.", []),
     ])
     expect(counts).toEqual({ keyword: 0, concept: 0, education: 1 })
+  })
+})
+
+describe("conceptOnlyBeats", () => {
+  it("names the beats the keyword table could not reach, never a beat it could", () => {
+    expect(
+      conceptOnlyBeats([
+        filed("Quantum sensors", "A material study.", ["Physics"]),
+        filed("Potsherd stratigraphy", "Field notes from a dig.", ["Physics"]),
+        filed("Parish registers", "A list of names.", ["Education"]),
+      ]),
+    )
+      .toEqual(["Education"])
+  })
+
+  it("names no beat when every clipping names its beat in text", () => {
+    expect(
+      conceptOnlyBeats([
+        filed("Quantum sensors", "A material study.", ["Physics"]),
+        filed("Clinical medicine", "A patient study.", ["Health"]),
+      ]),
+    )
+      .toEqual([])
+  })
+
+  it("names a concept-filed beat once, in page order", () => {
+    expect(
+      conceptOnlyBeats([
+        filed("Potsherd stratigraphy", "Field notes from a dig.", ["Biology"]),
+        filed("Parish registers", "A list of names.", ["Biology"]),
+        filed("Monsoon records", "An ice-core study.", ["Climate"]),
+      ]),
+    )
+      .toEqual(["Biology", "Climate"])
+  })
+
+  it("reports nothing for an empty page", () => {
+    expect(conceptOnlyBeats([])).toEqual([])
   })
 })
 
