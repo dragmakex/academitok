@@ -706,6 +706,82 @@ describe("papers application", () => {
     },
   )
 
+  it(
+    "reports the dwell entropy over the reader's last 50 dwells",
+    {
+      timeout: 15_000,
+    },
+    async () => {
+      const dataDir = await mkdtemp(
+        join(tmpdir(), "academitok-window-dwell-entropy-"),
+      )
+      directories.push(dataDir)
+      vi.stubGlobal("fetch", () => Promise.reject(new Error("offline")))
+      const pick = (id: string) => {
+        const paper = curatedPapers.find((candidate) => candidate.id === id)
+        if (paper === undefined) {
+          throw new Error(`missing curated paper fixture ${id}`)
+        }
+        return paper
+      }
+      const ai = pick("arxiv-2501-attention-maps-science-agents")
+      const biology = pick("biorxiv-2024-fast-protein-folding-signals")
+      const physics = pick("arxiv-2023-quantum-sensor-compression")
+
+      const [empty, spread, weighted, single] = await runFeed(
+        dataDir,
+        Effect.gen(function*() {
+          const repository = yield* ReaderStateRepository
+          yield* repository.onboard({
+            keptPaperIds: [],
+            rejectedPaperIds: [],
+            skipped: true,
+          })
+          const before = yield* getPaperFeedSnapshot(
+            requestFor("dwell-entropy-a"),
+          )
+          const dwell = (paperId: string, position: number, dwellMs: number) =>
+            repository.track({
+              paperId,
+              position,
+              exploration: false,
+              kind: "dwell",
+              dwellMs,
+            })
+          // An absent clipping and a zero dwell are dropped, not counted as beats.
+          for (const [position, paper] of [ai, biology, physics].entries()) {
+            yield* dwell(paper.id, position, 1_000)
+          }
+          yield* dwell("absent-from-catalog", 3, 1_000)
+          yield* dwell(ai.id, 4, 0)
+          const evenlyServed = yield* getPaperFeedSnapshot(
+            requestFor("dwell-entropy-b"),
+          )
+          // The same three beats, now 10 s / 1 s / 1 s.
+          yield* dwell(ai.id, 9, 9_000)
+          const attention = yield* getPaperFeedSnapshot(
+            requestFor("dwell-entropy-c"),
+          )
+          // Fifty newer dwells on one beat push the mixed ones out of the window.
+          for (let index = 0; index < 50; index += 1) {
+            yield* dwell(biology.id, index, 5_000)
+          }
+          return [
+            before,
+            evenlyServed,
+            attention,
+            yield* getPaperFeedSnapshot(requestFor("dwell-entropy-d")),
+          ] as const
+        }),
+      )
+
+      expect(empty.stats.windowDwellEntropy).toBeNull()
+      expect(spread.stats.windowDwellEntropy).toBeCloseTo(Math.log(3))
+      expect(weighted.stats.windowDwellEntropy).toBeCloseTo(0.5661, 3)
+      expect(single.stats.windowDwellEntropy).toBe(0)
+    },
+  )
+
   it("reports no windowed entropy for impressions absent from the catalog", async () => {
     const dataDir = await mkdtemp(
       join(tmpdir(), "academitok-window-entropy-none-"),

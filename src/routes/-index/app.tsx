@@ -637,6 +637,7 @@ export function App() {
   const openSourceRate = snapshot?.stats.openSourceRate ?? null
   const savesPerHundred = snapshot?.stats.savesPerHundred ?? null
   const windowTopicEntropy = snapshot?.stats.windowTopicEntropy ?? null
+  const windowDwellEntropy = snapshot?.stats.windowDwellEntropy ?? null
   const windowMedianYear = snapshot?.stats.windowMedianYear ?? null
   const windowOlderCitations = snapshot?.stats.windowOlderCitations ?? null
   const windowNewerCitations = snapshot?.stats.windowNewerCitations ?? null
@@ -745,6 +746,13 @@ export function App() {
                   ? "—"
                   : windowTopicEntropy.toFixed(2)}
                 helper="nats against the 1.6 floor"
+              />
+              <StatCard
+                label="Dwell entropy"
+                value={windowDwellEntropy === null
+                  ? "—"
+                  : windowDwellEntropy.toFixed(2)}
+                helper="nats weighted by dwell over the last 50 impressions"
               />
               <StatCard
                 label="Duplicate rate"

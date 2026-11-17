@@ -9,6 +9,7 @@ import {
   beatSourceCounts,
   citationAgeSkew,
   duplicateRate,
+  dwellEntropy,
   hashReaderId,
   medianCompletion,
   medianDwell,
@@ -372,6 +373,7 @@ const emptyStats = {
   windowNewerCitations: null,
   windowDuplicateRate: null,
   windowMedianReadMinutes: null,
+  windowDwellEntropy: null,
 }
 
 const snapshotWith = (
@@ -544,6 +546,54 @@ describe("topicEntropy", () => {
 
   it("reports no entropy for an empty page", () => {
     expect(topicEntropy([])).toBe(0)
+  })
+})
+
+const dwelled = (topics: ReadonlyArray<Topic>, dwellMs: number) => ({
+  topics,
+  dwellMs,
+})
+
+describe("dwellEntropy", () => {
+  it("reports natural-log entropy for dwell spread evenly across beats", () => {
+    expect(
+      dwellEntropy([
+        dwelled(["AI"], 1_000),
+        dwelled(["Biology"], 1_000),
+        dwelled(["Physics"], 1_000),
+      ]),
+    )
+      .toBeCloseTo(Math.log(3))
+  })
+
+  it("weights beats by reading time, not clipping count", () => {
+    expect(
+      dwellEntropy([
+        dwelled(["AI"], 10_000),
+        dwelled(["Biology"], 1_000),
+        dwelled(["Physics"], 1_000),
+      ]),
+    )
+      .toBeCloseTo(0.5661, 3)
+  })
+
+  it("reports no entropy when every dwell lands on one beat", () => {
+    expect(
+      dwellEntropy(
+        EffectArray.replicate(dwelled(["AI"], 4_000), 10),
+      ),
+    )
+      .toBe(0)
+  })
+
+  it("drops pairs without a positive dwell instead of counting them as a beat", () => {
+    expect(dwellEntropy([dwelled(["AI"], 5_000), dwelled(["Biology"], 0)]))
+      .toBe(0)
+    expect(dwellEntropy([{ topics: ["AI"] }])).toBe(0)
+  })
+
+  it("reports no entropy for an empty set, never NaN", () => {
+    expect(dwellEntropy([])).toBe(0)
   })
 })
 

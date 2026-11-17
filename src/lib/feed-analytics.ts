@@ -430,6 +430,42 @@ export function topicEntropy(
 }
 
 /**
+ * Shannon entropy in nats of each beat's share of the recorded dwell, so a
+ * window mixed by attention is told apart from one mixed by count (SPEC §8.4).
+ * @param pairs - Per-clipping primary beat and the dwell it recorded.
+ * @returns Entropy; 0 for an empty set, a single beat or no usable dwell.
+ */
+export function dwellEntropy(
+  pairs: ReadonlyArray<{
+    readonly topics: ReadonlyArray<Topic>
+    readonly dwellMs?: number | null | undefined
+  }>,
+): number {
+  const dwells = new Map<Topic, number>()
+  for (const pair of pairs) {
+    const beat = pair.topics[0]
+    const dwellMs = pair.dwellMs
+    if (
+      beat === undefined
+      || dwellMs === null
+      || dwellMs === undefined
+      || dwellMs <= 0
+    ) {
+      continue
+    }
+    dwells.set(beat, (dwells.get(beat) ?? 0) + dwellMs)
+  }
+  const total = [...dwells.values()].reduce((sum, dwell) => sum + dwell, 0)
+  if (total === 0) {
+    return 0
+  }
+  return [...dwells.values()].reduce((entropy, dwell) => {
+    const share = dwell / total
+    return entropy - share * Math.log(share)
+  }, 0)
+}
+
+/**
  * Tracks one ranked page returned to the reader.
  * @param snapshot - Ranked page response.
  * @param cursor - Requested cursor, or null for the first page.
