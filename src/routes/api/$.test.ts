@@ -129,7 +129,10 @@ const bibHandler = (dataDir: string) =>
     ),
   )
 
-it("serves the saved collection as a BibTeX attachment", async () => {
+// Offline stub walks the source guard ladder (1s + 2s) before the fallback.
+it("serves the saved collection as a BibTeX attachment", {
+  timeout: 15_000,
+}, async () => {
   const dataDir = await mkdtemp(join(tmpdir(), "academitok-bib-route-"))
   vi.stubGlobal("fetch", () => Promise.reject(new Error("offline")))
   const targets = curatedPapers.slice(0, 3)

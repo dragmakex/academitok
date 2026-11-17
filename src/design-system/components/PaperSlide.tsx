@@ -39,6 +39,7 @@ type PaperMeta = {
 type DeckPaperSlideProps = PaperMeta & {
   readonly variant?: "deck" | undefined
   readonly origin: "pool" | "live" | "seed"
+  readonly again: boolean
   readonly rationale: ReadonlyArray<string>
   readonly liked: boolean
   readonly bookmarked: boolean
@@ -135,6 +136,7 @@ export const PaperSlide = forwardRef<HTMLElement, PaperSlideProps>(
       abstract,
       accessLabel,
       actions,
+      again,
       authors,
       bookmarked,
       citations,
@@ -184,6 +186,7 @@ export const PaperSlide = forwardRef<HTMLElement, PaperSlideProps>(
                 <div className="mx-auto flex w-full max-w-[62ch] flex-1 flex-col justify-center py-[clamp(1rem,4vh,3rem)]">
                   <p className="mb-m font-label text-[0.72rem] uppercase tracking-[0.18em] text-stamp">
                     {topics[0] ?? "Research"}
+                    {again ? " · Again" : null}
                   </p>
                   <h2
                     id={headlineId}

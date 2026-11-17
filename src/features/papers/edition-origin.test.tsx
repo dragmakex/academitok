@@ -59,7 +59,7 @@ const actions = {
   onNext: () => {},
 }
 
-const renderDeckSlide = (origin: "pool" | "live" | "seed") =>
+const renderDeckSlide = (origin: "pool" | "live" | "seed", again = false) =>
   renderToStaticMarkup(
     <PaperSlide
       id="paper-1"
@@ -79,6 +79,7 @@ const renderDeckSlide = (origin: "pool" | "live" | "seed") =>
       externalUrl="https://example.com/paper"
       actions={actions}
       origin={origin}
+      again={again}
       position={2}
       total={10}
       skeleton={false}
@@ -122,5 +123,10 @@ describe("edition origin", () => {
     expect(renderDeckSlide("seed")).toContain("Offline Edition · No. 002")
     expect(renderDeckSlide("pool")).toContain("Evening Edition · No. 002")
     expect(renderDeckSlide("live")).toContain("Evening Edition · No. 002")
+  })
+
+  it("marks a refilled repeat in the kicker line", () => {
+    expect(renderDeckSlide("pool", true)).toContain("AI · Again")
+    expect(renderDeckSlide("pool")).not.toContain("Again")
   })
 })

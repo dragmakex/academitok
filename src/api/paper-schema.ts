@@ -107,6 +107,8 @@ export const FeedItem = Schema.Struct({
   bookmarked: Schema.Boolean,
   hidden: Schema.Boolean,
   exploration: Schema.Boolean,
+  /** True when the paper was already read inside the repeat window. */
+  again: Schema.Boolean,
 })
 export type FeedItem = typeof FeedItem.Type
 

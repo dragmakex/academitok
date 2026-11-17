@@ -244,6 +244,7 @@ function VisiblePaperSlide({
       citations={item.paper.citations}
       readMinutes={item.paper.readMinutes}
       rationale={item.rationale}
+      again={item.again}
       topics={item.paper.topics}
       liked={item.liked}
       bookmarked={item.bookmarked}

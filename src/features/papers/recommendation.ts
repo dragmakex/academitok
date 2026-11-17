@@ -9,6 +9,12 @@ import type {
   TopicFilter,
 } from "@/api/paper-schema"
 
+/** Papers viewed inside this window are repeats (SPEC §8.1 step 5). */
+const repeatWindowMs = 14 * 86_400_000
+
+/** Share of the ranked list eligible to refill an exhausted page. */
+const repeatShare = 0.03
+
 const reactionWeights = {
   view: 1.2,
   like: 4.5,
@@ -502,6 +508,7 @@ export function buildFeedItems(
         bookmarked: active.bookmarked.has(paper.id),
         hidden: active.hidden.has(paper.id),
         exploration: false,
+        again: false,
       } satisfies FeedItem
     })
     .filter((item) => !item.hidden)
@@ -582,6 +589,25 @@ function topicSimilarity(
 }
 
 /**
+ * Lists papers already read inside the 14-day repeat window.
+ * @param reactions - Reader reactions.
+ * @param now - Injected clock reading.
+ * @returns Paper IDs that count as repeats.
+ */
+export function recentPaperIds(
+  reactions: ReaderState["reactions"],
+  now: number,
+): ReadonlySet<string> {
+  return new Set(
+    reactions
+      .filter((reaction) =>
+        reaction.kind === "view" && now - reaction.timestamp < repeatWindowMs
+      )
+      .map((reaction) => reaction.paperId),
+  )
+}
+
+/**
  * Decodes the opaque cursor.
  * @param cursor - Encoded cursor.
  * @returns Previously emitted paper IDs.
@@ -629,6 +655,7 @@ function canAdd(
  * @param cursor - Session cursor.
  * @param limit - Maximum page size.
  * @param sessionSeen - Paper IDs the server already emitted for this session.
+ * @param repeats - Recently read items that may refill an exhausted page.
  * @returns Page items and next cursor.
  */
 export function buildFeedPage(
@@ -636,6 +663,7 @@ export function buildFeedPage(
   cursor: FeedCursor | null,
   limit = 10,
   sessionSeen: ReadonlyArray<string> = [],
+  repeats: ReadonlyArray<FeedItem> = [],
 ): {
   readonly items: ReadonlyArray<FeedItem>
   readonly nextCursor: FeedCursor | null
@@ -706,6 +734,25 @@ export function buildFeedPage(
     && canAdd(explorationCandidate, selected, topicCounts)
   ) {
     selected.push({ ...explorationCandidate, exploration: true })
+  }
+
+  for (
+    const repeat of repeats.slice(
+      0,
+      Math.ceil(repeats.length * repeatShare),
+    )
+  ) {
+    if (selected.length >= limit) {
+      break
+    }
+    if (!canAdd(repeat, selected, topicCounts)) {
+      continue
+    }
+    selected.push({ ...repeat, again: true })
+    const topic = repeat.paper.topics[0]
+    if (topic !== undefined) {
+      topicCounts.set(topic, (topicCounts.get(topic) ?? 0) + 1)
+    }
   }
 
   const selectedIds = selected.map((item) => item.paper.id)

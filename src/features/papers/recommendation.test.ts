@@ -5,6 +5,7 @@ import {
   buildFeedItems,
   buildFeedPage,
   buildFeedStats,
+  recentPaperIds,
   savedPaperIds,
 } from "@/features/papers/recommendation"
 import { describe, expect, it } from "vitest"
@@ -378,6 +379,7 @@ describe("paper recommendation", () => {
         bookmarked: false,
         hidden: false,
         exploration: false,
+        again: false,
       }),
     )
 
@@ -434,6 +436,7 @@ describe("paper recommendation", () => {
       bookmarked: false,
       hidden: false,
       exploration: false,
+      again: false,
     }))
 
     const first = buildFeedPage(ranked, null, 3)
@@ -443,5 +446,132 @@ describe("paper recommendation", () => {
     expect(seen).toHaveLength(3)
     expect(stale.items.filter((item) => seen.includes(item.paper.id)))
       .toHaveLength(0)
+  })
+
+  it("counts only views inside the 14-day repeat window", () => {
+    const now = Date.UTC(2024, 0, 20)
+    const day = 86_400_000
+    const recent = recentPaperIds([
+      {
+        paperId: "three-days",
+        kind: "view",
+        active: true,
+        timestamp: now - 3 * day,
+      },
+      {
+        paperId: "fifteen-days",
+        kind: "view",
+        active: true,
+        timestamp: now - 15 * day,
+      },
+      { paperId: "liked", kind: "like", active: true, timestamp: now },
+    ], now)
+
+    expect([...recent]).toEqual(["three-days"])
+
+    const [freshItem] = buildFeedItems(
+      { profile: null, reactions: [] },
+      [paperFixture("fifteen-days", "ocean currents shape coasts")],
+      "All",
+      "recommended",
+    )
+    expect(freshItem?.again).toBe(false)
+  })
+
+  const feedItem = (
+    id: string,
+    topic: Paper["topics"][number],
+    score: number,
+  ): FeedItem => ({
+    paper: paperFixture(id, `abstract ${id}`, { topics: [topic] }),
+    score,
+    rationale: [],
+    accessible: true,
+    liked: false,
+    bookmarked: false,
+    hidden: false,
+    exploration: false,
+    again: false,
+  })
+
+  const fillerItems = (
+    prefix: string,
+    count: number,
+    topic: Paper["topics"][number],
+  ) => {
+    const items: Array<FeedItem> = []
+    for (let index = 0; index < count; index += 1) {
+      items.push(feedItem(`${prefix}-${index}`, topic, 0))
+    }
+    return items
+  }
+
+  it("refills an exhausted page from the top 3% of ranked repeats", () => {
+    const fresh = [
+      feedItem("fresh-0", "AI", 10),
+      feedItem("fresh-1", "AI", 9),
+      feedItem("fresh-2", "Physics", 8),
+      feedItem("fresh-3", "Physics", 7),
+      feedItem("fresh-4", "Biology", 6),
+      feedItem("fresh-5", "Biology", 5),
+    ]
+    const repeats = [
+      feedItem("repeat-0", "Health", 4),
+      feedItem("repeat-1", "Health", 3),
+      feedItem("repeat-2", "Economics", 2),
+      feedItem("repeat-3", "Economics", 1),
+      feedItem("repeat-4", "Psychology", 1),
+      feedItem("repeat-5", "Psychology", 1),
+      ...fillerItems("outside", 194, "Climate"),
+    ]
+
+    const page = buildFeedPage(fresh, null, 10, [], repeats)
+    const ids = page.items.map((item) => item.paper.id)
+    const again = page.items.filter((item) => item.again)
+
+    expect(page.items).toHaveLength(10)
+    expect(new Set(ids).size).toBe(10)
+    expect(again.map((item) => item.paper.id)).toEqual([
+      "repeat-0",
+      "repeat-1",
+      "repeat-2",
+      "repeat-3",
+    ])
+    expect(ids).not.toContain("outside-44")
+    expect(
+      [
+        ...page
+          .items
+          .reduce((counts, item) => {
+            const topic = item.paper.topics[0]
+            return topic === undefined
+              ? counts
+              : counts.set(topic, (counts.get(topic) ?? 0) + 1)
+          }, new Map<string, number>())
+          .values(),
+      ]
+        .every((count) => count <= 2),
+    )
+      .toBe(true)
+  })
+
+  it("never refills an exhausted slot from a repeat outside the top 3%", () => {
+    const fresh = [
+      feedItem("fresh-0", "AI", 10),
+      feedItem("fresh-1", "AI", 9),
+      feedItem("fresh-2", "Physics", 8),
+    ]
+    const repeats = [
+      ...fillerItems("blocked", 6, "AI"),
+      ...fillerItems("outside", 194, "Health"),
+    ]
+
+    const page = buildFeedPage(fresh, null, 10, [], repeats)
+
+    expect(page.items.map((item) => item.paper.id)).toEqual([
+      "fresh-0",
+      "fresh-1",
+      "fresh-2",
+    ])
   })
 })

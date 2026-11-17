@@ -301,6 +301,7 @@ const snapshotWith = (
     bookmarked: false,
     hidden: false,
     exploration: false,
+    again: false,
   })),
   nextCursor: null,
   exploration: 0,

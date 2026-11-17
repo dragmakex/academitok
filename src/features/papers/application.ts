@@ -13,6 +13,7 @@ import {
   buildFeedItems,
   buildFeedPage,
   buildFeedStats,
+  recentPaperIds,
   savedPaperIds,
 } from "@/features/papers/recommendation"
 import {
@@ -77,6 +78,7 @@ export const getPaperFeedSnapshot = (request: FeedRequest) =>
     .gen(function*() {
       const repository = yield* ReaderStateRepository
       const state = yield* repository.load
+      const now = yield* Clock.currentTimeMillis
       const { papers, origin } = yield* resolveCatalog(
         request.query.topic,
         request.query.sort,
@@ -136,9 +138,12 @@ export const getPaperFeedSnapshot = (request: FeedRequest) =>
       const candidates = skipped && viewCount < 20
         ? ranked.map((item) => ({ ...item, exploration: true }))
         : ranked
+      const recent = recentPaperIds(state.reactions, now)
+      const fresh = candidates.filter((item) => !recent.has(item.paper.id))
+      const repeats = ranked.filter((item) => recent.has(item.paper.id))
       const page = onboarding
         ? { items: candidates.slice(0, 15), nextCursor: null }
-        : buildFeedPage(candidates, request.cursor, 10, sessionSeen)
+        : buildFeedPage(fresh, request.cursor, 10, sessionSeen, repeats)
       if (request.sessionId !== undefined) {
         yield* repository.saveFeedSession(
           request.sessionId,

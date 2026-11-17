@@ -149,6 +149,53 @@ describe("papers application", () => {
       .toBe(true)
   })
 
+  it("drops a paper read inside the repeat window from the next page", {
+    timeout: 20_000,
+  }, async () => {
+    const dataDir = await mkdtemp(join(tmpdir(), "academitok-repeat-window-"))
+    directories.push(dataDir)
+    vi.stubGlobal("fetch", () => Promise.reject(new Error("offline")))
+
+    const [before, after, target] = await runFeed(
+      dataDir,
+      Effect.gen(function*() {
+        const repository = yield* ReaderStateRepository
+        yield* repository.onboard({
+          keptPaperIds: [],
+          rejectedPaperIds: [],
+          skipped: true,
+        })
+        const first = yield* getPaperFeedSnapshot(requestFor("repeat-a"))
+        const viewed = first.items.at(-1)
+        if (viewed === undefined) {
+          throw new Error("missing first page")
+        }
+        yield* repository.track({
+          paperId: viewed.paper.id,
+          position: first.items.length - 1,
+          exploration: false,
+          kind: "view",
+          dwellMs: 0,
+        })
+        return [
+          first,
+          yield* getPaperFeedSnapshot(requestFor("repeat-b")),
+          viewed,
+        ] as const
+      }),
+    )
+
+    const beforeIds = paperIds(before)
+    expect(beforeIds).toContain(target.paper.id)
+    expect(paperIds(after)).not.toContain(target.paper.id)
+    expect(
+      paperIds(after).some((id) =>
+        id !== target.paper.id && beforeIds.includes(id)
+      ),
+    )
+      .toBe(true)
+  })
+
   it("reports the reader's median dwell on the feed snapshot", {
     timeout: 15_000,
   }, async () => {

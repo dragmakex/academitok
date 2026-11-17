@@ -14,6 +14,7 @@ const candidates: ReadonlyArray<FeedItem> = curatedPapers.map((paper) => ({
   bookmarked: false,
   hidden: false,
   exploration: false,
+  again: false,
 }))
 
 test("onboarding collects three pages and requires five keeps", async () => {

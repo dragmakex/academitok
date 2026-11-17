@@ -33,6 +33,7 @@ const clipping = {
     externalUrl: "https://example.com/kept",
   },
   exploration: false,
+  again: false,
 }
 
 const savedPage = (items: ReadonlyArray<unknown>) => ({
