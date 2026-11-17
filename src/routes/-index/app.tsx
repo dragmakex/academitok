@@ -27,6 +27,7 @@ import { formatEdition } from "@/features/papers/citation"
 import {
   archivalDrift,
   citationAgeSkew,
+  topicEntropy,
   trackFeedPageEvent,
 } from "@/lib/feed-analytics"
 import { deckAction, shortcutRows } from "@/lib/shortcuts"
@@ -546,6 +547,13 @@ export function App() {
   const pagePapers = (snapshot?.items ?? []).map((item) => item.paper)
   const drift = archivalDrift(pagePapers.map((paper) => paper.year))
   const skew = citationAgeSkew(pagePapers)
+  const entropy = topicEntropy(pagePapers)
+  const beats = new Set(
+    pagePapers.flatMap((paper) =>
+      paper.topics[0] === undefined ? [] : [paper.topics[0]]
+    ),
+  )
+    .size
   const editionNotice = formatEdition(
     (snapshot?.items ?? []).map((item) => item.paper),
     "Evening Edition",
@@ -598,6 +606,24 @@ export function App() {
               label="Share this edition"
               text={editionNotice}
             />
+          </Stack>
+
+          <Stack gap="m">
+            <Text tone="label" as="span">
+              Topic mix
+            </Text>
+            <Grid layout="stats">
+              <StatCard
+                label="Entropy"
+                value={snapshot === undefined ? "—" : entropy.toFixed(2)}
+                helper="nats across the page's primary beats"
+              />
+              <StatCard
+                label="Beats on the page"
+                value={snapshot === undefined ? "—" : beats}
+                helper={`of ${drift.total} loaded clippings`}
+              />
+            </Grid>
           </Stack>
 
           <Card tone="subtle">
