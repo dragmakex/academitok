@@ -997,7 +997,7 @@ write the conflict at the bottom instead of guessing.
       line prints; `bun run validate` is green.
       — `869bc83`
 
-- [ ] **52. The beat the keyword table cannot name, on the desk.** SPEC §17.2 keeps the fixed nine
+- [x] **52. The beat the keyword table cannot name, on the desk.** SPEC §17.2 keeps the fixed nine
       beats only until someone can tell whether they cover what the sources serve, and open
       decision 2 says to revisit the taxonomy on evidence — task 41 put the page's keyword /
       concept / education split on the desk, but that split is a page total: it says how many
@@ -1023,6 +1023,7 @@ write the conflict at the bottom instead of guessing.
       snapshot renders an em dash; the beats are asserted through `conceptOnlyBeats` over the
       papers of a real `getPaperFeedSnapshot` (stubbed catalog, temp PGlite dir); the ranked page
       for a fixed seed is identical before and after.
+      — `5c63c2a`
 
 ---
 
