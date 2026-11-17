@@ -6,7 +6,10 @@
  */
 
 import { DomainRpc } from "@/api/domain-rpc"
-import { PapersApplicationLive } from "@/features/papers/application"
+import {
+  getSavedBibtex,
+  PapersApplicationLive,
+} from "@/features/papers/application"
 import { ObservabilityLive } from "@/lib/observability"
 import {
   initPyroscopeServer,
@@ -26,6 +29,7 @@ import * as ManagedRuntime from "effect/ManagedRuntime"
 import * as Option from "effect/Option"
 import * as Headers from "effect/unstable/http/Headers"
 import * as HttpRouter from "effect/unstable/http/HttpRouter"
+import * as HttpServerRequest from "effect/unstable/http/HttpServerRequest"
 import * as HttpServerResponse from "effect/unstable/http/HttpServerResponse"
 import * as RpcMiddleware from "effect/unstable/rpc/RpcMiddleware"
 import * as RpcSerialization from "effect/unstable/rpc/RpcSerialization"
@@ -179,6 +183,41 @@ export const HealthRoute = HttpRouter.add(
   Effect.succeed(HttpServerResponse.text("OK")),
 )
 
+/** Attachment name for the saved-collection BibTeX export (SPEC §14). */
+export const savedBibtexFilename = "academitok-saved.bib"
+
+/**
+ * Answers the saved collection as a BibTeX attachment for one reader.
+ * @param request - Incoming HTTP request carrying the reader cookie.
+ * @returns BibTeX attachment response; empty body when nothing is saved.
+ */
+export const savedBibtexHandler = (
+  request: HttpServerRequest.HttpServerRequest,
+) =>
+  getSavedBibtex.pipe(
+    Effect.provideService(
+      ReaderId,
+      readerIdFromCookieHeader(
+        Option.getOrUndefined(Headers.get(request.headers, "cookie")),
+      ),
+    ),
+    Effect.map((bib) =>
+      HttpServerResponse.text(bib, {
+        contentType: "application/x-bibtex; charset=utf-8",
+        headers: {
+          "content-disposition":
+            `attachment; filename="${savedBibtexFilename}"`,
+        },
+      })
+    ),
+  )
+
+export const SavedBibtexRoute = HttpRouter.add(
+  "GET",
+  "/api/saved.bib",
+  savedBibtexHandler,
+)
+
 /**
  * Sentry integration test routes.
  *
@@ -236,6 +275,7 @@ export const AllRoutes = Layer
   .mergeAll(
     RpcRouter,
     HealthRoute,
+    SavedBibtexRoute,
     SentryTestGet,
     SentryTestPost,
   )

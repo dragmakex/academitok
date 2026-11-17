@@ -56,9 +56,23 @@ export function SavedPage() {
           title="Saved clippings"
           description="The morgue file: every paper you pinned while reading the edition."
           actions={
-            <LinkButton href="/" variant="secondary">
-              Back to the edition
-            </LinkButton>
+            <>
+              {page !== undefined && page.items.length > 0
+                ? (
+                  <LinkButton
+                    href="/api/saved.bib"
+                    target="_self"
+                    variant="primary"
+                    download="academitok-saved.bib"
+                  >
+                    Export BibTeX
+                  </LinkButton>
+                )
+                : null}
+              <LinkButton href="/" variant="secondary">
+                Back to the edition
+              </LinkButton>
+            </>
           }
         />
 
