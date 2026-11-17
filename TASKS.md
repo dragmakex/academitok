@@ -1093,7 +1093,7 @@ write the conflict at the bottom instead of guessing.
       page for a fixed seed is identical before and after; `bun run validate` is green.
       — `01cfeec`
 
-- [ ] **55. Who else opened the source, on the permalink.** SPEC §16 P3 lists "multi-reader with
+- [x] **55. Who else opened the source, on the permalink.** SPEC §16 P3 lists "multi-reader with
       collaborative signals" and §8.4 judges the deck on an open-source rate of ≥ 12%, but the rail
       records an `open-site` reaction that no surface counts: task 37 gave the permalink the one
       cross-reader fact the split rows could answer (`Filed by`, from `savedByReaders`) and tasks 40
@@ -1120,6 +1120,7 @@ write the conflict at the bottom instead of guessing.
       an unknown permalink id still returns the not-found notice; the count is asserted from a real
       repository written under two `ReaderId` values, and the rendered and omitted fact from
       `renderToStaticMarkup` of the real `PaperPage`; `bun run validate` is green.
+      — `1483754`
 
 ---
 
