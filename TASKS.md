@@ -134,6 +134,20 @@ write the conflict at the bottom instead of guessing.
       for a fixed seed is identical before and after.
       — `d7e214f`
 
+- [ ] **13. Citation-age skew on `feed.next`.** SPEC §17.3 keeps citation count as a quality
+      signal on the condition that we measure the archival bias it introduces; `feed.next` reports
+      `median_year` (how old the page feels) but nothing reports the half of the decision the
+      damping is meant to offset — whether the page's citations sit on its old clippings. Add a pure
+      `citationAgeSkew` helper beside `medianYear` in `src/lib/feed-analytics.ts` that splits a page
+      on its median year and returns the median citation count either side, and report both on the
+      existing `feed.next` feed-health event. Measurement only: no ranking, RPC contract or
+      persistence change, and the log10/3 damping stays as it is.
+      Accept: years 2010/2016/2024 with citations 400/50/10 report 400 for the older clippings and
+      30 for the newer ones (a clipping dated exactly the median year counts as newer); a page with
+      no years reports null for both, never `NaN`; a one-paper page reports null older and its own
+      citations as newer; the helper is unit-tested; the ranked page for a fixed seed
+      is identical before and after.
+
 ---
 
 ## Blocked — needs a product decision
