@@ -218,7 +218,7 @@ write the conflict at the bottom instead of guessing.
       ranked page for a fixed seed is unchanged.
       — `4a5f8d9`
 
-- [ ] **19. Gazette shell metadata.** SPEC §16 P3 lists a native shell; the smallest honest slice
+- [x] **19. Gazette shell metadata.** SPEC §16 P3 lists a native shell; the smallest honest slice
       is what the shell claims about the app, and `public/manifest.json` still carries the TanStack
       sample identity (`"name": "Create TanStack App Sample"`, black `theme_color`, sample-logo
       icons) that no head ever links — a reader adding the deck to a home screen gets somebody
@@ -233,6 +233,7 @@ write the conflict at the bottom instead of guessing.
       with a `theme-color` equal to the manifest's; `logo192.png`/`logo512.png` are gone and nothing
       references them; a test asserts name, start URL, display, the two colours and the head link
       from the real files.
+      — `6460591`
 
 ---
 
