@@ -1093,6 +1093,34 @@ write the conflict at the bottom instead of guessing.
       page for a fixed seed is identical before and after; `bun run validate` is green.
       — `01cfeec`
 
+- [ ] **55. Who else opened the source, on the permalink.** SPEC §16 P3 lists "multi-reader with
+      collaborative signals" and §8.4 judges the deck on an open-source rate of ≥ 12%, but the rail
+      records an `open-site` reaction that no surface counts: task 37 gave the permalink the one
+      cross-reader fact the split rows could answer (`Filed by`, from `savedByReaders`) and tasks 40
+      and 46 spread it to the morgue and the deck rail, while every `open-site` row a reader's click
+      writes sits in `reactions` unread across readers — so a permalink shows a clipping that a dozen
+      colleagues opened the source of exactly like one nobody ever left the deck for, and the
+      signal the feed is judged on is invisible on the one page built to be handed around. Add an
+      `openedByReaders(paperId)` read to `ReaderStateRepository` counting distinct `reader_id` rows
+      in `reactions` where `paper_id` matches, `kind = 'open-site'` and `active = true` —
+      deliberately not reader-scoped — implement it for both the PGlite and Postgres storages by
+      reading the same `{ readerId, active }` rows through the existing `activeFilers` count that
+      `savedByReaders` already uses, so a reader who opens the source twice counts once, wrap it in
+      an exported `getPaperOpenedBy(id)` in `src/features/papers/application.ts`, resolve it beside
+      the paper and its filing count through a third `createServerFn` in the permalink route's
+      existing `loader`, and render it as one more fact in `PaperPage`'s `<dl>` below `Filed by`
+      (`Opened by` → `3 readers`), omitted rather than printed as `0 readers` when nobody has.
+      Display only: no ranking, `ReaderState`, RPC procedure, schema, contract or PostHog change, no
+      new dependency, no new component, `savedByReaders`/`filedByOthers` stay as they are, and the
+      one-clipping-per-viewport snap is untouched.
+      Accept: two readers opening the same clipping report 2 and the permalink renders `Opened by`
+      with `2 readers`; one reader opening it twice reports 1, so the count is by reader and not by
+      click; the count is visible to a reader who never opened it, so it is not reader-scoped; a
+      clipping nobody opened reports 0 and the fact is omitted rather than printed as `0 readers`;
+      an unknown permalink id still returns the not-found notice; the count is asserted from a real
+      repository written under two `ReaderId` values, and the rendered and omitted fact from
+      `renderToStaticMarkup` of the real `PaperPage`; `bun run validate` is green.
+
 ---
 
 ## Blocked — needs a product decision
