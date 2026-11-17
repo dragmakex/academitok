@@ -1334,7 +1334,7 @@ write the conflict at the bottom instead of guessing.
       the ranked page for a fixed seed is identical before and after.
       — `8174b57`
 
-- [ ] **64. A reading time measured against the clipping, not a clamp.** SPEC §16 P3 lists
+- [x] **64. A reading time measured against the clipping, not a clamp.** SPEC §16 P3 lists
       reading-time analytics, and tasks 7, 26, 43, 44, 47 and 53 built completion, median reading
       load, page reading load, reading time per beat and the lowest-completion beat on top of one
       private estimator in `src/lib/openalex.ts`: `Math.max(4, Math.min(18, Math.round(words / 180)
@@ -1360,6 +1360,7 @@ write the conflict at the bottom instead of guessing.
       no hand-written value survives; the deck, morgue row and permalink render `min abstract` and
       `Abstract read time` with the clipping's own number; the ranked page for a fixed seed is
       identical before and after; `bun run validate` is green.
+      — `2babb9f`
 
 ---
 
