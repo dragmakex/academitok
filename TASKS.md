@@ -887,6 +887,26 @@ write the conflict at the bottom instead of guessing.
       fixed seed is identical before and after.
       — `1ae6b04`
 
+- [ ] **48. A way from the morgue row to its clipping.** SPEC §4 and §16 P2 pair `/saved` with
+      `/paper/$id` ("permalink + cite"), and tasks 36, 37 and 40 have since made the permalink the
+      only surface that prints the whole abstract, the copyable citation and `Filed by N readers`
+      — but the morgue row cannot reach it: `PaperSlide`'s compact variant prints the headline as
+      a bare `<h2>`, its facts line offers only `Source` (external) and `Remove`, and the deck
+      variant's rail `Link` button is the only route to `/paper/$id` anywhere in `src/`. A saved
+      clipping truncated to two lines of abstract is therefore a dead end unless the reader
+      re-finds that paper in the deck. Make the compact headline an anchor to
+      `/paper/<encoded id>`, mirroring the deck rail button's `encodeURIComponent`, keeping the
+      existing compact headline classes and the focus ring and changing no colour beyond ink;
+      `Source`, `Remove`, the facts line and the deck variant stay as they are. No new component,
+      no design-language, ranking, RPC contract, schema, persistence, PostHog or dependency
+      change, and the one-clipping-per-viewport snap is untouched.
+      Accept: a morgue row renders exactly one link to `/paper/<encoded id>` whose text is the
+      headline; a DOI id (`10.1000/a b`) is percent-encoded, so the href carries neither a raw
+      space nor a raw slash; the link sits inside the row's `article` and the row still
+      renders `Source` and `Remove` beside it; the deck variant's rail `Link` is unchanged; the
+      href and its text are asserted from `renderToStaticMarkup` of the real compact `PaperSlide`,
+      and the row from the real `SavedPage`.
+
 ---
 
 ## Blocked — needs a product decision
