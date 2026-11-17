@@ -6,6 +6,7 @@ import { PaperPage } from "@/design-system/components/PaperPage"
 import {
   getPaperAudience,
   getPaperById,
+  getPaperHiddenBy,
   getPaperLikedBy,
   getPaperOpenedBy,
 } from "@/features/papers/application"
@@ -42,6 +43,12 @@ const getPermalinkLikedBy = createServerFn({ method: "GET" })
   )
   .handler(({ data }) => serverRuntime.runPromise(getPaperLikedBy(data.id)))
 
+const getPermalinkHiddenBy = createServerFn({ method: "GET" })
+  .inputValidator((input: unknown) =>
+    Schema.decodeUnknownSync(paperPermalinkInput)(input)
+  )
+  .handler(({ data }) => serverRuntime.runPromise(getPaperHiddenBy(data.id)))
+
 /**
  * Download URL for one clipping's BibTeX entry (SPEC §14).
  * @param id - Paper id, percent-encoded so DOIs keep neither space nor slash.
@@ -69,18 +76,30 @@ export const permalinkHead = (paper: Paper | undefined) =>
 
 export const Route = createFileRoute("/paper/$id")({
   loader: async ({ params }) => {
-    const [paper, savedByReaders, openedByReaders, likedByReaders] =
-      await Promise.all([
-        getPaperPermalink({ data: { id: params.id } }),
-        getPermalinkAudience({ data: { id: params.id } }),
-        getPermalinkOpenedBy({ data: { id: params.id } }),
-        getPermalinkLikedBy({ data: { id: params.id } }),
-      ])
+    const [
+      paper,
+      savedByReaders,
+      openedByReaders,
+      likedByReaders,
+      hiddenByReaders,
+    ] = await Promise.all([
+      getPaperPermalink({ data: { id: params.id } }),
+      getPermalinkAudience({ data: { id: params.id } }),
+      getPermalinkOpenedBy({ data: { id: params.id } }),
+      getPermalinkLikedBy({ data: { id: params.id } }),
+      getPermalinkHiddenBy({ data: { id: params.id } }),
+    ])
     if (paper === null) {
       throw notFound()
     }
 
-    return { likedByReaders, openedByReaders, paper, savedByReaders }
+    return {
+      hiddenByReaders,
+      likedByReaders,
+      openedByReaders,
+      paper,
+      savedByReaders,
+    }
   },
   head: ({ loaderData }) =>
     permalinkHead(loaderData === undefined ? undefined : loaderData.paper),
@@ -93,8 +112,13 @@ export const Route = createFileRoute("/paper/$id")({
  * @returns The permalink page.
  */
 function PaperPermalinkRoute() {
-  const { likedByReaders, paper, openedByReaders, savedByReaders } = Route
-    .useLoaderData()
+  const {
+    hiddenByReaders,
+    likedByReaders,
+    paper,
+    openedByReaders,
+    savedByReaders,
+  } = Route.useLoaderData()
 
   return (
     <Page>
@@ -108,6 +132,7 @@ function PaperPermalinkRoute() {
         citation={formatCitation(paper)}
         citations={paper.citations}
         externalUrl={paper.externalUrl}
+        hiddenByReaders={hiddenByReaders}
         likedByReaders={likedByReaders}
         openedByReaders={openedByReaders}
         readMinutes={paper.readMinutes}

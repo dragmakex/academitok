@@ -320,6 +320,14 @@ export const getPaperLikedBy = (id: string) =>
     })
     .pipe(Effect.withSpan("paper.liked-by"))
 
+export const getPaperHiddenBy = (id: string) =>
+  Effect
+    .gen(function*() {
+      const repository = yield* ReaderStateRepository
+      return yield* repository.hiddenByReaders(id)
+    })
+    .pipe(Effect.withSpan("paper.hidden-by"))
+
 export const getSavedAudience: Effect.Effect<
   Record<string, number>,
   never,

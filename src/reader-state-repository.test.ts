@@ -443,6 +443,51 @@ describe("ReaderStateRepository", () => {
     expect(counts.unliked).toBe(0)
   })
 
+  it("counts the readers who hid a clipping, once each", async () => {
+    const dataDir = await mkdtemp(join(tmpdir(), "academitok-hidden-"))
+    directories.push(dataDir)
+    const readerA = "0c4d8b17-6e29-4f53-a8d0-31b7e5c9f242"
+    const readerB = "7d2f9a40-8b15-4c67-9e02-5a1d3f8b6c94"
+    const readerC = "4e9b1c72-3a58-4d06-b7f1-9c2e6a0d8b35"
+    const asReader = <A, E, R>(
+      readerId: string,
+      effect: Effect.Effect<A, E, ReaderId | R>,
+    ): Effect.Effect<A, E, R> =>
+      Effect.provideService(effect, ReaderId, readerId)
+
+    const counts = await runWithDatabase(
+      dataDir,
+      Effect.gen(function*() {
+        const repository = yield* ReaderStateRepository
+        const hide = (readerId: string, paperId: string) =>
+          asReader(readerId, repository.react({ paperId, kind: "hide" }))
+
+        yield* hide(readerA, "paper-1")
+        yield* hide(readerB, "paper-1")
+        const twoReaders = yield* repository.hiddenByReaders("paper-1")
+        yield* hide(readerC, "paper-2")
+        // The log orders reactions by `createdAt`, so the undo must land later.
+        yield* Effect.sleep("2 millis")
+        yield* hide(readerC, "paper-2")
+
+        return {
+          twoReaders,
+          strangerSees: yield* asReader(
+            readerC,
+            repository.hiddenByReaders("paper-1"),
+          ),
+          undone: yield* repository.hiddenByReaders("paper-2"),
+          unhidden: yield* repository.hiddenByReaders("paper-3"),
+        }
+      }),
+    )
+
+    expect(counts.twoReaders).toBe(2)
+    expect(counts.strangerSees).toBe(2)
+    expect(counts.undone).toBe(0)
+    expect(counts.unhidden).toBe(0)
+  })
+
   it("puts the impression retention boundary 90 days before now", () => {
     const now = new Date("2026-05-01T12:00:00.000Z")
     expect(now.getTime() - impressionCutoff(now).getTime()).toBe(

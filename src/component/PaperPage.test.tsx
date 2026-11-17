@@ -21,6 +21,7 @@ test("renders the clipping and copies its citation", async () => {
       citation={citation}
       citations={12}
       externalUrl="https://example.com/notes"
+      hiddenByReaders={2}
       likedByReaders={2}
       openedByReaders={2}
       readMinutes={6}
@@ -59,6 +60,7 @@ const markupFor = (
   savedByReaders: number,
   openedByReaders = 0,
   likedByReaders = 0,
+  hiddenByReaders = 0,
 ) =>
   renderToStaticMarkup(
     <PaperPage
@@ -69,6 +71,7 @@ const markupFor = (
       citation={citation}
       citations={12}
       externalUrl="https://example.com/notes"
+      hiddenByReaders={hiddenByReaders}
       likedByReaders={likedByReaders}
       openedByReaders={openedByReaders}
       readMinutes={6}
@@ -112,6 +115,17 @@ test("prints who liked the clipping", () => {
 
 test("omits the like fact when nobody liked it", () => {
   expect(markupFor(0, 0, 0)).not.toContain("Liked by")
+})
+
+test("prints who hid the clipping", () => {
+  const markup = markupFor(0, 0, 0, 3)
+
+  expect(markup).toContain("Hidden by")
+  expect(markup).toContain("3 readers")
+})
+
+test("omits the hide fact when nobody hid it", () => {
+  expect(markupFor(0, 0, 0, 0)).not.toContain("Hidden by")
 })
 
 test("exports the clipping beside the citation control", () => {

@@ -9,6 +9,7 @@ type PaperPageProps = {
   readonly citation: string
   readonly citations: number
   readonly externalUrl: string | undefined
+  readonly hiddenByReaders: number
   readonly likedByReaders: number
   readonly openedByReaders: number
   readonly readMinutes: number
@@ -130,6 +131,18 @@ export function PaperPage(props: PaperPageProps) {
                 <dd className="m-0 font-body text-[0.85rem] leading-tight">
                   {`${props.likedByReaders} ${
                     props.likedByReaders === 1 ? "reader" : "readers"
+                  }`}
+                </dd>
+              </div>
+            )}
+            {props.hiddenByReaders === 0 ? null : (
+              <div>
+                <dt className={factLabelClass}>
+                  Hidden by
+                </dt>
+                <dd className="m-0 font-body text-[0.85rem] leading-tight">
+                  {`${props.hiddenByReaders} ${
+                    props.hiddenByReaders === 1 ? "reader" : "readers"
                   }`}
                 </dd>
               </div>

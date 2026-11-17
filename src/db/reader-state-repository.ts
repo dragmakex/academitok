@@ -74,6 +74,7 @@ type ReaderStateRepositoryShape = {
   readonly savedByReaders: (paperId: string) => Effect.Effect<number>
   readonly openedByReaders: (paperId: string) => Effect.Effect<number>
   readonly likedByReaders: (paperId: string) => Effect.Effect<number>
+  readonly hiddenByReaders: (paperId: string) => Effect.Effect<number>
   readonly filedByOthers: (
     paperIds: ReadonlyArray<string>,
     readerId: string,
@@ -135,6 +136,7 @@ type StateStorage = {
   readonly savedByReaders: (paperId: string) => Promise<number>
   readonly openedByReaders: (paperId: string) => Promise<number>
   readonly likedByReaders: (paperId: string) => Promise<number>
+  readonly hiddenByReaders: (paperId: string) => Promise<number>
   readonly filedByOthers: (
     paperIds: ReadonlyArray<string>,
     readerId: string,
@@ -639,6 +641,12 @@ function makeRepositoryService(storage: StateStorage) {
           await ensureMigrated()
           return storage.likedByReaders(paperId)
         }),
+      // Deliberately not reader-scoped: the count spans every reader's hides.
+      hiddenByReaders: (paperId) =>
+        Effect.promise(async () => {
+          await ensureMigrated()
+          return storage.hiddenByReaders(paperId)
+        }),
       filedByOthers: (paperIds, readerId) =>
         Effect.promise(async () => {
           await ensureMigrated()
@@ -1008,6 +1016,20 @@ function makePostgresRepository(databaseUrl: string) {
               ))
               .orderBy(desc(reactionsTable.createdAt)),
           ),
+        hiddenByReaders: async (paperId) =>
+          activeFilers(
+            await db
+              .select({
+                readerId: reactionsTable.readerId,
+                active: reactionsTable.active,
+              })
+              .from(reactionsTable)
+              .where(and(
+                eq(reactionsTable.paperId, paperId),
+                eq(reactionsTable.kind, "hide"),
+              ))
+              .orderBy(desc(reactionsTable.createdAt)),
+          ),
       }
 
       return makeRepositoryService(postgresStorage)
@@ -1371,6 +1393,20 @@ function makePgliteRepository(dataDir: string | undefined) {
               .where(and(
                 eq(reactionsTable.paperId, paperId),
                 eq(reactionsTable.kind, "like"),
+              ))
+              .orderBy(desc(reactionsTable.createdAt)),
+          ),
+        hiddenByReaders: async (paperId) =>
+          activeFilers(
+            await db
+              .select({
+                readerId: reactionsTable.readerId,
+                active: reactionsTable.active,
+              })
+              .from(reactionsTable)
+              .where(and(
+                eq(reactionsTable.paperId, paperId),
+                eq(reactionsTable.kind, "hide"),
               ))
               .orderBy(desc(reactionsTable.createdAt)),
           ),
