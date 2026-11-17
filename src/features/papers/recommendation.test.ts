@@ -171,7 +171,7 @@ describe("paper recommendation", () => {
     expect(items[0]?.paper.topics.includes("AI")).toBe(true)
   })
 
-  it("explains a cold-start paper with only its beat", () => {
+  it("explains a cold-start paper by its citation boost before its beat", () => {
     const paper = paperFixture("cold", "a neutral abstract", {
       topics: ["Climate"],
       citations: 500,
@@ -184,7 +184,58 @@ describe("paper recommendation", () => {
       "recommended",
     )
 
+    expect(item?.rationale).toEqual(["Cited 500 times"])
+  })
+
+  it("keeps the beat for a cold-start paper with no citations", () => {
+    const paper = paperFixture("cold", "a neutral abstract", {
+      topics: ["Climate"],
+      citations: 0,
+    })
+
+    const [item] = buildFeedItems(
+      { profile: null, reactions: [] },
+      [paper],
+      "All",
+      "recommended",
+    )
+
     expect(item?.rationale).toEqual(["Climate"])
+  })
+
+  it("keeps two stronger terms ahead of a weak citation boost", () => {
+    const paper = paperFixture("cited", "a neutral abstract", {
+      citations: 10,
+    })
+
+    const [item] = buildFeedItems(
+      {
+        profile: null,
+        reactions: [
+          {
+            paperId: "cited",
+            kind: "like",
+            active: true,
+            timestamp: Date.now(),
+          },
+          {
+            paperId: "cited",
+            kind: "bookmark",
+            active: true,
+            timestamp: Date.now(),
+          },
+        ],
+      },
+      [paper],
+      "All",
+      "recommended",
+    )
+
+    // Both a like and a save fire here, outranking the 10-citation boost.
+    expect(item?.rationale).toEqual([
+      "Matches AI",
+      "Familiar authors or venue",
+    ])
   })
 
   it("explains the strongest affinity term that raised a paper's score", () => {
@@ -328,7 +379,8 @@ describe("paper recommendation", () => {
     )
 
     expect(items[0]?.paper.id).toBe(target.id)
-    expect(items[0]?.rationale).toContain("Held your attention")
+    expect(items[0]?.rationale[0]).toBe("Matches AI, Education")
+    expect(items[0]?.rationale).toContain(`Cited ${target.citations} times`)
   })
 
   it("rewards a long read more than a brief skip", () => {

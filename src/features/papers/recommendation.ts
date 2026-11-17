@@ -393,7 +393,7 @@ function authorVenueWeights(
 }
 
 /**
- * Explains the strongest personalized scoring terms.
+ * Explains the strongest scoring terms that fired.
  * @param paper - Candidate paper.
  * @param terms - Scoring contributions and their explanations.
  * @returns At most two rationale lines, or the paper's beat.
@@ -502,6 +502,7 @@ export function buildFeedItems(
           [active.bookmarked.has(paper.id) ? 3.5 : 0, "You saved this paper"],
           [Math.min(dwellCount, 3) * 1.4, "Held your attention"],
           [Math.min(openCount, 2) * 1.8, "You opened the source"],
+          [citationBoost(paper.citations), `Cited ${paper.citations} times`],
         ]),
         accessible,
         liked: active.liked.has(paper.id),

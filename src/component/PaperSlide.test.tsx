@@ -90,7 +90,7 @@ test("PaperSlide renders metadata and exposes accessible actions", async () => {
       siteLabel="OpenAlex"
       citations={42}
       readMinutes={6}
-      rationale={["Matches AI"]}
+      rationale={["Matches AI", "Cited 42 times"]}
       topics={["AI"]}
       liked={false}
       bookmarked={true}
@@ -109,6 +109,9 @@ test("PaperSlide renders metadata and exposes accessible actions", async () => {
     .toBeVisible()
   await expect
     .element(page.getByText(/Journal of Useful Results/))
+    .toBeVisible()
+  await expect
+    .element(page.getByText("Matches AI · Cited 42 times"))
     .toBeVisible()
   await expect
     .element(page.getByRole("button", { name: "Like paper" }))
