@@ -21,6 +21,8 @@ describe("installed-shell safe areas", () => {
     expect(deck).toContain("env(safe-area-inset-left)")
     expect(deck).toContain("env(safe-area-inset-right)")
     expect(masthead).toContain("env(safe-area-inset-top)")
-    expect(deck).toContain("env(safe-area-inset-bottom)")
+    expect(source("src/design-system/components/PaperSlide.tsx")).toContain(
+      "env(safe-area-inset-bottom)",
+    )
   })
 })

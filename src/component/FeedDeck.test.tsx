@@ -14,5 +14,5 @@ test("only the nameplate and the paper are readable on the newspaper field", asy
     "section[aria-label=\"Academic paper feed\"]",
   )
   expect(deck?.textContent).toBe("AcademiTokCurrent paper")
-  expect(deck?.querySelector("footer")?.textContent).toBe("")
+  expect(deck?.querySelector("footer")).toBeNull()
 })

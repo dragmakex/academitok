@@ -29,10 +29,6 @@ export const FeedDeck = forwardRef<HTMLElement, FeedDeckProps>(
         <div className="mx-auto min-h-0 w-[min(94%,max(54vw,40rem))] flex-1 snap-y snap-mandatory overflow-y-auto overscroll-y-contain border-x border-rule-soft bg-paper pl-[env(safe-area-inset-left)] pr-[env(safe-area-inset-right)]">
           {children}
         </div>
-        <footer
-          aria-hidden="true"
-          className="h-[max(5dvh,env(safe-area-inset-bottom))] shrink-0 border-t border-rule"
-        />
       </section>
     )
   },

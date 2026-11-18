@@ -133,7 +133,7 @@ export function EdgeDrawer(
       </div>
 
       {open && (
-        <div className="fixed inset-0 z-40 transition-opacity duration-200">
+        <div className="fixed inset-0 z-40">
           <button
             type="button"
             aria-label="Close filters"
@@ -146,7 +146,7 @@ export function EdgeDrawer(
             aria-label={title}
             aria-modal="true"
             role="dialog"
-            className="absolute inset-y-0 left-0 flex w-[min(24rem,88vw)] flex-col border-r-2 border-ink bg-paper"
+            className="absolute inset-y-0 left-0 flex w-[min(24rem,88vw)] flex-col border-r-2 border-ink bg-paper motion-safe:transition-transform motion-safe:duration-200 motion-safe:ease-out motion-safe:starting:-translate-x-full"
           >
             <div className="border-b border-rule-soft px-m py-m">
               <div className="flex items-start justify-between gap-m">

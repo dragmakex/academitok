@@ -187,7 +187,7 @@ export const PaperSlide = forwardRef<HTMLElement, PaperSlideProps>(
           : (
             <>
               <div className="flex min-h-0 flex-1 flex-col overflow-y-auto px-[clamp(0.65rem,1.8vw,3rem)] pb-m text-ink focus-visible:outline-2 focus-visible:outline-offset-[-8px] focus-visible:outline-ink">
-                <div className="mx-auto w-full max-w-[68rem] border-t-2 border-ink pt-m">
+                <div className="mx-auto w-full max-w-[68rem] pt-m">
                   <a
                     className="block text-ink no-underline"
                     href={externalUrl}
@@ -294,7 +294,7 @@ export const PaperSlide = forwardRef<HTMLElement, PaperSlideProps>(
                 </div>
               </div>
 
-              <div className="flex shrink-0 items-center justify-center border-t border-rule-soft bg-paper">
+              <div className="flex shrink-0 items-center justify-center bg-paper pb-[env(safe-area-inset-bottom)]">
                 <div className="relative flex items-stretch">
                   <button
                     className={pagerButtonClass}
@@ -304,10 +304,6 @@ export const PaperSlide = forwardRef<HTMLElement, PaperSlideProps>(
                   >
                     ↑
                   </button>
-                  <span
-                    aria-hidden="true"
-                    className="w-px self-stretch bg-ink/30"
-                  />
                   <button
                     className={pagerButtonClass}
                     type="button"
