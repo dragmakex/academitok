@@ -16,12 +16,11 @@ describe("installed-shell safe areas", () => {
 
   it("pads the deck and the clipping strip by all four insets", () => {
     const deck = source("src/design-system/components/FeedDeck.tsx")
-    const slide = source("src/design-system/components/PaperSlide.tsx")
     const masthead = source("src/design-system/components/Masthead.tsx")
 
     expect(deck).toContain("env(safe-area-inset-left)")
     expect(deck).toContain("env(safe-area-inset-right)")
     expect(masthead).toContain("env(safe-area-inset-top)")
-    expect(slide).toContain("env(safe-area-inset-bottom)")
+    expect(deck).toContain("env(safe-area-inset-bottom)")
   })
 })

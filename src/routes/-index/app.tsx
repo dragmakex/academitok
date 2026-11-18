@@ -913,7 +913,11 @@ export function App() {
           </FeedDeck>
         )
         : (
-          <FeedDeck ref={deckRef} announcement={announcement}>
+          <FeedDeck
+            ref={deckRef}
+            announcement={announcement}
+            stories={snapshot.items.map(item => item.paper)}
+          >
             {snapshot.items.map((item, index) => (
               <VisiblePaperSlide
                 key={item.paper.id}

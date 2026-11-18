@@ -159,7 +159,7 @@ test("the deck slide toggles like and save without leaving the page", async () =
     .toHaveAttribute("rel", "noopener noreferrer")
 })
 
-test("the deck slide shares the paper and keeps its foot band full width", async () => {
+test("the slide keeps sharing and navigation inside the reading column", async () => {
   await render(
     <PaperSlide
       id="paper-1"
@@ -181,9 +181,7 @@ test("the deck slide shares the paper and keeps its foot band full width", async
   await page.getByRole("button", { name: "Share paper" }).click()
   expect(actions.onShare).toHaveBeenCalledOnce()
 
-  // The foot band is the nameplate's twin: full-bleed stock on its own paper.
-  const band = document.querySelector("article > div:last-child")
-  expect(band?.className).toContain("border-t-4")
-  expect(band?.className).toContain("bg-paper")
-  expect(band?.className).not.toContain("max-w-")
+  await page.getByRole("button", { name: "Next paper" }).click()
+  expect(actions.onNext).toHaveBeenCalledOnce()
+  expect(document.querySelector("article footer")).toBeNull()
 })

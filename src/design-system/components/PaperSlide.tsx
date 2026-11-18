@@ -1,5 +1,4 @@
 import { forwardRef } from "react"
-import { NewsprintField } from "./NewsprintField"
 
 /* Square ink stamp under the headline: outline at rest, inverted once pressed. */
 const actionButtonClass =
@@ -187,12 +186,8 @@ export const PaperSlide = forwardRef<HTMLElement, PaperSlideProps>(
           )
           : (
             <>
-              <div className="flex min-h-0 flex-1 flex-col overflow-y-auto px-[clamp(0.6rem,3vw,3.5rem)] py-[clamp(0.75rem,3vh,2.5rem)] text-ink focus-visible:outline-2 focus-visible:outline-offset-[-8px] focus-visible:outline-ink">
-                {
-                  /* m-auto, not justify-center: a centred flex child taller than
-                    the sheet loses its first lines to the scroll box. */
-                }
-                <div className="m-auto w-full max-w-[min(94vw,clamp(54rem,42vw,84rem))] border-y-2 border-ink bg-paper px-[clamp(1.1rem,3.2vw,5rem)] py-[clamp(1.5rem,4.5vh,4rem)]">
+              <div className="flex min-h-0 flex-1 flex-col overflow-y-auto px-[clamp(0.65rem,1.8vw,3rem)] pb-m text-ink focus-visible:outline-2 focus-visible:outline-offset-[-8px] focus-visible:outline-ink">
+                <div className="mx-auto w-full max-w-[68rem] border-t-2 border-ink pt-m">
                   <a
                     className="block text-ink no-underline"
                     href={externalUrl}
@@ -299,9 +294,7 @@ export const PaperSlide = forwardRef<HTMLElement, PaperSlideProps>(
                 </div>
               </div>
 
-              <div className="relative flex shrink-0 items-center justify-center border-t-4 border-ink bg-paper pt-xs pb-[max(0.7rem,env(safe-area-inset-bottom))] before:absolute before:inset-x-0 before:top-[6px] before:h-px before:bg-ink/40">
-                {/* The foot band mirrors the nameplate: full-bleed stock, hairlines, one centred control. */}
-                <NewsprintField variant="band" />
+              <div className="flex shrink-0 items-center justify-center border-t border-rule-soft bg-paper">
                 <div className="relative flex items-stretch">
                   <button
                     className={pagerButtonClass}
