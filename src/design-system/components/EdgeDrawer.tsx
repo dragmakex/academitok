@@ -109,27 +109,25 @@ export function EdgeDrawer(
 
   return (
     <>
-      <div className="pointer-events-none fixed inset-y-0 left-0 z-30 w-9">
-        <div className="absolute inset-y-[20%] left-0 flex items-center">
-          <button
-            type="button"
-            aria-label={open ? "Close filters" : "Open filters"}
-            aria-pressed={open}
-            className="pointer-events-auto border border-ink bg-paper px-2xs py-m font-label text-[0.62rem] font-bold uppercase tracking-[0.16em] text-ink cursor-pointer [writing-mode:vertical-rl] hover:bg-ink hover:text-paper focus-visible:outline-2 focus-visible:outline-ink focus-visible:outline-offset-[-2px]"
-            onClick={() => onOpenChange(!open)}
+      <div className="fixed bottom-[calc(env(safe-area-inset-bottom)+0.125rem)] left-[max(0.5rem,env(safe-area-inset-left))] z-30 lg:top-1/2 lg:bottom-auto lg:left-0 lg:-translate-y-1/2">
+        <button
+          type="button"
+          aria-label={open ? "Close filters" : "Open filters"}
+          aria-pressed={open}
+          className="grid size-11 cursor-pointer place-items-center border border-ink bg-paper text-ink hover:bg-ink hover:text-paper focus-visible:outline-2 focus-visible:outline-ink focus-visible:outline-offset-[-2px] lg:w-8"
+          onClick={() => onOpenChange(!open)}
+        >
+          <svg
+            aria-hidden="true"
+            viewBox="0 0 20 20"
+            width="18"
+            height="18"
+            fill="none"
+            stroke="currentColor"
           >
-            <svg
-              aria-hidden="true"
-              viewBox="0 0 20 20"
-              width="18"
-              height="18"
-              fill="none"
-              stroke="currentColor"
-            >
-              <path d="M3 5h14M3 10h14M3 15h14" />
-            </svg>
-          </button>
-        </div>
+            <path d="M3 5h14M3 10h14M3 15h14" />
+          </svg>
+        </button>
       </div>
 
       {open && (

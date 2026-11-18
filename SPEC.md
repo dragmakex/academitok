@@ -122,7 +122,9 @@ explanation of why a paper is here.
 
 One pre-blurred crop of the reference newspaper (`public/newsprint.webp`) fills the viewport,
 without tiling on wide screens. The masthead always spans the viewport, and the centre column reaches
-the bottom edge. Below 64rem the feed spans the same width as the masthead and the image is hidden.
+the bottom edge. Below 64rem the feed spans the same width as the masthead and the texture is shown
+only in the masthead. The reading desk opener moves to the bottom-left on these screens to keep it
+out of the reading area.
 
 Type scales on `vmin` as well as `vw` and the sheet widens to 84rem, so a 4K panel gets a ~96px
 headline on a ~1344px sheet instead of a postage stamp.
