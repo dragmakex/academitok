@@ -186,8 +186,8 @@ export const PaperSlide = forwardRef<HTMLElement, PaperSlideProps>(
           )
           : (
             <>
-              <div className="flex min-h-0 flex-1 flex-col overflow-y-auto px-[clamp(0.65rem,1.8vw,3rem)] pb-m text-ink focus-visible:outline-2 focus-visible:outline-offset-[-8px] focus-visible:outline-ink">
-                <div className="mx-auto w-full max-w-[68rem] pt-m">
+              <div className="flex min-h-0 flex-1 flex-col overflow-y-auto px-[clamp(0.65rem,1.8vw,3rem)] py-[clamp(1.5rem,4dvh,3rem)] text-ink focus-visible:outline-2 focus-visible:outline-offset-[-8px] focus-visible:outline-ink">
+                <div className="m-auto w-full max-w-[68rem]">
                   <a
                     className="block text-ink no-underline"
                     href={externalUrl}
