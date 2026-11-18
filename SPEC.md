@@ -120,11 +120,9 @@ explanation of why a paper is here.
 
 ### 5.3a The field the deck is printed on
 
-The viewport is a window cut into **one** drawn broadsheet page (`public/newsprint.svg`), rendered
-`bg-cover` + `bg-no-repeat` and lightly defocused, so swiping a paper feels like moving a clipping
-across a page. Never tile it: a wall of repeated newspapers is wallpaper, not a newspaper. The sheet
-carries its own paper ground; the nameplate band and the pager band are the same stock and the same
-double rule as each other, full width, so the deck is framed top and bottom by editorial furniture.
+One pre-blurred crop of the reference newspaper (`public/newsprint.webp`) fills the viewport,
+without tiling. The margins, masthead and empty footer expose that same stationary image. Only the
+nameplate and the opaque, scrollable centre column carry readable type.
 
 Type scales on `vmin` as well as `vw` and the sheet widens to 84rem, so a 4K panel gets a ~96px
 headline on a ~1344px sheet instead of a postage stamp.

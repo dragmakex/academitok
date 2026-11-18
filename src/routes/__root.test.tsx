@@ -135,7 +135,7 @@ describe("gazette shell metadata", () => {
 
   it("ships a service worker that never replays an rpc or a sign-in link", () => {
     const worker = readFileSync(join(process.cwd(), "public/sw.js"), "utf8")
-    expect(worker).toContain("cacheName = \"academitok-shell-v1\"")
+    expect(worker).toContain("/newsprint.webp")
     expect(worker).toContain("startsWith(\"/api/\")")
     expect(worker).toContain("startsWith(\"/auth/\")")
     expect(worker).toContain("request.mode === \"navigate\"")

@@ -3,8 +3,8 @@
  * document tries the network first and falls back to the last edition read.
  */
 
-const cacheName = "academitok-shell-v1"
-const shellFiles = ["/", "/manifest.json", "/mark.svg", "/newsprint.svg"]
+const cacheName = "academitok-shell-v2"
+const shellFiles = ["/", "/manifest.json", "/mark.svg", "/newsprint.webp"]
 
 /**
  * Fetches one request and files the answer for offline use.

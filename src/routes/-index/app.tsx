@@ -916,7 +916,6 @@ export function App() {
           <FeedDeck
             ref={deckRef}
             announcement={announcement}
-            stories={snapshot.items.map(item => item.paper)}
           >
             {snapshot.items.map((item, index) => (
               <VisiblePaperSlide

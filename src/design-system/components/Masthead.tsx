@@ -33,35 +33,13 @@ export function Masthead(
 ) {
   if (variant === "banner") {
     return (
-      <header className="shrink-0 bg-paper px-[clamp(0.65rem,2vw,4rem)] pt-[max(0.5rem,env(safe-area-inset-top))] text-center">
-        <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-s pb-xs">
-          <span className="hidden w-fit border border-ink px-m py-xs font-body text-[clamp(0.8rem,1.2vw,1.6rem)] font-bold leading-tight sm:block">
-            The papers<br />worth reading
-          </span>
-          <a
-            className="col-start-2 block font-masthead text-[clamp(3rem,min(10vw,11vh),10rem)] leading-none tracking-tight text-ink no-underline"
-            href="/"
-          >
-            AcademiTok
-          </a>
-          <span className="hidden justify-self-end font-label text-[clamp(0.72rem,1.1vw,1.4rem)] font-bold uppercase sm:block">
-            Research edition
-          </span>
-        </div>
-        <div className="flex justify-between border-y border-rule py-2xs font-label text-[clamp(0.65rem,0.85vw,1.15rem)] font-bold uppercase tracking-wider">
-          <span>
-            Science &amp; scholarship
-          </span>
-          <span>
-            Front page
-          </span>
-        </div>
-        <p className="my-xs font-display text-[clamp(1.8rem,min(6.8vw,8vh),8rem)] font-bold uppercase leading-none tracking-tight">
-          The Research Dispatch
-        </p>
-        <p className="mx-auto mb-s w-fit border-t border-rule px-m pt-2xs font-display text-[clamp(1rem,2.3vw,3rem)] italic leading-none">
-          Papers from across the disciplines
-        </p>
+      <header className="shrink-0 border-b-2 border-ink pb-xs pt-[max(0.5rem,env(safe-area-inset-top))] text-center">
+        <a
+          className="font-masthead text-[clamp(3rem,min(9vw,9vh),9rem)] leading-none tracking-tight text-ink no-underline"
+          href="/"
+        >
+          AcademiTok
+        </a>
       </header>
     )
   }

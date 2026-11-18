@@ -118,7 +118,16 @@ export function EdgeDrawer(
             className="pointer-events-auto border border-ink bg-paper px-2xs py-m font-label text-[0.62rem] font-bold uppercase tracking-[0.16em] text-ink cursor-pointer [writing-mode:vertical-rl] hover:bg-ink hover:text-paper focus-visible:outline-2 focus-visible:outline-ink focus-visible:outline-offset-[-2px]"
             onClick={() => onOpenChange(!open)}
           >
-            Desk
+            <svg
+              aria-hidden="true"
+              viewBox="0 0 20 20"
+              width="18"
+              height="18"
+              fill="none"
+              stroke="currentColor"
+            >
+              <path d="M3 5h14M3 10h14M3 15h14" />
+            </svg>
           </button>
         </div>
       </div>
