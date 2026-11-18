@@ -121,8 +121,8 @@ explanation of why a paper is here.
 ### 5.3a The field the deck is printed on
 
 One pre-blurred crop of the reference newspaper (`public/newsprint.webp`) fills the viewport,
-without tiling. The margins and masthead expose that stationary image; the centre column reaches the bottom edge. Only the
-nameplate and the opaque, scrollable centre column carry readable type.
+without tiling on wide screens. The masthead always spans the viewport, and the centre column reaches
+the bottom edge. Below 64rem the feed spans the same width as the masthead and the image is hidden.
 
 Type scales on `vmin` as well as `vw` and the sheet widens to 84rem, so a 4K panel gets a ~96px
 headline on a ~1344px sheet instead of a postage stamp.

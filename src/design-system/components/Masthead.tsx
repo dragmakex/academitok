@@ -33,7 +33,7 @@ export function Masthead(
 ) {
   if (variant === "banner") {
     return (
-      <header className="shrink-0 border-b-2 border-ink pb-xs pt-[max(0.5rem,env(safe-area-inset-top))] text-center">
+      <header className="w-full shrink-0 border-b-2 border-ink pb-xs pt-[max(0.5rem,env(safe-area-inset-top))] text-center">
         <a
           className="font-masthead text-[clamp(3rem,min(9vw,9vh),9rem)] leading-none tracking-tight text-ink no-underline"
           href="/"
