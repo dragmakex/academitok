@@ -56,7 +56,7 @@ function VerifyPage() {
           <Text tone="muted">
             {email === null
               ? "Sign-in links work once and expire in 15 minutes. Ask for a fresh one from the reading desk."
-              : `This browser now keeps the beats and clippings of ${email}. Open the desk on another device and ask for a link there to fold it in.`}
+              : `This browser now keeps the topics and clippings of ${email}. Open the desk on another device and ask for a link there to fold it in.`}
           </Text>
           <LinkButton href="/" target="_self">
             Back to the deck

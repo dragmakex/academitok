@@ -1,9 +1,9 @@
 import { detectTopics } from "@/lib/openalex"
-import { conceptTopics, matchedTopics } from "@/lib/topic-beats"
+import { conceptTopics, matchedTopics } from "@/lib/research-topics"
 import { describe, expect, it } from "vitest"
 
 describe("matchedTopics", () => {
-  it("reports every beat whose keyword appears in the text", () => {
+  it("reports every topic whose keyword appears in the text", () => {
     expect(
       matchedTopics(
         "Neural network control of a robot arm",
@@ -13,12 +13,12 @@ describe("matchedTopics", () => {
       .toEqual(["AI", "Robotics"])
   })
 
-  it("reports nothing when the text carries no beat keyword", () => {
-    expect(matchedTopics("Potsherd stratigraphy", "Field notes from a dig."))
+  it("reports nothing when the text carries no topic keyword", () => {
+    expect(matchedTopics("A small puzzle", "Notes from a walk."))
       .toEqual([])
   })
 
-  it("keeps at most three beats", () => {
+  it("keeps at most three topics", () => {
     expect(
       matchedTopics(
         "Climate, learning and patient health",
@@ -30,17 +30,17 @@ describe("matchedTopics", () => {
 })
 
 describe("conceptTopics", () => {
-  it("maps a concept name onto its beat", () => {
+  it("maps a concept name onto its topic", () => {
     expect(conceptTopics(["Quantum mechanics", "Physics"])).toEqual([
       "Physics",
     ])
   })
 
-  it("reports nothing when no concept names a beat", () => {
-    expect(conceptTopics(["Sociology", "History"])).toEqual([])
+  it("reports nothing when no concept names a topic", () => {
+    expect(conceptTopics(["General knowledge"])).toEqual([])
   })
 
-  it("keeps at most three beats", () => {
+  it("keeps at most three topics", () => {
     expect(
       conceptTopics([
         "Machine learning",
@@ -55,11 +55,11 @@ describe("conceptTopics", () => {
 
 describe("detectTopics", () => {
   it("files unmatched text under the Education fallback", () => {
-    expect(detectTopics("Potsherd stratigraphy", "Field notes from a dig."))
+    expect(detectTopics("A small puzzle", "Notes from a walk."))
       .toEqual(["Education"])
   })
 
-  it("keeps the matched beats when anything matched", () => {
+  it("keeps the matched topics when anything matched", () => {
     expect(detectTopics("Quantum sensors", "A material study."))
       .toEqual(["Physics"])
   })
@@ -73,7 +73,7 @@ describe("detectTopics", () => {
       .toEqual(["Physics"])
   })
 
-  it("keeps the keyword beat over a conflicting concept", () => {
+  it("keeps the keyword topic over a conflicting concept", () => {
     expect(
       detectTopics("Robot gripper design", "A manipulator study.", [
         "Quantum mechanics",
@@ -84,8 +84,8 @@ describe("detectTopics", () => {
 
   it("falls back to Education when text and concepts match nothing", () => {
     expect(
-      detectTopics("Potsherd stratigraphy", "Field notes from a dig.", [
-        "Sociology",
+      detectTopics("A small puzzle", "Notes from a walk.", [
+        "General knowledge",
       ]),
     )
       .toEqual(["Education"])

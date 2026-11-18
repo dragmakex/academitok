@@ -1,6 +1,63 @@
 import type { Topic } from "@/api/paper-schema"
 
+const additionalTopics = {
+  Anthropology: ["anthropology", "ethnography", "ethnographic"],
+  Archaeology: ["archaeology", "archaeological", "archaeometry", "potsherd"],
+  Astronomy: ["astronomy", "astrophysics", "exoplanet", "cosmology"],
+  Chemistry: ["chemistry", "chemical synthesis", "spectroscopy", "catalysis"],
+  "Computer Science": [
+    "computer science",
+    "computer systems",
+    "distributed computing",
+    "computational complexity",
+  ],
+  Ecology: ["ecology", "ecological", "biodiversity", "ecosystem"],
+  Engineering: ["engineering", "structural design", "fluid dynamics"],
+  Geology: [
+    "geology",
+    "geological",
+    "seismology",
+    "tectonics",
+    "sedimentology",
+  ],
+  History: [
+    "historiography",
+    "medieval history",
+    "oral history",
+    "historical research",
+  ],
+  Linguistics: [
+    "linguistics",
+    "linguistic",
+    "phonology",
+    "syntax",
+    "morphosyntax",
+  ],
+  Mathematics: [
+    "mathematics",
+    "number theory",
+    "graph theory",
+    "arithmetic geometry",
+    "probability theory",
+  ],
+  Neuroscience: ["neuroscience", "neurobiology", "hippocampus", "synaptic"],
+  Philosophy: ["philosophy", "epistemology", "metaphysics", "moral reasoning"],
+  "Political Science": [
+    "political science",
+    "political economy",
+    "international relations",
+    "electoral systems",
+  ],
+  Sociology: [
+    "sociology",
+    "sociological",
+    "social stratification",
+    "social mobility",
+  ],
+} satisfies Partial<Record<Topic, ReadonlyArray<string>>>
+
 const topicKeywords: Record<Topic, ReadonlyArray<string>> = {
+  ...additionalTopics,
   AI: ["artificial intelligence", "machine learning", "neural", "llm"],
   Biology: ["biology", "protein", "genome", "cell"],
   Climate: ["climate", "carbon", "energy", "emissions"],
@@ -12,7 +69,9 @@ const topicKeywords: Record<Topic, ReadonlyArray<string>> = {
   Robotics: ["robot", "robotics", "autonomous", "control"],
 }
 
-const conceptBeats: Record<Topic, ReadonlyArray<string>> = {
+const conceptKeywords: Record<Topic, ReadonlyArray<string>> = {
+  ...additionalTopics,
+  History: ["history", ...additionalTopics.History],
   AI: [
     "artificial intelligence",
     "machine learning",
@@ -25,9 +84,7 @@ const conceptBeats: Record<Topic, ReadonlyArray<string>> = {
     "biology",
     "genetics",
     "genomics",
-    "ecology",
     "microbiology",
-    "neuroscience",
   ],
   Climate: [
     "climate",
@@ -42,7 +99,6 @@ const conceptBeats: Record<Topic, ReadonlyArray<string>> = {
     "econometrics",
     "finance",
     "management",
-    "political science",
   ],
   Health: [
     "medicine",
@@ -55,7 +111,6 @@ const conceptBeats: Record<Topic, ReadonlyArray<string>> = {
     "physics",
     "quantum",
     "materials science",
-    "astronomy",
     "optics",
     "thermodynamics",
   ],
@@ -74,16 +129,16 @@ const conceptBeats: Record<Topic, ReadonlyArray<string>> = {
 }
 
 /**
- * Maps OpenAlex concept names onto the fixed beats (SPEC §17.2), without a
+ * Maps OpenAlex concept names onto research topics (SPEC §17.2), without a
  * fallback so callers can count what the source metadata failed to cover.
  * @param concepts - Concept display names from the source.
- * @returns Up to three beats named by the concepts, empty when none matched.
+ * @returns Up to three topics named by the concepts, empty when none matched.
  */
 export function conceptTopics(
   concepts: ReadonlyArray<string>,
 ): ReadonlyArray<Topic> {
   const haystack = concepts.join(" ").toLowerCase()
-  return (Object.entries(conceptBeats) as ReadonlyArray<
+  return (Object.entries(conceptKeywords) as ReadonlyArray<
     readonly [Topic, ReadonlyArray<string>]
   >)
     .filter(([, names]) => names.some((name) => haystack.includes(name)))
@@ -92,11 +147,11 @@ export function conceptTopics(
 }
 
 /**
- * Maps text onto the fixed beats (SPEC §17.2), without a fallback so callers can
+ * Maps text onto research topics (SPEC §17.2), without a fallback so callers can
  * count what the taxonomy failed to cover.
  * @param title - Paper title.
  * @param abstract - Paper abstract.
- * @returns Up to three beats whose keywords appear in the text, empty when none matched.
+ * @returns Up to three topics whose keywords appear in the text, empty when none matched.
  */
 export function matchedTopics(
   title: string,

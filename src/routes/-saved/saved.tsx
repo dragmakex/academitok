@@ -28,11 +28,11 @@ export function SavedPage(
   const refresh = useAtomRefresh(savedPageAtom)
   const [topic, setTopic] = useState<TopicFilter>("All")
   const page = pageAsync._tag === "Success" ? pageAsync.value : undefined
-  const beatCounts = new Map<Topic, number>()
+  const topicCounts = new Map<Topic, number>()
 
   for (const item of page?.items ?? []) {
-    for (const beat of item.paper.topics) {
-      beatCounts.set(beat, (beatCounts.get(beat) ?? 0) + 1)
+    for (const topic of item.paper.topics) {
+      topicCounts.set(topic, (topicCounts.get(topic) ?? 0) + 1)
     }
   }
 
@@ -42,17 +42,15 @@ export function SavedPage(
     readonly count: number
   }> = [
     { key: "All", label: "All", count: page?.items.length ?? 0 },
-    ...[...beatCounts].map(([beat, count]) => ({
-      key: beat,
-      label: beat,
+    ...[...topicCounts].map(([topic, count]) => ({
+      key: topic,
+      label: topic,
       count,
     })),
   ]
   const items = topic === "All"
     ? page?.items ?? []
-    : (page?.items ?? []).filter((item) =>
-      item.paper.topics.some((beat) => beat === topic)
-    )
+    : (page?.items ?? []).filter((item) => item.paper.topics.includes(topic))
 
   return (
     <Page>
@@ -111,7 +109,7 @@ export function SavedPage(
           : (
             <>
               <Tabs
-                id="saved-beat-tabs"
+                id="saved-topic-tabs"
                 activeTab={topic}
                 items={tabs}
                 onChange={setTopic}
@@ -119,7 +117,7 @@ export function SavedPage(
               {items.length === 0
                 ? (
                   <EmptyState
-                    title="This beat holds no clippings"
+                    title="No saved papers for this topic"
                     description="Choose All to read every saved paper."
                   />
                 )

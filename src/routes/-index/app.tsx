@@ -1,7 +1,7 @@
 import {
   type FeedItem,
   type FeedQuery,
-  type Topic,
+  Topic,
   type TopicFilter,
 } from "@/api/paper-schema"
 import { Button } from "@/design-system/components/Button"
@@ -46,30 +46,12 @@ import {
 } from "./atoms"
 import { flushImpressionsOnHide } from "./impression-buffer"
 
-const topics: ReadonlyArray<TopicFilter> = [
-  "All",
-  "AI",
-  "Biology",
-  "Climate",
-  "Education",
-  "Economics",
-  "Health",
-  "Physics",
-  "Psychology",
-  "Robotics",
-]
+const topics: ReadonlyArray<TopicFilter> = ["All", ...Topic.literals]
 const sorts: ReadonlyArray<FeedQuery["sort"]> = [
   "recommended",
   "latest",
   "citations",
 ]
-const institutions = [
-  "Guest",
-  "MIT",
-  "Oxford",
-  "Stanford",
-  "Max Planck",
-] as const
 
 type VisiblePaperSlideProps = {
   readonly active: boolean
@@ -324,7 +306,7 @@ export function OnboardingPicks(
                 Set your front page · {page + 1} of 3
               </Text>
               <Text>
-                Keep at least five. Your choices tune beats and writing
+                Keep at least five. Your choices tune topics and writing
                 similarity before the first edition.
               </Text>
             </Stack>
@@ -454,9 +436,6 @@ export function App() {
     sort: snapshot?.selectedSort ?? "recommended",
   })
   const [name, setName] = useState(snapshot?.profile?.name ?? "Guest Reader")
-  const [institution, setInstitution] = useState(
-    snapshot?.profile?.institution ?? "Guest",
-  )
   const [selectedTopics, setSelectedTopics] = useState<ReadonlyArray<Topic>>(
     snapshot?.profile?.interests ?? ["AI", "Education", "Health"],
   )
@@ -668,7 +647,7 @@ export function App() {
         title="The reading desk"
         description={
           <Text tone="muted">
-            Set your beats and edition order.
+            Choose your research topics and edition order.
           </Text>
         }
       >
@@ -684,31 +663,22 @@ export function App() {
                 onChange={(event) => setName(event.currentTarget.value)}
               />
               <Text tone="label" as="span">
-                Institution
-              </Text>
-              <Tabs
-                id="institution-tabs"
-                activeTab={institution}
-                items={institutions.map((item) => ({ key: item, label: item }))}
-                onChange={setInstitution}
-              />
-              <Text tone="label" as="span">
-                Research beats
+                Research topics
               </Text>
               <Grid layout="stats">
-                {topics.filter((topic): topic is Topic => topic !== "All").map((
-                  topic,
-                ) => (
+                {Topic.literals.map((topic) => (
                   <Checkbox
                     key={topic}
                     checked={selectedTopics.includes(topic)}
                     label={topic}
-                    onChange={(event) =>
+                    onChange={(event) => {
+                      const { checked } = event.currentTarget
                       setSelectedTopics((current) =>
-                        event.currentTarget.checked
+                        checked
                           ? [...current, topic]
                           : current.filter((item) => item !== topic)
-                      )}
+                      )
+                    }}
                   />
                 ))}
               </Grid>
@@ -718,7 +688,7 @@ export function App() {
                   saveProfile({
                     input: {
                       name: name.trim() || "Guest Reader",
-                      institution,
+                      institution: snapshot?.profile?.institution ?? "Guest",
                       interests: [...new Set(selectedTopics)],
                     },
                     query,
@@ -807,9 +777,9 @@ export function App() {
                 ? (
                   <>
                     <Text tone="muted">
-                      The beats you teach this desk live in this browser. One
-                      tap, no password: a link in your mail carries them to
-                      every device you read on.
+                      Your topic preferences live in this browser. One tap, no
+                      password: a link in your mail carries them to every device
+                      you read on.
                     </Text>
                     <TextField
                       label="Email"

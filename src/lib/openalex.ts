@@ -6,8 +6,8 @@ import type {
   TopicFilter,
 } from "@/api/paper-schema"
 import { curatedPapers } from "@/data/papers"
+import { conceptTopics, matchedTopics } from "@/lib/research-topics"
 import { createSourceGuard } from "@/lib/source-guard"
-import { conceptTopics, matchedTopics } from "@/lib/topic-beats"
 
 const baseUrl = "https://api.openalex.org/works"
 const cacheTtlMs = 24 * 60 * 60 * 1_000
@@ -37,6 +37,21 @@ const topicSearchTerms: Record<TopicFilter, string> = {
   Physics: "physics quantum materials",
   Psychology: "psychology cognition behavior",
   Robotics: "robotics autonomous systems",
+  Anthropology: "anthropology",
+  Archaeology: "archaeology",
+  Astronomy: "astronomy",
+  Chemistry: "chemistry",
+  "Computer Science": "computer science",
+  Ecology: "ecology",
+  Engineering: "engineering",
+  Geology: "geology",
+  History: "historical research",
+  Linguistics: "linguistics",
+  Mathematics: "mathematics",
+  Neuroscience: "neuroscience",
+  Philosophy: "philosophy",
+  "Political Science": "political science",
+  Sociology: "sociology",
 }
 
 type OpenAlexAuthor = {
@@ -99,12 +114,12 @@ export function indexToText(
 }
 
 /**
- * Maps text onto fixed beats, falling back to the source concepts and then to
+ * Maps text onto research topics, falling back to the source concepts and then to
  * Education (SPEC §17.2).
  * @param title - Paper title.
  * @param abstract - Paper abstract.
  * @param concepts - Concept display names from the source.
- * @returns Matching beats, or the Education fallback.
+ * @returns Matching topics, or the Education fallback.
  */
 export function detectTopics(
   title: string,
@@ -267,7 +282,7 @@ export function collapseTitleDuplicates(
 /**
  * Fetches one bounded OpenAlex page while serializing requests to the host and
  * holding the retry schedule and circuit breaker from `sourceGuard`.
- * @param topic - Requested beat.
+ * @param topic - Requested topic.
  * @param sort - Requested ordering.
  * @param now - Boundary-supplied current time.
  * @returns Paper metadata.
@@ -317,7 +332,7 @@ async function requestOpenAlexPapers(
 
 /**
  * Fetches cached OpenAlex metadata without concurrent requests to the host.
- * @param topic - Requested beat.
+ * @param topic - Requested topic.
  * @param sort - Requested ordering.
  * @param now - Boundary-supplied current time.
  * @returns Paper metadata.

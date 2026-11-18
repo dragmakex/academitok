@@ -51,7 +51,7 @@ is what is wrong, and it is ~3 files.
 ```
 ┌──────────────────────────────────────────────┐
 │  /                     full-screen feed deck │  P0
-│  /desk          profile, beats, share, auth │  P0 (drawer, not route)
+│  /desk          profile, topics, share, auth │  P0 (drawer, not route)
 │  /saved                saved clippings       │  P2 (route)
 │  /paper/$id            permalink + cite      │  P2 (route)
 └──────────────────────────────────────────────┘
@@ -188,7 +188,7 @@ pool drops below `limit × 3`.
 
 - Sources: **OpenAlex** (primary, metadata + inverted abstract), **arXiv** (P2, atom feed),
   **bioRxiv/medRxiv** (P2), **Crossref** (P2, DOI enrichment).
-- Flow: `TopicRefresh` → fetch 200 works per beat, normalise → `Paper` → upsert by DOI, dedupe by
+- Flow: `TopicRefresh` → fetch 200 works per topic, normalise → `Paper` → upsert by DOI, dedupe by
   normalised title (Jaccard > 0.9) → log counts.
 - Polite usage: `mailto` in the OpenAlex query, one concurrent request per host, exponential backoff
   (1s → 8s, 3 tries), hard 10s timeout, circuit-break a source for 15 min after 3 consecutive errors.
@@ -212,7 +212,7 @@ flowchart LR
   E --> F[page of 10 + cursor]
 ```
 
-1. **Candidates** — pool query: selected beat(s) or all beats, `year ≥ now-8`, `not hidden`,
+1. **Candidates** — pool query: selected topic(s) or all topics, `year ≥ now-8`, `not hidden`,
    `not impressed within 14 days`, `limit 400`.
 2. **Score** (all terms normalised to roughly `[-1, 1]` before weighting):
 
@@ -300,7 +300,7 @@ carries no readouts: the numbers below are for whoever maintains the ranker.
 | `feed.next`       | `{topic, sort, cursor}`                     | `FeedPage {items, nextCursor, exploration}` |
 | `feed.react`      | `{paperId, kind, active, dwellMs?}`         | `{item: FeedItem}`                          |
 | `feed.impression` | `{paperId, dwellMs, position, exploration}` | `void` (batched client-side)                |
-| `profile.save`    | `{name, institution, beats}`                | `ReaderProfile`                             |
+| `profile.save`    | `{name, institution, interests}`            | `ReaderProfile`                             |
 | `profile.onboard` | `{keptPaperIds, rejectedPaperIds}`          | `{seeded: true}`                            |
 | `saved.list`      | `{cursor}`                                  | `FeedPage`                                  |
 
@@ -371,7 +371,7 @@ and server stories can be reconciled. Alert on `catalog.refresh` failure streak 
   the source publishes openly.
 - Respect `robots`-equivalent API etiquette: identified `mailto`, one concurrent request, cached
   responses, no scraping of paywalled content.
-- Filters are never inferred from protected attributes. Only explicit beats and observed reading
+- Filters are never inferred from protected attributes. Only explicit topics and observed reading
   behaviour.
 - "Why this" exists partly as an ethical requirement: opaque feeds are not acceptable for
   scientific literature. Never ship a score without a reason.
@@ -394,7 +394,7 @@ emitted for that session plus the last cursor, so a stale client cursor cannot r
 Sessions idle for 24 hours are swept on the next feed request.
 
 The catalog pool lives in `papers`: a feed page ranks the stored rows when at least three pages
-(30 papers) exist for the requested beat and they were fetched within 24 hours. Otherwise the
+(30 papers) exist for the requested topic and they were fetched within 24 hours. Otherwise the
 request fetches OpenAlex, stores the result and only then ranks it, so ten swipes are one upstream
 request rather than ten. The frozen seed edition remains the fallback when the pool is empty and
 the source fails, and it is never written to the pool.
@@ -421,7 +421,7 @@ Retire the todo template in a single cleanup commit after P0 ships.
    the id may already stand for an account and it is the only writer. Any device the account claims
    resolves to the account's canonical reader id at the request boundary, so a claimed device still
    sees the library it helped build.
-2. Topic taxonomy — fixed 9 beats (current) vs. OpenAlex concepts. P0: fixed beats, map source
+2. Topic taxonomy — 24 research topics with OpenAlex search and concept mapping. Map source
    concepts onto them; revisit when P2 sources land.
 3. Citation count as a quality signal biases toward old papers — currently damped by `log10`/3 and
    mixed with recency. Keep, measure, revisit if the feed feels archival.

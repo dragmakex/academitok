@@ -37,6 +37,34 @@ describe("OpenAlex abstract reconstruction", () => {
       .toBe("AcademiTok feeds research reliable")
   })
 
+  it("searches for a new topic and tags the returned papers", async () => {
+    const fetchMock = vi.fn((_url: string) =>
+      Promise.resolve(
+        new Response(JSON.stringify({
+          results: [{
+            id: "https://openalex.org/W42",
+            title: "Potsherd stratigraphy",
+            publication_year: 2024,
+            abstract_inverted_index: { Evidence: [0] },
+            open_access: { is_oa: true },
+          }],
+        })),
+      )
+    )
+    vi.stubGlobal("fetch", fetchMock)
+
+    const papers = await fetchOpenAlexPapers("Archaeology", "recommended", 0)
+
+    expect(
+      new URL(fetchMock.mock.calls[0]?.[0] ?? "").searchParams.get("search"),
+    )
+      .toBe("archaeology")
+    expect(
+      papers.find((paper) => paper.id === "https://openalex.org/W42")?.topics,
+    )
+      .toEqual(["Archaeology"])
+  })
+
   it("reuses a catalog page instead of repeating upstream requests", async () => {
     const fetchMock = vi.fn(() =>
       Promise.resolve(new Response(JSON.stringify({ results: [] })))

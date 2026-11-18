@@ -94,7 +94,7 @@ test("the deck slide is one paper, one screen, one way out", async () => {
     />,
   )
 
-  // Essentials only: beat, citation count, reading estimate, headline, abstract.
+  // Essentials only: topic, citation count, reading estimate, headline, abstract.
   expect(html).toContain("AI")
   expect(html).toContain("42 citations")
   expect(html).toContain("6 min read")

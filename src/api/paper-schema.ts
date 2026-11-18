@@ -2,14 +2,29 @@ import * as Schema from "effect/Schema"
 
 export const Topic = Schema.Literals([
   "AI",
+  "Anthropology",
+  "Archaeology",
+  "Astronomy",
   "Biology",
+  "Chemistry",
   "Climate",
-  "Education",
+  "Computer Science",
+  "Ecology",
   "Economics",
+  "Education",
+  "Engineering",
+  "Geology",
   "Health",
+  "History",
+  "Linguistics",
+  "Mathematics",
+  "Neuroscience",
+  "Philosophy",
   "Physics",
+  "Political Science",
   "Psychology",
   "Robotics",
+  "Sociology",
 ])
 export type Topic = typeof Topic.Type
 

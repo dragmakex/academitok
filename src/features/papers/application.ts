@@ -26,7 +26,7 @@ const poolPageThreshold = 10 * 3
 
 /**
  * Resolves live metadata with an offline fallback, preferring the stored pool.
- * @param topic - Requested beat.
+ * @param topic - Requested topic.
  * @param sort - Requested ordering.
  * @returns Catalog papers and the origin they were resolved from.
  */

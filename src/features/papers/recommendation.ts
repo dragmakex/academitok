@@ -297,7 +297,7 @@ function topicWeights(
   const now = Date.now()
 
   for (const reaction of state.reactions) {
-    // A dislike is a verdict on one paper, not on its beat: hide and reject
+    // A dislike is a verdict on one paper, not on its topic: hide and reject
     // scores are large by design, so letting them into a topic bucket would
     // bury an entire field after one skip.
     if (reaction.kind === "hide" || reaction.kind === "onboard-reject") {
@@ -383,7 +383,7 @@ function authorVenueWeights(
  * Scores the candidate pool.
  * @param state - Reader state.
  * @param papers - Candidate papers.
- * @param selectedTopic - Requested beat.
+ * @param selectedTopic - Requested topic.
  * @param sort - Requested ordering.
  * @returns Ranked items.
  */
