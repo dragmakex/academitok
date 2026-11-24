@@ -281,8 +281,8 @@ const createReaderStateTablesSql = `
 `
 
 const liveDatabaseConfig = Effect.gen(function*() {
-  const databaseUrl = yield* Config.option(Config.string("DATABASE_URL"))
-  const pgliteDataDir = yield* Config.string("PGLITE_READER_STATE_DIR").pipe(
+  const databaseUrl = yield* Config.option(Config.String("DATABASE_URL"))
+  const pgliteDataDir = yield* Config.String("PGLITE_READER_STATE_DIR").pipe(
     Config.orElse(() => Config.succeed("./data/pglite-reader-state")),
   )
 

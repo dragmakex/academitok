@@ -1,10 +1,9 @@
 import * as Context from "effect/Context"
 import * as Effect from "effect/Effect"
+import { FetchHttpClient } from "effect/http"
 import * as Layer from "effect/Layer"
+import { RpcClient, RpcSerialization } from "effect/rpc"
 import * as Stream from "effect/Stream"
-import * as FetchHttpClient from "effect/unstable/http/FetchHttpClient"
-import * as RpcClient from "effect/unstable/rpc/RpcClient"
-import * as RpcSerialization from "effect/unstable/rpc/RpcSerialization"
 import { DomainRpc } from "./domain-rpc"
 
 export const addRpcErrorLogging = <Client>(client: Client): Client => {

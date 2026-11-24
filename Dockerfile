@@ -10,7 +10,6 @@ RUN apt-get update \
   && apt-get install -y --no-install-recommends git ca-certificates \
   && rm -rf /var/lib/apt/lists/*
 COPY package.json bun.lock ./
-COPY patches ./patches
 COPY scripts/install-git-hooks.sh ./scripts/install-git-hooks.sh
 RUN bun install --frozen-lockfile
 

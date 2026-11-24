@@ -1,12 +1,11 @@
 /**
  * Pattern: RpcGroup API Definition
- * Purpose: Type-safe RPC contract using effect/unstable/rpc
+ * Purpose: Type-safe RPC contract using effect/rpc
  * See: docs/architecture/effect-simple-made-easy-mapping.md
  */
 
+import { Rpc, RpcGroup } from "effect/rpc"
 import * as Schema from "effect/Schema"
-import * as Rpc from "effect/unstable/rpc/Rpc"
-import * as RpcGroup from "effect/unstable/rpc/RpcGroup"
 import {
   FeedPage,
   FeedRequest,

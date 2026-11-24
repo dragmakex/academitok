@@ -53,16 +53,16 @@ export const ObservabilityLive: Layer.Layer<
   Config.ConfigError
 > = NodeSdk.layer(
   Effect.gen(function*() {
-    const traceEndpoint = yield* Config.string("OTLP_ENDPOINT").pipe(
+    const traceEndpoint = yield* Config.String("OTLP_ENDPOINT").pipe(
       Config.orElse(() => Config.succeed("http://localhost:4318")),
     )
-    const lokiOtlpEndpoint = yield* Config.string("LOKI_OTLP_ENDPOINT").pipe(
+    const lokiOtlpEndpoint = yield* Config.String("LOKI_OTLP_ENDPOINT").pipe(
       Config.orElse(() => Config.succeed("http://localhost:3100/otlp")),
     )
-    const serviceName = yield* Config.string("SERVICE_NAME").pipe(
+    const serviceName = yield* Config.String("SERVICE_NAME").pipe(
       Config.orElse(() => Config.succeed("effect-tanstack-start")),
     )
-    const environment = yield* Config.string("NODE_ENV").pipe(
+    const environment = yield* Config.String("NODE_ENV").pipe(
       Config.orElse(() => Config.succeed("development")),
     )
 

@@ -10,8 +10,8 @@ import { expect, it } from "@effect/vitest"
 import * as ConfigProvider from "effect/ConfigProvider"
 import * as Effect from "effect/Effect"
 import * as Exit from "effect/Exit"
+import { HttpRouter } from "effect/http"
 import * as Layer from "effect/Layer"
-import * as HttpRouter from "effect/unstable/http/HttpRouter"
 import { mkdtemp, rm } from "node:fs/promises"
 import { tmpdir } from "node:os"
 import { join } from "node:path"
@@ -144,7 +144,7 @@ it("serves the saved collection as a BibTeX attachment", {
   const dataDir = await mkdtemp(join(tmpdir(), "academitok-bib-route-"))
   vi.stubGlobal("fetch", () => Promise.reject(new Error("offline")))
   const targets = curatedPapers.slice(0, 3)
-  const files = bibHandler(dataDir)
+  let files: ReturnType<typeof bibHandler> | undefined
 
   try {
     await Effect.runPromise(
@@ -179,8 +179,10 @@ it("serves the saved collection as a BibTeX attachment", {
         ),
     )
 
+    files = bibHandler(dataDir)
+    const handler = files.handler
     const request = (cookie: string | undefined) =>
-      files.handler(
+      handler(
         new Request("http://localhost/api/saved.bib", {
           headers: cookie === undefined ? {} : { cookie },
         }),
@@ -207,7 +209,7 @@ it("serves the saved collection as a BibTeX attachment", {
     expect(defaultReaderId).toBe("singleton")
   } finally {
     vi.unstubAllGlobals()
-    await files.dispose()
+    await files?.dispose()
     await rm(dataDir, { recursive: true, force: true })
   }
 })
@@ -277,7 +279,7 @@ it("serves one clipping as a BibTeX attachment", {
     expect(await unknown.text()).toBe("")
   } finally {
     vi.unstubAllGlobals()
-    await files.dispose()
+    await files?.dispose()
     await rm(dataDir, { recursive: true, force: true })
   }
 })

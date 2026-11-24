@@ -16,31 +16,27 @@ type PyroscopeApi = {
 }
 
 class PyroscopeServerConfig extends Context.Service<
-  PyroscopeServerConfig,
-  {
-    readonly serverAddress: Option.Option<string>
-    readonly serviceName: string
-    readonly environment: string
-    readonly runtimeOverride: Option.Option<"bun" | "node">
-  }
+  PyroscopeServerConfig
 >()("@app/PyroscopeServerConfig", {
   make: Effect.gen(function*() {
     const serverAddress = yield* Config.option(
-      Config.string("PYROSCOPE_SERVER_ADDRESS"),
+      Config.String("PYROSCOPE_SERVER_ADDRESS"),
     )
-    const serviceName = yield* Config.string("SERVICE_NAME").pipe(
+    const serviceName = yield* Config.String("SERVICE_NAME").pipe(
       Config.orElse(() => Config.succeed("effect-tanstack-start")),
     )
-    const environment = yield* Config.string("NODE_ENV").pipe(
+    const environment = yield* Config.String("NODE_ENV").pipe(
       Config.orElse(() => Config.succeed("development")),
     )
     const runtimeOverride = yield* Config
       .option(
-        Config.string("DATADOG_PPROF_RUNTIME"),
+        Config.String("DATADOG_PPROF_RUNTIME"),
       )
       .pipe(
         Config.map(
-          Option.filter((value) => value === "bun" || value === "node"),
+          Option.filter((value): value is "bun" | "node" =>
+            value === "bun" || value === "node"
+          ),
         ),
       )
 

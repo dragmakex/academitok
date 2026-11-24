@@ -26,10 +26,9 @@ import {
 import * as Context from "effect/Context"
 import * as Effect from "effect/Effect"
 import * as Layer from "effect/Layer"
+import { AsyncResult, Atom } from "effect/reactivity"
+import { RpcClientError } from "effect/rpc"
 import * as Schema from "effect/Schema"
-import * as AsyncResult from "effect/unstable/reactivity/AsyncResult"
-import * as Atom from "effect/unstable/reactivity/Atom"
-import * as RpcClientError from "effect/unstable/rpc/RpcClientError"
 import { readSessionFn, requestSignInFn } from "../-lib/session-functions"
 import { bufferImpression } from "./impression-buffer"
 

@@ -25,17 +25,17 @@ import { createFileRoute } from "@tanstack/react-router"
 import type { Cause } from "effect/Cause"
 import * as Effect from "effect/Effect"
 import * as Exit from "effect/Exit"
+import {
+  Headers,
+  HttpRouter,
+  HttpServerRequest,
+  HttpServerResponse,
+} from "effect/http"
 import * as Layer from "effect/Layer"
 import * as Logger from "effect/Logger"
 import * as ManagedRuntime from "effect/ManagedRuntime"
 import * as Option from "effect/Option"
-import * as Headers from "effect/unstable/http/Headers"
-import * as HttpRouter from "effect/unstable/http/HttpRouter"
-import * as HttpServerRequest from "effect/unstable/http/HttpServerRequest"
-import * as HttpServerResponse from "effect/unstable/http/HttpServerResponse"
-import * as RpcMiddleware from "effect/unstable/rpc/RpcMiddleware"
-import * as RpcSerialization from "effect/unstable/rpc/RpcSerialization"
-import * as RpcServer from "effect/unstable/rpc/RpcServer"
+import { RpcMiddleware, RpcSerialization, RpcServer } from "effect/rpc"
 import { createPaperRpcHandlers } from "./-lib/papers-rpc-live"
 
 /**
