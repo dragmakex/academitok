@@ -57,10 +57,11 @@ specs
 *.md
 !README.md
 
-# Docker
+# Docker & VPS deploy tooling
 Dockerfile*
 docker-compose*.yml
 .dockerignore
+deploy
 
 # CI/CD
 .github

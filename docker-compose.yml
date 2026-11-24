@@ -1,4 +1,23 @@
 services:
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    depends_on:
+      app:
+        condition: service_healthy
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    environment:
+      APP_DOMAIN: ${APP_DOMAIN:?APP_DOMAIN must be set (e.g. academitok.example.com)}
+    volumes:
+      - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    networks:
+      - internal
+
   postgres:
     image: postgres:16-alpine
     restart: unless-stopped
@@ -13,6 +32,8 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    networks:
+      - internal
 
   app:
     build:
@@ -23,7 +44,8 @@ services:
       postgres:
         condition: service_healthy
     ports:
-      - "${PORT:-3000}:3000"
+      # Loopback only — public traffic enters through Caddy with automatic HTTPS
+      - "127.0.0.1:${APP_BIND_PORT:-3000}:3000"
     environment:
       NODE_ENV: production
       HOST: 0.0.0.0
@@ -40,6 +62,8 @@ services:
       POSTHOG_API_KEY: ${POSTHOG_API_KEY:-}
       POSTHOG_HOST: ${POSTHOG_HOST:-}
       SERVICE_NAME: ${SERVICE_NAME:-academitok}
+    networks:
+      - internal
 
   postgres-backup:
     image: postgres:16-alpine
@@ -53,8 +77,9 @@ services:
       BACKUP_INTERVAL_SECONDS: ${BACKUP_INTERVAL_SECONDS:-86400}
       RETENTION_DAYS: ${RETENTION_DAYS:-14}
     volumes:
-      - postgres_backups:/backups
+      - ${HOST_BACKUP_DIR:-./backups}:/backups
       - ./scripts/db-backup.sh:/usr/local/bin/db-backup.sh:ro
+      - ./scripts/db-restore.sh:/usr/local/bin/db-restore.sh:ro
     entrypoint: ["/bin/sh", "-c"]
     command:
       - |
@@ -63,7 +88,14 @@ services:
           sh /usr/local/bin/db-backup.sh
           sleep "$${BACKUP_INTERVAL_SECONDS}"
         done
+    networks:
+      - internal
 
 volumes:
+  caddy_data:
+  caddy_config:
   postgres_data:
-  postgres_backups:
+
+networks:
+  internal:
+    driver: bridge
