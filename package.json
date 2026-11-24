@@ -29,6 +29,9 @@
     "analyze": "vite build --mode analyze",
     "size": "bun run scripts/check-bundle-size.ts",
     "perf:check": "bun run build && bun run size",
+    "db:backup": "sh scripts/db-backup.sh",
+    "db:restore": "sh scripts/db-restore.sh",
+    "smoke:staging": "bun run scripts/smoke-staging.ts",
     "prepare": "effect-language-service patch",
     "postinstall": "bash scripts/install-git-hooks.sh",
     "validate": "bun run typecheck && bun run lint && bun run lint:type-aware && bun run lint:design-system && bun run format:check && bun run docs:check && bun run test:coverage && bun run test:browser && bun run perf:check"

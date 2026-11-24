@@ -12,6 +12,7 @@ tsconfig.app.tsbuildinfo
 
 # Local runtime state and caches
 data
+backups
 .cache
 .repos
 .pi

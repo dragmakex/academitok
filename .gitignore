@@ -33,6 +33,8 @@ data/pglite-reader-state/
 
 # Backups
 backups/*.sqlite
+backups/*.dump
+backups/*.sha256
 
 # Logs
 logs

@@ -87,6 +87,7 @@ type ReaderStateRepositoryShape = {
     paperIds: ReadonlyArray<string>,
     readerId: string,
   ) => Effect.Effect<Record<string, number>>
+  readonly ping: Effect.Effect<void>
   readonly accounts: AccountsRepository
 }
 
@@ -154,6 +155,7 @@ type StateStorage = {
     paperIds: ReadonlyArray<string>,
     readerId: string,
   ) => Promise<Record<string, number>>
+  readonly ping: () => Promise<void>
   readonly accounts: AccountsRepository
 }
 
@@ -712,6 +714,7 @@ function makeRepositoryService(storage: StateStorage) {
           await ensureMigrated()
           return storage.likedByOthers(paperIds, readerId)
         }),
+      ping: Effect.promise(() => storage.ping()),
     } satisfies ReaderStateRepositoryShape,
   )
 }
@@ -735,7 +738,12 @@ function makeRepository(config: RepositoryDatabaseConfig) {
 function makePostgresRepository(databaseUrl: string) {
   return Effect
     .gen(function*() {
-      const client = postgres(databaseUrl, { prepare: false })
+      const client = postgres(databaseUrl, {
+        prepare: false,
+        max: 20,
+        idle_timeout: 30,
+        connect_timeout: 10,
+      })
       yield* Effect.promise(() => client.unsafe(createReaderStateTablesSql))
       const db = drizzlePostgres(client, {
         schema: {
@@ -817,6 +825,9 @@ function makePostgresRepository(databaseUrl: string) {
       const postgresStorage: StateStorage = {
         ...feedSessionStorage,
         accounts,
+        ping: async () => {
+          await client`SELECT 1`
+        },
         savePapers: async (papers, fetchedAt) => {
           if (papers.length === 0) {
             return
@@ -1224,6 +1235,9 @@ function makePgliteRepository(dataDir: string | undefined) {
       const storage: StateStorage = {
         ...feedSessionStorage,
         accounts,
+        ping: async () => {
+          await client.query("SELECT 1")
+        },
         savePapers: async (papers, fetchedAt) => {
           if (papers.length === 0) {
             return
@@ -1540,3 +1554,12 @@ export class ReaderStateRepository extends Context.Service<
     Effect.flatMap(liveDatabaseConfig, makeRepository),
   )
 }
+
+/**
+ * Verifies live database connectivity for readiness probes.
+ * @returns Effect completing once the configured database answers `SELECT 1`.
+ */
+export const pingReaderStateRepository = Effect.flatMap(
+  ReaderStateRepository,
+  (repository) => repository.ping,
+)

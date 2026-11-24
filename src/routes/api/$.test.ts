@@ -303,6 +303,10 @@ it("does not expose the removed /api/sentry-test route", async () => {
     expect(health.status).toBe(200)
     expect(await health.text()).toBe("OK")
 
+    const ready = await app.handler(new Request("http://localhost/api/ready"))
+    expect(ready.status).toBe(200)
+    expect(await ready.text()).toBe("OK")
+
     const getSentry = await app.handler(
       new Request("http://localhost/api/sentry-test"),
     )

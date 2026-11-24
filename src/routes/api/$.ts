@@ -6,6 +6,7 @@
  */
 
 import { DomainRpc } from "@/api/domain-rpc"
+import { pingReaderStateRepository } from "@/db/reader-state-repository"
 import { AuthLive } from "@/features/auth/application"
 import {
   getPaperBibtex,
@@ -162,6 +163,14 @@ export const HealthRoute = HttpRouter.add(
   Effect.succeed(HttpServerResponse.text("OK")),
 )
 
+export const ReadyRoute = HttpRouter.add(
+  "GET",
+  "/api/ready",
+  pingReaderStateRepository.pipe(
+    Effect.map(() => HttpServerResponse.text("OK")),
+  ),
+)
+
 /** Attachment name for the saved-collection BibTeX export (SPEC §14). */
 export const savedBibtexFilename = "academitok-saved.bib"
 
@@ -269,6 +278,7 @@ export const AllRoutes = Layer
   .mergeAll(
     RpcRouter,
     HealthRoute,
+    ReadyRoute,
     SavedBibtexRoute,
     PaperBibtexRoute,
   )
