@@ -95,7 +95,12 @@ const config = defineConfig(async ({ mode }) => {
         },
       })
       : null,
-    !isVitest ? nitro({ preset: "bun" }) : null,
+    !isVitest
+      ? nitro({
+        preset: "bun",
+        plugins: ["./src/server/validate-env.ts"],
+      })
+      : null,
     // this is the plugin that enables path aliases
     viteTsConfigPaths({
       projects: ["./tsconfig.json"],
