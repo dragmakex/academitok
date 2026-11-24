@@ -281,10 +281,25 @@ const createReaderStateTablesSql = `
 `
 
 const liveDatabaseConfig = Effect.gen(function*() {
-  const databaseUrl = yield* Config.option(Config.String("DATABASE_URL"))
+  const nodeEnv = yield* Config.String("NODE_ENV").pipe(
+    Config.orElse(() => Config.succeed("development")),
+  )
+  const rawDatabaseUrl = yield* Config.option(Config.String("DATABASE_URL"))
+  const databaseUrl = Option.filter(
+    Option.map(rawDatabaseUrl, (url) => url.trim()),
+    (url) => url !== "",
+  )
   const pgliteDataDir = yield* Config.String("PGLITE_READER_STATE_DIR").pipe(
     Config.orElse(() => Config.succeed("./data/pglite-reader-state")),
   )
+
+  if (Option.isNone(databaseUrl) && nodeEnv === "production") {
+    return yield* Effect.die(
+      new Error(
+        "DATABASE_URL is required when NODE_ENV=production; PGlite fallback is disabled in production.",
+      ),
+    )
+  }
 
   return Option.match(databaseUrl, {
     onNone: () =>

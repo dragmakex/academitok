@@ -220,6 +220,7 @@ const config = defineConfig(async ({ mode }) => {
           "src/lib/codefabrik-workflow-state.ts",
           "src/lib/posthog-server.ts",
           "src/lib/pyroscope-server.ts",
+          "src/lib/server-env.ts",
           "src/lib/telemetry-client.ts",
           "src/lib/telemetry-server.ts",
         ],
