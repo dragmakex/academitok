@@ -283,3 +283,37 @@ it("serves one clipping as a BibTeX attachment", {
     await rm(dataDir, { recursive: true, force: true })
   }
 })
+
+it("does not expose the removed /api/sentry-test route", async () => {
+  const dataDir = await mkdtemp(join(tmpdir(), "academitok-routes-"))
+  const app = HttpRouter.toWebHandler(
+    AllRoutes.pipe(
+      Layer.provide(
+        ConfigProvider.layer(
+          ConfigProvider.fromEnv({
+            env: { PGLITE_READER_STATE_DIR: dataDir },
+          }),
+        ),
+      ),
+    ),
+  )
+
+  try {
+    const health = await app.handler(new Request("http://localhost/api/health"))
+    expect(health.status).toBe(200)
+    expect(await health.text()).toBe("OK")
+
+    const getSentry = await app.handler(
+      new Request("http://localhost/api/sentry-test"),
+    )
+    expect(getSentry.status).toBe(404)
+
+    const postSentry = await app.handler(
+      new Request("http://localhost/api/sentry-test", { method: "POST" }),
+    )
+    expect(postSentry.status).toBe(404)
+  } finally {
+    await app.dispose()
+    await rm(dataDir, { recursive: true, force: true })
+  }
+})

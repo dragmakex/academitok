@@ -19,7 +19,6 @@ import {
 } from "@/lib/pyroscope-server"
 import { ReaderId, readerIdFromCookieHeader } from "@/lib/reader-id"
 import { SentryLive } from "@/lib/sentry-effect"
-import { handleSentryTestPost } from "@/lib/sentry-service"
 import { initServer } from "@/lib/server-init"
 import { createFileRoute } from "@tanstack/react-router"
 import type { Cause } from "effect/Cause"
@@ -239,32 +238,6 @@ export const PaperBibtexRoute = HttpRouter.add(
 )
 
 /**
- * Sentry integration test routes.
- *
- * GET /api/sentry-test — Status check
- * POST /api/sentry-test — Trigger test error (captured by Sentry)
- *
- * Verification: Check http://localhost:9000 after POST for captured error.
- */
-const SentryTestGet = HttpRouter.add(
-  "GET",
-  "/api/sentry-test",
-  HttpServerResponse.json({
-    status: "Sentry test endpoint ready",
-    instructions: "POST to this endpoint to trigger a test error",
-    sentry_url: "http://localhost:9000",
-    verification:
-      "After POST, check Sentry at http://localhost:9000 for captured errors",
-  }),
-)
-
-const SentryTestPost = HttpRouter.add(
-  "POST",
-  "/api/sentry-test",
-  handleSentryTestPost,
-)
-
-/**
  * Development console logger — provides pretty console output alongside OTLP.
  * In production, only OTLP logs are emitted (ObservabilityLive replaces the
  * default logger).
@@ -298,8 +271,6 @@ export const AllRoutes = Layer
     HealthRoute,
     SavedBibtexRoute,
     PaperBibtexRoute,
-    SentryTestGet,
-    SentryTestPost,
   )
   .pipe(Layer.provideMerge(ServerRuntimeLive))
 

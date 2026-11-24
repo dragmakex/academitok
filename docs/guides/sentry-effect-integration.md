@@ -211,31 +211,10 @@ bun run dev
 
 #### 3. Test Sentry Integration
 
-**GET endpoint (status check):**
+The `/api/sentry-test` HTTP route was removed prior to launch so unauthenticated callers cannot trigger synthetic server errors in production. Verify Sentry integration locally via the unit suite or `testSentryError` from `src/lib/sentry-effect.ts`:
 
 ```bash
-curl http://localhost:3000/api/sentry-test
-```
-
-**POST endpoint (trigger error):**
-
-```bash
-curl -X POST http://localhost:3000/api/sentry-test
-```
-
-**Expected response:**
-
-```json
-{
-  "status": "error_triggered",
-  "message": "Test error was triggered and should be in Sentry",
-  "error": "Sentry Effect Integration Test Error",
-  "verification": {
-    "sentry_url": "http://localhost:9000",
-    "project": "effect-tanstack-start",
-    "instructions": "Check Sentry issues for 'Sentry Effect Integration Test Error'"
-  }
-}
+bunx vitest run src/lib/sentry-effect.test.ts
 ```
 
 #### 4. Verify in Sentry
@@ -243,7 +222,7 @@ curl -X POST http://localhost:3000/api/sentry-test
 1. Open http://localhost:9000
 2. Login with `admin@localhost` / `admin123`
 3. Navigate to Projects → effect-tanstack-start
-4. Check Issues for the test error
+4. Check Issues for captured errors
 
 #### 5. Verify in Grafana
 
@@ -263,9 +242,6 @@ curl -G http://localhost:3100/loki/api/v1/query \
 
 # Check Sentry health
 curl http://localhost:9000/_health/
-
-# Trigger test error
-curl -X POST http://localhost:3000/api/sentry-test
 ```
 
 ## Troubleshooting
