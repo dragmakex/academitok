@@ -64,6 +64,14 @@ PGLITE_DATA_DIR="./data/pglite"
 For ephemeral tests, prefer per-test in-memory or isolated directories rather
 than sharing one persistent database.
 
+One server at a time: PGlite corrupts a data directory that two processes open
+concurrently. The reader-state store therefore takes an exclusive
+`<data-dir>.lock` beside the directory — a second live server is refused at
+launch with the owning pid, and a stale lock from a killed process is taken
+over. If a directory cannot be opened at all (damaged by an earlier concurrent
+launch), it is moved to `<data-dir>.corrupt-<timestamp>` untouched and a fresh
+store starts in its place, so a launch never bricks on old state.
+
 ---
 
 ## Schema Definition

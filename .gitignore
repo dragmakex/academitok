@@ -30,7 +30,7 @@ data/*.sqlite
 data/*.sqlite-shm
 data/*.sqlite-wal
 data/pglite/
-data/pglite-reader-state/
+data/pglite-reader-state*
 !data/.gitkeep
 
 # Backups
