@@ -52,6 +52,8 @@ sudo systemctl daemon-reload
 sudo systemctl enable academitok.service
 ```
 
+Log out and back in after bootstrap (or run `newgrp docker`) so the deploy user's new `docker` group membership applies before running Compose.
+
 ### 3. Configure `.env.production`
 
 ```bash
