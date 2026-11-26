@@ -46,18 +46,23 @@ export const allowedOrigins = (raw: string): ReadonlyArray<string> =>
 /**
  * Checks the origin a sign-in link should point at.
  * @param requested - Origin the browser reported.
- * @param allowed - Origins from configuration; empty allows any well-formed one.
+ * @param allowed - Origins from configuration; empty allows any well-formed one unless required.
+ * @param requireAllowlist - When true (production), refuses requests if `allowed` is empty.
  * @returns The origin to embed in the link, or null when refused.
  */
 export const resolveSignInOrigin = (
   requested: string,
   allowed: ReadonlyArray<string>,
+  requireAllowlist = false,
 ): string | null => {
   if (!originPattern.test(requested)) {
     return null
   }
   const origin = requested.replace(/\/+$/, "")
-  return allowed.length === 0 || allowed.includes(origin) ? origin : null
+  if (allowed.length === 0) {
+    return requireAllowlist ? null : origin
+  }
+  return allowed.includes(origin) ? origin : null
 }
 
 /**
@@ -82,6 +87,7 @@ export const requestSignInLink = (
     const origin = resolveSignInOrigin(
       input.origin,
       allowedOrigins(process.env.AUTH_ORIGINS ?? ""),
+      process.env.NODE_ENV === "production",
     )
     if (origin === null) {
       return { sent: false }

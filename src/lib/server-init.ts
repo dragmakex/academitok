@@ -6,11 +6,12 @@
  */
 
 import * as Sentry from "@sentry/node"
+import { validateServerEnv } from "./server-env"
 
 let initialized = false
 
 /**
- * Initialize server-side observability singletons.
+ * Initialize server-side observability singletons and enforce environment validation.
  * Safe to call multiple times — only the first call takes effect.
  */
 export function initServer(): void {
@@ -18,11 +19,13 @@ export function initServer(): void {
     return
   }
 
-  if (process.env.SENTRY_DSN) {
+  const env = validateServerEnv(process.env)
+
+  if (env.sentryDsn !== undefined) {
     Sentry.init({
-      dsn: process.env.SENTRY_DSN,
-      environment: process.env.NODE_ENV ?? "development",
-      tracesSampleRate: 1.0,
+      dsn: env.sentryDsn,
+      environment: env.nodeEnv,
+      tracesSampleRate: env.sentryTracesSampleRate ?? 1.0,
     })
   }
 

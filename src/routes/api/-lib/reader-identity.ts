@@ -7,10 +7,10 @@ import { ReaderStateRepository } from "@/db/reader-state-repository"
 import { canonicalReaderId } from "@/features/auth/application"
 import { ReaderId, readerIdFromCookieHeader } from "@/lib/reader-id"
 import * as Effect from "effect/Effect"
+import { Headers } from "effect/http"
 import * as Layer from "effect/Layer"
 import * as Option from "effect/Option"
-import * as Headers from "effect/unstable/http/Headers"
-import * as RpcMiddleware from "effect/unstable/rpc/RpcMiddleware"
+import { RpcMiddleware } from "effect/rpc"
 
 type RpcMiddlewareOptions = Parameters<RpcMiddleware.Any>[1]
 

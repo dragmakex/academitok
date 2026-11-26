@@ -46,8 +46,10 @@ vi.mock("@/lib/atom-hydration", () => ({
 
 vi.mock("@/lib/atom-utils", () => ({ dehydrate: vi.fn() }))
 
-vi.mock("effect/unstable/reactivity/AsyncResult", () => ({
-  success: (value: unknown) => ({ _tag: "Success", value }),
+vi.mock("effect/reactivity", () => ({
+  AsyncResult: {
+    success: (value: unknown) => ({ _tag: "Success", value }),
+  },
 }))
 
 vi.mock("./-index/atoms", () => ({

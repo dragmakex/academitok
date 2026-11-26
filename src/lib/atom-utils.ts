@@ -1,5 +1,5 @@
+import { Atom } from "effect/reactivity"
 import type * as Schema from "effect/Schema"
-import * as Atom from "effect/unstable/reactivity/Atom"
 
 export interface TypedSerializable<A, I> {
   readonly [Atom.SerializableTypeId]: {

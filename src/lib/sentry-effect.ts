@@ -67,7 +67,7 @@ export const makeSentryLive = (config: SentryConfig): Layer.Layer<never> =>
 export const SentryLive: Layer.Layer<never, Config.ConfigError> = Effect
   .gen(
     function*() {
-      const dsn = yield* Config.string("SENTRY_DSN").pipe(
+      const dsn = yield* Config.String("SENTRY_DSN").pipe(
         Config.orElse(() => Config.succeed("")),
       )
 
@@ -76,12 +76,12 @@ export const SentryLive: Layer.Layer<never, Config.ConfigError> = Effect
         return Layer.empty
       }
 
-      const environment = yield* Config.string("NODE_ENV").pipe(
+      const environment = yield* Config.String("NODE_ENV").pipe(
         Config.orElse(() => Config.succeed("development")),
       )
 
       const tracesSampleRate = yield* Config
-        .number("SENTRY_TRACES_SAMPLE_RATE")
+        .Number("SENTRY_TRACES_SAMPLE_RATE")
         .pipe(
           Config.orElse(() => Config.succeed(1.0)),
         )

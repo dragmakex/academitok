@@ -20,6 +20,8 @@ build
 # Environment files
 .env
 .env.local
+.env.production
+.env.staging
 .env.*.local
 *.local
 
@@ -33,6 +35,8 @@ data/pglite-reader-state/
 
 # Backups
 backups/*.sqlite
+backups/*.dump
+backups/*.sha256
 
 # Logs
 logs

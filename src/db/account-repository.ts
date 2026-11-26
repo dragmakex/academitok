@@ -73,7 +73,7 @@ export interface AccountsRepository {
    * Resolves the reader that owns an account's data.
    * @param readerId - Reader id from the request cookie.
    * @returns The account's canonical reader, or the given id when unclaimed,
-   *   so a device claimed by an account reads and writes the same rows.
+   * so a device claimed by an account reads and writes the same rows.
    */
   readonly canonicalReaderId: (readerId: string) => Promise<string>
 }

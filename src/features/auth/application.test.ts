@@ -31,6 +31,13 @@ describe("sign-in origin guard", () => {
     expect(resolveSignInOrigin("http://academitok.example", allowed)).toBeNull()
   })
 
+  it("refuses any origin when allowlist is required and blank", () => {
+    expect(
+      resolveSignInOrigin("https://academitok.example", [], true),
+    )
+      .toBeNull()
+  })
+
   it("refuses anything that is not a bare origin", () => {
     for (
       const origin of [

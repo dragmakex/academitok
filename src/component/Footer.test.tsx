@@ -22,8 +22,8 @@ test("Footer displays the Bulgarian programming joke", async () => {
 
   const joke = page.getByTestId("bulgarian-joke")
   await expect.element(joke).toBeVisible()
-  await expect.element(joke).toHaveTextContent("Khan Asparuh")
-  await expect.element(joke).toHaveTextContent("strict typing")
+  await expect.element(joke).toMatchTextContent("Khan Asparuh")
+  await expect.element(joke).toMatchTextContent("strict typing")
 })
 
 test("Footer shows the Bulgarian flag", async () => {
@@ -41,6 +41,6 @@ test("Footer displays current year in copyright", async () => {
   const currentYear = new Date().getFullYear().toString()
 
   await expect.element(copyright).toBeVisible()
-  await expect.element(copyright).toHaveTextContent(currentYear)
-  await expect.element(copyright).toHaveTextContent("Bulgarian Rigorosity")
+  await expect.element(copyright).toMatchTextContent(currentYear)
+  await expect.element(copyright).toMatchTextContent("Bulgarian Rigorosity")
 })

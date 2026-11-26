@@ -10,8 +10,10 @@ vi.mock("@/lib/atom-utils", () => ({
   })),
 }))
 
-vi.mock("effect/unstable/reactivity/AsyncResult", () => ({
-  success: (value: unknown) => ({ _tag: "Success", value }),
+vi.mock("effect/reactivity", () => ({
+  AsyncResult: {
+    success: (value: unknown) => ({ _tag: "Success", value }),
+  },
 }))
 
 vi.mock("@/lib/atom-hydration", () => ({

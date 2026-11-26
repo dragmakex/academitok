@@ -1,7 +1,6 @@
 import { RegistryContext } from "@effect/atom-react"
+import { Atom, AtomRegistry } from "effect/reactivity"
 import * as Schema from "effect/Schema"
-import * as Atom from "effect/unstable/reactivity/Atom"
-import * as AtomRegistry from "effect/unstable/reactivity/AtomRegistry"
 import { expect, test, vi } from "vitest"
 import { render } from "vitest-browser-react"
 import { HydrationBoundary } from "./atom-hydration"

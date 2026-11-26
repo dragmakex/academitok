@@ -1,6 +1,6 @@
 import { expect, it } from "@effect/vitest"
 import * as Effect from "effect/Effect"
-import * as Atom from "effect/unstable/reactivity/Atom"
+import { Atom } from "effect/reactivity"
 import { dehydrate, serializable, type TypedSerializable } from "./atom-utils"
 
 /**

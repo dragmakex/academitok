@@ -6,6 +6,7 @@
  */
 
 import { DomainRpc } from "@/api/domain-rpc"
+import { pingReaderStateRepository } from "@/db/reader-state-repository"
 import { AuthLive } from "@/features/auth/application"
 import {
   getPaperBibtex,
@@ -19,23 +20,22 @@ import {
 } from "@/lib/pyroscope-server"
 import { ReaderId, readerIdFromCookieHeader } from "@/lib/reader-id"
 import { SentryLive } from "@/lib/sentry-effect"
-import { handleSentryTestPost } from "@/lib/sentry-service"
 import { initServer } from "@/lib/server-init"
 import { createFileRoute } from "@tanstack/react-router"
 import type { Cause } from "effect/Cause"
 import * as Effect from "effect/Effect"
 import * as Exit from "effect/Exit"
+import {
+  Headers,
+  HttpRouter,
+  HttpServerRequest,
+  HttpServerResponse,
+} from "effect/http"
 import * as Layer from "effect/Layer"
 import * as Logger from "effect/Logger"
 import * as ManagedRuntime from "effect/ManagedRuntime"
 import * as Option from "effect/Option"
-import * as Headers from "effect/unstable/http/Headers"
-import * as HttpRouter from "effect/unstable/http/HttpRouter"
-import * as HttpServerRequest from "effect/unstable/http/HttpServerRequest"
-import * as HttpServerResponse from "effect/unstable/http/HttpServerResponse"
-import * as RpcMiddleware from "effect/unstable/rpc/RpcMiddleware"
-import * as RpcSerialization from "effect/unstable/rpc/RpcSerialization"
-import * as RpcServer from "effect/unstable/rpc/RpcServer"
+import { RpcMiddleware, RpcSerialization, RpcServer } from "effect/rpc"
 import { createPaperRpcHandlers } from "./-lib/papers-rpc-live"
 
 /**
@@ -163,6 +163,14 @@ export const HealthRoute = HttpRouter.add(
   Effect.succeed(HttpServerResponse.text("OK")),
 )
 
+export const ReadyRoute = HttpRouter.add(
+  "GET",
+  "/api/ready",
+  pingReaderStateRepository.pipe(
+    Effect.map(() => HttpServerResponse.text("OK")),
+  ),
+)
+
 /** Attachment name for the saved-collection BibTeX export (SPEC §14). */
 export const savedBibtexFilename = "academitok-saved.bib"
 
@@ -239,32 +247,6 @@ export const PaperBibtexRoute = HttpRouter.add(
 )
 
 /**
- * Sentry integration test routes.
- *
- * GET /api/sentry-test — Status check
- * POST /api/sentry-test — Trigger test error (captured by Sentry)
- *
- * Verification: Check http://localhost:9000 after POST for captured error.
- */
-const SentryTestGet = HttpRouter.add(
-  "GET",
-  "/api/sentry-test",
-  HttpServerResponse.json({
-    status: "Sentry test endpoint ready",
-    instructions: "POST to this endpoint to trigger a test error",
-    sentry_url: "http://localhost:9000",
-    verification:
-      "After POST, check Sentry at http://localhost:9000 for captured errors",
-  }),
-)
-
-const SentryTestPost = HttpRouter.add(
-  "POST",
-  "/api/sentry-test",
-  handleSentryTestPost,
-)
-
-/**
  * Development console logger — provides pretty console output alongside OTLP.
  * In production, only OTLP logs are emitted (ObservabilityLive replaces the
  * default logger).
@@ -296,10 +278,9 @@ export const AllRoutes = Layer
   .mergeAll(
     RpcRouter,
     HealthRoute,
+    ReadyRoute,
     SavedBibtexRoute,
     PaperBibtexRoute,
-    SentryTestGet,
-    SentryTestPost,
   )
   .pipe(Layer.provideMerge(ServerRuntimeLive))
 

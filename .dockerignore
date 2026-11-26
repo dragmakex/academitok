@@ -8,11 +8,20 @@ dist
 .nitro
 .vinxi
 .tanstack
+tsconfig.app.tsbuildinfo
+
+# Local runtime state and caches
+data
+backups
+.cache
+.repos
+.pi
+.vitest-attachments
 
 # Environment files
 .env
-.env.local
-.env.*.local
+.env.*
+!.env.example
 
 # Logs
 *.log
@@ -32,9 +41,13 @@ yarn-error.log*
 .DS_Store
 Thumbs.db
 
-# Testing
+# Testing & auxiliary directories
 coverage
 .vitest
+tests
+workflows
+prompts
+specs
 
 # Git
 .git
@@ -44,10 +57,11 @@ coverage
 *.md
 !README.md
 
-# Docker
+# Docker & VPS deploy tooling
 Dockerfile*
 docker-compose*.yml
 .dockerignore
+deploy
 
 # CI/CD
 .github
