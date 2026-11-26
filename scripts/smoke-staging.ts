@@ -8,7 +8,7 @@
  * `/paper/$id` permalinks against a live running server.
  *
  * Usage:
- *   BASE_URL=http://127.0.0.1:3109 bun run smoke:staging
+ * BASE_URL=http://127.0.0.1:3109 bun run smoke:staging
  */
 
 import { chromium } from "playwright"
