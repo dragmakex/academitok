@@ -496,6 +496,56 @@ describe("paper recommendation", () => {
       .toBe(true)
   })
 
+  it("exempts the requested topic from the per-topic cap on topic feeds", () => {
+    const items = [
+      feedItem("physics-0", "Physics", 10),
+      feedItem("physics-1", "Physics", 9),
+      feedItem("physics-2", "Physics", 8),
+      feedItem("physics-3", "Physics", 7),
+      feedItem("physics-4", "Physics", 6),
+    ]
+
+    const page = buildFeedPage(items, null, 10, [], [], "Physics")
+
+    expect(page.items.map((item) => item.paper.id)).toEqual([
+      "physics-0",
+      "physics-1",
+      "physics-2",
+      "physics-3",
+      "physics-4",
+    ])
+  })
+
+  it("breaks score ties by paper id so equal pools rank identically", () => {
+    const papers = [
+      paperFixture("c-tie", "same abstract"),
+      paperFixture("a-tie", "same abstract"),
+      paperFixture("b-tie", "same abstract"),
+    ]
+
+    const first = buildFeedItems(
+      { profile: null, reactions: [] },
+      papers,
+      "All",
+      "recommended",
+    )
+    const second = buildFeedItems(
+      { profile: null, reactions: [] },
+      papers,
+      "All",
+      "recommended",
+    )
+
+    expect(first.map((item) => item.paper.id)).toEqual([
+      "a-tie",
+      "b-tie",
+      "c-tie",
+    ])
+    expect(second.map((item) => item.paper.id)).toEqual(
+      first.map((item) => item.paper.id),
+    )
+  })
+
   it("never refills an exhausted slot from a repeat outside the top 3%", () => {
     const fresh = [
       feedItem("fresh-0", "AI", 10),

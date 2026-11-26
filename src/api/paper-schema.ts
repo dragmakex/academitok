@@ -126,7 +126,7 @@ export const FeedItem = Schema.Struct({
 })
 export type FeedItem = typeof FeedItem.Type
 
-export const FeedCursor = Schema.String
+export const FeedCursor = Schema.String.check(Schema.isMaxLength(16_384))
 export type FeedCursor = typeof FeedCursor.Type
 
 export const FeedPage = Schema.Struct({
@@ -172,41 +172,56 @@ export type EditionIds = typeof EditionIds.Type
 export const FeedRequest = Schema.Struct({
   query: FeedQuery,
   cursor: Schema.NullOr(FeedCursor),
-  sessionId: Schema.optional(Schema.NonEmptyString),
+  sessionId: Schema.optional(
+    Schema.NonEmptyString.check(Schema.isMaxLength(64)),
+  ),
   edition: Schema.optional(EditionIds),
 })
 export type FeedRequest = typeof FeedRequest.Type
 
 export const SaveProfileInput = Schema.Struct({
-  name: Schema.NonEmptyString,
+  name: Schema.NonEmptyString.check(Schema.isMaxLength(80)),
   institution: Institution,
-  interests: Schema.Array(Topic),
+  interests: Schema.Array(Topic).check(
+    Schema.isMaxLength(Topic.literals.length),
+  ),
 })
 export type SaveProfileInput = typeof SaveProfileInput.Type
 
+/** Client-supplied paper id; bounded so crafted payloads cannot bloat storage. */
+const PaperId = Schema.String.check(Schema.isMaxLength(255))
+
 export const ReactToPaperInput = Schema.Struct({
-  paperId: Schema.String,
+  paperId: PaperId,
   kind: Schema.Literals(["like", "bookmark", "hide", "open-site"]),
 })
 export type ReactToPaperInput = typeof ReactToPaperInput.Type
 
 export const ReactionResult = Schema.Struct({
-  paperId: Schema.String,
+  paperId: PaperId,
   kind: Schema.Literals(["like", "bookmark", "hide", "open-site"]),
   active: Schema.Boolean,
 })
 export type ReactionResult = typeof ReactionResult.Type
 
 export const TrackPaperViewInput = Schema.Struct({
-  paperId: Schema.String,
+  paperId: PaperId,
   kind: Schema.Literals(["view", "dwell"]),
-  dwellMs: Schema.Number,
-  position: Schema.Number,
+  dwellMs: Schema.Number.check(
+    Schema.isInt(),
+    Schema.isBetween({ minimum: 0, maximum: 3_600_000 }),
+  ),
+  position: Schema.Number.check(
+    Schema.isInt(),
+    Schema.isBetween({ minimum: 0, maximum: 1_000 }),
+  ),
   exploration: Schema.Boolean,
 })
 export type TrackPaperViewInput = typeof TrackPaperViewInput.Type
 
-export const TrackPaperViewsInput = Schema.Array(TrackPaperViewInput)
+export const TrackPaperViewsInput = Schema.Array(TrackPaperViewInput).check(
+  Schema.isMaxLength(50),
+)
 export type TrackPaperViewsInput = typeof TrackPaperViewsInput.Type
 
 const OnboardingPaperIds = Schema.Array(Schema.String).check(

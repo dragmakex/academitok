@@ -104,7 +104,14 @@ export const getPaperFeedSnapshot = (request: FeedRequest) =>
       const page = edition === undefined || pinned === undefined
         ? onboarding
           ? { items: candidates.slice(0, 15), nextCursor: null }
-          : buildFeedPage(fresh, request.cursor, 10, sessionSeen, repeats)
+          : buildFeedPage(
+            fresh,
+            request.cursor,
+            10,
+            sessionSeen,
+            repeats,
+            request.query.topic === "All" ? undefined : request.query.topic,
+          )
         : {
           items: edition.flatMap((id) => {
             const item = pinned.get(id)

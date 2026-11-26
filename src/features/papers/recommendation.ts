@@ -440,7 +440,6 @@ export function buildFeedItems(
         + 0.9 * contentAffinity
         + 0.5 * authorVenueAffinity
         + (paper.access === "open" ? 0.8 : accessible ? 0.3 : -0.6)
-        + (active.hidden.has(paper.id) ? engagementWeights.hide : 0)
         + (active.liked.has(paper.id) ? engagementWeights.like : 0)
         + (active.bookmarked.has(paper.id) ? engagementWeights.bookmark : 0)
         + Math.min(viewCount, 3) * engagementWeights.view
@@ -466,7 +465,8 @@ export function buildFeedItems(
     return [...items].sort(
       (left, right) =>
         right.paper.year - left.paper.year
-        || right.paper.citations - left.paper.citations,
+        || right.paper.citations - left.paper.citations
+        || byId(left, right),
     )
   }
 
@@ -474,11 +474,29 @@ export function buildFeedItems(
     return [...items].sort(
       (left, right) =>
         right.paper.citations - left.paper.citations
-        || right.paper.year - left.paper.year,
+        || right.paper.year - left.paper.year
+        || byId(left, right),
     )
   }
 
-  return [...items].sort((left, right) => right.score - left.score)
+  return [...items].sort((left, right) =>
+    right.score - left.score || byId(left, right)
+  )
+}
+
+/**
+ * Breaks score ties by paper id so equal-score pools rank identically on every
+ * request instead of falling back to database scan order.
+ * @param left - First item.
+ * @param right - Second item.
+ * @returns Comparator result.
+ */
+function byId(left: FeedItem, right: FeedItem): number {
+  return left.paper.id === right.paper.id
+    ? 0
+    : left.paper.id < right.paper.id
+    ? -1
+    : 1
 }
 
 /**
@@ -487,7 +505,7 @@ export function buildFeedItems(
  * @returns Unique normalized words.
  */
 function titleWords(title: string): ReadonlySet<string> {
-  return new Set(title.toLowerCase().match(/[a-z0-9]+/g) ?? [])
+  return new Set(title.toLowerCase().match(/[\p{L}\p{N}]+/gu) ?? [])
 }
 
 /**
@@ -580,15 +598,22 @@ function decodeCursor(cursor: FeedCursor | null): ReadonlyArray<string> {
  * @param item - Candidate item.
  * @param selected - Current page.
  * @param topicCounts - Primary-topic counts.
+ * @param requestedTopic - Active topic filter; its papers bypass the topic cap.
  * @returns Whether the candidate can be added.
  */
 function canAdd(
   item: FeedItem,
   selected: ReadonlyArray<FeedItem>,
   topicCounts: ReadonlyMap<Topic, number>,
+  requestedTopic?: Topic,
 ): boolean {
   const primaryTopic = item.paper.topics[0]
-  if (primaryTopic !== undefined && (topicCounts.get(primaryTopic) ?? 0) >= 2) {
+  const capped = requestedTopic === undefined || primaryTopic !== requestedTopic
+  if (
+    capped
+    && primaryTopic !== undefined
+    && (topicCounts.get(primaryTopic) ?? 0) >= 2
+  ) {
     return false
   }
   const authors = new Set(selected.flatMap((entry) => entry.paper.authors))
@@ -605,6 +630,7 @@ function canAdd(
  * @param limit - Maximum page size.
  * @param sessionSeen - Paper IDs the server already emitted for this session.
  * @param repeats - Recently read items that may refill an exhausted page.
+ * @param requestedTopic - Active topic filter; its papers bypass the topic cap.
  * @returns Page items and next cursor.
  */
 export function buildFeedPage(
@@ -613,6 +639,7 @@ export function buildFeedPage(
   limit = 10,
   sessionSeen: ReadonlyArray<string> = [],
   repeats: ReadonlyArray<FeedItem> = [],
+  requestedTopic?: Topic,
 ): {
   readonly items: ReadonlyArray<FeedItem>
   readonly nextCursor: FeedCursor | null
@@ -623,10 +650,6 @@ export function buildFeedPage(
   const selected: Array<FeedItem> = []
   const topicCounts = new Map<Topic, number>()
   const explorationStart = Math.ceil(candidates.length * 0.4)
-  const explorationCandidate = candidates.slice(explorationStart).find((item) =>
-    canAdd(item, selected, topicCounts)
-  )
-  const exploitationLimit = limit - (explorationCandidate === undefined ? 0 : 1)
   const idf = inverseDocumentFrequencies(
     candidates.map((candidate) => candidate.paper),
   )
@@ -637,15 +660,26 @@ export function buildFeedPage(
     ]),
   )
 
-  while (selected.length < exploitationLimit) {
+  const add = (item: FeedItem) => {
+    selected.push(item)
+    const topic = item.paper.topics[0]
+    if (topic !== undefined) {
+      topicCounts.set(topic, (topicCounts.get(topic) ?? 0) + 1)
+    }
+  }
+
+  /**
+   * Picks the highest-MMR candidate the page can still hold.
+   * @returns The best remaining candidate, or undefined when none fits.
+   */
+  const pickMmrBest = (): FeedItem | undefined => {
     let best: FeedItem | undefined
     let bestMmr = Number.NEGATIVE_INFINITY
 
     for (const candidate of candidates) {
       if (
-        candidate === explorationCandidate
-        || selected.includes(candidate)
-        || !canAdd(candidate, selected, topicCounts)
+        selected.includes(candidate)
+        || !canAdd(candidate, selected, topicCounts, requestedTopic)
       ) {
         continue
       }
@@ -666,23 +700,39 @@ export function buildFeedPage(
         bestMmr = mmr
       }
     }
+    return best
+  }
 
+  const explorationCandidate = candidates
+    .slice(explorationStart)
+    .find((item) => canAdd(item, selected, topicCounts, requestedTopic))
+  const exploitationLimit = limit - (explorationCandidate === undefined ? 0 : 1)
+
+  while (selected.length < exploitationLimit) {
+    const best = pickMmrBest()
     if (best === undefined) {
       break
     }
-    selected.push(best)
-    const topic = best.paper.topics[0]
-    if (topic !== undefined) {
-      topicCounts.set(topic, (topicCounts.get(topic) ?? 0) + 1)
-    }
+    add(best)
   }
 
+  let explorationAppended = false
   if (
     explorationCandidate !== undefined
     && selected.length < limit
-    && canAdd(explorationCandidate, selected, topicCounts)
+    && canAdd(explorationCandidate, selected, topicCounts, requestedTopic)
   ) {
-    selected.push({ ...explorationCandidate, exploration: true })
+    add({ ...explorationCandidate, exploration: true })
+    explorationAppended = true
+  }
+
+  // A capped-out exploration slot must not ship a short page while unreserved
+  // candidates remain: backfill one more exploitation pick.
+  if (!explorationAppended && selected.length < limit) {
+    const best = pickMmrBest()
+    if (best !== undefined) {
+      add(best)
+    }
   }
 
   for (
@@ -694,14 +744,10 @@ export function buildFeedPage(
     if (selected.length >= limit) {
       break
     }
-    if (!canAdd(repeat, selected, topicCounts)) {
+    if (!canAdd(repeat, selected, topicCounts, requestedTopic)) {
       continue
     }
-    selected.push({ ...repeat, again: true })
-    const topic = repeat.paper.topics[0]
-    if (topic !== undefined) {
-      topicCounts.set(topic, (topicCounts.get(topic) ?? 0) + 1)
-    }
+    add({ ...repeat, again: true })
   }
 
   const selectedIds = selected.map((item) => item.paper.id)

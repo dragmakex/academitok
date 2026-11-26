@@ -3,7 +3,12 @@
  * (SPEC §17.1). There are no accounts to canonicalise through.
  */
 
-import { ReaderId, readerIdFromCookieHeader } from "@/lib/reader-id"
+import {
+  defaultReaderId,
+  newReaderId,
+  ReaderId,
+  readerIdFromCookieHeader,
+} from "@/lib/reader-id"
 import * as Effect from "effect/Effect"
 import { Headers } from "effect/http"
 import * as Layer from "effect/Layer"
@@ -22,9 +27,16 @@ const rpcReaderIdMiddleware = <A, E>(
   effect: Effect.Effect<A, E, ReaderId>,
   opts: RpcMiddlewareOptions,
 ): Effect.Effect<A, E> => {
-  const readerId = readerIdFromCookieHeader(
+  const claimed = readerIdFromCookieHeader(
     Option.getOrUndefined(Headers.get(opts.headers, "cookie")),
   )
+  // A cookie-less or forged-cookie writer must never land on the shared
+  // fallback identity: it would let any unauthenticated request poison the
+  // cross-reader counts every visitor sees. Give it an orphan id instead;
+  // only the page boundary mints a persistent cookie.
+  const readerId = claimed === defaultReaderId
+    ? newReaderId()
+    : claimed
   return Effect.provideService(effect, ReaderId, readerId)
 }
 
