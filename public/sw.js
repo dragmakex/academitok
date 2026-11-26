@@ -60,7 +60,7 @@ self.addEventListener("fetch", (event) => {
   if (request.mode === "navigate") {
     event.respondWith(
       fromNetwork(request).catch(() =>
-        caches.match(request).then((hit) => hit ?? caches.match("/"))
+        caches.match("/").then((shell) => shell ?? Response.error())
       ),
     )
     return

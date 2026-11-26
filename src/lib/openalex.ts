@@ -234,7 +234,7 @@ const titleCollapseThreshold = 0.9
  * @returns The title's token set.
  */
 function titleTokens(title: string): Set<string> {
-  return new Set(title.toLowerCase().match(/[a-z0-9]+/g) ?? [])
+  return new Set(title.toLowerCase().match(/[\p{L}\p{N}]+/gu) ?? [])
 }
 
 /**

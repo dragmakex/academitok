@@ -18,7 +18,7 @@ import {
 } from "@/db/schema"
 import { ReaderId } from "@/lib/reader-id"
 import { PGlite } from "@electric-sql/pglite"
-import { and, desc, eq, gte, inArray, isNull, lt, ne } from "drizzle-orm"
+import { and, asc, desc, eq, gte, inArray, isNull, lt, ne } from "drizzle-orm"
 import { drizzle as drizzlePglite } from "drizzle-orm/pglite"
 import { drizzle as drizzlePostgres } from "drizzle-orm/postgres-js"
 import * as Config from "effect/Config"
@@ -250,6 +250,16 @@ const createReaderStateTablesSql = `
   ALTER TABLE feed_sessions ALTER COLUMN started_at DROP NOT NULL;
   CREATE INDEX IF NOT EXISTS feed_sessions_updated_at_idx
     ON feed_sessions (updated_at);
+  CREATE INDEX IF NOT EXISTS impressions_reader_shown_idx
+    ON impressions (reader_id, shown_at);
+  CREATE INDEX IF NOT EXISTS impressions_shown_at_idx
+    ON impressions (shown_at);
+  CREATE INDEX IF NOT EXISTS reactions_reader_created_idx
+    ON reactions (reader_id, created_at);
+  CREATE INDEX IF NOT EXISTS reactions_paper_kind_created_idx
+    ON reactions (paper_id, kind, created_at);
+  CREATE INDEX IF NOT EXISTS papers_fetched_at_idx
+    ON papers (fetched_at)
 `
 
 const liveDatabaseConfig = Effect.gen(function*() {
@@ -592,6 +602,11 @@ function makeRepositoryService(storage: StateStorage) {
         await storage.migrate(defaultReaderState, readerId)
       }
     })()
+    // A transient failure must not poison the memo: clear it so the next
+    // request retries the migration instead of dying forever.
+    ready.catch(() => {
+      ready = undefined
+    })
     return ready
   }
 
@@ -699,8 +714,33 @@ function makeRepository(config: RepositoryDatabaseConfig) {
     : makePgliteRepository(config.dataDir)
 }
 
+const delay = async (ms: number): Promise<void> => {
+  Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, ms)
+}
+
 /**
- * Builds the PostgreSQL reader-state repository.
+ * Retries the boot-time schema migration so a brief database restart or
+ * failover does not brick the process; waits ≈23s in total before giving up.
+ * @param run - Migration to run.
+ * @returns Migration completion.
+ */
+const migrateWithRetry = async (run: () => Promise<unknown>): Promise<void> => {
+  const delays = [1_000, 2_000, 4_000, 8_000, 8_000]
+  for (let attempt = 0;; attempt++) {
+    try {
+      await run()
+      return
+    } catch (error) {
+      if (attempt >= delays.length) {
+        throw error
+      }
+      await delay(delays[attempt])
+    }
+  }
+}
+
+/**
+ * Builds the Postgres-backed reader-state repository.
  * @param databaseUrl - PostgreSQL connection URL.
  * @returns Scoped repository construction effect.
  */
@@ -713,7 +753,9 @@ function makePostgresRepository(databaseUrl: string) {
         idle_timeout: 30,
         connect_timeout: 10,
       })
-      yield* Effect.promise(() => client.unsafe(createReaderStateTablesSql))
+      yield* Effect.promise(() =>
+        migrateWithRetry(() => client.unsafe(createReaderStateTablesSql))
+      )
       const db = drizzlePostgres(client, {
         schema: {
           impressionsTable,
@@ -780,6 +822,7 @@ function makePostgresRepository(databaseUrl: string) {
             .onConflictDoUpdate({
               target: feedSessionsTable.id,
               set: { readerId, seenPaperIds, cursor, updatedAt: now },
+              setWhere: eq(feedSessionsTable.readerId, readerId),
             })
           await sweepExpired(now)
         },
@@ -817,6 +860,7 @@ function makePostgresRepository(databaseUrl: string) {
             .select()
             .from(papersTable)
             .where(gte(papersTable.fetchedAt, since))
+            .orderBy(desc(papersTable.fetchedAt), asc(papersTable.id))
           return rows.map(storedPaper)
         },
         onboard: async (input, createdAt, readerId) => {
@@ -1005,6 +1049,7 @@ function makePostgresRepository(databaseUrl: string) {
               .where(and(
                 eq(reactionsTable.paperId, paperId),
                 eq(reactionsTable.kind, "bookmark"),
+                ne(reactionsTable.readerId, defaultReaderId),
               ))
               .orderBy(desc(reactionsTable.createdAt)),
           ),
@@ -1024,6 +1069,7 @@ function makePostgresRepository(databaseUrl: string) {
                 inArray(reactionsTable.paperId, paperIds),
                 eq(reactionsTable.kind, "bookmark"),
                 ne(reactionsTable.readerId, readerId),
+                ne(reactionsTable.readerId, defaultReaderId),
               ))
               .orderBy(desc(reactionsTable.createdAt)),
           )
@@ -1044,6 +1090,7 @@ function makePostgresRepository(databaseUrl: string) {
                 inArray(reactionsTable.paperId, paperIds),
                 eq(reactionsTable.kind, "like"),
                 ne(reactionsTable.readerId, readerId),
+                ne(reactionsTable.readerId, defaultReaderId),
               ))
               .orderBy(desc(reactionsTable.createdAt)),
           )
@@ -1059,6 +1106,7 @@ function makePostgresRepository(databaseUrl: string) {
               .where(and(
                 eq(reactionsTable.paperId, paperId),
                 eq(reactionsTable.kind, "open-site"),
+                ne(reactionsTable.readerId, defaultReaderId),
               ))
               .orderBy(desc(reactionsTable.createdAt)),
           ),
@@ -1087,6 +1135,7 @@ function makePostgresRepository(databaseUrl: string) {
               .where(and(
                 eq(reactionsTable.paperId, paperId),
                 eq(reactionsTable.kind, "hide"),
+                ne(reactionsTable.readerId, defaultReaderId),
               ))
               .orderBy(desc(reactionsTable.createdAt)),
           ),
@@ -1310,6 +1359,7 @@ function makePgliteRepository(dataDir: string | undefined) {
             .onConflictDoUpdate({
               target: feedSessionsTable.id,
               set: { readerId, seenPaperIds, cursor, updatedAt: now },
+              setWhere: eq(feedSessionsTable.readerId, readerId),
             })
           await sweepExpired(now)
         },
@@ -1347,6 +1397,7 @@ function makePgliteRepository(dataDir: string | undefined) {
             .select()
             .from(papersTable)
             .where(gte(papersTable.fetchedAt, since))
+            .orderBy(desc(papersTable.fetchedAt), asc(papersTable.id))
           return rows.map(storedPaper)
         },
         onboard: async (input, createdAt, readerId) => {
@@ -1535,6 +1586,7 @@ function makePgliteRepository(dataDir: string | undefined) {
               .where(and(
                 eq(reactionsTable.paperId, paperId),
                 eq(reactionsTable.kind, "bookmark"),
+                ne(reactionsTable.readerId, defaultReaderId),
               ))
               .orderBy(desc(reactionsTable.createdAt)),
           ),
@@ -1554,6 +1606,7 @@ function makePgliteRepository(dataDir: string | undefined) {
                 inArray(reactionsTable.paperId, paperIds),
                 eq(reactionsTable.kind, "bookmark"),
                 ne(reactionsTable.readerId, readerId),
+                ne(reactionsTable.readerId, defaultReaderId),
               ))
               .orderBy(desc(reactionsTable.createdAt)),
           )
@@ -1574,6 +1627,7 @@ function makePgliteRepository(dataDir: string | undefined) {
                 inArray(reactionsTable.paperId, paperIds),
                 eq(reactionsTable.kind, "like"),
                 ne(reactionsTable.readerId, readerId),
+                ne(reactionsTable.readerId, defaultReaderId),
               ))
               .orderBy(desc(reactionsTable.createdAt)),
           )
@@ -1589,6 +1643,7 @@ function makePgliteRepository(dataDir: string | undefined) {
               .where(and(
                 eq(reactionsTable.paperId, paperId),
                 eq(reactionsTable.kind, "open-site"),
+                ne(reactionsTable.readerId, defaultReaderId),
               ))
               .orderBy(desc(reactionsTable.createdAt)),
           ),
@@ -1617,6 +1672,7 @@ function makePgliteRepository(dataDir: string | undefined) {
               .where(and(
                 eq(reactionsTable.paperId, paperId),
                 eq(reactionsTable.kind, "hide"),
+                ne(reactionsTable.readerId, defaultReaderId),
               ))
               .orderBy(desc(reactionsTable.createdAt)),
           ),

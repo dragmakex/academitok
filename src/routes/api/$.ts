@@ -167,6 +167,9 @@ export const ReadyRoute = HttpRouter.add(
   "/api/ready",
   pingReaderStateRepository.pipe(
     Effect.map(() => HttpServerResponse.text("OK")),
+    Effect.catchDefect(() =>
+      Effect.succeed(HttpServerResponse.empty({ status: 503 }))
+    ),
   ),
 )
 

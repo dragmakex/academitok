@@ -266,6 +266,18 @@ rarity (`1/df(topic)` normalised).
 6. **Page** — 10 items + opaque cursor (`{offset, salt, sessionId}`), server-authoritative so a
    reload does not restart the same order.
 
+**Calibration note (pre-launch).** The shipped ranker deviates from the formulas above where
+testing found better pages; the ratios, not the constants, are the contract. Recency is
+`max(0, year−2021)·0.7`, citations `2.4·log10(citations+1)`, access bonus `0.8 / 0.3 / −0.6`,
+interest boost `2.6`. The like-weight split across a paper's topics is uniform `1/topics.length`
+until topic rarity is measured. Exploration reserves one slot per page taken from below the top
+40% of candidates. The pool caps at 58 papers per (topic, sort) and stores the full abstract. The
+page cursor re-encodes the session's seen ids (bounded at 16 KB) instead of the planned
+`{offset, salt, sessionId}` tuple, because the session row already carries the seen set server-side.
+On a topic-filtered feed the requested topic is exempt from the ≤2-per-topic cap, and every
+ranking sort ties off by paper id so equal-score pools rank identically across requests.
+Revisit all of these against the §8.4 metrics after launch.
+
 ### 8.2 Cold start
 
 Onboarding before the first page: 15 candidate papers in 3 pages of 5; reader picks ≥ 5 "keep
