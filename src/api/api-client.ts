@@ -57,11 +57,38 @@ type BaseWindow = {
   }
 }
 
+type ServerEnv = Readonly<Record<string, string | undefined>>
+
+const readServerEnv = (): ServerEnv =>
+  typeof process === "undefined" ? {} : process.env
+
+/**
+ * Resolves the RPC origin for the current runtime.
+ *
+ * The browser uses its own origin. The server must use the port it actually
+ * listens on: Nitro boots on `PORT` (3000 in the container), and a hardcoded
+ * 3000 breaks server-side rendering for any other staging port.
+ *
+ * @param baseWindow - Browser window when rendering in a document.
+ * @param env - Server environment when no window exists.
+ * @returns Absolute origin for the RPC endpoint.
+ */
 export const getBaseUrl = (
   baseWindow: BaseWindow | null | undefined = typeof window === "undefined"
     ? null
     : window,
-): string => baseWindow ? baseWindow.location.origin : "http://localhost:3000"
+  env: ServerEnv = readServerEnv(),
+): string => {
+  if (baseWindow) {
+    return baseWindow.location.origin
+  }
+  const port = env.PORT?.trim() || "3000"
+  const configuredHost = env.HOST?.trim() || "127.0.0.1"
+  const host = configuredHost === "0.0.0.0" || configuredHost === "::"
+    ? "127.0.0.1"
+    : configuredHost
+  return `http://${host}:${port}`
+}
 
 const RpcConfigLive = RpcClient
   .layerProtocolHttp({

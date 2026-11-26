@@ -137,7 +137,31 @@ it.effect("getBaseUrl - uses window origin when available", () =>
     )
   }))
 
-it.effect("getBaseUrl - falls back to localhost when window is undefined", () =>
+it.effect("getBaseUrl - falls back to loopback when window is undefined", () =>
   Effect.sync(() => {
-    expect(getBaseUrl(null)).toBe("http://localhost:3000")
+    expect(getBaseUrl(null, {})).toBe("http://127.0.0.1:3000")
+  }))
+
+it.effect("getBaseUrl - uses the server's listening port and host", () =>
+  Effect.sync(() => {
+    expect(getBaseUrl(null, { HOST: "127.0.0.1", PORT: "4175" })).toBe(
+      "http://127.0.0.1:4175",
+    )
+  }))
+
+it.effect("getBaseUrl - maps wildcard bind addresses to loopback", () =>
+  Effect.sync(() => {
+    expect(getBaseUrl(null, { HOST: "0.0.0.0", PORT: "3000" })).toBe(
+      "http://127.0.0.1:3000",
+    )
+    expect(getBaseUrl(null, { HOST: "::", PORT: "3000" })).toBe(
+      "http://127.0.0.1:3000",
+    )
+  }))
+
+it.effect("getBaseUrl - ignores blank server environment values", () =>
+  Effect.sync(() => {
+    expect(getBaseUrl(null, { HOST: "  ", PORT: " " })).toBe(
+      "http://127.0.0.1:3000",
+    )
   }))
