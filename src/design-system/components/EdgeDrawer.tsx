@@ -11,6 +11,7 @@ type EdgeDrawerProps = {
   readonly children: ReactNode
   readonly description?: ReactNode | undefined
   readonly open: boolean
+  readonly showTrigger?: boolean | undefined
   readonly title: string
   readonly onOpenChange: (open: boolean) => void
 }
@@ -25,11 +26,13 @@ const swipeDistance = 72
  * @param root0.description - Optional description.
  * @param root0.onOpenChange - Open-state callback.
  * @param root0.open - Whether the drawer is open.
+ * @param root0.showTrigger - Whether to render the fixed edge trigger.
  * @param root0.title - Accessible title.
  * @returns Edge drawer.
  */
 export function EdgeDrawer(
-  { children, description, onOpenChange, open, title }: EdgeDrawerProps,
+  { children, description, onOpenChange, open, showTrigger = true, title }:
+    EdgeDrawerProps,
 ) {
   const touchStartX = useRef<number | null>(null)
   const touchStartY = useRef<number | null>(null)
@@ -109,26 +112,30 @@ export function EdgeDrawer(
 
   return (
     <>
-      <div className="fixed bottom-[calc(env(safe-area-inset-bottom)+0.125rem)] left-[max(0.5rem,env(safe-area-inset-left))] z-30 lg:top-1/2 lg:bottom-auto lg:left-0 lg:-translate-y-1/2">
-        <button
-          type="button"
-          aria-label={open ? "Close filters" : "Open filters"}
-          aria-pressed={open}
-          className="grid size-11 cursor-pointer place-items-center border border-ink bg-paper text-ink hover:bg-ink hover:text-paper focus-visible:outline-2 focus-visible:outline-ink focus-visible:outline-offset-[-2px] lg:w-8"
-          onClick={() => onOpenChange(!open)}
-        >
-          <svg
-            aria-hidden="true"
-            viewBox="0 0 20 20"
-            width="18"
-            height="18"
-            fill="none"
-            stroke="currentColor"
-          >
-            <path d="M3 5h14M3 10h14M3 15h14" />
-          </svg>
-        </button>
-      </div>
+      {showTrigger
+        ? (
+          <div className="fixed bottom-[calc(env(safe-area-inset-bottom)+0.125rem)] left-[max(0.5rem,env(safe-area-inset-left))] z-30 lg:top-1/2 lg:bottom-auto lg:left-0 lg:-translate-y-1/2">
+            <button
+              type="button"
+              aria-label={open ? "Close filters" : "Open filters"}
+              aria-pressed={open}
+              className="grid size-11 cursor-pointer place-items-center border border-ink bg-paper text-ink hover:bg-ink hover:text-paper focus-visible:outline-2 focus-visible:outline-ink focus-visible:outline-offset-[-2px] lg:w-8"
+              onClick={() => onOpenChange(!open)}
+            >
+              <svg
+                aria-hidden="true"
+                viewBox="0 0 20 20"
+                width="18"
+                height="18"
+                fill="none"
+                stroke="currentColor"
+              >
+                <path d="M3 5h14M3 10h14M3 15h14" />
+              </svg>
+            </button>
+          </div>
+        )
+        : null}
 
       {open && (
         <div className="fixed inset-0 z-40">
