@@ -12,8 +12,6 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as SavedRouteImport } from './routes/saved'
 import { Route as ApiSplatRouteImport } from './routes/api/$'
-import { Route as AuthSignOutRouteImport } from './routes/auth/sign-out'
-import { Route as AuthVerifyRouteImport } from './routes/auth/verify'
 import { Route as PaperIdRouteImport } from './routes/paper/$id'
 
 const IndexRoute = IndexRouteImport.update({
@@ -31,16 +29,6 @@ const ApiSplatRoute = ApiSplatRouteImport.update({
   path: '/api/$',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AuthSignOutRoute = AuthSignOutRouteImport.update({
-  id: '/auth/sign-out',
-  path: '/auth/sign-out',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AuthVerifyRoute = AuthVerifyRouteImport.update({
-  id: '/auth/verify',
-  path: '/auth/verify',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const PaperIdRoute = PaperIdRouteImport.update({
   id: '/paper/$id',
   path: '/paper/$id',
@@ -51,16 +39,12 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/saved': typeof SavedRoute
   '/api/$': typeof ApiSplatRoute
-  '/auth/sign-out': typeof AuthSignOutRoute
-  '/auth/verify': typeof AuthVerifyRoute
   '/paper/$id': typeof PaperIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/saved': typeof SavedRoute
   '/api/$': typeof ApiSplatRoute
-  '/auth/sign-out': typeof AuthSignOutRoute
-  '/auth/verify': typeof AuthVerifyRoute
   '/paper/$id': typeof PaperIdRoute
 }
 export interface FileRoutesById {
@@ -68,33 +52,20 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/saved': typeof SavedRoute
   '/api/$': typeof ApiSplatRoute
-  '/auth/sign-out': typeof AuthSignOutRoute
-  '/auth/verify': typeof AuthVerifyRoute
   '/paper/$id': typeof PaperIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths:
-    '/' | '/saved' | '/api/$' | '/auth/sign-out' | '/auth/verify' | '/paper/$id'
+  fullPaths: '/' | '/saved' | '/api/$' | '/paper/$id'
   fileRoutesByTo: FileRoutesByTo
-  to:
-    '/' | '/saved' | '/api/$' | '/auth/sign-out' | '/auth/verify' | '/paper/$id'
-  id:
-    | '__root__'
-    | '/'
-    | '/saved'
-    | '/api/$'
-    | '/auth/sign-out'
-    | '/auth/verify'
-    | '/paper/$id'
+  to: '/' | '/saved' | '/api/$' | '/paper/$id'
+  id: '__root__' | '/' | '/saved' | '/api/$' | '/paper/$id'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   SavedRoute: typeof SavedRoute
   ApiSplatRoute: typeof ApiSplatRoute
-  AuthSignOutRoute: typeof AuthSignOutRoute
-  AuthVerifyRoute: typeof AuthVerifyRoute
   PaperIdRoute: typeof PaperIdRoute
 }
 
@@ -121,20 +92,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiSplatRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/auth/sign-out': {
-      id: '/auth/sign-out'
-      path: '/auth/sign-out'
-      fullPath: '/auth/sign-out'
-      preLoaderRoute: typeof AuthSignOutRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/auth/verify': {
-      id: '/auth/verify'
-      path: '/auth/verify'
-      fullPath: '/auth/verify'
-      preLoaderRoute: typeof AuthVerifyRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/paper/$id': {
       id: '/paper/$id'
       path: '/paper/$id'
@@ -149,8 +106,6 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   SavedRoute: SavedRoute,
   ApiSplatRoute: ApiSplatRoute,
-  AuthSignOutRoute: AuthSignOutRoute,
-  AuthVerifyRoute: AuthVerifyRoute,
   PaperIdRoute: PaperIdRoute,
 }
 export const routeTree = rootRouteImport

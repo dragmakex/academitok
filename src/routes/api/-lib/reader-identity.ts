@@ -1,10 +1,8 @@
 /**
- * RPC reader identity: resolves the reader cookie, then the reader that owns
- * the data once an account has claimed that device (SPEC §17.1, §17.5).
+ * RPC reader identity: resolves the anonymous reader from the request cookie
+ * (SPEC §17.1). There are no accounts to canonicalise through.
  */
 
-import { ReaderStateRepository } from "@/db/reader-state-repository"
-import { canonicalReaderId } from "@/features/auth/application"
 import { ReaderId, readerIdFromCookieHeader } from "@/lib/reader-id"
 import * as Effect from "effect/Effect"
 import { Headers } from "effect/http"
@@ -17,20 +15,17 @@ type RpcMiddlewareOptions = Parameters<RpcMiddleware.Any>[1]
 /** RPC middleware that supplies `ReaderId` to every handler. */
 export class RpcReaderId extends RpcMiddleware.Service<
   RpcReaderId,
-  { provides: ReaderId; requires: ReaderStateRepository }
+  { provides: ReaderId }
 >()("RpcReaderId") {}
 
 const rpcReaderIdMiddleware = <A, E>(
-  effect: Effect.Effect<A, E, ReaderId | ReaderStateRepository>,
+  effect: Effect.Effect<A, E, ReaderId>,
   opts: RpcMiddlewareOptions,
-): Effect.Effect<A, E, ReaderStateRepository> => {
-  const claimed = readerIdFromCookieHeader(
+): Effect.Effect<A, E> => {
+  const readerId = readerIdFromCookieHeader(
     Option.getOrUndefined(Headers.get(opts.headers, "cookie")),
   )
-  return Effect.gen(function*() {
-    const readerId = yield* canonicalReaderId(claimed)
-    return yield* Effect.provideService(effect, ReaderId, readerId)
-  })
+  return Effect.provideService(effect, ReaderId, readerId)
 }
 
 /** Layer providing the RPC reader-identity middleware. */

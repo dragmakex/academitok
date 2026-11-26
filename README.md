@@ -19,6 +19,18 @@ The feed learns from impressions, dwell time, likes, saves, hides, and source op
 - Tailwind CSS 4 design tokens
 - Vitest and Playwright
 
+## Where the papers come from
+
+The catalog is **OpenAlex metadata**: title, abstract, authors, venue, year, citation count,
+open-access status and the publisher/DOI landing page. Requests are cached in the local catalog pool
+for 24 hours, and a frozen seed edition keeps the deck readable when the source is unavailable.
+AcademiTok stores and serves metadata only — no PDFs and no full text.
+
+The whole clipping is the outbound link. When a reader taps **Read the paper**, they land on the
+publisher or DOI page and use whatever access their institution, library or the publisher already
+gives them. There is no AcademiTok login: a first-party cookie keeps this browser's likes, saves and
+learned topic profile local to the device.
+
 ## Local development
 
 Requirements: [Bun](https://bun.sh) and a Chromium browser for browser tests.

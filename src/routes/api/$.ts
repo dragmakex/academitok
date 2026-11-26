@@ -7,7 +7,6 @@
 
 import { DomainRpc } from "@/api/domain-rpc"
 import { pingReaderStateRepository } from "@/db/reader-state-repository"
-import { AuthLive } from "@/features/auth/application"
 import {
   getPaperBibtex,
   getSavedBibtex,
@@ -269,7 +268,7 @@ const ObservabilityRuntimeLive = Layer.orDie(ObservabilityLive)
  * Pattern: Layer.provideMerge — merges multiple service layers into runtime.
  */
 export const ServerRuntimeLive = Layer
-  .mergeAll(PapersApplicationLive, AuthLive)
+  .mergeAll(PapersApplicationLive)
   .pipe(Layer.provideMerge(ObservabilityRuntimeLive))
   .pipe(Layer.provideMerge(SentryLive))
   .pipe(Layer.provideMerge(DevConsoleLive))

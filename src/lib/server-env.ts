@@ -3,15 +3,12 @@
  *
  * Pattern: Effect Schema boundary validation
  * Purpose: Prevent production servers from booting into unsafe defaults
- * (ephemeral PGlite fallback, open sign-in origin allowlist, unconfigured
- * mail delivery, or missing OpenAlex polite-pool identification).
+ * (ephemeral PGlite fallback or missing OpenAlex polite-pool identification).
  */
 
 import * as Schema from "effect/Schema"
 
-const originPattern = /^https?:\/\/[a-z0-9.-]+(:\d+)?$/i
 const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-const mailFromEmailPattern = /[^\s@<>]+@[^\s@<>]+\.[^\s@<>]+/
 
 const NodeEnvSchema = Schema.Literals(["development", "test", "production"])
 
@@ -20,10 +17,7 @@ export type NodeEnv = typeof NodeEnvSchema.Type
 export interface ValidatedServerEnv {
   readonly nodeEnv: NodeEnv
   readonly databaseUrl: string | undefined
-  readonly authOrigins: ReadonlyArray<string>
   readonly openAlexMailto: string | undefined
-  readonly resendApiKey: string | undefined
-  readonly mailFrom: string | undefined
   readonly sentryDsn: string | undefined
   readonly sentryTracesSampleRate: number | undefined
   readonly otlpEndpoint: string | undefined
@@ -83,12 +77,6 @@ const isValidPostgresUrl = (value: string): boolean => {
   }
 }
 
-const parseAuthOrigins = (raw: string | undefined): ReadonlyArray<string> =>
-  (raw ?? "")
-    .split(",")
-    .map((origin) => origin.trim())
-    .filter((origin) => origin !== "")
-
 const optionalHttpUrlVars = [
   "SENTRY_DSN",
   "OTLP_ENDPOINT",
@@ -122,10 +110,7 @@ export function validateServerEnv(
 
   const isProduction = nodeEnv === "production"
   const databaseUrl = trimmed(env.DATABASE_URL)
-  const authOrigins = parseAuthOrigins(env.AUTH_ORIGINS)
   const openAlexMailto = trimmed(env.OPENALEX_MAILTO)
-  const resendApiKey = trimmed(env.RESEND_API_KEY)
-  const mailFrom = trimmed(env.MAIL_FROM)
   const sentryDsn = trimmed(env.SENTRY_DSN)
   const otlpEndpoint = trimmed(env.OTLP_ENDPOINT)
   const lokiOtlpEndpoint = trimmed(env.LOKI_OTLP_ENDPOINT)
@@ -144,22 +129,6 @@ export function validateServerEnv(
     )
   }
 
-  if (authOrigins.length === 0) {
-    if (isProduction) {
-      issues.push(
-        "AUTH_ORIGINS is required in production (comma-separated allowed sign-in origins)",
-      )
-    }
-  } else {
-    for (const origin of authOrigins) {
-      if (!originPattern.test(origin)) {
-        issues.push(
-          `AUTH_ORIGINS entry "${origin}" must be a bare http(s) origin without trailing slash or path`,
-        )
-      }
-    }
-  }
-
   if (openAlexMailto === undefined) {
     if (isProduction) {
       issues.push(
@@ -168,27 +137,6 @@ export function validateServerEnv(
     }
   } else if (!emailPattern.test(openAlexMailto)) {
     issues.push("OPENALEX_MAILTO must be a valid email address")
-  }
-
-  if (isProduction) {
-    if (resendApiKey === undefined) {
-      issues.push(
-        "RESEND_API_KEY is required in production for sign-in email delivery",
-      )
-    }
-    if (mailFrom === undefined) {
-      issues.push(
-        "MAIL_FROM is required in production (e.g. \"AcademiTok <desk@academitok.example>\")",
-      )
-    }
-  } else if ((resendApiKey === undefined) !== (mailFrom === undefined)) {
-    issues.push(
-      "RESEND_API_KEY and MAIL_FROM must either both be set or both be omitted",
-    )
-  }
-
-  if (mailFrom !== undefined && !mailFromEmailPattern.test(mailFrom)) {
-    issues.push("MAIL_FROM must contain a valid sender email address")
   }
 
   for (const key of optionalHttpUrlVars) {
@@ -218,10 +166,7 @@ export function validateServerEnv(
   return {
     nodeEnv,
     databaseUrl,
-    authOrigins,
     openAlexMailto,
-    resendApiKey,
-    mailFrom,
     sentryDsn,
     sentryTracesSampleRate,
     otlpEndpoint,

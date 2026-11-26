@@ -10,7 +10,7 @@ docker build --target production -t academitok:latest .
 
 ## Run
 
-Provide a production environment file (PostgreSQL `DATABASE_URL`, `AUTH_ORIGINS`, `OPENALEX_MAILTO`, and Resend mail credentials):
+Provide a production environment file (PostgreSQL `DATABASE_URL`, `OPENALEX_MAILTO`, and the optional observability settings):
 
 ```bash
 docker run --rm \

@@ -5,7 +5,7 @@ const actionButtonClass =
   "flex h-11 w-11 items-center justify-center border border-rule-soft bg-paper text-ink cursor-pointer hover:bg-ink hover:text-paper focus-visible:outline-2 focus-visible:outline-ink focus-visible:outline-offset-2 aria-pressed:bg-ink aria-pressed:text-paper"
 
 const pagerButtonClass =
-  "flex min-h-12 w-12 items-center justify-center border-0 bg-transparent font-display text-[1.15rem] text-ink cursor-pointer hover:bg-ink hover:text-paper focus-visible:outline-2 focus-visible:outline-ink focus-visible:outline-offset-[-2px]"
+  "flex h-11 w-11 items-center justify-center border-0 bg-transparent font-display text-[1.15rem] text-ink cursor-pointer hover:bg-ink hover:text-paper focus-visible:outline-2 focus-visible:outline-ink focus-visible:outline-offset-[-2px]"
 
 const metaClass =
   "font-label text-[0.62rem] font-bold uppercase tracking-[0.14em] text-ink-muted"
@@ -186,116 +186,114 @@ export const PaperSlide = forwardRef<HTMLElement, PaperSlideProps>(
           )
           : (
             <>
-              <div className="flex min-h-0 flex-1 flex-col overflow-y-auto px-[clamp(0.65rem,1.8vw,3rem)] py-[clamp(1.5rem,4dvh,3rem)] text-ink focus-visible:outline-2 focus-visible:outline-offset-[-8px] focus-visible:outline-ink">
-                <div className="m-auto w-full max-w-[68rem]">
-                  <a
-                    className="block text-ink no-underline"
-                    href={externalUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    onClick={actions.onOpenSite}
-                    aria-label="Open paper source in a new tab"
+              <div className="flex min-h-0 flex-1 flex-col overflow-hidden px-[clamp(0.65rem,1.8vw,3rem)] pt-[clamp(1.1rem,3dvh,3rem)] pb-s text-ink focus-visible:outline-2 focus-visible:outline-offset-[-8px] focus-visible:outline-ink">
+                <a
+                  className="mx-auto flex min-h-0 w-full max-w-[68rem] flex-1 flex-col text-ink no-underline"
+                  href={externalUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={actions.onOpenSite}
+                  aria-label="Open paper source in a new tab"
+                >
+                  <p className="m-0 shrink-0 font-label text-[clamp(0.66rem,0.85vmin,0.9rem)] font-bold uppercase tracking-[0.2em]">
+                    {topics[0] ?? "Research"}
+                    <span className="text-ink-muted">
+                      {"  ·  "}
+                      {citations} {citations === 1 ? "citation" : "citations"}
+                      {"  ·  "}
+                      {readMinutes} min read
+                    </span>
+                  </p>
+
+                  <h2
+                    id={headlineId}
+                    className="mt-s line-clamp-5 m-0 max-w-[27ch] overflow-wrap-anywhere font-display text-[clamp(1.65rem,min(4.2vw,5.4vh),4.1rem)] font-bold leading-[1] tracking-[-0.03em]"
                   >
-                    <p className="m-0 font-label text-[clamp(0.7rem,0.85vmin,0.95rem)] font-bold uppercase tracking-[0.2em]">
-                      {topics[0] ?? "Research"}
-                      <span className="text-ink-muted">
-                        {"  ·  "}
-                        {citations} {citations === 1 ? "citation" : "citations"}
-                        {"  ·  "}
-                        {readMinutes} min read
-                      </span>
-                    </p>
+                    {title}
+                  </h2>
 
-                    <h2
-                      id={headlineId}
-                      className="mt-s max-w-[24ch] overflow-wrap-anywhere m-0 text-balance font-display text-[clamp(1.9rem,min(4.2vw,5.8vh),4.1rem)] font-bold leading-[1] tracking-[-0.03em]"
-                    >
-                      {title}
-                    </h2>
+                  <p className="mt-m line-clamp-4 m-0 max-w-[62ch] hyphens-auto text-left font-body text-[clamp(1rem,min(1.6vw,2.2vh),1.5rem)] leading-[1.45] md:line-clamp-6 md:text-justify md:[text-align-last:left]">
+                    {abstract}
+                  </p>
 
-                    <p className="mt-m m-0 hyphens-auto text-left font-body text-[clamp(1.02rem,min(1.6vw,2.4vh),1.6rem)] leading-[1.48] md:columns-2 md:gap-[2rem] md:text-justify md:[text-align-last:left]">
-                      {abstract}
-                    </p>
-
-                    <p className="mt-l m-0 font-label text-[clamp(0.66rem,0.8vmin,0.9rem)] font-bold uppercase tracking-[0.18em] text-ink-muted">
-                      Read the paper →
-                    </p>
-                  </a>
-
-                  <div
-                    role="group"
-                    aria-label="Paper actions"
-                    className="mt-l flex items-center gap-s"
-                  >
-                    <button
-                      className={actionButtonClass}
-                      type="button"
-                      onClick={actions.onLike}
-                      aria-label={liked ? "Unlike paper" : "Like paper"}
-                      aria-pressed={liked}
-                    >
-                      <svg
-                        viewBox="0 0 24 24"
-                        width="20"
-                        height="20"
-                        fill={liked ? "currentColor" : "none"}
-                        stroke="currentColor"
-                        strokeWidth={1.6}
-                        strokeLinejoin="round"
-                        aria-hidden="true"
-                      >
-                        <path d="M12 20.3 5.6 14A4.6 4.6 0 0 1 12 7.4 4.6 4.6 0 0 1 18.4 14Z" />
-                      </svg>
-                    </button>
-                    <button
-                      className={actionButtonClass}
-                      type="button"
-                      onClick={actions.onBookmark}
-                      aria-label={bookmarked
-                        ? "Remove saved paper"
-                        : "Save paper"}
-                      aria-pressed={bookmarked}
-                    >
-                      <svg
-                        viewBox="0 0 24 24"
-                        width="20"
-                        height="20"
-                        fill={bookmarked ? "currentColor" : "none"}
-                        stroke="currentColor"
-                        strokeWidth={1.6}
-                        strokeLinejoin="round"
-                        aria-hidden="true"
-                      >
-                        <path d="M7 4.5h10v15l-5-3.6-5 3.6Z" />
-                      </svg>
-                    </button>
-                    <button
-                      className={actionButtonClass}
-                      type="button"
-                      onClick={actions.onShare}
-                      aria-label="Share paper"
-                    >
-                      <svg
-                        viewBox="0 0 24 24"
-                        width="20"
-                        height="20"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth={1.6}
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        aria-hidden="true"
-                      >
-                        <path d="M12 15.5V4m0 0L8 8m4-4 4 4" />
-                        <path d="M6.5 11v8.5h11V11" />
-                      </svg>
-                    </button>
-                  </div>
-                </div>
+                  <p className="mt-auto pt-m m-0 font-label text-[clamp(0.66rem,0.8vmin,0.9rem)] font-bold uppercase tracking-[0.18em] text-ink-muted">
+                    Read the paper →
+                  </p>
+                </a>
               </div>
 
-              <div className="flex shrink-0 items-center justify-center bg-paper pb-[env(safe-area-inset-bottom)]">
-                <div className="relative flex items-stretch">
+              <div className="flex shrink-0 items-center justify-between gap-s border-t border-rule-soft bg-paper px-[clamp(0.65rem,1.8vw,3rem)] py-xs pb-[max(0.5rem,env(safe-area-inset-bottom))] pl-[calc(3.5rem+env(safe-area-inset-left))] lg:pl-[clamp(1.6rem,4vw,3rem)]">
+                <div
+                  role="group"
+                  aria-label="Paper actions"
+                  className="flex items-center gap-s"
+                >
+                  <button
+                    className={actionButtonClass}
+                    type="button"
+                    onClick={actions.onLike}
+                    aria-label={liked ? "Unlike paper" : "Like paper"}
+                    aria-pressed={liked}
+                  >
+                    <svg
+                      viewBox="0 0 24 24"
+                      width="20"
+                      height="20"
+                      fill={liked ? "currentColor" : "none"}
+                      stroke="currentColor"
+                      strokeWidth={1.6}
+                      strokeLinejoin="round"
+                      aria-hidden="true"
+                    >
+                      <path d="M12 20.3 5.6 14A4.6 4.6 0 0 1 12 7.4 4.6 4.6 0 0 1 18.4 14Z" />
+                    </svg>
+                  </button>
+                  <button
+                    className={actionButtonClass}
+                    type="button"
+                    onClick={actions.onBookmark}
+                    aria-label={bookmarked
+                      ? "Remove saved paper"
+                      : "Save paper"}
+                    aria-pressed={bookmarked}
+                  >
+                    <svg
+                      viewBox="0 0 24 24"
+                      width="20"
+                      height="20"
+                      fill={bookmarked ? "currentColor" : "none"}
+                      stroke="currentColor"
+                      strokeWidth={1.6}
+                      strokeLinejoin="round"
+                      aria-hidden="true"
+                    >
+                      <path d="M7 4.5h10v15l-5-3.6-5 3.6Z" />
+                    </svg>
+                  </button>
+                  <button
+                    className={actionButtonClass}
+                    type="button"
+                    onClick={actions.onShare}
+                    aria-label="Share paper"
+                  >
+                    <svg
+                      viewBox="0 0 24 24"
+                      width="20"
+                      height="20"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth={1.6}
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      aria-hidden="true"
+                    >
+                      <path d="M12 15.5V4m0 0L8 8m4-4 4 4" />
+                      <path d="M6.5 11v8.5h11V11" />
+                    </svg>
+                  </button>
+                </div>
+
+                <div className="flex items-stretch">
                   <button
                     className={pagerButtonClass}
                     type="button"
