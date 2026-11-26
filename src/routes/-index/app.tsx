@@ -55,6 +55,7 @@ type VisiblePaperSlideProps = {
   readonly item: FeedItem
   readonly total: number
   readonly onBookmark: () => void
+  readonly onOpenDesk: () => void
   readonly onShare: () => void
   readonly onNavigate: (index: number) => void
   readonly onVisible: (index: number) => void
@@ -69,6 +70,7 @@ type VisiblePaperSlideProps = {
  * @param root0.item - Feed item.
  * @param root0.total - Mounted feed length.
  * @param root0.onBookmark - Save reaction callback.
+ * @param root0.onOpenDesk - Reading desk callback.
  * @param root0.onShare - Share-sheet callback.
  * @param root0.onNavigate - Navigation callback.
  * @param root0.onVisible - Visibility callback.
@@ -80,6 +82,7 @@ function VisiblePaperSlide({
   index,
   item,
   onBookmark,
+  onOpenDesk,
   onShare,
   onNavigate,
   onVisible,
@@ -229,7 +232,7 @@ function VisiblePaperSlide({
       }}
       id={item.paper.id}
       title={item.paper.title}
-      abstract={item.paper.summary}
+      abstract={item.paper.abstract}
       citations={item.paper.citations}
       readMinutes={item.paper.readMinutes}
       topics={item.paper.topics}
@@ -243,6 +246,7 @@ function VisiblePaperSlide({
         onLike: () => react("like"),
         onBookmark,
         onShare,
+        onOpenDesk,
         onOpenSite: () => react("open-site"),
         onPrevious: () => onNavigate(index - 1),
         onNext: () => onNavigate(index + 1),
@@ -632,6 +636,7 @@ export function App() {
       <EdgeDrawer
         open={drawerOpen}
         onOpenChange={setDrawerOpen}
+        showTrigger={false}
         title="The reading desk"
         description={
           <Text tone="muted">
@@ -840,6 +845,7 @@ export function App() {
                   reactToPaper({ kind: "bookmark", paperId: item.paper.id })
                   setNotice({ label: "Filed in clippings" })
                 }}
+                onOpenDesk={() => setDrawerOpen(true)}
                 onNavigate={navigate}
                 onVisible={onVisible}
                 registerNode={registerNode}

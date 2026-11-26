@@ -1,11 +1,11 @@
-import { forwardRef } from "react"
+import { forwardRef, useEffect, useRef } from "react"
 
 /* Square ink stamp under the headline: outline at rest, inverted once pressed. */
 const actionButtonClass =
-  "flex h-11 w-11 items-center justify-center border border-rule-soft bg-paper text-ink cursor-pointer hover:bg-ink hover:text-paper focus-visible:outline-2 focus-visible:outline-ink focus-visible:outline-offset-2 aria-pressed:bg-ink aria-pressed:text-paper"
+  "flex h-10 w-10 shrink-0 items-center justify-center border border-rule-soft bg-paper text-ink cursor-pointer hover:bg-ink hover:text-paper focus-visible:outline-2 focus-visible:outline-ink focus-visible:outline-offset-2 aria-pressed:bg-ink aria-pressed:text-paper sm:h-11 sm:w-11"
 
 const pagerButtonClass =
-  "flex h-11 w-11 items-center justify-center border-0 bg-transparent font-display text-[1.15rem] text-ink cursor-pointer hover:bg-ink hover:text-paper focus-visible:outline-2 focus-visible:outline-ink focus-visible:outline-offset-[-2px]"
+  "flex h-10 w-10 shrink-0 items-center justify-center border-0 bg-transparent font-display text-[1.15rem] text-ink cursor-pointer hover:bg-ink hover:text-paper focus-visible:outline-2 focus-visible:outline-ink focus-visible:outline-offset-[-2px] sm:h-11 sm:w-11"
 
 const metaClass =
   "font-label text-[0.62rem] font-bold uppercase tracking-[0.14em] text-ink-muted"
@@ -15,6 +15,7 @@ type ActionHandlers = {
   readonly onBookmark: () => void
   readonly onShare: () => void
   readonly onOpenSite: () => void
+  readonly onOpenDesk: () => void
   readonly onPrevious: () => void
   readonly onNext: () => void
 }
@@ -71,6 +72,39 @@ export const PaperSlide = forwardRef<HTMLElement, PaperSlideProps>(
     const headlineId = `paper-headline-${
       props.id.replaceAll(/[^a-zA-Z0-9_-]/g, "-")
     }`
+    const abstractBoxRef = useRef<HTMLParagraphElement | null>(null)
+    const abstractTextRef = useRef<HTMLSpanElement | null>(null)
+    const abstractText = props.abstract
+    const deckSkeleton = props.variant === "compact" ? true : props.skeleton
+
+    /*
+     * Fit the abstract to the height the slide actually leaves. A fixed line
+     * clamp either strands white space on tall screens or cuts a line mid-glyph
+     * when the headline is long; the wrapper owns the flex height and the span
+     * gets the exact number of lines that height can hold.
+     */
+    useEffect(() => {
+      const box = abstractBoxRef.current
+      const text = abstractTextRef.current
+      if (box === null || text === null) {
+        return
+      }
+      const fit = () => {
+        const lineHeight = Number.parseFloat(getComputedStyle(text).lineHeight)
+        if (!Number.isFinite(lineHeight) || lineHeight <= 0) {
+          return
+        }
+        const lines = Math.max(
+          1,
+          Math.floor((box.clientHeight - 2) / lineHeight),
+        )
+        text.style.setProperty("-webkit-line-clamp", String(lines))
+      }
+      fit()
+      const observer = new ResizeObserver(fit)
+      observer.observe(box)
+      return () => observer.disconnect()
+    }, [abstractText, deckSkeleton])
 
     if (props.variant === "compact") {
       const {
@@ -207,27 +241,52 @@ export const PaperSlide = forwardRef<HTMLElement, PaperSlideProps>(
 
                   <h2
                     id={headlineId}
-                    className="mt-s line-clamp-5 m-0 max-w-[27ch] overflow-wrap-anywhere font-display text-[clamp(1.65rem,min(4.2vw,5.4vh),4.1rem)] font-bold leading-[1] tracking-[-0.03em]"
+                    className="mt-s line-clamp-5 shrink-0 m-0 max-w-[27ch] overflow-wrap-anywhere font-display text-[clamp(1.6rem,6.4vh,4.5rem)] font-bold leading-[1] tracking-[-0.03em] [@media(min-height:680px)]:line-clamp-6"
                   >
                     {title}
                   </h2>
 
-                  <p className="mt-m line-clamp-4 m-0 max-w-[62ch] hyphens-auto text-left font-body text-[clamp(1rem,min(1.6vw,2.2vh),1.5rem)] leading-[1.45] md:line-clamp-6 md:text-justify md:[text-align-last:left]">
-                    {abstract}
+                  <p
+                    ref={abstractBoxRef}
+                    className="mt-m min-h-0 flex-1 m-0 max-w-[62ch] overflow-hidden hyphens-auto text-left font-body text-[clamp(1.02rem,3.2vh,1.8rem)] leading-[1.4] md:text-justify md:[text-align-last:left]"
+                  >
+                    <span
+                      ref={abstractTextRef}
+                      className="line-clamp-5 [@media(min-height:680px)]:line-clamp-7 [@media(min-height:820px)]:line-clamp-8"
+                    >
+                      {abstract}
+                    </span>
                   </p>
 
-                  <p className="mt-auto pt-m m-0 font-label text-[clamp(0.66rem,0.8vmin,0.9rem)] font-bold uppercase tracking-[0.18em] text-ink-muted">
+                  <p className="mt-m shrink-0 pt-2xs m-0 font-label text-[clamp(0.66rem,0.8vmin,0.9rem)] font-bold uppercase tracking-[0.18em] text-ink-muted">
                     Read the paper →
                   </p>
                 </a>
               </div>
 
-              <div className="flex shrink-0 items-center justify-between gap-s border-t border-rule-soft bg-paper px-[clamp(0.65rem,1.8vw,3rem)] py-xs pb-[max(0.5rem,env(safe-area-inset-bottom))] pl-[calc(3.5rem+env(safe-area-inset-left))] lg:pl-[clamp(1.6rem,4vw,3rem)]">
+              <div className="flex shrink-0 items-center justify-between gap-2xs border-t border-rule-soft bg-paper px-[clamp(0.65rem,1.8vw,3rem)] py-xs pb-[max(0.5rem,env(safe-area-inset-bottom))]">
                 <div
                   role="group"
                   aria-label="Paper actions"
-                  className="flex items-center gap-s"
+                  className="flex items-center gap-2xs sm:gap-xs"
                 >
+                  <button
+                    className={actionButtonClass}
+                    type="button"
+                    onClick={actions.onOpenDesk}
+                    aria-label="Open the reading desk"
+                  >
+                    <svg
+                      viewBox="0 0 20 20"
+                      width="18"
+                      height="18"
+                      fill="none"
+                      stroke="currentColor"
+                      aria-hidden="true"
+                    >
+                      <path d="M3 5h14M3 10h14M3 15h14" />
+                    </svg>
+                  </button>
                   <button
                     className={actionButtonClass}
                     type="button"
