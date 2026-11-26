@@ -5,39 +5,51 @@ import {
   poolCutoff,
   ReaderStateRepository,
 } from "@/db/reader-state-repository"
+import { PgliteLockError } from "@/db/reader-state-repository"
 import { savedPaperIds } from "@/features/papers/recommendation"
 import { defaultReaderId, ReaderId } from "@/lib/reader-id"
 import { PGlite } from "@electric-sql/pglite"
+import * as Cause from "effect/Cause"
 import * as ConfigProvider from "effect/ConfigProvider"
 import * as Effect from "effect/Effect"
+import * as Exit from "effect/Exit"
 import * as Layer from "effect/Layer"
-import { mkdtemp, rm } from "node:fs/promises"
+import { spawn } from "node:child_process"
+import { mkdir, mkdtemp, readdir, rm, writeFile } from "node:fs/promises"
 import { tmpdir } from "node:os"
-import { join } from "node:path"
+import { basename, dirname, join } from "node:path"
 import { afterEach, describe, expect, it } from "vitest"
 
 const directories: Array<string> = []
 
-const runWithDatabase = <A>(
+const provideDatabase = <A>(
   dataDir: string,
   effect: Effect.Effect<A, never, ReaderStateRepository | ReaderId>,
 ) =>
-  Effect.runPromise(
-    effect.pipe(
-      Effect.provide([
-        ReaderStateRepository.layer,
-        Layer.succeed(ReaderId, defaultReaderId),
-      ]),
-      Effect.provide(
-        ConfigProvider.layer(
-          ConfigProvider.fromEnv({
-            env: { PGLITE_READER_STATE_DIR: dataDir },
-          }),
-        ),
+  effect.pipe(
+    Effect.provide([
+      ReaderStateRepository.layer,
+      Layer.succeed(ReaderId, defaultReaderId),
+    ]),
+    Effect.provide(
+      ConfigProvider.layer(
+        ConfigProvider.fromEnv({
+          env: { PGLITE_READER_STATE_DIR: dataDir },
+        }),
       ),
-      Effect.scoped,
     ),
+    Effect.scoped,
   )
+
+const runWithDatabase = <A>(
+  dataDir: string,
+  effect: Effect.Effect<A, never, ReaderStateRepository | ReaderId>,
+) => Effect.runPromise(provideDatabase(dataDir, effect))
+
+const runWithDatabaseExit = <A>(
+  dataDir: string,
+  effect: Effect.Effect<A, never, ReaderStateRepository | ReaderId>,
+) => Effect.runPromiseExit(provideDatabase(dataDir, effect))
 
 afterEach(async () => {
   await Promise.all(
@@ -606,5 +618,61 @@ describe("ReaderStateRepository", () => {
     expect(pooled.none).toEqual([])
     expect(pooled.fresh).toEqual([paper])
     expect(pooled.expired).toEqual([])
+  })
+
+  it("refuses a second live process on the same data directory", async () => {
+    const dataDir = await mkdtemp(join(tmpdir(), "academitok-locked-"))
+    directories.push(dataDir)
+    const holder = spawn("sleep", ["30"])
+    try {
+      await mkdir(`${dataDir}.lock`, { recursive: true })
+      await writeFile(
+        join(`${dataDir}.lock`, "owner"),
+        `${holder.pid}\n`,
+        "utf8",
+      )
+
+      const exit = await runWithDatabaseExit(dataDir, Effect.void)
+      if (!Exit.isFailure(exit)) {
+        throw new Error("expected the locked data directory to fail")
+      }
+      const error = Cause.squash(exit.cause)
+      if (!(error instanceof PgliteLockError)) {
+        throw new Error(`expected PgliteLockError, got ${String(error)}`)
+      }
+      expect(error.ownerPid).toBe(holder.pid)
+    } finally {
+      holder.kill()
+    }
+  })
+
+  it("rebuilds a damaged data directory and keeps the damaged copy aside", async () => {
+    const dataDir = await mkdtemp(join(tmpdir(), "academitok-damaged-"))
+    directories.push(dataDir)
+    await writeFile(join(dataDir, "base"), "not a directory")
+
+    const loaded = await runWithDatabaseExit(
+      dataDir,
+      Effect.gen(function*() {
+        const repository = yield* ReaderStateRepository
+        return yield* repository.load
+      }),
+    )
+    expect(Exit.isSuccess(loaded)).toBe(true)
+
+    const siblings = await readdir(dirname(dataDir))
+    const damaged = siblings.find((name) =>
+      name.startsWith(`${basename(dataDir)}.corrupt-`)
+    )
+    expect(damaged).toBeDefined()
+
+    const reopened = await runWithDatabaseExit(
+      dataDir,
+      Effect.gen(function*() {
+        const repository = yield* ReaderStateRepository
+        return yield* repository.load
+      }),
+    )
+    expect(Exit.isSuccess(reopened)).toBe(true)
   })
 })

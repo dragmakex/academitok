@@ -29,7 +29,8 @@ import * as Option from "effect/Option"
 import * as Schema from "effect/Schema"
 import { Buffer } from "node:buffer"
 import { randomUUID } from "node:crypto"
-import { mkdir } from "node:fs/promises"
+import { mkdir, readFile, rename, rm, writeFile } from "node:fs/promises"
+import { join, resolve } from "node:path"
 import postgres from "postgres"
 
 type RepositoryDatabaseConfig =
@@ -1097,6 +1098,126 @@ function makePostgresRepository(databaseUrl: string) {
 }
 
 /**
+ * Refusal to open a PGlite data directory another live process already owns.
+ */
+export class PgliteLockError extends Error {
+  readonly dataDir: string
+  readonly ownerPid: number
+
+  /**
+   * Builds the cross-process refusal.
+   * @param dataDir - Directory the other process owns.
+   * @param ownerPid - Live process currently using it.
+   */
+  constructor(dataDir: string, ownerPid: number) {
+    super(
+      `Another AcademiTok server (pid ${ownerPid}) is already using ${dataDir}. Stop that server, or point PGLITE_READER_STATE_DIR at a different directory.`,
+    )
+    this.name = "PgliteLockError"
+    this.dataDir = dataDir
+    this.ownerPid = ownerPid
+  }
+}
+
+/** Lock paths this process already holds, so re-entry in one process is a no-op. */
+const pgliteLocks = new Set<string>()
+
+const processIsAlive = (pid: number): boolean => {
+  try {
+    process.kill(pid, 0)
+    return true
+  } catch {
+    return false
+  }
+}
+
+/**
+ * Claims the exclusive lock beside one PGlite data directory. PGlite corrupts
+ * a directory that two processes open at once, so a second live server is
+ * refused with a clear message instead of being allowed to break the store.
+ * @param dataDir - Directory about to be opened.
+ * @returns Lock acquisition.
+ */
+const acquirePgliteLock = async (dataDir: string): Promise<void> => {
+  const key = resolve(dataDir)
+  const lockPath = `${key}.lock`
+  if (pgliteLocks.has(key)) {
+    return
+  }
+  const claim = async (): Promise<void> => {
+    await mkdir(lockPath, { recursive: false })
+    await writeFile(join(lockPath, "owner"), `${process.pid}\n`, "utf8")
+    pgliteLocks.add(key)
+  }
+  try {
+    await claim()
+    return
+  } catch {
+    const owner = Number.parseInt(
+      (await readFile(join(lockPath, "owner"), "utf8").catch(() => "")).trim(),
+      10,
+    )
+    if (
+      Number.isInteger(owner)
+      && owner > 0
+      && owner !== process.pid
+      && processIsAlive(owner)
+    ) {
+      throw new PgliteLockError(key, owner)
+    }
+    await rm(lockPath, { force: true, recursive: true })
+    await claim()
+  }
+}
+
+/**
+ * Releases the lock this process holds on one PGlite data directory.
+ * @param dataDir - Directory previously claimed.
+ * @returns Lock release.
+ */
+const releasePgliteLock = async (dataDir: string): Promise<void> => {
+  const key = resolve(dataDir)
+  if (!pgliteLocks.delete(key)) {
+    return
+  }
+  await rm(`${key}.lock`, { force: true, recursive: true })
+}
+
+/**
+ * Opens PGlite, migrating the schema; if the data directory is damaged beyond
+ * opening (a concurrent launch once shared it), the directory is moved aside
+ * untouched and a fresh store starts in its place.
+ * @param dataDir - Persistent directory, or undefined for memory storage.
+ * @returns Client plus the path the damaged state was moved to, when recovery ran.
+ */
+const openPgliteState = async (
+  dataDir: string | undefined,
+): Promise<{
+  readonly client: PGlite
+  readonly recoveredFrom: string | undefined
+}> => {
+  const open = async (): Promise<PGlite> => {
+    const client = dataDir === undefined
+      ? new PGlite()
+      : new PGlite(dataDir)
+    await client.exec(createReaderStateTablesSql)
+    return client
+  }
+  if (dataDir === undefined) {
+    return { client: await open(), recoveredFrom: undefined }
+  }
+  try {
+    return { client: await open(), recoveredFrom: undefined }
+  } catch {
+    const recoveredFrom = `${dataDir.replaceAll(/[/\\]+$/g, "")}.corrupt-${
+      new Date().toISOString().replaceAll(/[:.]/g, "-")
+    }`
+    await rename(dataDir, recoveredFrom).catch(() => undefined)
+    return { client: await open(), recoveredFrom }
+  }
+}
+
+/**
  * Builds the local PGlite reader-state repository.
  * @param dataDir - Persistent directory, or undefined for memory storage.
  * @returns Scoped repository construction effect.
@@ -1106,15 +1227,22 @@ function makePgliteRepository(dataDir: string | undefined) {
     .gen(function*() {
       if (dataDir !== undefined) {
         yield* Effect.promise(() => mkdir(dataDir, { recursive: true }))
+        yield* Effect.promise(() => acquirePgliteLock(dataDir))
+        yield* Effect.addFinalizer(() =>
+          Effect.promise(() => releasePgliteLock(dataDir))
+        )
       }
       if (globalThis.Buffer === undefined) {
         globalThis.Buffer = Buffer
       }
 
-      const client = yield* Effect.sync(() =>
-        dataDir === undefined ? new PGlite() : new PGlite(dataDir)
-      )
-      yield* Effect.promise(() => client.exec(createReaderStateTablesSql))
+      const opened = yield* Effect.promise(() => openPgliteState(dataDir))
+      const client = opened.client
+      if (opened.recoveredFrom !== undefined) {
+        yield* Effect.logWarning(
+          `PGlite state at ${dataDir} failed to open; moved to ${opened.recoveredFrom} and started a fresh store.`,
+        )
+      }
       const db = drizzlePglite({
         client,
         schema: {
