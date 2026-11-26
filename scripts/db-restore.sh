@@ -43,7 +43,7 @@ echo "[db-restore] Verifying archive readability..."
 pg_restore --list "${BACKUP_FILE}" >/dev/null
 
 if [ "${AUTO_CONFIRM}" -ne 1 ]; then
-  printf "Restore %s into %s? This overwrites existing tables. [y/N] " "${BACKUP_FILE}" "${DATABASE_URL}"
+  printf "Restore %s into the configured database? This overwrites existing tables. [y/N] " "${BACKUP_FILE}"
   read -r REPLY
   case "${REPLY}" in
     y|Y|yes|YES) ;;

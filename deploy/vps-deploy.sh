@@ -48,7 +48,7 @@ set +a
 missing=()
 for var in APP_DOMAIN POSTGRES_PASSWORD AUTH_ORIGINS OPENALEX_MAILTO RESEND_API_KEY MAIL_FROM; do
   val="${!var:-}"
-  if [ -z "${val}" ] || [[ "${val}" == *"replace"* ]]; then
+  if [ -z "${val}" ] || [[ "${val}" == *"replace"* ]] || [[ "${val}" == *"example.com"* ]]; then
     missing+=("${var}")
   fi
 done
@@ -57,6 +57,20 @@ if [ "${#missing[@]}" -gt 0 ]; then
   echo "ERROR: ${ENV_FILE} is missing or still has placeholder values for: ${missing[*]}" >&2
   exit 1
 fi
+
+if [[ ! "${APP_DOMAIN}" =~ ^[a-z0-9]([a-z0-9.-]*[a-z0-9])?$ ]]; then
+  echo "ERROR: APP_DOMAIN must be a bare hostname without a scheme or path (got ${APP_DOMAIN})." >&2
+  exit 1
+fi
+
+AUTH_ORIGINS_COMPACT="${AUTH_ORIGINS// /}"
+case ",${AUTH_ORIGINS_COMPACT}," in
+  *",https://${APP_DOMAIN},"*) ;;
+  *)
+    echo "ERROR: AUTH_ORIGINS must include https://${APP_DOMAIN} so magic-link sign-in works on the public host." >&2
+    exit 1
+    ;;
+esac
 
 HOST_BACKUP_DIR="${HOST_BACKUP_DIR:-/var/backups/academitok}"
 mkdir -p "${HOST_BACKUP_DIR}"
@@ -105,8 +119,11 @@ echo "[deploy] Checking public HTTPS endpoint https://${APP_DOMAIN}/api/health..
 if curl -fsS --max-time 10 "https://${APP_DOMAIN}/api/health" >/dev/null 2>&1; then
   echo "  ✓ Public HTTPS verified: https://${APP_DOMAIN}"
 else
-  echo "  ⚠ Local app is healthy, but https://${APP_DOMAIN}/api/health did not respond yet."
-  echo "    Verify DNS A/AAAA points at this VPS and check: docker compose --env-file ${ENV_FILE} logs caddy"
+  echo "ERROR: Local app is healthy, but https://${APP_DOMAIN}/api/health did not respond." >&2
+  echo "  Verify DNS A/AAAA points at this VPS, then rerun this script." >&2
+  echo "  Current Caddy state:" >&2
+  docker compose --env-file "${ENV_FILE}" logs --tail=40 caddy >&2
+  exit 1
 fi
 
 echo ""
