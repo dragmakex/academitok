@@ -338,7 +338,7 @@ export function OnboardingPicks(
                       <Button
                         variant={decisions[item.paper.id] === "discard"
                           ? "danger"
-                          : "ghost"}
+                          : "secondary"}
                         aria-label={`Skip ${item.paper.title}`}
                         aria-pressed={decisions[item.paper.id] === "discard"}
                         onClick={() =>
@@ -356,7 +356,7 @@ export function OnboardingPicks(
             </Grid>
             <Inline gap="s" align="between">
               <Button
-                variant="ghost"
+                variant="secondary"
                 onClick={() =>
                   onSubmit({
                     keptPaperIds: [],
