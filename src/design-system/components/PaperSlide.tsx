@@ -220,7 +220,7 @@ export const PaperSlide = forwardRef<HTMLElement, PaperSlideProps>(
           )
           : (
             <>
-              <div className="flex min-h-0 flex-1 flex-col overflow-hidden px-[clamp(0.65rem,1.8vw,3rem)] pt-[clamp(1.1rem,3dvh,3rem)] pb-s text-ink focus-visible:outline-2 focus-visible:outline-offset-[-8px] focus-visible:outline-ink">
+              <div className="flex min-h-0 flex-1 flex-col overflow-hidden px-[clamp(0.65rem,1.8vw,3rem)] pt-[clamp(0.9rem,2.2dvh,2rem)] pb-2xs text-ink focus-visible:outline-2 focus-visible:outline-offset-[-8px] focus-visible:outline-ink">
                 <a
                   className="mx-auto flex min-h-0 w-full max-w-[68rem] flex-1 flex-col text-ink no-underline"
                   href={externalUrl}
@@ -241,14 +241,14 @@ export const PaperSlide = forwardRef<HTMLElement, PaperSlideProps>(
 
                   <h2
                     id={headlineId}
-                    className="mt-s line-clamp-5 shrink-0 m-0 max-w-[27ch] overflow-wrap-anywhere font-display text-[clamp(1.6rem,6.4vh,4.5rem)] font-bold leading-[1] tracking-[-0.03em] [@media(min-height:680px)]:line-clamp-6"
+                    className="mt-s line-clamp-8 shrink-0 m-0 max-w-[27ch] overflow-wrap-anywhere font-display text-[clamp(1.4rem,4.6vh,2.75rem)] font-bold leading-[1.05] tracking-[-0.02em] md:line-clamp-7"
                   >
                     {title}
                   </h2>
 
                   <p
                     ref={abstractBoxRef}
-                    className="mt-m min-h-0 flex-1 m-0 max-w-[62ch] overflow-hidden hyphens-auto text-left font-body text-[clamp(1.02rem,3.2vh,1.8rem)] leading-[1.4] md:text-justify md:[text-align-last:left]"
+                    className="mt-s min-h-0 flex-1 m-0 max-w-[62ch] overflow-hidden hyphens-auto text-left font-body text-[clamp(0.98rem,2.7vh,1.3rem)] leading-[1.45] md:text-justify md:[text-align-last:left]"
                   >
                     <span
                       ref={abstractTextRef}
