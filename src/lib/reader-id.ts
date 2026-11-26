@@ -16,7 +16,7 @@ const readerIdPattern = /^[A-Za-z0-9-]{8,64}$/
 const cookieMaxAgeSeconds = 365 * 24 * 60 * 60
 
 /**
- * Fresh reader id for a browser that has none, or for a sign-out.
+ * Fresh reader id for a browser that has none, or for a fresh reading desk.
  * @returns A random id matching the cookie grammar.
  */
 export const newReaderId = (): string => globalThis.crypto.randomUUID()
@@ -26,8 +26,8 @@ export const newReaderId = (): string => globalThis.crypto.randomUUID()
  * @param value - Reader id to carry.
  * @param options - Cookie hardening flags.
  * @param options.httpOnly - Invisible to `document.cookie`, so injected script
- * cannot lift the id once it stands for a signed-in reader.
- * @param options.secure - HTTPS only; required wherever sign-in works.
+ * cannot lift the browser's reading desk.
+ * @param options.secure - HTTPS only.
  * @returns `Set-Cookie` header value.
  */
 export const readerCookie = (
@@ -46,8 +46,8 @@ export const readerCookie = (
 
 /**
  * `Set-Cookie` value carrying a fresh, hardened reader id. The cookie is
- * `HttpOnly` from birth because the server is its only writer: once a device
- * is signed in, the id stands for an account.
+ * `HttpOnly` from birth because the server is its only writer and the id
+ * names one browser-local reading desk.
  * @param readerId - Reader id to carry; a fresh one by default.
  * @returns `Set-Cookie` header value.
  */

@@ -36,12 +36,8 @@ import {
   onboardReaderAtom,
   reactionFailureAtom,
   reactToPaperAtom,
-  requestSignInAtom,
   restoreHiddenPaperAtom,
   saveReaderProfileAtom,
-  sessionAtom,
-  signInStatusAtom,
-  signOutAtom,
   trackPaperViewAtom,
 } from "./atoms"
 import { flushImpressionsOnHide } from "./impression-buffer"
@@ -412,14 +408,6 @@ export function App() {
     : undefined
   const reactionFailure = useAtomValue(reactionFailureAtom)
   const setReactionFailure = useAtomSet(reactionFailureAtom)
-  const sessionAsync = useAtomValue(sessionAtom)
-  const signInStatus = useAtomValue(signInStatusAtom)
-  const requestSignIn = useAtomSet(requestSignInAtom)
-  const signOut = useAtomSet(signOutAtom)
-  const email = sessionAsync._tag === "Success"
-    ? sessionAsync.value.email
-    : null
-  const [signInEmail, setSignInEmail] = useState("")
 
   const [drawerOpen, setDrawerOpen] = useState(false)
   const [sheetOpen, setSheetOpen] = useState(false)
@@ -765,62 +753,6 @@ export function App() {
                 label="Link"
                 text={origin}
               />
-            </Stack>
-          </Card>
-
-          <Card>
-            <Stack gap="m">
-              <Text tone="label" as="span">
-                Account
-              </Text>
-              {email === null
-                ? (
-                  <>
-                    <Text tone="muted">
-                      Your topic preferences live in this browser. One tap, no
-                      password: a link in your mail carries them to every device
-                      you read on.
-                    </Text>
-                    <TextField
-                      label="Email"
-                      value={signInEmail}
-                      onChange={(event) =>
-                        setSignInEmail(event.currentTarget.value)}
-                    />
-                    <Button
-                      loading={signInStatus === "sending"}
-                      onClick={() => requestSignIn({ email: signInEmail })}
-                    >
-                      Send me a link
-                    </Button>
-                    {signInStatus === "sent"
-                      ? (
-                        <Text tone="muted">
-                          If that address can sign in, the link is on its way.
-                          It works once and expires in fifteen minutes.
-                        </Text>
-                      )
-                      : null}
-                    {signInStatus === "failed"
-                      ? (
-                        <Text tone="muted">
-                          That request did not go through. Check the address and
-                          try again.
-                        </Text>
-                      )
-                      : null}
-                  </>
-                )
-                : (
-                  <>
-                    <Text tone="muted">
-                      {`Signed in as ${email}. Ask for a link on another device to fold it into this desk.`}
-                    </Text>
-                    <Button variant="secondary" onClick={() => signOut()}>
-                      Sign out
-                    </Button>
-                  </>
-                )}
             </Stack>
           </Card>
         </Stack>

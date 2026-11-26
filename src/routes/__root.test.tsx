@@ -133,11 +133,10 @@ describe("gazette shell metadata", () => {
     expect(manifest.display).toBe("standalone")
   })
 
-  it("ships a service worker that never replays an rpc or a sign-in link", () => {
+  it("ships a service worker that never replays an rpc", () => {
     const worker = readFileSync(join(process.cwd(), "public/sw.js"), "utf8")
     expect(worker).toContain("/newsprint.webp")
     expect(worker).toContain("startsWith(\"/api/\")")
-    expect(worker).toContain("startsWith(\"/auth/\")")
     expect(worker).toContain("request.mode === \"navigate\"")
   })
 

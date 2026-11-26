@@ -46,7 +46,7 @@ describe("reader id", () => {
     expect(newReaderId()).not.toBe(minted)
   })
 
-  it("hardens the cookie once it stands for an account", () => {
+  it("hardens the reader cookie for production", () => {
     const hardened = readerCookie(readerId, { httpOnly: true, secure: true })
     expect(hardened).toContain(`${readerIdCookieName}=${readerId}`)
     expect(hardened).toContain("Path=/")

@@ -19,10 +19,7 @@ When `NODE_ENV=production`, `src/lib/server-env.ts` (invoked by Nitro's boot plu
 | `POSTGRES_PASSWORD`         | Yes (Compose)       | Strong PostgreSQL password (`openssl rand -hex 24`)                       |
 | `NODE_ENV`                  | Yes (`production`)  | Enables `Secure` cookies, strict env checks, and disables PGlite fallback |
 | `DATABASE_URL`              | Yes                 | PostgreSQL URI (wired automatically by `docker-compose.yml`)              |
-| `AUTH_ORIGINS`              | Yes                 | Comma-separated bare origins allowed in sign-in magic links               |
 | `OPENALEX_MAILTO`           | Yes                 | Email identifying requests in OpenAlex's polite pool                      |
-| `RESEND_API_KEY`            | Yes                 | Resend API key for sign-in email delivery                                 |
-| `MAIL_FROM`                 | Yes                 | Sender identity containing a valid email address                          |
 | `SENTRY_DSN`                | Optional            | Valid `http(s)://` DSN for error reporting                                |
 | `SENTRY_TRACES_SAMPLE_RATE` | Optional            | Finite number in `[0, 1]`                                                 |
 | `OTLP_ENDPOINT`             | Optional            | Tempo OTLP base URL                                                       |
