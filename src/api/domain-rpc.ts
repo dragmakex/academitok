@@ -7,6 +7,11 @@
 import { Rpc, RpcGroup } from "effect/rpc"
 import * as Schema from "effect/Schema"
 import {
+  SessionInfo,
+  SignInRequestInput,
+  SignInRequestResult,
+} from "./auth-schema"
+import {
   FeedPage,
   FeedRequest,
   FeedSnapshot,
@@ -52,4 +57,21 @@ export class ProfileRpc extends RpcGroup
   .prefix("profile_")
 {}
 
-export class DomainRpc extends PapersRpc.merge(ProfileRpc) {}
+export class AuthRpc extends RpcGroup
+  .make(
+    Rpc.make("requestSignIn", {
+      success: SignInRequestResult,
+      payload: { input: SignInRequestInput },
+    }),
+    Rpc.make("session", {
+      success: SessionInfo,
+    }),
+    Rpc.make("verifySignIn", {
+      success: SessionInfo,
+      payload: { token: Schema.String },
+    }),
+  )
+  .prefix("auth_")
+{}
+
+export class DomainRpc extends PapersRpc.merge(ProfileRpc).merge(AuthRpc) {}

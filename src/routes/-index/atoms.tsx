@@ -1,4 +1,5 @@
 import { ApiClient } from "@/api/api-client"
+import type { SignInRequestInput } from "@/api/auth-schema"
 import {
   type FeedItem,
   FeedPage as FeedPageSchema,
@@ -90,6 +91,9 @@ class Api extends Context.Service<Api>()("@app/index/Api", {
       trackViews: (inputs: ReadonlyArray<TrackPaperViewInput>) =>
         rpc.papers_trackViews({ inputs }),
       savedList: () => rpc.papers_savedList(),
+      requestSignIn: (input: SignInRequestInput) =>
+        rpc.auth_requestSignIn({ input }),
+      session: () => rpc.auth_session(),
     } as const
   }),
 }) {
@@ -178,6 +182,48 @@ export const removeSavedPaperAtom = runtime.fn<string>()(
     const page = yield* api.savedList()
     get.set(savedPageAtom, { _tag: "Replace", value: page })
     return page
+  }),
+)
+
+export const sessionAtom = runtime.atom(
+  Effect.gen(function*() {
+    const api = yield* Api
+    return yield* api.session()
+  }),
+)
+
+/** Progress of a sign-in request the desk is holding open. */
+export const signInStatusAtom = Atom.make<
+  "idle" | "sending" | "sent" | "failed"
+>("idle")
+
+/** Mails a sign-in link to the address the reader typed. */
+export const requestSignInAtom = runtime.fn<{ email: string }>()(
+  Effect.fnUntraced(function*(input, get) {
+    get.set(signInStatusAtom, "sending")
+    const api = yield* Api
+    const result = yield* api
+      .requestSignIn({
+        email: input.email,
+        origin: globalThis.location.origin,
+      })
+      .pipe(
+        Effect.tapError((cause) =>
+          Effect.logWarning(`sign-in request failed`, cause)
+        ),
+        Effect.result,
+      )
+    get.set(
+      signInStatusAtom,
+      result._tag === "Success" && result.success.sent ? "sent" : "failed",
+    )
+  }),
+)
+
+/** Signs this browser out: a document request mints a fresh anonymous reader. */
+export const signOutAtom = runtime.fn<void>()(
+  Effect.fnUntraced(function*(_input, _get) {
+    yield* Effect.sync(() => globalThis.location.assign("/auth/sign-out"))
   }),
 )
 

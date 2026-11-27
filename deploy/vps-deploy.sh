@@ -46,7 +46,7 @@ set -a
 set +a
 
 missing=()
-for var in APP_DOMAIN POSTGRES_PASSWORD OPENALEX_MAILTO; do
+for var in APP_DOMAIN POSTGRES_PASSWORD AUTH_ORIGINS OPENALEX_MAILTO RESEND_API_KEY MAIL_FROM; do
   val="${!var:-}"
   if [ -z "${val}" ] || [[ "${val}" == *"replace"* ]] || [[ "${val}" == *"example.com"* ]]; then
     missing+=("${var}")
@@ -62,6 +62,15 @@ if [[ ! "${APP_DOMAIN}" =~ ^[a-z0-9]([a-z0-9.-]*[a-z0-9])?$ ]]; then
   echo "ERROR: APP_DOMAIN must be a bare hostname without a scheme or path (got ${APP_DOMAIN})." >&2
   exit 1
 fi
+
+AUTH_ORIGINS_COMPACT="${AUTH_ORIGINS// /}"
+case ",${AUTH_ORIGINS_COMPACT}," in
+  *",https://${APP_DOMAIN},"*) ;;
+  *)
+    echo "ERROR: AUTH_ORIGINS must include https://${APP_DOMAIN} so magic-link sign-in works on the public host." >&2
+    exit 1
+    ;;
+esac
 
 HOST_BACKUP_DIR="${HOST_BACKUP_DIR:-/var/backups/academitok}"
 mkdir -p "${HOST_BACKUP_DIR}"

@@ -28,8 +28,9 @@ AcademiTok stores and serves metadata only — no PDFs and no full text.
 
 The whole clipping is the outbound link. When a reader taps **Read the paper**, they land on the
 publisher or DOI page and use whatever access their institution, library or the publisher already
-gives them. There is no AcademiTok login: a first-party cookie keeps this browser's likes, saves and
-learned topic profile local to the device.
+gives them. There is no password: the desk lives in a first-party cookie per browser, and an
+optional email magic link (offered at the end of onboarding) carries that desk to every device.
+AcademiTok stores metadata only — no PDFs and no full text.
 
 ## Local development
 

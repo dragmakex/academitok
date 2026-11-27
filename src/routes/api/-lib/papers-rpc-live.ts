@@ -1,3 +1,4 @@
+import type { SignInRequestInput } from "@/api/auth-schema"
 import type {
   FeedRequest,
   OnboardProfileInput,
@@ -5,6 +6,11 @@ import type {
   SaveProfileInput,
   TrackPaperViewsInput,
 } from "@/api/paper-schema"
+import {
+  readSession,
+  requestSignInLink,
+  verifySignInLink,
+} from "@/features/auth/application"
 import {
   getPaperFeedSnapshot,
   getSavedPapers,
@@ -28,4 +34,8 @@ export const createPaperRpcHandlers = Effect.succeed({
   papers_savedList: () => getSavedPapers,
   profile_onboard: ({ input }: { input: OnboardProfileInput }) =>
     onboardReader(input),
+  auth_requestSignIn: ({ input }: { input: SignInRequestInput }) =>
+    requestSignInLink(input),
+  auth_session: () => readSession,
+  auth_verifySignIn: ({ token }: { token: string }) => verifySignInLink(token),
 })
