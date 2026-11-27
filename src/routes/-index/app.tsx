@@ -59,7 +59,6 @@ type VisiblePaperSlideProps = {
   readonly item: FeedItem
   readonly total: number
   readonly onBookmark: () => void
-  readonly onOpenDesk: () => void
   readonly onShare: () => void
   readonly onNavigate: (index: number) => void
   readonly onVisible: (index: number) => void
@@ -74,7 +73,6 @@ type VisiblePaperSlideProps = {
  * @param root0.item - Feed item.
  * @param root0.total - Mounted feed length.
  * @param root0.onBookmark - Save reaction callback.
- * @param root0.onOpenDesk - Reading desk callback.
  * @param root0.onShare - Share-sheet callback.
  * @param root0.onNavigate - Navigation callback.
  * @param root0.onVisible - Visibility callback.
@@ -86,7 +84,6 @@ function VisiblePaperSlide({
   index,
   item,
   onBookmark,
-  onOpenDesk,
   onShare,
   onNavigate,
   onVisible,
@@ -250,7 +247,6 @@ function VisiblePaperSlide({
         onLike: () => react("like"),
         onBookmark,
         onShare,
-        onOpenDesk,
         onOpenSite: () => react("open-site"),
         onPrevious: () => onNavigate(index - 1),
         onNext: () => onNavigate(index + 1),
@@ -675,7 +671,7 @@ export function App() {
           }
           reactToPaper({ kind: action, paperId: item.paper.id })
           if (action === "bookmark") {
-            setNotice({ label: "Filed in clippings" })
+            setNotice({ label: "Saved" })
           }
       }
     }
@@ -717,7 +713,6 @@ export function App() {
       <EdgeDrawer
         open={drawerOpen}
         onOpenChange={setDrawerOpen}
-        showTrigger={false}
         title="The reading desk"
         description={
           <Text tone="muted">
@@ -980,9 +975,8 @@ export function App() {
                 }}
                 onBookmark={() => {
                   reactToPaper({ kind: "bookmark", paperId: item.paper.id })
-                  setNotice({ label: "Filed in clippings" })
+                  setNotice({ label: "Saved" })
                 }}
-                onOpenDesk={() => setDrawerOpen(true)}
                 onNavigate={navigate}
                 onVisible={onVisible}
                 registerNode={registerNode}

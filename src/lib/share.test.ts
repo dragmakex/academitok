@@ -27,7 +27,9 @@ describe("share payloads", () => {
     const one = paperShare(paper)
 
     expect(one.title).toBe(paper.title)
-    expect(one.text).toBe("Attention Maps for Agents — Leah Ortiz (2025)")
+    expect(one.text).toBe(
+      "Attention Maps for Agents — Leah Ortiz (2025) · Found on AcademiTok",
+    )
     expect(one.url).toBe(paper.permalink)
   })
 })

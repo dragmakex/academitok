@@ -15,7 +15,6 @@ type ActionHandlers = {
   readonly onBookmark: () => void
   readonly onShare: () => void
   readonly onOpenSite: () => void
-  readonly onOpenDesk: () => void
   readonly onPrevious: () => void
   readonly onNext: () => void
 }
@@ -160,7 +159,7 @@ export const PaperSlide = forwardRef<HTMLElement, PaperSlideProps>(
                 ? null
                 : (
                   <span className={metaClass}>
-                    {`Also kept by ${filedByOthers} ${
+                    {`Also saved by ${filedByOthers} ${
                       filedByOthers === 1 ? "reader" : "readers"
                     }`}
                   </span>
@@ -220,7 +219,7 @@ export const PaperSlide = forwardRef<HTMLElement, PaperSlideProps>(
           )
           : (
             <>
-              <div className="flex min-h-0 flex-1 flex-col overflow-hidden px-[clamp(0.65rem,1.8vw,3rem)] pt-[clamp(0.9rem,2.2dvh,2rem)] pb-2xs text-ink focus-visible:outline-2 focus-visible:outline-offset-[-8px] focus-visible:outline-ink">
+              <div className="flex min-h-0 flex-1 flex-col overflow-hidden px-[clamp(0.65rem,1.8vw,3rem)] pt-[clamp(1.1rem,3dvh,3rem)] pb-s text-ink focus-visible:outline-2 focus-visible:outline-offset-[-8px] focus-visible:outline-ink">
                 <a
                   className="mx-auto flex min-h-0 w-full max-w-[68rem] flex-1 flex-col text-ink no-underline"
                   href={externalUrl}
@@ -270,23 +269,6 @@ export const PaperSlide = forwardRef<HTMLElement, PaperSlideProps>(
                   aria-label="Paper actions"
                   className="flex items-center gap-2xs sm:gap-xs"
                 >
-                  <button
-                    className={actionButtonClass}
-                    type="button"
-                    onClick={actions.onOpenDesk}
-                    aria-label="Open the reading desk"
-                  >
-                    <svg
-                      viewBox="0 0 20 20"
-                      width="18"
-                      height="18"
-                      fill="none"
-                      stroke="currentColor"
-                      aria-hidden="true"
-                    >
-                      <path d="M3 5h14M3 10h14M3 15h14" />
-                    </svg>
-                  </button>
                   <button
                     className={actionButtonClass}
                     type="button"

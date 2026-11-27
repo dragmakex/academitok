@@ -141,12 +141,12 @@ describe("saved audience", () => {
 
 describe("compact clipping audience line", () => {
   it("prints how many other readers keep the clipping", () => {
-    expect(renderCompact(2)).toContain("Also kept by 2 readers")
-    expect(renderCompact(1)).toContain("Also kept by 1 reader")
+    expect(renderCompact(2)).toContain("Also saved by 2 readers")
+    expect(renderCompact(1)).toContain("Also saved by 1 reader")
   })
 
   it("omits the clause when nobody else filed it", () => {
-    expect(renderCompact(0)).not.toContain("Also kept by")
-    expect(renderCompact(undefined)).not.toContain("Also kept by")
+    expect(renderCompact(0)).not.toContain("Also saved by")
+    expect(renderCompact(undefined)).not.toContain("Also saved by")
   })
 })

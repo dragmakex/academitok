@@ -26,18 +26,19 @@ const getSavedAudienceCount = createServerFn({ method: "GET" }).handler(
 )
 
 /**
- * Head entries for the morgue.
- * @returns The morgue title and preview copy.
+ * Head entries for the saved page.
+ * @returns The saved title and preview copy.
  */
-export const morgueHead = () =>
+export const savedHead = () =>
   pageHead({
-    title: "Clippings · AcademiTok",
+    title: "Saved · AcademiTok",
     description:
-      "The clippings you filed from the AcademiTok reading deck, kept as a broadsheet list you can export as BibTeX.",
+      "The papers you saved from the AcademiTok reading deck, exportable as BibTeX.",
+    noindex: true,
   })
 
 export const Route = createFileRoute("/saved")({
-  head: morgueHead,
+  head: savedHead,
   loader: async () => {
     const [dehydrated, audience] = await Promise.all([
       getSavedClippings(),
