@@ -90,6 +90,54 @@ export const feedSessionsTable = pgTable("feed_sessions", {
     .notNull(),
 })
 
+/**
+ * A signed-in reader (SPEC §17.5). An account is only a claim on reader ids:
+ * `readerId` is the canonical one whose state later devices merge into.
+ */
+export const accountsTable = pgTable("accounts", {
+  id: text("id").primaryKey(),
+  email: text("email").notNull().unique(),
+  readerId: text("reader_id").notNull(),
+  createdAt: timestamp("created_at", {
+    mode: "date",
+    withTimezone: true,
+  })
+    .notNull(),
+})
+
+/** Every reader id an account may be reached through, canonical first. */
+export const accountReadersTable = pgTable("account_readers", {
+  accountId: text("account_id").notNull(),
+  readerId: text("reader_id").notNull(),
+  claimedAt: timestamp("claimed_at", {
+    mode: "date",
+    withTimezone: true,
+  })
+    .notNull(),
+})
+
+/** One emailed sign-in link. Only the token digest is stored. */
+export const loginTokensTable = pgTable("login_tokens", {
+  id: text("id").primaryKey(),
+  email: text("email").notNull(),
+  tokenHash: text("token_hash").notNull().unique(),
+  readerId: text("reader_id").notNull(),
+  createdAt: timestamp("created_at", {
+    mode: "date",
+    withTimezone: true,
+  })
+    .notNull(),
+  expiresAt: timestamp("expires_at", {
+    mode: "date",
+    withTimezone: true,
+  })
+    .notNull(),
+  consumedAt: timestamp("consumed_at", {
+    mode: "date",
+    withTimezone: true,
+  }),
+})
+
 // Migration source only. New reader state is never written here.
 export const readerStateTable = pgTable("reader_state", {
   id: text("id").primaryKey(),

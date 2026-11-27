@@ -4,7 +4,11 @@ import { ServerEnvError, validateServerEnv } from "./server-env"
 const validProductionEnv: Record<string, string> = {
   NODE_ENV: "production",
   DATABASE_URL: "postgresql://academitok:secret@db.internal:5432/academitok",
+  AUTH_ORIGINS:
+    "https://academitok.example, https://staging.academitok.example",
   OPENALEX_MAILTO: "desk@academitok.example",
+  RESEND_API_KEY: "re_test_123456",
+  MAIL_FROM: "AcademiTok <desk@academitok.example>",
   SENTRY_DSN: "https://public@sentry.example/1",
   SENTRY_TRACES_SAMPLE_RATE: "0.25",
   OTLP_ENDPOINT: "https://tempo.internal:4318",
@@ -19,7 +23,10 @@ describe("validateServerEnv", () => {
     expect(result).toEqual({
       nodeEnv: "development",
       databaseUrl: undefined,
+      authOrigins: [],
       openAlexMailto: undefined,
+      resendApiKey: undefined,
+      mailFrom: undefined,
       sentryDsn: undefined,
       sentryTracesSampleRate: undefined,
       otlpEndpoint: undefined,
@@ -33,6 +40,10 @@ describe("validateServerEnv", () => {
     const result = validateServerEnv(validProductionEnv)
     expect(result.nodeEnv).toBe("production")
     expect(result.databaseUrl).toBe(validProductionEnv.DATABASE_URL)
+    expect(result.authOrigins).toEqual([
+      "https://academitok.example",
+      "https://staging.academitok.example",
+    ])
     expect(result.openAlexMailto).toBe("desk@academitok.example")
     expect(result.sentryTracesSampleRate).toBe(0.25)
   })
@@ -47,7 +58,10 @@ describe("validateServerEnv", () => {
       expect(error).toBeInstanceOf(ServerEnvError)
       const issues = (error as ServerEnvError).issues.join("\n")
       expect(issues).toContain("DATABASE_URL")
+      expect(issues).toContain("AUTH_ORIGINS")
       expect(issues).toContain("OPENALEX_MAILTO")
+      expect(issues).toContain("RESEND_API_KEY")
+      expect(issues).toContain("MAIL_FROM")
     }
   })
 
@@ -75,14 +89,43 @@ describe("validateServerEnv", () => {
       .toThrow(/DATABASE_URL must be a valid postgres/)
   })
 
-  it("rejects a malformed OPENALEX_MAILTO value", () => {
+  it("rejects malformed AUTH_ORIGINS entries", () => {
+    expect(() =>
+      validateServerEnv({
+        ...validProductionEnv,
+        AUTH_ORIGINS: "https://academitok.example/path",
+      })
+    )
+      .toThrow(/AUTH_ORIGINS entry/)
+  })
+
+  it("rejects malformed OPENALEX_MAILTO and MAIL_FROM values", () => {
     expect(() =>
       validateServerEnv({
         ...validProductionEnv,
         OPENALEX_MAILTO: "not-an-email",
+        MAIL_FROM: "AcademiTok",
       })
     )
       .toThrow(/OPENALEX_MAILTO must be a valid email/)
+  })
+
+  it("rejects half-configured Resend mail settings outside production", () => {
+    expect(() =>
+      validateServerEnv({
+        NODE_ENV: "development",
+        RESEND_API_KEY: "re_123",
+      })
+    )
+      .toThrow(/RESEND_API_KEY and MAIL_FROM must either both be set/)
+
+    expect(() =>
+      validateServerEnv({
+        NODE_ENV: "development",
+        MAIL_FROM: "AcademiTok <desk@academitok.example>",
+      })
+    )
+      .toThrow(/RESEND_API_KEY and MAIL_FROM must either both be set/)
   })
 
   it("validates optional observability URLs and sample rates when provided", () => {

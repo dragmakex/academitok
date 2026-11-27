@@ -436,11 +436,22 @@ Retire the todo template in a single cleanup commit after P0 ships.
    mixed with recency. Keep, measure, revisit if the feed feels archival.
 4. `Space` for next conflicts with page scroll expectations in embedded contexts. P0: deck owns the
    viewport, no conflict.
-5. Sign-in — **removed**. AcademiTok has no login, no passwords, no email links and no account
-   tables. Every visitor gets an anonymous `reader_id` cookie that keeps likes, saves, hides,
-   impressions and the learned profile on that browser only. Papers are public metadata: title,
-   abstract, authors, venue, year, citation count and an outbound DOI/source URL. When a reader wants
-   the full text, the deck sends them to the publisher; access there is whatever their institution,
-   library or the publisher already offers. Nothing about authentication is ours to operate, and no
-   PDF or full text is stored or proxied. A future cross-device shelf would need its own decision and
-   must not reintroduce a second identity owner beside `ReaderId`.
+5. Sign-in — settled: **email magic link only**, no passwords, no third-party redirect on first
+   load. Login exists for exactly two jobs: the algorithm follows one taste profile across devices,
+   and the saved-paper library behaves like a Zotero shelf the reader can move between machines.
+   Shape: `accounts` (email unique, `reader_id` canonical), `account_readers` (aliases a device
+   claimed), `login_tokens` (SHA-256 digest only, 15-minute expiry, single use, 3 per address per
+   hour). A token is spent at `/auth/verify?token=…`; spending it attaches the _current_ anonymous
+   reader to the account, so nothing the reader did before signing in is lost. A second device
+   merges into the canonical reader: reactions keep the newest write per paper and kind,
+   impressions and feed sessions simply move, and the canonical profile wins. Signing out hands
+   the browser a fresh anonymous reader; the account keeps the old one, so signing in again folds
+   the device back in. Mail goes through Resend when `RESEND_API_KEY` is set and is logged
+   otherwise, so development needs no mail provider. The onboarding screen carries the sign-in as
+   its fourth step ("Sign the front page"): the reader leaves an email after tuning the desk, the
+   link claims the anonymous reader that made the picks, and a cookie-less or forged-cookie RPC
+   writer gets an orphan identity so unauthenticated traffic can never poison the shared
+   `singleton` reader or the cross-reader counts. Rejected: Better Auth — it would install a second
+   owner of identity beside `ReaderId`, with its own user/session tables competing with the
+   `reader_id` foreign key that already keys every table. Revisit only for multi-provider sign-in,
+   passwords, 2FA or teams.

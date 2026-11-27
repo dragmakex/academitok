@@ -47,7 +47,10 @@ test("onboarding collects three pages and requires five keeps", async () => {
       })
       .click()
   }
-  await page.getByRole("button", { name: "Print edition" }).click()
+  await page.getByRole("button", { name: "Next" }).click()
+
+  // The sign step gates Print edition on a sent link; skipping prints without one.
+  await page.getByRole("button", { name: "Skip for now" }).click()
 
   expect(onSubmit).toHaveBeenCalledWith({
     keptPaperIds: candidates.slice(0, 5).map((item) => item.paper.id),

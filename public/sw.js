@@ -53,8 +53,11 @@ self.addEventListener("fetch", (event) => {
   if (url.origin !== self.location.origin) {
     return
   }
-  /* RPC answers must never be replayed from cache. */
-  if (url.pathname.startsWith("/api/")) {
+  /* Sign-in links and RPC answers must never be replayed from cache. */
+  if (
+    url.pathname.startsWith("/api/")
+    || url.pathname.startsWith("/auth/")
+  ) {
     return
   }
   if (request.mode === "navigate") {
