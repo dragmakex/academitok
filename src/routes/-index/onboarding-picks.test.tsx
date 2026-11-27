@@ -16,41 +16,48 @@ const candidates: ReadonlyArray<FeedItem> = curatedPapers.map((paper) => ({
   again: false,
 }))
 
-test("onboarding collects three pages and requires five keeps", async () => {
+test("onboarding collects five swipe pages and prints undecided papers as skips", async () => {
   const onSubmit = vi.fn()
   await render(
     <OnboardingPicks candidates={candidates} onSubmit={onSubmit} />,
   )
 
-  for (const candidate of candidates.slice(0, 5)) {
+  // Fewer than three keeps leaves the first page: the algorithm needs a seed.
+  await page
+    .getByRole("button", { name: `Keep ${candidates[0]!.paper.title}` })
+    .click()
+  await expect
+    .element(page.getByRole("button", { name: "Next" }).nth(0))
+    .toBeDisabled()
+
+  // Three keeps on page one unlock the walk; two more on page two reach five.
+  await page
+    .getByRole("button", { name: `Keep ${candidates[0]!.paper.title}` })
+    .click()
+  for (const candidate of candidates.slice(1, 5)) {
     await page
-      .getByRole("button", {
-        name: `Keep ${candidate.paper.title}`,
-      })
+      .getByRole("button", { name: `Keep ${candidate.paper.title}` })
       .click()
   }
-  await page.getByRole("button", { name: "Next" }).click()
+  await page
+    .getByRole("button", { name: "Next" })
+    .nth(0)
+    .click()
+  await page
+    .getByRole("button", { name: "Next" })
+    .nth(1)
+    .click()
+  await page
+    .getByRole("button", { name: "Next" })
+    .nth(2)
+    .click()
+  await page
+    .getByRole("button", { name: "Next" })
+    .nth(3)
+    .click()
 
-  for (const candidate of candidates.slice(5, 10)) {
-    await page
-      .getByRole("button", {
-        name: `Skip ${candidate.paper.title}`,
-      })
-      .click()
-  }
-  await page.getByRole("button", { name: "Next" }).click()
-
-  for (const candidate of candidates.slice(10)) {
-    await page
-      .getByRole("button", {
-        name: `Skip ${candidate.paper.title}`,
-      })
-      .click()
-  }
-  await page.getByRole("button", { name: "Next" }).click()
-
-  // The sign step gates Print edition on a sent link; skipping prints without one.
-  await page.getByRole("button", { name: "Skip for now" }).click()
+  // Print edition works without a magic link: the cookie already carries identity.
+  await page.getByRole("button", { name: "Print edition" }).click()
 
   expect(onSubmit).toHaveBeenCalledWith({
     keptPaperIds: candidates.slice(0, 5).map((item) => item.paper.id),
