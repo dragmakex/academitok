@@ -16,8 +16,9 @@ type EdgeDrawerProps = {
   readonly onOpenChange: (open: boolean) => void
 }
 
-const leftEdgeActivationWidth = 36
-const swipeDistance = 72
+const leftEdgeActivationWidth = 48
+const swipeDistance = 56
+const verticalResetDistance = 96
 
 /**
  * Renders a focus-trapped edge drawer.
@@ -75,7 +76,7 @@ export function EdgeDrawer(
 
       const deltaX = touch.clientX - startX
       const deltaY = Math.abs(touch.clientY - startY)
-      if (deltaY > 48) {
+      if (deltaY > verticalResetDistance) {
         gestureOrigin.current = null
         return
       }
@@ -114,7 +115,7 @@ export function EdgeDrawer(
     <>
       {showTrigger
         ? (
-          <div className="fixed bottom-[calc(env(safe-area-inset-bottom)+0.125rem)] left-[max(0.5rem,env(safe-area-inset-left))] z-30 lg:top-1/2 lg:bottom-auto lg:left-0 lg:-translate-y-1/2">
+          <div className="fixed left-[max(0.5rem,env(safe-area-inset-left))] top-[max(0.5rem,env(safe-area-inset-top))] z-30 lg:top-1/2 lg:bottom-auto lg:-translate-y-1/2">
             <button
               type="button"
               aria-label={open ? "Close filters" : "Open filters"}

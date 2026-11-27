@@ -21,6 +21,11 @@ export const rootHead = () => ({
       title: "AcademiTok Gazette",
     },
     {
+      name: "description",
+      content:
+        "A full-screen, swipe-native feed of academic papers set like a print-era broadsheet. Metadata and open-access links from OpenAlex; no PDFs, no paywall.",
+    },
+    {
       name: "theme-color",
       content: "oklch(0.18 0.012 60)",
     },
@@ -36,8 +41,33 @@ export const rootHead = () => ({
       name: "apple-mobile-web-app-title",
       content: "AcademiTok",
     },
+    { property: "og:site_name", content: "AcademiTok" },
+    { property: "og:type", content: "website" },
+    { property: "og:url", content: "https://academitok.com/" },
+    {
+      property: "og:image",
+      content: "https://academitok.com/apple-touch-icon.png",
+    },
+    { name: "twitter:card", content: "summary" },
+    {
+      name: "twitter:title",
+      content: "AcademiTok — academic papers, one swipe at a time",
+    },
+    {
+      name: "twitter:description",
+      content:
+        "A full-screen, swipe-native feed of academic papers set like a print-era broadsheet.",
+    },
+    {
+      name: "twitter:image",
+      content: "https://academitok.com/apple-touch-icon.png",
+    },
   ],
   links: [
+    {
+      rel: "canonical",
+      href: "https://academitok.com/",
+    },
     {
       rel: "icon",
       href: "/mark.svg",
@@ -53,8 +83,32 @@ export const rootHead = () => ({
       href: "/manifest.json",
     },
     {
+      rel: "sitemap",
+      href: "/sitemap.xml",
+    },
+    {
+      rel: "llms",
+      href: "/llms.txt",
+    },
+    {
       rel: "stylesheet",
       href: appCss,
+    },
+  ],
+  scripts: [
+    {
+      type: "application/ld+json",
+      children: JSON.stringify({
+        "@context": "https://schema.org",
+        "@type": "WebSite",
+        name: "AcademiTok",
+        alternateName: "AcademiTok Gazette",
+        url: "https://academitok.com/",
+        description:
+          "A full-screen, swipe-native feed of academic papers set like a print-era broadsheet. Metadata and open-access links from OpenAlex.",
+        inLanguage: "en",
+        isAccessibleForFree: true,
+      }),
     },
   ],
 })
@@ -82,10 +136,15 @@ function clampHeadCopy(text: string): string {
  * @param options - Copy for the surface.
  * @param options.title - Page title.
  * @param options.description - Preview copy; omitted when the surface has none.
+ * @param options.noindex - Whether the surface is reader-local and unindexed.
  * @returns Head meta carrying the title, description and their Open Graph twins.
  */
 export function pageHead(
-  { title, description }: { title: string; description?: string },
+  { title, description, noindex }: {
+    title: string
+    description?: string
+    noindex?: boolean
+  },
 ) {
   const headline = clampHeadCopy(title)
   const summary = description === undefined
@@ -98,6 +157,7 @@ export function pageHead(
       ...(summary === undefined
         ? []
         : [{ name: "description", content: summary }]),
+      ...(noindex ? [{ name: "robots", content: "noindex, nofollow" }] : []),
       { property: "og:title", content: headline },
       ...(summary === undefined
         ? []

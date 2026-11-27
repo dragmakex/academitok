@@ -1,0 +1,49 @@
+# AcademiTok
+
+> TikTok's rhythm, a newsroom's typography, a researcher's firehose. AcademiTok is a
+> full-screen, swipe-native feed of academic papers dressed as a print-era broadsheet:
+> one paper per viewport, a reaction rail, and a ranker that learns from every
+> impression, dwell, like, save, hide, and source open.
+
+AcademiTok indexes **OpenAlex metadata only** — title, abstract, authors, venue, year,
+citation count, open-access status, and the publisher/DOI landing page. No PDFs and no
+full text are stored or served; each clipping links out to the publisher, where readers
+use whatever institutional or publisher access they already have.
+
+## How the feed works
+
+- **Candidates** come from an OpenAlex catalog pool cached for 24 hours, with a frozen
+  seed edition as the offline fallback.
+- **Scoring** blends topic affinity (decayed per reaction), tf-idf content similarity to
+  the reader's liked/saved abstracts, author/venue affinity, recency, citations, and
+  open-access availability.
+- **Diversity** is enforced per page: at most 2 papers per topic, at most 1 per author,
+  near-duplicate titles collapsed (Jaccard > 0.9), and an exploration slot drawn from
+  below the top 40% of candidates.
+- **Seen-filter**: papers impressed within 14 days only return when the pool is
+  exhausted, labeled "again", and only from the top 3% of ranked repeats.
+- Every page is deterministic for the same reader state: pool reads are ordered and
+  score ties break by paper id.
+
+## Pages
+
+- `/` — the reading deck: one paper per viewport, swipe/arrow navigation, like, save,
+  hide, share, and open-source actions. Responds to keyboard and screen readers.
+- `/paper/{id}` — a permalink per paper: the clipping anatomy, full metadata, BibTeX,
+  and an outbound DOI/publisher link.
+- `/saved` — a reader's saved papers, exportable as BibTeX (reader-local; not indexed).
+
+## For machines
+
+- Every paper permalink serves Open Graph, Twitter card, and JSON-LD
+  `ScholarlyArticle` metadata (headline, author list, publication year, abstract,
+  identifier).
+- `sitemap.xml` lists the indexable routes.
+- The feed and catalog are also available as an ndjson RPC surface at `/api/rpc`
+  (`papers_snapshot`, `papers_savedList`, `profile_onboard`).
+
+## Non-goals
+
+- No PDF storage or proxying.
+- No accounts with passwords; sign-in is an email magic link only.
+- No redistribution of full text beyond the abstract.

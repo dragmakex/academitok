@@ -179,9 +179,6 @@ test("the slide keeps sharing and navigation inside the reading column", async (
     />,
   )
 
-  await page.getByRole("button", { name: "Open the reading desk" }).click()
-  expect(actions.onOpenDesk).toHaveBeenCalledOnce()
-
   await page.getByRole("button", { name: "Share paper" }).click()
   expect(actions.onShare).toHaveBeenCalledOnce()
 

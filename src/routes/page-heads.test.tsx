@@ -85,18 +85,20 @@ describe("route heads", () => {
     })
   })
 
-  it("names the morgue and describes it", async () => {
-    const { morgueHead } = await import("./saved")
-    const head = morgueHead()
+  it("names the saved shelf and describes it", async () => {
+    const { savedHead } = await import("./saved")
+    const head = savedHead()
 
-    expect(head.meta).toContainEqual({ title: "Clippings · AcademiTok" })
+    expect(head.meta).toContainEqual({ title: "Saved · AcademiTok" })
     expect(head.meta).toContainEqual({
       property: "og:title",
-      content: "Clippings · AcademiTok",
+      content: "Saved · AcademiTok",
     })
     expect(
       head.meta.some((entry) =>
-        "name" in entry && entry.name === "description"
+        "name" in entry
+        && entry.name === "robots"
+        && entry.content === "noindex, nofollow"
       ),
     )
       .toBe(true)
@@ -142,7 +144,7 @@ describe("route heads", () => {
   })
 
   it("gives no surface the bare gazette title", async () => {
-    const [{ deckHead }, { morgueHead }, { permalinkHead }, { rootHead }] =
+    const [{ deckHead }, { savedHead }, { permalinkHead }, { rootHead }] =
       await Promise.all([
         import("./index"),
         import("./saved"),
@@ -152,7 +154,7 @@ describe("route heads", () => {
     const rootTitle = rootHead().meta.find((entry) => "title" in entry)
     const titles = [
       deckHead(),
-      morgueHead(),
+      savedHead(),
       permalinkHead(undefined),
     ]
       .flatMap((head) => head.meta.filter((entry) => "title" in entry))

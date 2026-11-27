@@ -39,7 +39,7 @@ export const paperShare = (
   },
 ): SharePayload => ({
   title,
-  text: `${title} — ${authors} (${year})`,
+  text: `${title} — ${authors} (${year}) · Found on AcademiTok`,
   url: permalink,
 })
 
