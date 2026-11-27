@@ -297,7 +297,7 @@ export function OnboardingPicks(
     .map((item) => item.paper.id)
 
   return (
-    <FeedDeck>
+    <FeedDeck snap={false}>
       <FeedStateSlide>
         <Card>
           <Stack gap="m">
