@@ -2,7 +2,7 @@ import { cx } from "@/design-system/foundation/classes"
 import type { ButtonHTMLAttributes, ReactNode } from "react"
 
 const baseClass =
-  "inline-flex items-center justify-center gap-xs min-h-9 px-s border font-label text-[0.72rem] font-bold uppercase tracking-[0.14em] cursor-pointer transition-colors duration-100 disabled:cursor-not-allowed disabled:opacity-40 focus-visible:outline-2 focus-visible:outline-ink focus-visible:outline-offset-2"
+  "inline-flex touch-manipulation items-center justify-center gap-xs min-h-9 px-s border font-label text-[0.72rem] font-bold uppercase tracking-[0.14em] cursor-pointer transition-colors duration-100 disabled:cursor-not-allowed disabled:opacity-40 focus-visible:outline-2 focus-visible:outline-ink focus-visible:outline-offset-2"
 
 const variantClass = {
   primary:
