@@ -25,7 +25,7 @@ export const verifyHead = () =>
   pageHead({
     title: "Sign-in · AcademiTok",
     description:
-      "Spending an AcademiTok sign-in link so one reading desk follows the reader across devices.",
+      "Spending an AcademiTok sign-in link so your topics follow you across devices.",
   })
 
 export const Route = createFileRoute("/auth/verify")({
@@ -114,13 +114,13 @@ function VerifyPage() {
             {outcome.state === "signed"
               ? `This browser now keeps the topics and clippings of ${outcome.email}. Open the desk on another device and ask for a link there to fold it in.`
               : outcome.state === "failed"
-              ? "Check the address and try again, or ask for a fresh link from the reading desk."
+              ? "Check the address and try again, or ask for a fresh link from the papers."
               : outcome.state === "pending"
               ? "One moment while the link is spent."
-              : "Sign-in links work once and expire in 15 minutes. Ask for a fresh one from the reading desk."}
+              : "Sign-in links work once and expire in 15 minutes. Ask for a fresh one from the papers."}
           </Text>
           <LinkButton href="/" target="_self">
-            Back to the deck
+            Back to the papers
           </LinkButton>
         </Stack>
       </Card>

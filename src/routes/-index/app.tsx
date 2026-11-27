@@ -6,7 +6,6 @@ import {
 } from "@/api/paper-schema"
 import { Button } from "@/design-system/components/Button"
 import { Card } from "@/design-system/components/Card"
-import { Checkbox } from "@/design-system/components/Checkbox"
 import { CopyBlock } from "@/design-system/components/CopyBlock"
 import { EdgeDrawer } from "@/design-system/components/EdgeDrawer"
 import { EmptyState } from "@/design-system/components/EmptyState"
@@ -17,10 +16,11 @@ import { Notice, type NoticeAction } from "@/design-system/components/Notice"
 import { Page } from "@/design-system/components/Page"
 import { PaperSlide } from "@/design-system/components/PaperSlide"
 import { ShortcutSheet } from "@/design-system/components/ShortcutSheet"
+import { SwipePager } from "@/design-system/components/SwipePager"
 import { Tabs } from "@/design-system/components/Tabs"
 import { Text } from "@/design-system/components/Text"
 import { TextField } from "@/design-system/components/TextField"
-import { Grid } from "@/design-system/primitives/Grid"
+import { Expand } from "@/design-system/primitives/Expand"
 import { Inline } from "@/design-system/primitives/Inline"
 import { Stack } from "@/design-system/primitives/Stack"
 import { reactionFailureNotice, trackFeedPageEvent } from "@/lib/feed-analytics"
@@ -38,7 +38,6 @@ import {
   reactToPaperAtom,
   requestSignInAtom,
   restoreHiddenPaperAtom,
-  saveReaderProfileAtom,
   sessionAtom,
   signInStatusAtom,
   signOutAtom,
@@ -282,184 +281,196 @@ type OnboardingPicksProps = {
 export function OnboardingPicks(
   { candidates, onSubmit }: OnboardingPicksProps,
 ) {
-  const [page, setPage] = useState(0)
   const [decisions, setDecisions] = useState<
     Readonly<Record<string, "keep" | "discard">>
   >({})
   const requestSignIn = useAtomSet(requestSignInAtom)
   const signInStatus = useAtomValue(signInStatusAtom)
   const [signInEmail, setSignInEmail] = useState("")
-  const scrollRef = useRef<HTMLDivElement | null>(null)
-  const signStep = page === 3
-  const visible = candidates.slice(page * 5, page * 5 + 5)
+  const pagerRef = useRef<HTMLDivElement | null>(null)
 
-  // A fresh pick page starts at its top: the reader swaps content, not a deep
-  // scroll into the middle of the next five cards.
-  useEffect(() => {
-    scrollRef.current?.scrollTo({ top: 0, behavior: "auto" })
-  }, [page, signStep])
-
-  const pageComplete = signStep
-    || (visible.length === 5
-      && visible.every((item) => decisions[item.paper.id] !== undefined))
+  const pages: Array<ReadonlyArray<FeedItem>> = []
+  for (let start = 0; start < candidates.length; start += 3) {
+    pages.push(candidates.slice(start, start + 3))
+  }
+  const signView = pages.length
   const keptPaperIds = candidates
     .filter((item) => decisions[item.paper.id] === "keep")
     .map((item) => item.paper.id)
+  // The onboarding contract takes all 15 decisions. A swipe-through reader
+  // keeps what they like; every paper left undecided is a rejection, so the
+  // submit always carries 15 distinct decisions.
   const rejectedPaperIds = candidates
-    .filter((item) => decisions[item.paper.id] === "discard")
+    .filter((item) => decisions[item.paper.id] !== "keep")
     .map((item) => item.paper.id)
+  const keptCount = keptPaperIds.length
   const print = () =>
     onSubmit({ keptPaperIds, rejectedPaperIds, skipped: false })
 
+  const goTo = (target: number) => {
+    const pager = pagerRef.current
+    if (pager !== null) {
+      pager.scrollTo({ left: target * pager.clientWidth, behavior: "smooth" })
+    }
+  }
+
   return (
-    <FeedDeck snap={false} scrollRef={scrollRef}>
+    <FeedDeck snap={false}>
       <FeedStateSlide>
-        <Card>
-          <Stack gap="m">
-            {signStep
-              ? (
-                <>
-                  <Stack gap="xs">
-                    <Text tone="label" as="span">
-                      Sign the front page · 4 of 4
-                    </Text>
-                    <Text>
-                      One magic link, no password: the desk you just tuned
-                      follows you to every device you read on.
-                    </Text>
-                  </Stack>
-                  <TextField
-                    label="Email"
-                    type="email"
-                    value={signInEmail}
-                    onChange={(event) =>
-                      setSignInEmail(event.currentTarget.value)}
-                  />
-                  <Button
-                    loading={signInStatus === "sending"}
-                    disabled={!signInEmail.includes("@")}
-                    onClick={() => requestSignIn({ email: signInEmail })}
-                  >
-                    Send me the link
-                  </Button>
-                  {signInStatus === "sent"
-                    ? (
-                      <Text tone="muted">
-                        The link is on its way. Spend it on this device and this
-                        desk is yours everywhere.
-                      </Text>
+        <SwipePager scrollRef={pagerRef}>
+          {pages.map((group, groupIndex) => (
+            <Stack
+              key={`picks-${groupIndex}`}
+              gap="l"
+            >
+              <Stack gap="m">
+                <Stack gap="xs">
+                  <Text tone="label" as="span">
+                    Set your front page · {groupIndex + 1} of {pages.length}
+                  </Text>
+                  <Text>
+                    Keep at least five. Your choices tune topics and writing
+                    similarity before the first edition. Swipe or use the
+                    stamps.
+                  </Text>
+                </Stack>
+                <Stack gap="l">
+                  {group.map((item) => {
+                    const kept = decisions[item.paper.id] === "keep"
+                    const discarded = decisions[item.paper.id] === "discard"
+                    return (
+                      <Card key={item.paper.id} tone="accent">
+                        <Stack gap="s">
+                          <Text tone="label" as="span">
+                            {item.paper.topics[0] ?? "Research"}
+                          </Text>
+                          <Text>
+                            {item.paper.title}
+                          </Text>
+                          <Inline gap="s">
+                            <Button
+                              variant={kept ? "primary" : "secondary"}
+                              aria-label={`Keep ${item.paper.title}`}
+                              aria-pressed={kept}
+                              onClick={() =>
+                                setDecisions((current) => ({
+                                  ...current,
+                                  [item.paper.id]: "keep",
+                                }))}
+                            >
+                              Keep
+                            </Button>
+                            <Button
+                              variant={discarded ? "danger" : "secondary"}
+                              aria-label={`Skip ${item.paper.title}`}
+                              aria-pressed={discarded}
+                              onClick={() =>
+                                setDecisions((current) => ({
+                                  ...current,
+                                  [item.paper.id]: "discard",
+                                }))}
+                            >
+                              Skip
+                            </Button>
+                          </Inline>
+                        </Stack>
+                      </Card>
                     )
-                    : null}
-                  {signInStatus === "failed"
-                    ? (
-                      <Text tone="muted">
-                        That request did not go through. Check the address and
-                        try again.
-                      </Text>
-                    )
-                    : null}
-                </>
-              )
-              : (
-                <>
-                  <Stack gap="xs">
-                    <Text tone="label" as="span">
-                      Set your front page · {page + 1} of 4
-                    </Text>
-                    <Text>
-                      Keep at least five. Your choices tune topics and writing
-                      similarity before the first edition.
-                    </Text>
-                  </Stack>
-                  <Grid layout="stats">
-                    {visible.map((item) => {
-                      const kept = decisions[item.paper.id] === "keep"
-                      const discarded = decisions[item.paper.id] === "discard"
-                      return (
-                        <Card key={item.paper.id} tone="subtle">
-                          <Stack gap="s">
-                            <Text tone="label" as="span">
-                              {item.paper.topics[0] ?? "Research"}
-                            </Text>
-                            <Text>
-                              {item.paper.title}
-                            </Text>
-                            <Inline gap="s">
-                              <Button
-                                variant={kept ? "primary" : "secondary"}
-                                aria-label={`Keep ${item.paper.title}`}
-                                aria-pressed={kept}
-                                onClick={() =>
-                                  setDecisions((current) => ({
-                                    ...current,
-                                    [item.paper.id]: "keep",
-                                  }))}
-                              >
-                                Keep
-                              </Button>
-                              <Button
-                                variant={discarded ? "danger" : "secondary"}
-                                aria-label={`Skip ${item.paper.title}`}
-                                aria-pressed={discarded}
-                                onClick={() =>
-                                  setDecisions((current) => ({
-                                    ...current,
-                                    [item.paper.id]: "discard",
-                                  }))}
-                              >
-                                Skip
-                              </Button>
-                            </Inline>
-                          </Stack>
-                        </Card>
-                      )
-                    })}
-                  </Grid>
-                </>
-              )}
-            <Inline gap="s" align="between">
-              {signStep
+                  })}
+                </Stack>
+              </Stack>
+              <Expand>
+                {null}
+              </Expand>
+              <Inline gap="s" align="between">
+                {groupIndex === 0
+                  ? (
+                    <Button
+                      variant="secondary"
+                      onClick={() =>
+                        onSubmit({
+                          keptPaperIds: [],
+                          rejectedPaperIds: [],
+                          skipped: true,
+                        })}
+                    >
+                      Skip this
+                    </Button>
+                  )
+                  : (
+                    <Button
+                      variant="secondary"
+                      onClick={() => goTo(groupIndex - 1)}
+                    >
+                      Back
+                    </Button>
+                  )}
+                <Button
+                  disabled={keptCount < 3}
+                  onClick={() => goTo(groupIndex + 1)}
+                >
+                  {groupIndex + 1 === pages.length
+                    ? "Sign the front page"
+                    : "Next"}
+                </Button>
+              </Inline>
+            </Stack>
+          ))}
+
+          <Stack gap="l">
+            <Stack gap="m">
+              <Stack gap="xs">
+                <Text tone="label" as="span">
+                  Sign the front page · {signView + 1} of {signView + 1}
+                </Text>
+                <Text>
+                  One magic link, no password: the front page you just tuned
+                  follows you to every device you read on.
+                </Text>
+              </Stack>
+              <TextField
+                label="Email"
+                type="email"
+                value={signInEmail}
+                onChange={(event) => setSignInEmail(event.currentTarget.value)}
+              />
+              <Button
+                loading={signInStatus === "sending"}
+                disabled={!signInEmail.includes("@")}
+                onClick={() => requestSignIn({ email: signInEmail })}
+              >
+                Send me the link
+              </Button>
+              {signInStatus === "sent"
                 ? (
-                  <>
-                    <Button variant="ghost" onClick={print}>
-                      Skip for now
-                    </Button>
-                    <Button
-                      disabled={signInStatus !== "sent"}
-                      onClick={print}
-                    >
-                      Print edition
-                    </Button>
-                  </>
+                  <Text tone="muted">
+                    The link is on its way. Spend it on this device and this
+                    desk is yours everywhere.
+                  </Text>
                 )
-                : (
-                  <>
-                    {page === 0
-                      ? (
-                        <Button
-                          variant="secondary"
-                          onClick={() =>
-                            onSubmit({
-                              keptPaperIds: [],
-                              rejectedPaperIds: [],
-                              skipped: true,
-                            })}
-                        >
-                          Skip this
-                        </Button>
-                      )
-                      : <span aria-hidden="true" />}
-                    <Button
-                      disabled={!pageComplete}
-                      onClick={() => setPage((current) => current + 1)}
-                    >
-                      Next
-                    </Button>
-                  </>
-                )}
+                : null}
+              {signInStatus === "failed"
+                ? (
+                  <Text tone="muted">
+                    That request did not go through. Check the address and try
+                    again.
+                  </Text>
+                )
+                : null}
+            </Stack>
+            <Expand>
+              {null}
+            </Expand>
+            <Inline gap="s" align="between">
+              <Button variant="secondary" onClick={() => goTo(signView - 1)}>
+                Back
+              </Button>
+              <Button disabled={keptCount < 5} onClick={print}>
+                Print edition
+              </Button>
             </Inline>
           </Stack>
-        </Card>
+        </SwipePager>
       </FeedStateSlide>
     </FeedDeck>
   )
@@ -474,7 +485,6 @@ export function App() {
   const loadPaperFeed = useAtomSet(loadPaperFeedAtom)
   const loadNextPage = useAtomSet(loadNextPaperPageAtom)
   const onboardReader = useAtomSet(onboardReaderAtom)
-  const saveProfile = useAtomSet(saveReaderProfileAtom)
   const trackView = useAtomSet(trackPaperViewAtom)
   const snapshot = snapshotAsync._tag === "Success"
     ? snapshotAsync.value
@@ -504,10 +514,6 @@ export function App() {
     topic: snapshot?.selectedTopic ?? "All",
     sort: snapshot?.selectedSort ?? "recommended",
   })
-  const [name, setName] = useState(snapshot?.profile?.name ?? "Guest Reader")
-  const [selectedTopics, setSelectedTopics] = useState<ReadonlyArray<Topic>>(
-    snapshot?.profile?.interests ?? ["AI", "Education", "Health"],
-  )
   const deckRef = useRef<HTMLElement | null>(null)
   const slideNodes = useRef(new Map<number, HTMLElement>())
   const requestedCursors = useRef(new Set<string>())
@@ -713,7 +719,7 @@ export function App() {
       <EdgeDrawer
         open={drawerOpen}
         onOpenChange={setDrawerOpen}
-        title="The reading desk"
+        title="The papers"
         description={
           <Text tone="muted">
             Choose your research topics and edition order.
@@ -721,50 +727,59 @@ export function App() {
         }
       >
         <Stack gap="l">
-          <Card tone="subtle">
+          <Card>
             <Stack gap="m">
               <Text tone="label" as="span">
-                Profile
+                Account
               </Text>
-              <TextField
-                label="Reader name"
-                value={name}
-                onChange={(event) => setName(event.currentTarget.value)}
-              />
-              <Text tone="label" as="span">
-                Research topics
-              </Text>
-              <Grid layout="stats">
-                {Topic.literals.map((topic) => (
-                  <Checkbox
-                    key={topic}
-                    checked={selectedTopics.includes(topic)}
-                    label={topic}
-                    onChange={(event) => {
-                      const { checked } = event.currentTarget
-                      setSelectedTopics((current) =>
-                        checked
-                          ? [...current, topic]
-                          : current.filter((item) => item !== topic)
+              {email === null
+                ? (
+                  <>
+                    <Text tone="muted">
+                      Your topic preferences live in this browser. One tap, no
+                      password: a link in your mail carries them to every device
+                      you read on.
+                    </Text>
+                    <TextField
+                      label="Email"
+                      value={signInEmail}
+                      onChange={(event) =>
+                        setSignInEmail(event.currentTarget.value)}
+                    />
+                    <Button
+                      loading={signInStatus === "sending"}
+                      onClick={() => requestSignIn({ email: signInEmail })}
+                    >
+                      Send me a link
+                    </Button>
+                    {signInStatus === "sent"
+                      ? (
+                        <Text tone="muted">
+                          If that address can sign in, the link is on its way.
+                          It works once and expires in fifteen minutes.
+                        </Text>
                       )
-                    }}
-                  />
-                ))}
-              </Grid>
-              <Button
-                loading={loading}
-                onClick={() =>
-                  saveProfile({
-                    input: {
-                      name: name.trim() || "Guest Reader",
-                      institution: snapshot?.profile?.institution ?? "Guest",
-                      interests: [...new Set(selectedTopics)],
-                    },
-                    query,
-                  })}
-              >
-                Save
-              </Button>
+                      : null}
+                    {signInStatus === "failed"
+                      ? (
+                        <Text tone="muted">
+                          That request did not go through. Check the address and
+                          try again.
+                        </Text>
+                      )
+                      : null}
+                  </>
+                )
+                : (
+                  <>
+                    <Text tone="muted">
+                      {`Signed in as ${email}. Ask for a link on another device to fold it into this desk.`}
+                    </Text>
+                    <Button variant="secondary" onClick={() => signOut()}>
+                      Sign out
+                    </Button>
+                  </>
+                )}
             </Stack>
           </Card>
 
