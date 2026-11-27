@@ -248,7 +248,7 @@ export const PaperSlide = forwardRef<HTMLElement, PaperSlideProps>(
 
                   <p
                     ref={abstractBoxRef}
-                    className="mt-s min-h-0 flex-1 m-0 max-w-[62ch] overflow-hidden hyphens-auto text-left font-body text-[clamp(0.98rem,2.7vh,1.3rem)] leading-[1.45] md:text-justify md:[text-align-last:left]"
+                    className="mt-s min-h-0 flex-1 m-0 max-w-[62ch] overflow-hidden text-left font-body text-[clamp(0.98rem,2.7vh,1.3rem)] leading-[1.45] md:text-justify md:[text-align-last:left]"
                   >
                     <span
                       ref={abstractTextRef}

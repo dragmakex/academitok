@@ -68,6 +68,42 @@ afterEach(async () => {
 describe("papers application", () => {
   // The offline stub walks the source guard's retry ladder (1s + 2s) before the
   // fallback, so this test needs more than the default budget.
+  it("does not persist the onboarding candidate page into the feed session", {
+    timeout: 15_000,
+  }, async () => {
+    const dataDir = await mkdtemp(join(tmpdir(), "academitok-onboard-session-"))
+    directories.push(dataDir)
+    vi.stubGlobal("fetch", () => Promise.reject(new Error("offline")))
+
+    const [candidates, firstEdition] = await runFeed(
+      dataDir,
+      Effect.gen(function*() {
+        const repository = yield* ReaderStateRepository
+        const candidates = yield* getPaperFeedSnapshot(
+          requestFor("onboard-session"),
+        )
+        yield* repository.onboard({
+          keptPaperIds: [],
+          rejectedPaperIds: [],
+          skipped: true,
+        })
+        return [
+          candidates,
+          yield* getPaperFeedSnapshot(requestFor("onboard-session")),
+        ] as const
+      }),
+    )
+
+    expect(paperIds(candidates).length).toBeGreaterThan(0)
+    // The first edition is MMR-ordered and capped, so it must be a non-empty
+    // subset of the onboarding candidates rather than the same sequence.
+    expect(paperIds(firstEdition).length).toBeGreaterThan(0)
+    expect(
+      paperIds(firstEdition).every((id) => paperIds(candidates).includes(id)),
+    )
+      .toBe(true)
+  })
+
   it("keeps a persisted feed session clean across a stale cursor", {
     timeout: 15_000,
   }, async () => {

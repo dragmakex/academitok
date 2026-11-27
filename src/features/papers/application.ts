@@ -119,7 +119,9 @@ export const getPaperFeedSnapshot = (request: FeedRequest) =>
           }),
           nextCursor: null,
         }
-      if (edition === undefined && request.sessionId !== undefined) {
+      if (
+        edition === undefined && request.sessionId !== undefined && !onboarding
+      ) {
         yield* repository.saveFeedSession(
           request.sessionId,
           [
